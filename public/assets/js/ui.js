@@ -185,8 +185,17 @@ function falarNavegador(texto, { velocidade = 1 } = {}) {
 }
 // "Ler pra mim": o Tuiuiú lê em voz alta, em português, o que está no balão (ajuda quem lê pouco ou está começando)
 export function falarPt(texto, aoFim) {
+  const arq = !localStorageGet('voz') && mapaVoz && mapaVoz['pt:' + String(texto).trim()];
+  if (arq) {
+    pararVoz();
+    const a = new Audio(PASTA_VOZ + arq + '?v=__V__');
+    a.onended = a.onerror = () => { tocandoVoz = null; aoFim?.(); };
+    tocandoVoz = a;
+    a.play().catch(() => { tocandoVoz = null; aoFim?.(); });
+    return true;
+  }
   if (!('speechSynthesis' in window)) { toast('Seu navegador não tem leitura de voz.'); return false; }
-  speechSynthesis.cancel();
+  pararVoz();
   const u = new SpeechSynthesisUtterance(texto);
   const todas = speechSynthesis.getVoices();
   const voz = todas.find(v => /^pt[-_]BR/i.test(v.lang) && /natural|google|luciana|francisca/i.test(v.name)) || todas.find(v => /^pt[-_]BR/i.test(v.lang)) || todas.find(v => /^pt/i.test(v.lang));
