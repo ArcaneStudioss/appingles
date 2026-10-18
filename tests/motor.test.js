@@ -233,7 +233,7 @@ test('perfil de aprendizagem: mede por modo (ler/escrever/ouvir), dá mais trein
   const pessoais = A.errosPessoais([{ id: 1, frente: 'Como dizer melhor: "I am agree"', verso: 'I agree', nota_origem: 'agree já é verbo', origem: 'conversa' }, { id: 2, frente: 'qualquer coisa', verso: 'x' }, { id: 3, frente: 'Como dizer melhor: "a"', verso: "I'm ... (years old)" }]);
   assert.equal(pessoais.length, 1, 'só entra erro com frase certa de verdade (nada de modelo com ...)');
   const treino = A.montarTreino({ tags: difs.slice(0, 2), pessoais, pesos, quantos: 8, semente: 'x' });
-  assert.equal(treino.itens.length, 8);
+  assert.equal(treino.itens.length, 7, "com áudio no treino, o teto cai para 7");
   assert.ok(treino.modos.ouvir >= treino.modos.ler, 'o modo fraco entra mais');
   assert.ok(treino.itens.some(i => i.tipo === 'ditado' && i.audio) && treino.itens.some(i => i.tipo === 'corrigir' && i.errado === 'I am agree'));
   assert.ok(new Set(treino.itens.map(i => i._fonte)).size === treino.itens.length, 'sem repetir a mesma pergunta');
@@ -244,4 +244,21 @@ test('perfil de aprendizagem: mede por modo (ler/escrever/ouvir), dá mais trein
   const { corrigirExercicio } = require('../src/motor/correcao');
   const c = treino.itens.find(i => i.tipo === 'corrigir');
   assert.ok(corrigirExercicio(c, 'I agree').correto && !corrigirExercicio(c, 'I am agree').correto);
+});
+
+test('lição e treino: no máximo 10 questões, e menos (7) quando tem áudio', () => {
+  const { limitarQuestoes, limiteDaLicao } = require('../src/motor/licao');
+  const ex = (n, tipo = 'escolha') => Array.from({ length: n }, (_, i) => ({ id: `${tipo}${i}`, tipo }));
+  const sem = [{ tipo: 'exercicios', titulo: 'Prática', exercicios: ex(9) }, { tipo: 'retomada', titulo: 'Retomada rápida', exercicios: ex(4) }];
+  assert.equal(limiteDaLicao(sem), 10);
+  limitarQuestoes(sem);
+  assert.equal(sem.reduce((n, b) => n + b.exercicios.length, 0), 10);
+  const com = [{ tipo: 'exercicios', titulo: 'Prática', exercicios: ex(6) }, { tipo: 'escuta', titulo: 'Escuta', exercicios: ex(3, 'ditado') }, { tipo: 'retomada', titulo: 'Retomada rápida', exercicios: ex(2) }];
+  assert.equal(limiteDaLicao(com), 7);
+  limitarQuestoes(com);
+  assert.equal(com.reduce((n, b) => n + b.exercicios.length, 0), 7);
+  assert.ok(com.some(b => b.tipo === 'escuta'), 'a escuta não some');
+  const APR = require('../src/motor/aprendizagem');
+  const t = APR.montarTreino({ tags: [{ tag: 'present-simple', nome: 'x' }], pessoais: [], pesos: { ler: 0.3, escrever: 0.3, ouvir: 0.4 }, quantos: 12, semente: 's' });
+  assert.ok(t.itens.length <= 7);
 });

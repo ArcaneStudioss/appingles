@@ -141,6 +141,9 @@ function distribuir(total, pesos) {
 // Monta o treino do dia. `bancoIa` = exercícios novos da IA por tag (já validados), `vistos` = { itemId: { acertou } }.
 function montarTreino({ tags, pessoais = [], pesos, quantos = 8, bancoIa = {}, vistos = {}, semente = 's' }) {
   if (!tags.length && !pessoais.length) return { itens: [], modos: { ler: 0, escrever: 0, ouvir: 0 }, tags: [], pessoais: 0 };
+  // Teto de 10 perguntas; se o treino tem áudio (ouvir), 7, porque ouvir e digitar pesa mais.
+  quantos = Math.min(10, quantos);
+  if (quantos > 7 && Math.round(pesos.ouvir * (quantos - Math.min(2, pessoais.length, Math.floor(quantos / 4)))) > 0) quantos = 7;
   const nPessoais = Math.min(2, pessoais.length, Math.floor(quantos / 4));
   const principais = quantos - nPessoais;
   const cont = distribuir(principais, pesos);

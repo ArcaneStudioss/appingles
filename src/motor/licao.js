@@ -62,6 +62,25 @@ function blocoFoco(foco, origemTexto) {
   };
 }
 
+// Teto de questões por lição: 10, ou 7 quando há áudio (escuta pesa mais). A tarefa de escrever no fim não conta.
+// Corta primeiro o que é reforço (respostas rápidas, retomada, treino extra) e só depois a prática principal.
+const MAX_QUESTOES = 10, MAX_COM_AUDIO = 7;
+const ORDEM_CORTE = [b => b.tipo === 'rapidas', b => b.tipo === 'retomada', b => b.titulo === 'Treino extra', b => b.tipo === 'exercicios' && b.titulo !== 'Combine os pares' && b.titulo !== 'Treino extra', b => b.tipo === 'escuta'];
+function limiteDaLicao(blocos) { return blocos.some(b => b.tipo === 'escuta' || b.exercicios?.some(e => e.tipo === 'escuta' || e.tipo === 'ditado')) ? MAX_COM_AUDIO : MAX_QUESTOES; }
+function limitarQuestoes(blocos) {
+  const conta = () => blocos.reduce((n, b) => n + (b.exercicios ? b.exercicios.length : 0), 0);
+  const antes = conta(), teto = limiteDaLicao(blocos);
+  for (const alvo of ORDEM_CORTE) {
+    for (const b of blocos.filter(alvo).reverse()) {
+      while (b.exercicios.length > 1 && conta() > teto) b.exercicios.pop();
+      if (conta() > teto && b.exercicios.length === 1 && b.tipo !== 'escuta') b.exercicios.pop();
+    }
+    if (conta() <= teto) break;
+  }
+  for (let i = blocos.length - 1; i >= 0; i--) if (blocos[i].exercicios && !blocos[i].exercicios.length) blocos.splice(i, 1);
+  return antes - conta();
+}
+
 function montarLicao(ctx) {
   const { perfil, plano, nivel, tentativas = [], competencias = {}, focos = [], hipoteses = [], hojeISO, cartoesPendentes = 0 } = ctx;
   const orcamento = Math.max(10, Math.min(20, perfil.minutos_dia | 0 || 15));
@@ -190,6 +209,8 @@ function montarLicao(ctx) {
     }
   }
 
+  gasto -= limitarQuestoes(blocos) * MIN.exercicio;
+
   return {
     data: hojeISO,
     minutos: Math.round(Math.min(orcamento, Math.max(8, gasto))),
@@ -253,4 +274,4 @@ function validarExerciciosIa(lista, missaoId, tag, max = 3) {
   return ok;
 }
 
-module.exports = { montarLicao, paraCliente, acharExercicio, exerciciosDaTag, missaoAtual, validarExerciciosIa };
+module.exports = { limitarQuestoes, limiteDaLicao, MAX_QUESTOES, MAX_COM_AUDIO, montarLicao, paraCliente, acharExercicio, exerciciosDaTag, missaoAtual, validarExerciciosIa };
