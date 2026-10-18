@@ -392,6 +392,10 @@ function criar(db) {
     else if (pend) proximo = { acao: 'revisar', texto: `Revisar ${pend} cartões pendentes` };
     else if (!conversaHoje) proximo = { acao: 'conversar', texto: 'Uma conversa curta para fechar o dia', cenario: POR_ID[missaoAtual(plano, competenciasDe(uid))?.id]?.conversa || 'apresentacao' };
     else proximo = { acao: 'descansar', texto: 'Por hoje está ótimo. Volte amanhã para a próxima lição.' };
+    const inicioHoje = new Date(Date.now() - 864e5).toISOString();
+    const pontosHoje = 10 * q("SELECT COUNT(*) n FROM tentativas WHERE user_id = ? AND correto = 1 AND origem IN ('licao','revisao','conversa','producao','material') AND em >= ?").get(uid, inicioHoje).n
+      + 20 * q("SELECT COUNT(*) n FROM licoes WHERE user_id = ? AND data = ? AND status = 'concluida'").get(uid, h).n;
+    const diasNoMes = q('SELECT COUNT(*) n FROM dias_estudo WHERE user_id = ? AND data LIKE ?').get(uid, h.slice(0, 7) + '%').n;
     const novasConquistas = q('SELECT codigo FROM conquistas WHERE user_id = ? AND em >= ?').all(uid, new Date(Date.now() - 864e5).toISOString()).map(r => r.codigo);
     return {
       nome: ctx.u.nome.split(' ')[0], hoje: h,
@@ -400,7 +404,7 @@ function criar(db) {
       meta: { minutos: p.meta_diaria || 15, feitos: Math.round(minutosHoje) },
       foco: focoNovo ? { nome: POR_TAG[focoNovo.tag]?.nome, origem: focoNovo.origem } : null,
       objetivo: { nome: plano.objetivoNome, prazo: plano.prazo, metaRealista: plano.metaRealista },
-      assinatura: est, novasConquistas,
+      assinatura: est, novasConquistas, pontosHoje, diasNoMes,
     };
   });
 

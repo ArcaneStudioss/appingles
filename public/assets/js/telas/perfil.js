@@ -1,6 +1,8 @@
 // Onboarding: objetivo, prazo, área/interesses e tempo disponível. Uma pergunta por tela.
 import { api } from '../api.js?v=__V__';
 import { h, ocupado, icone, toast } from '../ui.js?v=__V__';
+import { lou, louFala } from '../diversao.js?v=__V__';
+
 
 const somarMeses = m => { const d = new Date(); d.setMonth(d.getMonth() + m); return d.toISOString().slice(0, 10); };
 const somarDias = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
@@ -41,7 +43,7 @@ export async function telaPerfil(el, { estado, ir, carregarEu }) {
     caixa.replaceChildren(barra());
     if (passo === 0) {
       caixa.append(
-        h('p', { class: 'bilhete' }, editando ? 'Mudou alguma coisa? Sem problema.' : `Oi, ${estado.eu.usuario.nome.split(' ')[0]}! Vamos montar seu plano.`),
+        louFala('oi', h('p', {}, editando ? 'Mudou alguma coisa? Sem problema, o plano se ajusta.' : `Oi, ${estado.eu.usuario.nome.split(' ')[0]}! Eu sou o Lou. Vou montar seu plano em 4 perguntas.`)),
         h('h1', {}, 'Para que você precisa do inglês agora?'),
         h('p', { class: 'ajuda' }, 'Escolha o principal. O curso inteiro vai girar em torno dele, e você pode mudar depois.'),
         h('div', { class: 'opcoes-grandes', role: 'radiogroup' }, objetivos.map(o => h('label', { class: 'opcao-grande' },

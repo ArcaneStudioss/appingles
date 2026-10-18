@@ -130,6 +130,9 @@ function montarLicao(ctx) {
 
     if (primeira) {
       blocos.push({ tipo: 'explicacao', titulo: def.explicacao.titulo, texto: def.explicacao.texto, estrutura: def.explicacao.estrutura, exemplos: def.exemplos, vocab: def.vocab, missao: def.id });
+      // combinar pares com o vocabulário que acabou de aparecer (aquecimento rápido de memória)
+      blocos.push({ tipo: 'exercicios', titulo: 'Combine os pares', exercicios: [{ id: `pares:${def.id}`, tipo: 'pares', habilidade: 'vocabulario', dif: 1, missao: def.id, pares: def.vocab.slice(0, 5).map(v => ({ en: v.en, pt: v.pt })) }] });
+      gasto += 1;
     } else {
       blocos.push({ tipo: 'lembrete', titulo: 'Relembrando a estrutura', estrutura: def.explicacao.estrutura, missao: def.id });
     }
@@ -212,6 +215,7 @@ function paraCliente(licao, semente) {
     if (e.sufixo) base.sufixo = e.sufixo;
     if (e.multi) base.multi = true;
     if (e.personalizado) base.personalizado = true;
+    if (e.pares) base.pares = e.pares;   // nos pares a tradução já foi mostrada na explicação: não é gabarito escondido
     return base;
   };
   return {

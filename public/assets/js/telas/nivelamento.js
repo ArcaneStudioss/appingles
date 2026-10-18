@@ -1,6 +1,7 @@
 // Teste de nivelamento: uma pergunta por tela, "não sei" sem culpa, escrita e fala opcionais, resultado com incerteza.
 import { api } from '../api.js?v=__V__';
 import { h, ocupado, icone, falar, temVoz, temMicrofone, ouvirMicrofone, toast } from '../ui.js?v=__V__';
+import { lou, louFala, som, confete } from '../diversao.js?v=__V__';
 
 const NOMES = { gramatica: 'Gramática', vocabulario: 'Vocabulário', leitura: 'Leitura', escuta: 'Escuta', escrita: 'Escrita', fala: 'Fala' };
 const NIVEIS = ['A1', 'A2', 'B1', 'B2', 'C1'];
@@ -15,7 +16,7 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
 
   function intro() {
     caixa.replaceChildren(
-      h('p', { class: 'bilhete' }, anterior ? 'Refazendo o teste. Ótimo para ver a evolução.' : 'Antes de montar o plano, um retrato de agora.'),
+      louFala('pensando', h('p', {}, anterior ? 'Refazendo o teste? Ótimo para ver a evolução.' : 'Antes de montar o plano, quero tirar um retrato de agora. Sem pressão!')),
       h('h1', {}, 'Teste de nível'),
       h('ul', { class: 'lista-check' },
         h('li', {}, `${itens.length} perguntas rápidas de gramática, vocabulário, leitura e escuta (uns 12 minutos).`),
@@ -98,9 +99,10 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
   }
 
   function resultado(r, plano) {
+    som('fim'); confete();
     const hab = Object.entries(r.porHabilidade);
     caixa.replaceChildren(
-      h('p', { class: 'bilhete' }, 'Pronto. Aqui está o retrato de hoje.'),
+      louFala('feliz', h('p', {}, 'Pronto! Aqui está o retrato de hoje.')),
       h('div', { class: 'folha resultado-nivel' },
         h('p', { class: 'chip' }, 'Nível estimado'),
         h('p', { class: 'nivel-grande' }, r.nivel),

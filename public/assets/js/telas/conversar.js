@@ -2,6 +2,8 @@
 import { api } from '../api.js?v=__V__';
 import { h, icone, falar, toast, ocupado, confirmar, janela, temMicrofone, ouvirMicrofone, dataBR } from '../ui.js?v=__V__';
 import { nomeConquista } from './hoje.js?v=__V__';
+import { lou, louFala } from '../diversao.js?v=__V__';
+
 
 export async function telaConversar(el, { ir }) {
   const [{ cenarios, ia }, { conversas }] = await Promise.all([api('/conversas/cenarios'), api('/conversas')]);
@@ -16,7 +18,7 @@ export async function telaConversar(el, { ir }) {
     ia ? null : h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, 'Modo de prática: o tutor segue um roteiro do cenário e aponta os erros mais comuns. Com a IA ligada, a conversa fica livre e a correção, completa.')),
     h('ul', { class: 'cenarios' }, cenarios.map(c => {
       const b = h('button', { type: 'button', class: 'cenario folha' + (c.recomendado || c.id === pre ? ' cenario--rec' : ''), on: { click: () => iniciar(c.id, b) } },
-        h('span', {}, h('strong', {}, c.titulo), c.recomendado ? h('small', { class: 'bilhete pequeno' }, 'combina com a sua missão atual') : null), icone('arrow-right'));
+        lou(c.recomendado ? 'feliz' : 'oi', { tamanho: 52, rotulo: '' }), h('span', { class: 'cenario__txt' }, h('strong', {}, c.titulo), c.recomendado ? h('small', { class: 'bilhete pequeno' }, 'combina com a sua missão atual') : null), icone('arrow-right'));
       return h('li', {}, b);
     })),
     conversas.length ? h('section', {}, h('h2', {}, 'Conversas anteriores'), h('ul', { class: 'lista-simples' }, conversas.slice(0, 15).map(c => h('li', {}, h('a', { href: '#/conversa/' + c.id }, c.titulo), h('small', {}, ` ${dataBR(c.iniciada_em)}${c.terminada_em ? '' : ' · em aberto'}`))))) : null);
@@ -29,6 +31,7 @@ export async function telaConversa(el, { param, ir }) {
   const lista = h('ol', { class: 'chat', 'aria-live': 'polite' });
   const balao = (m) => {
     const li = h('li', { class: 'msg msg--' + m.papel },
+      m.papel === 'tutor' ? h('span', { class: 'msg__avatar' }, lou('oi', { tamanho: 40, rotulo: '' })) : null,
       h('div', { class: 'msg__balao', lang: 'en' }, m.texto,
         m.papel === 'tutor' ? h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir', on: { click: () => falar(m.texto) } }, icone('speaker-high')) : null));
     return li;

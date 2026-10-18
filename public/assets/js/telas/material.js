@@ -30,9 +30,10 @@ export async function telaMaterialItem(el, { param, ir }) {
 
   const exs = h('div', { class: 'lista-exercicios' });
   for (const ex of [...(m.compreensao || []).map(c => ({ ...c, tipo: 'escolha', enunciado: c.pergunta })), ...(m.exercicios || [])]) {
-    exs.append(h('div', { class: 'folha' }, exercicio(ex, { responder: (resposta) => api(`/materiais/${m.id}/responder`, { metodo: 'POST', corpo: { itemId: ex.id, resposta } }), aoProximo: () => {}, rotuloProximo: 'Ok' })));
+    const caixa = h('div', { class: 'folha' });
+    caixa.append(exercicio(ex, { responder: (resposta) => api(`/materiais/${m.id}/responder`, { metodo: 'POST', corpo: { itemId: ex.id, resposta } }), rotuloProximo: 'Próximo', aoProximo: () => { const prox = caixa.nextElementSibling; if (prox) { prox.scrollIntoView({ block: 'center' }); prox.querySelector('button,input,textarea')?.focus({ preventScroll: true }); } } }));
+    exs.append(caixa);
   }
-  exs.querySelectorAll('.exercicio > .btn-bloco').forEach(b => b.remove());
 
   el.append(
     h('header', { class: 'cabeca' }, h('a', { class: 'btn btn-texto btn-peq', href: '#/material' }, icone('caret-left'), 'Materiais'), h('h1', {}, m.titulo), h('p', { class: 'ajuda' }, dataBR(m.criado_em))),

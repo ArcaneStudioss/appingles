@@ -2,6 +2,8 @@
 import { api } from '../api.js?v=__V__';
 import { h, icone, falar, toast, formulario, confirmar, plural } from '../ui.js?v=__V__';
 import { nomeConquista } from './hoje.js?v=__V__';
+import { lou, louFala } from '../diversao.js?v=__V__';
+
 
 const TIPO = { expressao: 'Expressão', erro: 'Do seu erro', palavra: 'Palavra' };
 
@@ -18,7 +20,8 @@ export async function telaRevisar(el) {
 
   function vazio() {
     caixa.replaceChildren(
-      h('header', { class: 'cabeca' }, h('h1', {}, 'Revisar'), h('p', { class: 'bilhete' }, feitos ? `${plural(feitos, 'cartão revisado', 'cartões revisados')}. Até a próxima!` : 'Nada para revisar agora.')),
+      h('header', { class: 'cabeca' }, h('h1', {}, 'Revisar')),
+      louFala(feitos ? 'festa' : 'feliz', h('p', {}, feitos ? `${plural(feitos, 'cartão revisado', 'cartões revisados')}. Até a próxima!` : 'Nada para revisar agora. Você está em dia!')),
       h('div', { class: 'folha vazio' }, h('p', {}, 'Os cartões voltam no dia certo para você não esquecer. Eles nascem das lições, dos seus erros nas conversas e dos seus materiais.'),
         h('div', { class: 'linha-acoes' }, h('a', { class: 'btn btn-sec', href: '#/hoje' }, 'Voltar para hoje'), h('button', { class: 'btn btn-sec', on: { click: novo } }, icone('plus'), 'Criar um cartão'), h('button', { class: 'btn btn-texto', on: { click: gerenciar } }, 'Ver todos os cartões'))));
   }

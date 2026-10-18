@@ -277,3 +277,196 @@ input.lacuna{display:inline-block;width:auto;min-width:6ch;max-width:14ch;min-he
   .flashcard{min-height:300px}
 }
 .passo>.chip,.cabeca>.chip{justify-self:start}
+
+/* ==========================================================================
+   Camada lúdica (pedido do Gabriel: inspirado no Duolingo, mais refinado).
+   Botões e cartões "gordinhos" com borda inferior, mascote Lou, trilha em caminho,
+   folha de resposta que sobe. Movimento só com transform/opacity e desligado em movimento reduzido.
+   ========================================================================== */
+body{background:var(--papel)}
+.topo-app{border-bottom-width:2px}
+.nav a{font-weight:800}
+.nav a[aria-current] .ico{transform:scale(1.12)}
+
+/* Lou */
+.lou{flex:none;overflow:visible}
+@media (prefers-reduced-motion:no-preference){
+  .lou .lou__corpo{animation:lou-flutua 3.2s ease-in-out infinite;transform-origin:60px 100px}
+  .lou .lou__olhos{animation:lou-pisca 5s infinite;transform-origin:60px 46px}
+  .lou--festa .lou__corpo{animation:lou-pula .7s var(--ease) 3}
+  .lou__estrela{animation:brilha 1.4s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+}
+@keyframes lou-flutua{50%{transform:translateY(-4px)}}
+@keyframes lou-pisca{0%,46%,50%,100%{transform:scaleY(1)}48%{transform:scaleY(.1)}}
+@keyframes lou-pula{40%{transform:translateY(-14px) rotate(-4deg)}70%{transform:translateY(0) rotate(3deg)}}
+@keyframes brilha{50%{transform:scale(1.35) rotate(20deg);opacity:.7}}
+.lou-fala{display:flex;align-items:flex-end;gap:.6rem}
+.lou-fala__balao{position:relative;flex:1;background:var(--folha);border:2px solid var(--linha);border-bottom-width:4px;border-radius:18px;padding:.8rem 1rem;margin-bottom:.6rem}
+.lou-fala__balao::before{content:"";position:absolute;left:-10px;bottom:16px;width:16px;height:16px;background:var(--folha);border-left:2px solid var(--linha);border-bottom:2px solid var(--linha);transform:rotate(45deg);border-radius:0 0 0 4px}
+.lou-fala__balao p{margin:0 0 .3rem}.lou-fala__balao p:last-child{margin:0}
+.lou-fala__nome{font-family:var(--f-titulo);font-weight:600;font-size:1.15rem}
+.lou-fala .por-que{margin:.2rem 0 0;padding-left:1.1rem;display:grid;gap:.35rem}
+
+/* barra de status do topo */
+.status{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+.status__item{display:grid;justify-items:center;gap:.05rem;padding:.55rem .3rem;border-radius:var(--raio);background:var(--folha);border:2px solid var(--linha);border-bottom-width:4px;text-decoration:none;color:var(--tinta);text-align:center}
+.status__item .ico{width:1.5rem;height:1.5rem;color:var(--caneta)}
+.status__item strong{font-family:var(--f-titulo);font-size:1.25rem;font-weight:600;line-height:1.1}
+.status__item span{font-size:.75rem;color:var(--grafite);font-weight:700}
+.status__item--sol .ico{color:var(--sol-sombra)}
+.status__item .anel{--t:26px}
+.status__item .anel-cheio{-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px))}
+
+/* lição do dia */
+.licao-dia{display:grid;gap:.35rem;padding:1.3rem 1.2rem 1.2rem;border-radius:var(--raio-g);background:linear-gradient(160deg,var(--caneta) 0%,color-mix(in srgb,var(--caneta) 72%,#5EC8F2) 100%);color:#fff;border:0;box-shadow:0 6px 0 var(--btn-sombra)}
+.licao-dia h2{font-size:1.65rem;margin:0;color:#fff}
+.licao-dia .rotulo-pequeno{color:rgba(255,255,255,.85)}
+.licao-dia__meta{margin:0 0 .7rem;color:rgba(255,255,255,.92)}
+.licao-dia .chip{background:rgba(255,255,255,.2);color:#fff}
+.licao-dia .chip-sol{background:var(--sol);color:#3B2A00}
+.licao-dia .btn{background:#fff;color:var(--caneta-forte);border-color:#fff;box-shadow:0 4px 0 rgba(10,30,90,.35)}
+.licao-dia .btn-sec{background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.5)}
+.btn-grande{min-height:56px;font-size:1.1rem}
+
+/* atalhos (revisão, próximo passo) */
+.atalho{display:flex;align-items:center;gap:.8rem;padding:.9rem 1rem;border-radius:var(--raio-g);background:var(--folha);border:2px solid var(--linha);border-bottom-width:5px;text-decoration:none;color:var(--tinta);transition:transform .1s}
+.atalho:active{transform:translateY(3px);border-bottom-width:2px}
+.atalho strong{display:block;font-weight:800}
+.atalho small{color:var(--grafite)}
+.atalho__ico{display:inline-grid;place-items:center;width:44px;height:44px;flex:none;border-radius:14px;background:var(--caneta-fundo);color:var(--caneta)}
+.atalho__ico .ico{width:1.5rem;height:1.5rem}
+.atalho--revisao .atalho__ico{background:var(--sol-fundo);color:var(--sol-sombra)}
+.mais a .atalho__ico{width:36px;height:36px;border-radius:12px}
+.medalha{display:inline-grid;place-items:center;width:56px;height:56px;border-radius:50%;background:var(--sol);color:#5A3E00;box-shadow:0 4px 0 var(--sol-sombra),inset 0 -6px 0 rgba(0,0,0,.08)}
+.medalha .ico{width:60%;height:60%}
+.medalha--peq{width:34px;height:34px}
+.conquista-recente{gap:.6rem}
+
+/* trilha em caminho */
+.trilha-sec{display:grid;gap:.6rem;margin-top:.6rem}
+.trilha-sec__topo{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.trilha-sec__topo h2{margin:0}
+.caminho{list-style:none;padding:0;margin:0;display:grid;justify-items:center;gap:.9rem}
+.caminho__missao{width:100%;margin-top:.8rem}
+.caminho__faixa{display:grid;gap:.1rem;padding:.8rem 1rem;border-radius:var(--raio);background:var(--caneta);color:#fff;box-shadow:0 4px 0 var(--btn-sombra)}
+.caminho__faixa span{font-size:.78rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+.caminho__faixa strong{font-family:var(--f-titulo);font-weight:600;font-size:1.1rem}
+.caminho__missao.feito .caminho__faixa{background:var(--sol);color:#3B2A00;box-shadow:0 4px 0 var(--sol-sombra)}
+.no{position:relative;display:grid;place-items:center;width:68px;height:62px;border-radius:50%;border:0;cursor:pointer;transform:translateX(var(--dx,0));background:var(--linha);color:var(--apagado);box-shadow:0 6px 0 color-mix(in srgb,var(--linha) 75%,#000 12%);text-decoration:none;transition:transform .1s}
+.no .ico{width:1.7rem;height:1.7rem}
+.no:active{transform:translateX(var(--dx,0)) translateY(5px);box-shadow:0 1px 0 color-mix(in srgb,var(--linha) 75%,#000 12%)}
+.no--feito{background:var(--caneta);color:#fff;box-shadow:0 6px 0 var(--btn-sombra)}
+.no--feito:active{box-shadow:0 1px 0 var(--btn-sombra)}
+.no--trofeu{border-radius:20px;width:72px}
+.no--trofeu.no--feito{background:var(--sol);color:#5A3E00;box-shadow:0 6px 0 var(--sol-sombra)}
+.no--atual{width:80px;height:74px;background:var(--caneta);color:#fff;box-shadow:0 7px 0 var(--btn-sombra),0 0 0 8px var(--caneta-fundo)}
+.no--atual .ico{width:2rem;height:2rem}
+.no__balao{position:absolute;bottom:calc(100% + 14px);left:50%;transform:translateX(-50%);background:var(--folha);color:var(--caneta);border:2px solid var(--linha);border-bottom-width:4px;border-radius:12px;padding:.3rem .8rem;font-weight:800;white-space:nowrap;font-size:.95rem}
+.no__balao::after{content:"";position:absolute;top:100%;left:50%;margin-left:-7px;border:7px solid transparent;border-top-color:var(--linha)}
+@media (prefers-reduced-motion:no-preference){.no--atual{animation:pulsa 2s ease-in-out infinite}.no__balao{animation:balanca 2s ease-in-out infinite}}
+@keyframes pulsa{50%{box-shadow:0 7px 0 var(--btn-sombra),0 0 0 14px color-mix(in srgb,var(--caneta-fundo) 60%,transparent)}}
+@keyframes balanca{50%{transform:translateX(-50%) translateY(-4px)}}
+.caminho__no{display:flex;justify-content:center;width:100%}
+.caminho__missao+.caminho__no{margin-top:2.6rem}
+.caminho__fim{display:grid;justify-items:center;gap:.2rem;margin-top:1rem}
+
+/* lição: barra de ação fixa e folha de resposta */
+body.foco-total .palco{padding-bottom:12rem}
+.licao-topo .barra-progresso{height:16px;background:var(--linha)}
+.licao-topo .barra-progresso>span{background:var(--caneta);border-radius:99px;position:relative}
+.licao-topo .barra-progresso>span::after{content:"";position:absolute;left:8px;right:8px;top:3px;height:4px;border-radius:99px;background:rgba(255,255,255,.35)}
+.enunciado{font-family:var(--f-titulo);font-weight:600;font-size:1.45rem;line-height:1.25;margin:.3rem 0 .5rem}
+.barra-acao{margin-top:1rem}
+.barra-acao__in{display:grid;gap:.8rem}
+.barra-acao--fixa{position:fixed;left:0;right:0;bottom:0;z-index:40;margin:0;background:var(--folha);border-top:2px solid var(--linha);padding:1rem 1rem calc(1rem + env(safe-area-inset-bottom))}
+.barra-acao--fixa .barra-acao__in{max-width:720px;margin:0 auto}
+.barra-acao--certo{background:var(--caneta-fundo);border-top-color:transparent}
+.barra-acao--quase{background:var(--quase-fundo);border-top-color:transparent}
+.barra-acao--quase .btn{background:var(--quase);border-color:var(--quase);color:#3A1205;box-shadow:0 4px 0 color-mix(in srgb,var(--quase) 70%,#000 25%)}
+.folha-resposta:empty{display:none}
+.folha-resposta{display:flex;gap:.7rem;align-items:flex-start}
+.folha-resposta__texto{display:grid;gap:.3rem;min-width:0}
+.folha-resposta__titulo{font-family:var(--f-titulo);font-weight:600;font-size:1.4rem;margin:0;color:var(--caneta-forte)}
+.barra-acao--quase .folha-resposta__titulo,.barra-acao--quase .explica{color:var(--quase-tinta)}
+.barra-acao--quase .correcao .nova{color:var(--quase-tinta)}
+.folha-resposta p{margin:0}
+@media (prefers-reduced-motion:no-preference){.barra-acao--certo .folha-resposta,.barra-acao--quase .folha-resposta{animation:sobe-folha .32s var(--ease)}}
+@keyframes sobe-folha{from{opacity:0;transform:translateY(24px)}}
+.exercicio__retorno{display:none}
+
+/* alternativas gordinhas com número do teclado */
+.opcoes{gap:.65rem}
+.opcao{display:flex;align-items:center;gap:.8rem;border:2px solid var(--linha);border-bottom-width:4px;border-radius:var(--raio);padding:.85rem 1rem;font-weight:700;background:var(--folha)}
+.opcao__tecla{display:inline-grid;place-items:center;flex:none;width:28px;height:28px;border-radius:8px;border:2px solid var(--linha);font-size:.85rem;color:var(--apagado);font-weight:800}
+.opcao.escolhida{border-color:var(--caneta);background:var(--caneta-fundo);color:var(--caneta-forte)}
+.opcao.escolhida .opcao__tecla{border-color:var(--caneta);color:var(--caneta)}
+.is-errado .opcao.escolhida{border-color:var(--quase);background:var(--quase-fundo);color:var(--quase-tinta);border-style:solid}
+.opcao.certa{border-color:var(--caneta);background:var(--caneta-fundo)}
+.opcao:active:not(:disabled){transform:translateY(2px);border-bottom-width:2px}
+.btn-ouvir-grande{width:84px;height:84px;padding:0;border-radius:24px}
+.btn-ouvir-grande .ico{width:2.4rem;height:2.4rem}
+.btn-ouvir-devagar{width:56px;height:56px;padding:0;border-radius:18px;font-size:.72rem}
+.peca{border:2px solid var(--linha);border-bottom-width:4px;border-radius:12px;font-weight:700;box-shadow:none}
+.peca:active{transform:translateY(2px);border-bottom-width:2px}
+.montagem{min-height:110px;align-content:flex-start;background:repeating-linear-gradient(to bottom,transparent 0,transparent 52px,var(--linha) 52px,var(--linha) 54px);border:0;border-radius:0}
+.frase-pt{display:flex;align-items:flex-end;gap:.6rem}
+.balao-pt{position:relative;margin:0 0 .6rem;padding:.7rem .9rem;border:2px solid var(--linha);border-radius:16px;background:var(--folha);font-size:1.1rem;font-weight:700}
+textarea.resposta-livre{min-height:110px;font-size:1.1rem;background:var(--papel);border-width:2px}
+input.lacuna{border-bottom-width:3px;border-color:var(--caneta)}
+
+/* combinar pares */
+.pares{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.pares__col{display:grid;gap:.6rem;align-content:start}
+.par{min-height:56px;padding:.6rem .7rem;border-radius:var(--raio);border:2px solid var(--linha);border-bottom-width:4px;background:var(--folha);font:700 1rem/1.25 var(--f-texto);cursor:pointer;color:var(--tinta)}
+.par.sel{border-color:var(--caneta);background:var(--caneta-fundo);color:var(--caneta-forte)}
+.par.ok{opacity:.45;border-color:var(--linha);background:var(--papel);cursor:default}
+.par.nao{border-color:var(--quase);background:var(--quase-fundo)}
+@media (prefers-reduced-motion:no-preference){.par.nao{animation:treme .35s}.par.ok{animation:encolhe .3s}}
+@keyframes treme{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@keyframes encolhe{50%{transform:scale(.94)}}
+
+/* fim da lição */
+.passo--fim{justify-items:center;text-align:center}
+.fim-titulo{font-size:1.9rem;color:var(--caneta-forte)}
+.placar{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;width:100%;max-width:440px}
+.placar__item{display:grid;border-radius:var(--raio);overflow:hidden;border:2px solid var(--caneta)}
+.placar__item span{background:var(--caneta);color:#fff;font-size:.8rem;font-weight:800;padding:.25rem;text-transform:uppercase;letter-spacing:.04em}
+.placar__item strong{font-family:var(--f-titulo);font-weight:600;font-size:1.5rem;padding:.5rem .2rem;color:var(--caneta-forte);background:var(--folha)}
+.placar__item--sol{border-color:var(--sol)}.placar__item--sol span{background:var(--sol);color:#3B2A00}.placar__item--sol strong{color:#7A5300}
+.placar__item--azul{border-color:#5EC8F2}.placar__item--azul span{background:#5EC8F2;color:#06344A}
+
+/* confete */
+.confete{position:fixed;inset:0;pointer-events:none;z-index:250;overflow:hidden}
+.confete i{position:absolute;top:60%;width:10px;height:14px;border-radius:3px;animation:confete var(--d) cubic-bezier(.2,.7,.4,1) forwards}
+@keyframes confete{0%{transform:translate(0,0) rotate(0);opacity:1}100%{transform:translate(var(--x),var(--y)) rotate(var(--r));opacity:0}}
+
+/* revisão, conversa, progresso com o mesmo vocabulário visual */
+.flashcard__face{border:2px solid var(--linha);border-bottom-width:6px;box-shadow:none}
+.notas .btn{min-height:54px}
+.msg__balao{border-width:2px;border-bottom-width:4px}
+.msg--aluno .msg__balao{border-color:var(--btn-sombra)}
+.msg--tutor{align-items:flex-end;gap:.4rem}
+.msg__avatar{flex:none}
+.cenario{border-bottom-width:5px}
+.cenario .lou{width:52px;height:52px}
+.folha--destaque{box-shadow:none;border-color:var(--caneta)}
+.conquistas li{display:grid;justify-items:center;gap:.4rem;text-align:center;width:104px;font-size:.85rem;font-weight:800;background:none;color:var(--tinta);padding:0}
+.conquistas{gap:1rem}
+.entrar-envoltorio .lou{justify-self:center}
+.onboarding .lou-fala{margin-bottom:.2rem}
+@media (min-width:900px){
+  .barra-acao--fixa{left:200px}
+  body.foco-total .topo-app{width:200px}
+  .caminho{gap:1rem}
+  .no{width:76px;height:70px}.no--atual{width:88px;height:82px}
+}
+.cenario{justify-content:flex-start}.cenario__txt{flex:1}
+/* na lição a barra de ação é position:fixed: aqui a entrada anima só opacidade (transform criaria um bloco que prende a barra) */
+@media (prefers-reduced-motion:no-preference){body.foco-total .tela>*,.passo{animation-name:entra-op}}
+@keyframes entra-op{from{opacity:0}}
+.lou{max-width:none}
+.folha-resposta__lou{flex:none;width:56px}
+.lou-fala>.lou{width:72px}
+.caminho__missao.adiante .caminho__faixa{background:var(--folha);color:var(--grafite);border:2px solid var(--linha);box-shadow:0 4px 0 var(--linha)}
+.caminho__missao+.caminho__missao{margin-top:.2rem}
+.caminho__no:has(.no--atual){margin-top:2.8rem}

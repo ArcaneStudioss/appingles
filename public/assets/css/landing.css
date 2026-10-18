@@ -117,3 +117,13 @@ main section{max-width:1120px;margin:0 auto;padding:3.2rem 1rem}
   .faq{max-width:820px}
   .aviso-cookies{left:20px;right:auto;bottom:20px}
 }
+/* camada lúdica na página pública */
+.caderno{padding-top:3.2rem}
+.caderno__lou{position:absolute;top:-6px;right:6%;z-index:2;filter:drop-shadow(0 6px 0 rgba(26,75,184,.25))}
+@media (prefers-reduced-motion:no-preference){.caderno__lou .lou__corpo{animation:lou-flutua 3.2s ease-in-out infinite}}
+@keyframes lou-flutua{50%{transform:translateY(-5px)}}
+.caderno__folha,.trilha-exemplo,.plano-card,.brasil__erros li{border-width:2px;border-bottom-width:5px;box-shadow:none}
+.ciclo__n{border-width:0;background:var(--caneta);color:#fff;box-shadow:0 4px 0 var(--btn-sombra);font-family:var(--f-titulo);font-size:1.3rem}
+.prova__col{border-width:2px;border-bottom-width:5px}
+.heroi h1{font-weight:600}
+.preco{font-weight:600}

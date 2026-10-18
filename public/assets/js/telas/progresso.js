@@ -65,5 +65,5 @@ export async function telaProgresso(el) {
       p.objetivo ? h('p', { class: 'ajuda' }, p.objetivo.compromisso) : null,
       h('a', { class: 'btn btn-sec', href: '#/plano' }, icone('path'), 'Ver a trilha completa')),
 
-    p.conquistas.length ? h('section', {}, h('h2', {}, 'Conquistas'), h('ul', { class: 'conquistas' }, p.conquistas.map(x => h('li', { class: 'chip' }, icone('medal'), nomeConquista(x.codigo))))) : null);
+    p.conquistas.length ? h('section', {}, h('h2', {}, 'Conquistas'), h('ul', { class: 'conquistas' }, p.conquistas.map(x => h('li', {}, h('span', { class: 'medalha' }, icone('medal')), nomeConquista(x.codigo))))) : null);
 }

@@ -10,6 +10,7 @@ function respostaCerta(ex) {
     case 'ordenar': return ex.resposta + (ex.sufixo || '');
     case 'lacuna': case 'ditado': return ex.resposta[0];
     case 'traduzir': return ex.aceitas[0] + (ex.sufixo || '');
+    case 'pares': return 'todos os pares';
     default: return '';
   }
 }
@@ -24,6 +25,10 @@ function corrigirExercicio(ex, resposta) {
     if (r.quase) r = { correto: false, quase: false };          // ordem errada não é erro de digitação
   } else if (ex.tipo === 'lacuna' || ex.tipo === 'ditado') {
     r = comparar(resposta, ex.resposta);
+  } else if (ex.tipo === 'pares') {
+    const m = /^erros:(\d{1,2})$/.exec(String(resposta || ''));
+    r = { correto: !!m && Number(m[1]) === 0, quase: !!m && Number(m[1]) === 1 };
+    if (r.quase) r.correto = true;          // um tropeço em 5 pares ainda conta como acerto
   } else if (ex.tipo === 'traduzir') {
     r = comparar(resposta, ex.aceitas);
   } else {

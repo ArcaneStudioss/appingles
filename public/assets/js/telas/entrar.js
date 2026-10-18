@@ -1,5 +1,7 @@
 import { api } from '../api.js?v=__V__';
 import { h, ocupado, icone } from '../ui.js?v=__V__';
+import { lou, louFala } from '../diversao.js?v=__V__';
+
 
 export async function telaEntrar(el, { estado, ir, carregarEu }) {
   const est = await api('/auth/estado').catch(() => ({ logado: false }));
@@ -7,7 +9,8 @@ export async function telaEntrar(el, { estado, ir, carregarEu }) {
   let modo = new URLSearchParams(location.hash.split('?')[1] || '').get('modo') === 'cadastro' ? 'cadastro' : 'entrar';
   const caixa = h('div', { class: 'entrar folha' });
   el.append(h('div', { class: 'entrar-envoltorio' },
-    h('p', { class: 'bilhete entrar-bilhete' }, 'Bem-vindo ao seu caderno de inglês.'),
+    lou('oi', { tamanho: 110 }),
+    h('p', { class: 'bilhete entrar-bilhete' }, 'Oi! Eu sou o Lou. Bora destravar seu inglês?'),
     caixa,
     h('p', { class: 'ajuda centro' }, '30 dias grátis, sem cartão. ', h('a', { href: '/' }, 'Conhecer o Inglou'))));
 
