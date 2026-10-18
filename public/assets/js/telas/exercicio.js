@@ -26,7 +26,7 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
       h('p', { class: 'ajuda' }, 'Toque no botão para ouvir. O áudio não toca sozinho.')));
   }
   if (ex.tipo === 'leitura') area.append(h('blockquote', { class: 'texto-leitura', lang: 'en' }, ex.texto));
-  const titulo = ex.enunciado || ex.pergunta || ({ lacuna: 'Complete a frase', ordenar: 'Monte a frase', ditado: 'Escreva o que você ouviu', traduzir: 'Escreva em inglês', pares: 'Toque nos pares que combinam', corrigir: 'Corrija a frase' })[ex.tipo];
+  const titulo = ex.enunciado || ex.pergunta || ({ lacuna: 'Complete a frase', ordenar: 'Monte a frase', ditado: 'Escreva o que você ouviu', traduzir: 'Escreva em inglês', fala: 'Fale em voz alta', pares: 'Toque nos pares que combinam', corrigir: 'Corrija a frase' })[ex.tipo];
   raiz.append(h('h2', { class: 'enunciado', lang: ehIngles(titulo) ? 'en' : null }, titulo));
   if (ex.tipo === 'escuta' && ex.pergunta && ex.enunciado) raiz.append(h('p', {}, ex.pergunta));
 
@@ -128,6 +128,33 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
     pegarResposta = () => campo.value.trim();
     area.append(campo);
     setTimeout(() => campo.focus({ preventScroll: true }), 60);
+  } else if (ex.tipo === 'fala') {
+    // fala em voz alta: reconhecimento de voz do aparelho quando existir; sempre dá para escrever o que disse
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let ouvido = '', rec = null;
+    const eco = h('p', { class: 'fala-eco', 'aria-live': 'polite' }, '');
+    const campo = h('input', { type: 'text', class: 'resposta-livre', lang: 'en', autocapitalize: 'off', spellcheck: 'false', maxlength: 200, placeholder: SR ? 'Ou escreva o que você disse' : 'Escreva o que você disse', 'aria-label': 'O que você disse, escrito' });
+    campo.addEventListener('input', () => { ouvido = ''; habilitar(!!campo.value.trim()); });
+    const btnFalar = SR ? h('button', { type: 'button', class: 'btn btn-ouvir-grande btn-falar', 'aria-pressed': 'false', 'aria-label': 'Falar no microfone' }, icone('microphone')) : null;
+    const parar = () => { try { rec?.stop(); } catch {} btnFalar?.setAttribute('aria-pressed', 'false'); };
+    btnFalar?.addEventListener('click', () => {
+      if (btnFalar.getAttribute('aria-pressed') === 'true') { parar(); return; }
+      try {
+        rec = new SR(); rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 1;
+        rec.onresult = ev => { ouvido = ev.results[0][0].transcript.trim(); campo.value = ouvido; eco.textContent = 'Você disse: "' + ouvido + '"'; habilitar(!!ouvido); };
+        rec.onerror = () => { toast('Não consegui ouvir. Tente de novo ou escreva abaixo.'); parar(); };
+        rec.onend = parar;
+        rec.start(); btnFalar.setAttribute('aria-pressed', 'true'); eco.textContent = 'Estou ouvindo...';
+      } catch { toast('O microfone não abriu. Escreva abaixo o que você disse.'); parar(); }
+    });
+    area.append(
+      h('div', { class: 'frase-fala' }, h('p', { class: 'frase-fala__en', lang: 'en' }, ex.frase), ex.pt ? h('p', { class: 'ajuda' }, ex.pt) : null),
+      h('div', { class: 'escuta-caixa' },
+        h('button', { type: 'button', class: 'btn btn-sec', 'aria-label': 'Ouvir como se fala', on: { click: () => falar(ex.audio || ex.frase, { velocidade: vel }) } }, icone('speaker-high'), 'Ouvir'),
+        btnFalar),
+      eco, campo,
+      h('p', { class: 'ajuda' }, SR ? 'Toque no microfone e fale a frase. Se preferir, escreva o que disse.' : 'Seu aparelho não tem reconhecimento de voz. Fale em voz alta e escreva o que disse.'));
+    pegarResposta = () => (ouvido || campo.value).trim();
   } else if (ex.tipo === 'pares') {
     // combina inglês x português; o resultado vai ao servidor como "erros:N"
     let erros = 0, sel = null, feitos = 0;

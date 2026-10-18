@@ -479,7 +479,7 @@ function criar(db) {
       if (atual[itemId]) return;   // clique duplo
       atual[itemId] = { correto: r.correto, quase: r.quase, esperado: r.esperado, explica: r.explica, achados: r.achados, resposta };
       q('UPDATE licoes SET respondidos = ? WHERE id = ? AND user_id = ?').run(JSON.stringify(atual), lic.id, uid);
-      registrarTentativa(uid, { item_id: itemId, missao: ex.missao || null, habilidade: ex.habilidade, tag: ex.tag, formato, modalidade: ['escuta', 'ditado'].includes(ex.tipo) ? 'audio' : 'texto', correto: r.correto, tempo_ms: b.tempoMs, dica: b.dica === true, origem: 'licao', contexto: ex.missao || (ex.tag ? 'foco' : 'licao'), resposta });
+      registrarTentativa(uid, { item_id: itemId, missao: ex.missao || null, habilidade: ex.habilidade, tag: ex.tag, formato, modalidade: ['escuta', 'ditado', 'fala'].includes(ex.tipo) ? 'audio' : 'texto', correto: r.correto, tempo_ms: b.tempoMs, dica: b.dica === true, origem: 'licao', contexto: ex.missao || (ex.tag ? 'foco' : 'licao'), resposta });
       if (!r.correto && ex.tipo === 'traduzir') criarCartao(uid, { frente: ex.pt, verso: r.esperado, tipo: 'erro', origem: 'licao', tag: ex.tag, nota_origem: r.explica }, h);
       if (!r.correto && ex.tipo === 'lacuna' && !ex.multi) criarCartao(uid, { frente: ex.frase, verso: ex.frase.replace('___', ex.resposta[0]), tipo: 'erro', origem: 'licao', tag: ex.tag, nota_origem: r.explica }, h);
     });

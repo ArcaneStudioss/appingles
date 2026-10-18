@@ -111,7 +111,7 @@ Z.push({
     'Você chegou na casa de um amigo à noite. Cumprimente, agradeça pelo convite e depois se despeça.',
     'Escreva como você cumprimenta, agradece e se despede de um vizinho de manhã.',
   ],
-  conversa: 'zero-conhecer',
+  conversa: 'zero-cumprimentos',
 });
 
 Z.push({
@@ -177,14 +177,14 @@ Z.push({
   vocab: [
     { en: 'one, two, three', pt: 'um, dois, três', ex: 'One, two, three.' },
     { en: 'ten', pt: 'dez', ex: 'I have ten minutes.' },
-    { en: 'twenty', pt: 'vinte', ex: 'She is twenty.' },
+    { en: 'twenty, thirty, forty', pt: 'vinte, trinta, quarenta', ex: 'She is thirty.' },
     { en: 'old', pt: 'velho, de idade', ex: 'How old are you?' },
     { en: 'phone number', pt: 'número de telefone', ex: 'My phone number is on the card.' },
     { en: 'price', pt: 'preço', ex: 'What is the price?' },
   ],
   explicacao: {
     titulo: 'Idade em inglês usa o verbo "ser", não "ter"',
-    texto: 'Em português a gente "tem" anos. Em inglês, a pessoa "é" a idade: "I am 30" (eu sou 30). Dizer "I have 30 years" é o erro mais comum de quem fala português. Para perguntar a idade: "How old are you?". Os números de 1 a 10: one, two, three, four, five, six, seven, eight, nine, ten.',
+    texto: 'Em português a gente "tem" anos. Em inglês, a pessoa "é" a idade: "I am 30" (eu sou 30). Dizer "I have 30 years" é o erro mais comum de quem fala português. Para perguntar a idade: "How old are you?". Os números de 1 a 10: one, two, three, four, five, six, seven, eight, nine, ten. As dezenas: twenty (20), thirty (30), forty (40), fifty (50). Para juntar, use um tracinho: twenty-five é 25 e thirty-two é 32. No telefone, cada número é dito separado, e o zero pode ser "zero" ou "oh".',
     estrutura: ['How old are you?', 'I am [número] (years old).', 'My phone number is ...'],
   },
   exemplos: [
@@ -201,6 +201,8 @@ Z.push({
     e('4-5', 'ditado', { habilidade: 'escuta', dif: 1, audio: 'How old are you?', resposta: ['How old are you'] }),
     e('4-6', 'lacuna', { habilidade: 'gramatica', tag: 'idade-have', dif: 1, frase: 'I ___ 25 years old.', resposta: ['am'], explica: 'Idade usa "am": I am 25.' }),
     e('4-7', 'ordenar', { habilidade: 'gramatica', dif: 1, palavras: ['She', 'is', 'twenty', 'years', 'old'], resposta: 'She is twenty years old' }),
+    e('4-9', 'escolha', { habilidade: 'vocabulario', dif: 1, enunciado: 'Como se diz "30" em inglês?', opcoes: ['thirty', 'thirteen', 'three'], resposta: 0, explica: '"Thirty" é 30. Cuidado com "thirteen", que é 13: o som final é mais forte (thir-TEEN).' }),
+    e('4-10', 'escuta', { habilidade: 'escuta', dif: 2, audio: 'She is twenty-five years old.', pergunta: 'Qual é a idade dela?', opcoes: ['25', '15', '35'], resposta: 0, explica: '"Twenty-five" junta vinte (20) e cinco (5): 25.' }),
     e('4-8', 'traduzir', { habilidade: 'escrita', tag: 'idade-have', dif: 1, pt: 'Eu tenho dez anos.', aceitas: ['I am ten years old', "I'm ten years old", 'I am ten', "I'm ten", 'I am 10 years old', "I'm 10 years old"] }),
   ],
   tarefa: {
@@ -254,7 +256,7 @@ Z.push({
     e('5-5', 'escuta', { habilidade: 'escuta', dif: 1, audio: 'He is tired today.', pergunta: 'Como ele está?', opcoes: ['Cansado', 'Feliz', 'Com fome'], resposta: 0 }),
     e('5-6', 'ditado', { habilidade: 'escuta', dif: 1, audio: 'We are friends.', resposta: ['We are friends'] }),
     e('5-7', 'ordenar', { habilidade: 'gramatica', dif: 1, palavras: ['Are', 'you', 'happy'], resposta: 'Are you happy', sufixo: '?' }),
-    e('5-8', 'traduzir', { habilidade: 'escrita', dif: 1, pt: 'Ela é minha amiga.', aceitas: ['She is my friend', "She's my friend"] }),
+    e('5-8', 'traduzir', { habilidade: 'escrita', dif: 2, pt: 'Ela é minha amiga.', aceitas: ['She is my friend', "She's my friend"] }),
   ],
   tarefa: {
     enunciado: 'Escreva sobre você e outra pessoa: como você está, quem é essa pessoa e o que vocês são.',
@@ -303,12 +305,12 @@ Z.push({
   exercicios: [
     e('6-1', 'escolha', { habilidade: 'vocabulario', dif: 1, enunciado: 'O que significa "brother"?', opcoes: ['irmão', 'pai', 'amigo'], resposta: 0 }),
     e('6-2', 'escolha', { habilidade: 'vocabulario', dif: 1, enunciado: 'Como se diz "minha mãe"?', opcoes: ['my mother', 'me mother', 'I mother'], resposta: 0 }),
-    e('6-3', 'lacuna', { habilidade: 'gramatica', dif: 1, frase: 'This is ___ family.', resposta: ['my'], explica: 'My = meu, minha.' }),
-    e('6-4', 'lacuna', { habilidade: 'gramatica', dif: 1, frase: 'I have two ___. (irmãos)', resposta: ['brothers'], explica: 'Mais de um leva -s.' }),
+    e('6-3', 'lacuna', { habilidade: 'gramatica', dif: 2, frase: 'This is ___ family.', resposta: ['my'], explica: 'My = meu, minha.' }),
+    e('6-4', 'lacuna', { habilidade: 'gramatica', dif: 2, frase: 'I have two ___. (irmãos)', resposta: ['brothers'], explica: 'Mais de um leva -s.' }),
     e('6-5', 'escuta', { habilidade: 'escuta', dif: 1, audio: 'My mother is a nurse and my father is a driver.', pergunta: 'O que o pai faz?', opcoes: ['É motorista', 'É enfermeiro', 'É professor'], resposta: 0 }),
     e('6-6', 'ditado', { habilidade: 'escuta', dif: 1, audio: 'This is my family.', resposta: ['This is my family'] }),
-    e('6-7', 'ordenar', { habilidade: 'gramatica', dif: 1, palavras: ['His', 'name', 'is', 'Paulo'], resposta: 'His name is Paulo' }),
-    e('6-8', 'traduzir', { habilidade: 'escrita', dif: 1, pt: 'Eu tenho um irmão.', aceitas: ['I have one brother', 'I have a brother', 'I have 1 brother'] }),
+    e('6-7', 'ordenar', { habilidade: 'gramatica', dif: 2, palavras: ['His', 'name', 'is', 'Paulo'], resposta: 'His name is Paulo' }),
+    e('6-8', 'traduzir', { habilidade: 'escrita', dif: 2, pt: 'Eu tenho um irmão.', aceitas: ['I have one brother', 'I have a brother', 'I have 1 brother'] }),
   ],
   tarefa: {
     enunciado: 'Apresente a sua família: quem são (mãe, pai, irmão...), o nome ou o que fazem e quantos irmãos você tem.',
@@ -326,7 +328,7 @@ Z.push({
     'Mostre uma foto da sua família para um amigo e diga quem é quem, em inglês.',
     'Fale de dois amigos seus: o nome deles e de onde são.',
   ],
-  conversa: 'zero-conhecer',
+  conversa: 'zero-familia',
 });
 
 Z.push({
@@ -357,12 +359,12 @@ Z.push({
   exercicios: [
     e('7-1', 'escolha', { habilidade: 'vocabulario', dif: 1, enunciado: 'O que significa "kitchen"?', opcoes: ['cozinha', 'quarto', 'janela'], resposta: 0 }),
     e('7-2', 'escolha', { habilidade: 'gramatica', dif: 1, enunciado: 'Qual frase está certa?', opcoes: ['There are two chairs.', 'There is two chairs.', 'There are a chair.'], resposta: 0 }),
-    e('7-3', 'lacuna', { habilidade: 'gramatica', dif: 1, frase: 'There ___ a table here.', resposta: ['is'] }),
-    e('7-4', 'lacuna', { habilidade: 'gramatica', tag: 'people-plural', dif: 1, frase: 'There are three ___. (cadeiras)', resposta: ['chairs'], explica: 'Mais de uma coisa leva -s.' }),
+    e('7-3', 'lacuna', { habilidade: 'gramatica', dif: 2, frase: 'There ___ a table here.', resposta: ['is'] }),
+    e('7-4', 'lacuna', { habilidade: 'gramatica', tag: 'people-plural', dif: 2, frase: 'There are three ___. (cadeiras)', resposta: ['chairs'], explica: 'Mais de uma coisa leva -s.' }),
     e('7-5', 'escuta', { habilidade: 'escuta', dif: 1, audio: 'There is a red car in front of the house.', pergunta: 'Qual é a cor do carro?', opcoes: ['Vermelho', 'Azul', 'Verde'], resposta: 0 }),
     e('7-6', 'ditado', { habilidade: 'escuta', dif: 1, audio: 'My house is small.', resposta: ['My house is small'] }),
-    e('7-7', 'ordenar', { habilidade: 'gramatica', dif: 1, palavras: ['There', 'is', 'a', 'blue', 'bed'], resposta: 'There is a blue bed' }),
-    e('7-8', 'traduzir', { habilidade: 'escrita', dif: 1, pt: 'Minha casa é pequena.', aceitas: ['My house is small', 'My house is little'] }),
+    e('7-7', 'ordenar', { habilidade: 'gramatica', dif: 2, palavras: ['There', 'is', 'a', 'blue', 'bed'], resposta: 'There is a blue bed' }),
+    e('7-8', 'traduzir', { habilidade: 'escrita', dif: 2, pt: 'Minha casa é pequena.', aceitas: ['My house is small', 'My house is little'] }),
   ],
   tarefa: {
     enunciado: 'Descreva um cômodo da sua casa: o que tem nele e de que cor são as coisas.',
@@ -380,7 +382,7 @@ Z.push({
     'Descreva o seu quarto para alguém que nunca esteve lá, em inglês.',
     'Fale da cozinha da sua casa: o que tem nela e de que cor são as coisas.',
   ],
-  conversa: 'zero-conhecer',
+  conversa: 'zero-casa',
 });
 
 Z.push({
@@ -411,12 +413,12 @@ Z.push({
   exercicios: [
     e('8-1', 'escolha', { habilidade: 'vocabulario', dif: 1, enunciado: 'O que significa "wake up"?', opcoes: ['acordar', 'dormir', 'trabalhar'], resposta: 0 }),
     e('8-2', 'escolha', { habilidade: 'gramatica', tag: 'terceira-pessoa', dif: 1, enunciado: 'Qual frase está certa?', opcoes: ['She works at a school.', 'She work at a school.', 'She working at a school.'], resposta: 0, explica: 'Com she, he e it o verbo ganha -s.' }),
-    e('8-3', 'lacuna', { habilidade: 'gramatica', dif: 1, frase: 'I wake up ___ six.', resposta: ['at'], explica: 'Hora usa "at".' }),
-    e('8-4', 'lacuna', { habilidade: 'gramatica', tag: 'terceira-pessoa', dif: 1, frase: 'He ___ (work) on Monday.', resposta: ['works'] }),
+    e('8-3', 'lacuna', { habilidade: 'gramatica', dif: 2, frase: 'I wake up ___ six.', resposta: ['at'], explica: 'Hora usa "at".' }),
+    e('8-4', 'lacuna', { habilidade: 'gramatica', tag: 'terceira-pessoa', dif: 2, frase: 'He ___ (work) on Monday.', resposta: ['works'] }),
     e('8-5', 'escuta', { habilidade: 'escuta', dif: 1, audio: 'I wake up at six and I work from Monday to Friday.', pergunta: 'A que horas a pessoa acorda?', opcoes: ['Às seis', 'Às dez', 'Ao meio-dia'], resposta: 0 }),
     e('8-6', 'ditado', { habilidade: 'escuta', dif: 1, audio: 'What time is it?', resposta: ['What time is it'] }),
-    e('8-7', 'ordenar', { habilidade: 'gramatica', dif: 1, palavras: ['I', 'work', 'every', 'day'], resposta: 'I work every day' }),
-    e('8-8', 'traduzir', { habilidade: 'escrita', dif: 1, pt: 'Eu trabalho de segunda a sexta.', aceitas: ['I work from Monday to Friday', 'I work Monday to Friday', 'I work from Monday through Friday'] }),
+    e('8-7', 'ordenar', { habilidade: 'gramatica', dif: 2, palavras: ['I', 'work', 'every', 'day'], resposta: 'I work every day' }),
+    e('8-8', 'traduzir', { habilidade: 'escrita', dif: 2, pt: 'Eu trabalho de segunda a sexta.', aceitas: ['I work from Monday to Friday', 'I work Monday to Friday', 'I work from Monday through Friday'] }),
   ],
   tarefa: {
     enunciado: 'Descreva o seu dia: a hora em que acorda, os dias em que trabalha ou estuda e a hora de dormir.',
@@ -434,7 +436,7 @@ Z.push({
     'Conte para um amigo a sua rotina de segunda-feira, com as horas.',
     'Escreva o que uma pessoa que você conhece faz todo dia (use she ou he).',
   ],
-  conversa: 'zero-conhecer',
+  conversa: 'zero-rotina-zero',
 });
 
 Z.push({
@@ -465,12 +467,12 @@ Z.push({
   exercicios: [
     e('9-1', 'escolha', { habilidade: 'vocabulario', dif: 1, enunciado: 'Qual é o jeito mais educado de pedir?', opcoes: ["I'd like a coffee, please.", 'I want coffee.', 'Coffee now.'], resposta: 0 }),
     e('9-2', 'escolha', { habilidade: 'vocabulario', dif: 1, enunciado: 'O que significa "How much is it?"', opcoes: ['Quanto custa?', 'Onde fica?', 'Que horas são?'], resposta: 0 }),
-    e('9-3', 'lacuna', { habilidade: 'vocabulario', dif: 1, frase: "I'd ___ a sandwich, please.", resposta: ['like'] }),
-    e('9-4', 'lacuna', { habilidade: 'vocabulario', dif: 1, frase: 'How ___ is it?', resposta: ['much'] }),
-    e('9-5', 'escuta', { habilidade: 'escuta', dif: 1, audio: "I'd like a coffee and a sandwich, please.", pergunta: 'O que a pessoa pediu?', opcoes: ['Café e sanduíche', 'Água e bolo', 'Suco e pizza'], resposta: 0 }),
+    e('9-3', 'lacuna', { habilidade: 'vocabulario', dif: 2, frase: "I'd ___ a sandwich, please.", resposta: ['like'] }),
+    e('9-4', 'lacuna', { habilidade: 'vocabulario', dif: 2, frase: 'How ___ is it?', resposta: ['much'] }),
+    e('9-5', 'escuta', { habilidade: 'escuta', dif: 2, audio: "I'd like a coffee and a sandwich, please.", pergunta: 'O que a pessoa pediu?', opcoes: ['Café e sanduíche', 'Água e bolo', 'Suco e pizza'], resposta: 0 }),
     e('9-6', 'ditado', { habilidade: 'escuta', dif: 1, audio: 'The bill, please.', resposta: ['The bill, please', 'The bill please'] }),
-    e('9-7', 'ordenar', { habilidade: 'gramatica', dif: 1, palavras: ['Can', 'I', 'see', 'the', 'menu'], resposta: 'Can I see the menu', sufixo: '?' }),
-    e('9-8', 'traduzir', { habilidade: 'escrita', dif: 1, pt: 'Eu gostaria de uma água, por favor.', aceitas: ["I'd like a water, please", "I'd like water, please", 'I would like a water, please', "I'd like a glass of water, please", 'I would like water, please'] }),
+    e('9-7', 'ordenar', { habilidade: 'gramatica', dif: 2, palavras: ['Can', 'I', 'see', 'the', 'menu'], resposta: 'Can I see the menu', sufixo: '?' }),
+    e('9-8', 'traduzir', { habilidade: 'escrita', dif: 2, pt: 'Eu gostaria de uma água, por favor.', aceitas: ["I'd like a water, please", "I'd like water, please", 'I would like a water, please', "I'd like a glass of water, please", 'I would like water, please'] }),
   ],
   tarefa: {
     enunciado: 'Você está num café. Faça o pedido com educação e pergunte o preço.',
@@ -488,7 +490,7 @@ Z.push({
     'Você está num restaurante. Peça uma bebida e uma comida, e peça a conta no fim.',
     'Numa padaria, peça dois pães e pergunte quanto custa.',
   ],
-  conversa: 'zero-conhecer',
+  conversa: 'zero-restaurante',
 });
 
 Z.push({
@@ -519,12 +521,12 @@ Z.push({
   exercicios: [
     e('10-1', 'escolha', { habilidade: 'vocabulario', dif: 1, enunciado: 'O que significa "Turn left"?', opcoes: ['Vire à esquerda', 'Vire à direita', 'Siga em frente'], resposta: 0 }),
     e('10-2', 'escolha', { habilidade: 'vocabulario', dif: 1, enunciado: 'Como se pergunta "onde fica o banco?"', opcoes: ['Where is the bank?', 'What is the bank?', 'How is the bank?'], resposta: 0 }),
-    e('10-3', 'lacuna', { habilidade: 'vocabulario', dif: 1, frase: 'Go ___ and turn right.', resposta: ['straight'] }),
-    e('10-4', 'lacuna', { habilidade: 'gramatica', tag: 'preposicoes', dif: 1, frase: 'The bank is ___ the bakery. (ao lado de)', resposta: ['next to'], explica: 'Next to = ao lado de.' }),
-    e('10-5', 'escuta', { habilidade: 'escuta', dif: 1, audio: 'Go straight and turn left. The bank is next to the bakery.', pergunta: 'Onde fica o banco?', opcoes: ['Ao lado da padaria', 'Atrás da escola', 'Longe do centro'], resposta: 0 }),
+    e('10-3', 'lacuna', { habilidade: 'vocabulario', dif: 2, frase: 'Go ___ and turn right.', resposta: ['straight'] }),
+    e('10-4', 'lacuna', { habilidade: 'gramatica', tag: 'preposicoes', dif: 2, frase: 'The bank is ___ the bakery. (ao lado de)', resposta: ['next to'], explica: 'Next to = ao lado de.' }),
+    e('10-5', 'escuta', { habilidade: 'escuta', dif: 2, audio: 'Go straight and turn left. The bank is next to the bakery.', pergunta: 'Onde fica o banco?', opcoes: ['Ao lado da padaria', 'Atrás da escola', 'Longe do centro'], resposta: 0 }),
     e('10-6', 'ditado', { habilidade: 'escuta', dif: 1, audio: 'Excuse me, where is the bank?', resposta: ['Excuse me, where is the bank', 'Excuse me where is the bank'] }),
-    e('10-7', 'ordenar', { habilidade: 'gramatica', dif: 1, palavras: ['Turn', 'left', 'here'], resposta: 'Turn left here' }),
-    e('10-8', 'traduzir', { habilidade: 'escrita', dif: 1, pt: 'Com licença, onde fica a estação?', aceitas: ['Excuse me, where is the station', 'Excuse me where is the station', 'Excuse me, where is the train station', 'Excuse me, where is the bus station'] }),
+    e('10-7', 'ordenar', { habilidade: 'gramatica', dif: 2, palavras: ['Turn', 'left', 'here'], resposta: 'Turn left here' }),
+    e('10-8', 'traduzir', { habilidade: 'escrita', dif: 2, pt: 'Com licença, onde fica a estação?', aceitas: ['Excuse me, where is the station', 'Excuse me where is the station', 'Excuse me, where is the train station', 'Excuse me, where is the bus station'] }),
   ],
   tarefa: {
     enunciado: 'Você está perdido na rua. Peça licença, pergunte onde fica um lugar e diga uma direção que você ouviu.',
@@ -542,7 +544,7 @@ Z.push({
     'Um turista pergunta onde fica o mercado da sua cidade. Explique o caminho em inglês.',
     'Pergunte onde fica o banheiro e peça para a pessoa mostrar o caminho.',
   ],
-  conversa: 'zero-conhecer',
+  conversa: 'zero-lugares',
 });
 
 Z.push({
@@ -573,12 +575,12 @@ Z.push({
   exercicios: [
     e('11-1', 'escolha', { habilidade: 'gramatica', dif: 1, enunciado: 'Como se diz "eu adoro pizza"?', opcoes: ['I love pizza.', 'I am pizza.', 'I have pizza.'], resposta: 0 }),
     e('11-2', 'escolha', { habilidade: 'gramatica', tag: 'perguntas-do', dif: 1, enunciado: 'Qual pergunta está certa?', opcoes: ['Do you like football?', 'You like football?', 'Are you like football?'], resposta: 0 }),
-    e('11-3', 'lacuna', { habilidade: 'gramatica', dif: 1, frase: "I ___ like rain.", resposta: ["don't", 'do not'] }),
-    e('11-4', 'lacuna', { habilidade: 'gramatica', tag: 'terceira-pessoa', dif: 1, frase: 'She ___ music. (likes)', resposta: ['likes'], explica: 'Com she o verbo ganha -s.' }),
-    e('11-5', 'escuta', { habilidade: 'escuta', dif: 1, audio: "I like pizza, but I don't like rain.", pergunta: 'Do que a pessoa não gosta?', opcoes: ['De chuva', 'De pizza', 'De música'], resposta: 0 }),
+    e('11-3', 'lacuna', { habilidade: 'gramatica', dif: 2, frase: "I ___ like rain.", resposta: ["don't", 'do not'] }),
+    e('11-4', 'lacuna', { habilidade: 'gramatica', tag: 'terceira-pessoa', dif: 2, frase: 'She ___ music. (likes)', resposta: ['likes'], explica: 'Com she o verbo ganha -s.' }),
+    e('11-5', 'escuta', { habilidade: 'escuta', dif: 2, audio: "I like pizza, but I don't like rain.", pergunta: 'Do que a pessoa não gosta?', opcoes: ['De chuva', 'De pizza', 'De música'], resposta: 0 }),
     e('11-6', 'ditado', { habilidade: 'escuta', dif: 1, audio: 'Do you like football?', resposta: ['Do you like football'] }),
-    e('11-7', 'ordenar', { habilidade: 'gramatica', dif: 1, palavras: ['I', 'love', 'music'], resposta: 'I love music' }),
-    e('11-8', 'traduzir', { habilidade: 'escrita', dif: 1, pt: 'Eu não gosto de chuva.', aceitas: ["I don't like rain", 'I do not like rain', "I don't like the rain"] }),
+    e('11-7', 'ordenar', { habilidade: 'gramatica', dif: 2, palavras: ['I', 'love', 'music'], resposta: 'I love music' }),
+    e('11-8', 'traduzir', { habilidade: 'escrita', dif: 2, pt: 'Eu não gosto de chuva.', aceitas: ["I don't like rain", 'I do not like rain', "I don't like the rain"] }),
   ],
   tarefa: {
     enunciado: 'Escreva do que você gosta, do que não gosta e faça uma pergunta de volta ("Do you like...?").',
@@ -596,7 +598,7 @@ Z.push({
     'Conte para um amigo novo do que você gosta e do que não gosta, e pergunte do que ele gosta.',
     'Escreva três coisas que uma pessoa da sua família gosta (use he ou she).',
   ],
-  conversa: 'zero-conhecer',
+  conversa: 'zero-gostos',
 });
 
 Z.push({
@@ -627,12 +629,12 @@ Z.push({
   exercicios: [
     e('12-1', 'escolha', { habilidade: 'vocabulario', dif: 1, enunciado: 'O que responder a "How are you?"', opcoes: ["I'm fine, thank you.", 'My name is Ana.', 'I am from Brazil.'], resposta: 0 }),
     e('12-2', 'escolha', { habilidade: 'vocabulario', dif: 1, enunciado: 'O que significa "What about you?"', opcoes: ['E você?', 'O que é isso?', 'Onde você está?'], resposta: 0 }),
-    e('12-3', 'lacuna', { habilidade: 'gramatica', tag: 'idade-have', dif: 1, frase: 'I ___ thirty years old.', resposta: ['am'] }),
-    e('12-4', 'lacuna', { habilidade: 'gramatica', dif: 1, frase: 'I like music. What about ___?', resposta: ['you'] }),
-    e('12-5', 'escuta', { habilidade: 'escuta', dif: 1, audio: "Hi! My name is Lucas. I'm twenty-five. I like football. What about you?", pergunta: 'Do que o Lucas gosta?', opcoes: ['De futebol', 'De música', 'De filmes'], resposta: 0 }),
+    e('12-3', 'lacuna', { habilidade: 'gramatica', tag: 'idade-have', dif: 2, frase: 'I ___ thirty years old.', resposta: ['am'] }),
+    e('12-4', 'lacuna', { habilidade: 'gramatica', dif: 2, frase: 'I like music. What about ___?', resposta: ['you'] }),
+    e('12-5', 'escuta', { habilidade: 'escuta', dif: 2, audio: "Hi! My name is Lucas. I'm twenty-five. I like football. What about you?", pergunta: 'Do que o Lucas gosta?', opcoes: ['De futebol', 'De música', 'De filmes'], resposta: 0 }),
     e('12-6', 'ditado', { habilidade: 'escuta', dif: 1, audio: 'Nice talking to you.', resposta: ['Nice talking to you'] }),
-    e('12-7', 'ordenar', { habilidade: 'gramatica', dif: 1, palavras: ['My', 'name', 'is', 'Marcos'], resposta: 'My name is Marcos' }),
-    e('12-8', 'traduzir', { habilidade: 'escrita', dif: 1, pt: 'Eu gosto de música. E você?', aceitas: ['I like music. What about you', 'I like music. And you', 'I like music, and you', 'I like music. How about you'] }),
+    e('12-7', 'ordenar', { habilidade: 'gramatica', dif: 2, palavras: ['My', 'name', 'is', 'Marcos'], resposta: 'My name is Marcos' }),
+    e('12-8', 'traduzir', { habilidade: 'escrita', dif: 2, pt: 'Eu gosto de música. E você?', aceitas: ['I like music. What about you', 'I like music. And you', 'I like music, and you', 'I like music. How about you'] }),
   ],
   tarefa: {
     enunciado: 'Escreva sua primeira conversa: cumprimente, diga seu nome, de onde é, algo de que gosta e pergunte para a pessoa.',

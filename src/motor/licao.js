@@ -154,11 +154,15 @@ function montarLicao(ctx) {
       gasto += 1;
     } else {
       blocos.push({ tipo: 'lembrete', titulo: 'Relembrando a estrutura', estrutura: def.explicacao.estrutura, missao: def.id });
+      // aquecimento diferente a cada parte: o vocabulário da missão girado, para não repetir os mesmos 5 pares
+      const giro = def.vocab.slice((parte - 1) % def.vocab.length).concat(def.vocab.slice(0, (parte - 1) % def.vocab.length));
+      blocos.push({ tipo: 'exercicios', titulo: 'Combine os pares', exercicios: [{ id: `pares:${def.id}:${parte}`, tipo: 'pares', habilidade: 'vocabulario', dif: 1, missao: def.id, pares: giro.slice(0, 5).map(v => ({ en: v.en, pt: v.pt })) }] });
+      gasto += 1;
     }
     const custoExp = primeira ? MIN.explicacao : 0.5;
     const reservaProducao = ultima && !temProducao ? MIN.producao : 0;
     const vagas = Math.max(2, Math.floor((resta - custoExp - reservaProducao) / MIN.exercicio));
-    const naoEscuta = def.exercicios.filter(e => e.tipo !== 'escuta' && e.tipo !== 'ditado');
+    const naoEscuta = def.exercicios.filter(e => e.tipo !== 'escuta' && e.tipo !== 'ditado' && e.tipo !== 'fala');
     const escuta = def.exercicios.filter(e => e.tipo === 'escuta' || e.tipo === 'ditado');
     const nEscuta = Math.min(escuta.length, hip.has('escuta-x-leitura') ? 3 : primeira ? 1 : 2);
     // cada parte usa sua fatia dos exercícios da missão (senão a parte 1 gasta tudo)
@@ -168,6 +172,9 @@ function montarLicao(ctx) {
     if (exs.length) blocos.push({ tipo: 'exercicios', titulo: primeira ? 'Primeira prática' : 'Prática', exercicios: exs.map(e => ({ ...e, missao: def.id })) });
     const esc = escolherExercicios(escuta, { quantos: nEscuta, alvo, vistos, excluir: usados });
     if (esc.length) blocos.push({ tipo: 'escuta', titulo: 'Escuta', exercicios: esc.map(e => ({ ...e, missao: def.id })), devagar: hip.has('escuta-x-leitura') || nivel === 'A1', mostrarTextoDepois: true });
+    // a partir da segunda parte da missão entra uma frase para falar em voz alta (microfone ou digitando)
+    const fala = !primeira ? escolherExercicios(def.exercicios.filter(e => e.tipo === 'fala'), { quantos: 1, alvo, vistos, excluir: usados }) : [];
+    if (fala.length) { blocos.push({ tipo: 'exercicios', titulo: 'Fale em voz alta', exercicios: fala.map(e => ({ ...e, missao: def.id })) }); gasto += MIN.exercicio; }
     if (hip.has('escuta-x-leitura')) porque.push('Incluímos mais escuta porque, até aqui, você tem entendido melhor lendo do que ouvindo.');
     if (preferirProducao) porque.push('Trocamos parte das alternativas por frases para você montar, porque produzir sozinho ainda é o passo que falta.');
     gasto += custoExp + exs.length * MIN.exercicio + esc.length * MIN.escuta;

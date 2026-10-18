@@ -122,7 +122,7 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
       hab.length ? h('ul', { class: 'barras' }, hab.map(([k, v]) => h('li', {},
         h('span', { class: 'barras-rotulo' }, NOMES[k], v.estimativaFraca ? h('small', {}, ' (estimativa simples)') : null),
         h('span', { class: 'barras-trilho', 'aria-hidden': 'true' }, h('span', { style: `transform:scaleX(${((NIVEIS.indexOf(v.nivel) + 1) / 5).toFixed(2)})` })),
-        h('strong', {}, v.nivel))))) : null,
+        h('strong', {}, v.nivel)))) : null,
       h('div', { class: 'folha com-margem' }, r.resumo.map(t => h('p', {}, t)),
         r.pistas.length ? h('p', {}, 'Pistas para observar (ainda são hipóteses, vamos confirmar com as próximas atividades): ', r.pistas.map(p => p.nome.toLowerCase()).join('; '), '.') : null),
       h('button', { type: 'button', class: 'btn btn-bloco', on: { click: () => ir('#/plano') } }, plano ? 'Ver meu plano' : 'Continuar', icone('arrow-right')));
