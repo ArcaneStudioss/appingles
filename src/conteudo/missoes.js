@@ -253,8 +253,8 @@ M.push({
     { id: 'forcas-1', tipo: 'escolha', habilidade: 'vocabulario', tag: 'preposicoes', dif: 1, enunciado: '"Sou boa em negociar."', opcoes: ["I'm good at negotiating.", "I'm good in negotiate.", 'I am good on negotiating.'], resposta: 0 },
     { id: 'forcas-2', tipo: 'lacuna', habilidade: 'vocabulario', tag: 'make-do', dif: 2, frase: "I'm ___ an online course to improve my Excel skills.", resposta: ['taking', 'doing'], explica: 'Fazer um curso = take (ou do) a course, nunca make.' },
     { id: 'forcas-3', tipo: 'lacuna', habilidade: 'gramatica', tag: 'terceira-pessoa', dif: 2, frase: 'My manager always ___ (say) that I am very reliable.', resposta: ['says'] },
-    { id: 'forcas-4', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: "Something I'm working on is public speaking. I volunteer to present in our team meetings every month.", pergunta: 'O que a pessoa faz para melhorar?', opcoes: ['Se oferece para apresentar nas reuniões', 'Faz um curso de teatro', 'Evita apresentar em público'], resposta: 0 },
-    { id: 'forcas-5', tipo: 'escolha', habilidade: 'leitura', dif: 3, enunciado: 'Qual resposta é melhor para "What is your weakness?"', opcoes: ["Sometimes I take on too many tasks. Now I use a planner and I've started to say no when it's necessary.", "I don't have weaknesses.", 'I am perfectionist and I work too much.'], resposta: 0, explica: 'A melhor resposta mostra consciência e um plano real.' },
+    { id: 'forcas-4', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: "Something I'm working on is public speaking. I volunteer to present in our team meetings every month.", pergunta: 'O que a pessoa faz para melhorar?', opcoes: ['Se oferece para apresentar nas reuniões', 'Faz um curso de teatro para perder a timidez', 'Evita apresentar e pede para outra pessoa falar'], resposta: 0 },
+    { id: 'forcas-5', tipo: 'escolha', habilidade: 'leitura', dif: 3, enunciado: 'Qual resposta é melhor para "What is your weakness?"', opcoes: ["Sometimes I take on too many tasks. Now I use a planner and I've started to say no when it's necessary.", "I don't have any weaknesses, I am perfect for this job.", 'I am a perfectionist and I work too much, I never stop.'], resposta: 0, explica: 'A melhor resposta mostra consciência e um plano real.' },
     { id: 'forcas-6', tipo: 'ordenar', habilidade: 'gramatica', dif: 2, palavras: ['One', 'of', 'my', 'strengths', 'is', 'attention', 'to', 'detail'], resposta: 'One of my strengths is attention to detail' },
     { id: 'forcas-7', tipo: 'traduzir', habilidade: 'escrita', dif: 3, pt: 'Por exemplo, no mês passado eu organizei um treinamento para a equipe.', aceitas: ['For example, last month I organized a training for the team', 'For example, last month I organized a training session for the team', 'For example, last month I organised a training for the team', 'For example, last month I organized training for the team'] },
     { id: 'forcas-8', tipo: 'ditado', habilidade: 'escuta', dif: 2, audio: "I'm good at working with deadlines.", resposta: ["I'm good at working with deadlines", 'I am good at working with deadlines'] },
@@ -309,7 +309,7 @@ M.push({
     { id: 'perguntar-3', tipo: 'lacuna', habilidade: 'gramatica', tag: 'perguntas-do', dif: 2, frase: 'How ___ the team share information?', resposta: ['does'], explica: '"The team" = it, então does.' },
     { id: 'perguntar-4', tipo: 'ordenar', habilidade: 'gramatica', dif: 2, palavras: ['What', 'are', 'the', 'next', 'steps', 'in', 'the', 'process'], resposta: 'What are the next steps in the process', sufixo: '?' },
     { id: 'perguntar-5', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: "That's a great question. The team has six people, and we meet every Monday to plan the week.", pergunta: 'Quantas pessoas tem a equipe?', opcoes: ['Seis', 'Dez', 'Duas'], resposta: 0 },
-    { id: 'perguntar-6', tipo: 'escuta', habilidade: 'escuta', dif: 3, audio: "The position is hybrid. You'd come to the office twice a week, usually on Tuesdays and Thursdays.", pergunta: 'Como é o formato?', opcoes: ['Híbrido, 2 dias no escritório', 'Totalmente remoto', 'Presencial todos os dias'], resposta: 0 },
+    { id: 'perguntar-6', tipo: 'escuta', habilidade: 'escuta', dif: 3, audio: "The position is hybrid. You'd come to the office twice a week, usually on Tuesdays and Thursdays.", pergunta: 'Como é o formato?', opcoes: ['Híbrido, 2 dias no escritório', 'Totalmente remoto, de qualquer cidade', 'Presencial, cinco dias por semana'], resposta: 0 },
     { id: 'perguntar-7', tipo: 'traduzir', habilidade: 'escrita', tag: 'perguntas-do', dif: 2, pt: 'Como vocês medem o sucesso nesta função?', aceitas: ['How do you measure success in this role', 'How do you measure success in this position', 'How do you measure success in this job'], sufixo: '?' },
     { id: 'perguntar-8', tipo: 'ditado', habilidade: 'escuta', dif: 2, audio: 'Is the position remote or hybrid?', resposta: ['Is the position remote or hybrid'], sufixo: '?' },
   ],
@@ -522,7 +522,7 @@ M.push({
     { id: 'atender-2', tipo: 'lacuna', habilidade: 'gramatica', tag: 'sujeito-oculto', dif: 1, frase: "___'s free for students.", resposta: ['It'] },
     { id: 'atender-3', tipo: 'lacuna', habilidade: 'vocabulario', dif: 2, frase: '___ you like to try a different size?', resposta: ['Would'] },
     { id: 'atender-4', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: "Hi, I bought this jacket yesterday, but it's too small. Can I exchange it?", pergunta: 'O que o cliente quer?', opcoes: ['Trocar a jaqueta por ser pequena', 'Comprar outra jaqueta igual', 'Devolver porque não gostou da cor'], resposta: 0 },
-    { id: 'atender-5', tipo: 'escuta', habilidade: 'escuta', dif: 3, audio: 'Do you deliver to other cities? And how long does it take?', pergunta: 'O que o cliente pergunta?', opcoes: ['Se entregam em outras cidades e quanto tempo leva', 'Quanto custa o produto', 'Onde fica a loja'], resposta: 0 },
+    { id: 'atender-5', tipo: 'escuta', habilidade: 'escuta', dif: 3, audio: 'Do you deliver to other cities? And how long does it take?', pergunta: 'O que o cliente pergunta?', opcoes: ['Se entregam em outras cidades e quanto tempo leva', 'Quanto custa o produto e como pagar', 'Onde fica a loja e qual o horário'], resposta: 0 },
     { id: 'atender-6', tipo: 'traduzir', habilidade: 'escrita', dif: 2, pt: 'Deixa eu verificar para você.', aceitas: ['Let me check that for you', 'Let me check for you', 'Let me check it for you'] },
     { id: 'atender-7', tipo: 'ordenar', habilidade: 'gramatica', dif: 2, palavras: ['Delivery', 'takes', 'about', 'three', 'business', 'days'], resposta: 'Delivery takes about three business days' },
     { id: 'atender-8', tipo: 'ditado', habilidade: 'escuta', dif: 2, audio: 'How can I help you today?', resposta: ['How can I help you today'], sufixo: '?' },
@@ -576,7 +576,7 @@ M.push({
     { id: 'reclamacao-2', tipo: 'lacuna', habilidade: 'gramatica', tag: 'perguntas-do', dif: 2, frase: 'When ___ you receive the package?', resposta: ['did'] },
     { id: 'reclamacao-3', tipo: 'escolha', habilidade: 'gramatica', tag: 'perguntas-do', dif: 2, enunciado: 'Qual pergunta está certa?', opcoes: ['What happened when you opened the box?', 'What did happened when you opened the box?', 'What happen when you opened the box?'], resposta: 0, explica: 'Quando a pergunta é sobre o próprio sujeito ("o que aconteceu"), não usa did: What happened?' },
     { id: 'reclamacao-4', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: 'I ordered a blue chair, but you sent a red one. And it arrived a week late.', pergunta: 'Quais são os problemas?', opcoes: ['Cor errada e atraso', 'Cadeira quebrada', 'Cobrança duplicada'], resposta: 0 },
-    { id: 'reclamacao-5', tipo: 'escuta', habilidade: 'escuta', dif: 3, audio: "I'm really sorry about that. I'll send the right color tomorrow, and you don't need to return the red one.", pergunta: 'Qual foi a solução?', opcoes: ['Enviar a cor certa e o cliente fica com a outra', 'Reembolso total', 'Desconto na próxima compra'], resposta: 0 },
+    { id: 'reclamacao-5', tipo: 'escuta', habilidade: 'escuta', dif: 3, audio: "I'm really sorry about that. I'll send the right color tomorrow, and you don't need to return the red one.", pergunta: 'Qual foi a solução?', opcoes: ['Enviar a cor certa e o cliente fica com a outra', 'Reembolso total do valor pago', 'Desconto na próxima compra na loja'], resposta: 0 },
     { id: 'reclamacao-6', tipo: 'traduzir', habilidade: 'escrita', dif: 3, pt: 'Vou verificar e te ligo de volta em uma hora.', aceitas: ["I'll check and call you back in an hour", 'I will check and call you back in an hour', "I'll check and call you back in one hour", "I'll check it and call you back in an hour"] },
     { id: 'reclamacao-7', tipo: 'lacuna', habilidade: 'vocabulario', dif: 2, frase: 'We can send a ___ or give you a full refund.', resposta: ['replacement', 'new one'] },
     { id: 'reclamacao-8', tipo: 'ditado', habilidade: 'escuta', dif: 2, audio: "I'm sorry to hear that.", resposta: ["I'm sorry to hear that", 'I am sorry to hear that'] },
@@ -681,7 +681,7 @@ M.push({
   exercicios: [
     { id: 'viagem2-1', tipo: 'escolha', habilidade: 'gramatica', tag: 'sujeito-oculto', dif: 1, enunciado: '"Tem uma farmácia aqui perto?"', opcoes: ['Is there a pharmacy near here?', 'Have a pharmacy near here?', 'Has pharmacy near here?'], resposta: 0 },
     { id: 'viagem2-2', tipo: 'lacuna', habilidade: 'vocabulario', dif: 1, frase: "I'd ___ the soup of the day, please.", resposta: ['like', 'have'] },
-    { id: 'viagem2-3', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: 'Go straight for two blocks and turn left. The museum is on your right.', pergunta: 'Como chegar ao museu?', opcoes: ['Reto duas quadras, virar à esquerda, fica à direita', 'Virar à direita e seguir reto', 'Reto uma quadra, fica à esquerda'], resposta: 0 },
+    { id: 'viagem2-3', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: 'Go straight for two blocks and turn left. The museum is on your right.', pergunta: 'Como chegar ao museu?', opcoes: ['Reto duas quadras, virar à esquerda, fica à direita', 'Virar à direita e seguir reto por três quadras', 'Reto uma quadra, o museu fica à esquerda'], resposta: 0 },
     { id: 'viagem2-4', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: "That's twenty-four fifty. Would you like to pay by card?", pergunta: 'Quanto deu a conta?', opcoes: ['24,50', '42,50', '20,45'], resposta: 0 },
     { id: 'viagem2-5', tipo: 'ordenar', habilidade: 'gramatica', dif: 1, palavras: ['How', 'do', 'I', 'get', 'to', 'the', 'station'], resposta: 'How do I get to the station', sufixo: '?' },
     { id: 'viagem2-6', tipo: 'traduzir', habilidade: 'escrita', dif: 2, pt: 'Pode trazer a conta, por favor?', aceitas: ['Could I have the check, please', 'Can I have the check, please', 'Could I have the bill, please', 'Can I have the bill, please', 'Could we have the check, please', 'Could we have the bill, please'], sufixo: '?' },
@@ -735,7 +735,7 @@ M.push({
     { id: 'fds-1', tipo: 'lacuna', habilidade: 'gramatica', tag: 'passado-irregular', dif: 1, frase: 'On Saturday I ___ (go) to the beach.', resposta: ['went'] },
     { id: 'fds-2', tipo: 'escolha', habilidade: 'gramatica', tag: 'perguntas-do', dif: 1, enunciado: 'Pergunta correta:', opcoes: ['What did you do on Sunday?', 'What did you did on Sunday?', 'What you did on Sunday?'], resposta: 0 },
     { id: 'fds-3', tipo: 'lacuna', habilidade: 'gramatica', tag: 'passado-irregular', dif: 2, frase: 'We ___ (have) a barbecue and ___ (see) some old friends.', resposta: ['had saw', 'had, saw'], multi: true },
-    { id: 'fds-4', tipo: 'escuta', habilidade: 'escuta', tag: 'passado-irregular', dif: 2, audio: 'It was quiet. I stayed home on Saturday, but on Sunday I took my kids to the park.', pergunta: 'O que a pessoa fez no domingo?', opcoes: ['Levou os filhos ao parque', 'Ficou em casa', 'Foi a uma festa'], resposta: 0 },
+    { id: 'fds-4', tipo: 'escuta', habilidade: 'escuta', tag: 'passado-irregular', dif: 2, audio: 'It was quiet. I stayed home on Saturday, but on Sunday I took my kids to the park.', pergunta: 'O que a pessoa fez no domingo?', opcoes: ['Levou os filhos ao parque', 'Ficou em casa descansando o dia todo', 'Foi a uma festa de aniversário'], resposta: 0 },
     { id: 'fds-5', tipo: 'escuta', habilidade: 'escuta', dif: 3, audio: "We drove to the mountains, but it rained all day, so we spent most of the time in a café.", pergunta: 'Por que ficaram no café?', opcoes: ['Choveu o dia todo', 'O carro quebrou', 'Estava muito frio para andar'], resposta: 0 },
     { id: 'fds-6', tipo: 'ordenar', habilidade: 'gramatica', tag: 'perguntas-do', dif: 2, palavras: ['Where', 'did', 'you', 'go', 'last', 'weekend'], resposta: 'Where did you go last weekend', sufixo: '?' },
     { id: 'fds-7', tipo: 'traduzir', habilidade: 'escrita', tag: 'passado-irregular', dif: 2, pt: 'No sábado eu fiquei em casa e assisti a uma série.', aceitas: ['On Saturday I stayed home and watched a series', 'On Saturday I stayed at home and watched a series', 'On Saturday I stayed home and watched a show', 'On Saturday I stayed home and watched a TV series'] },
@@ -846,7 +846,7 @@ M.push({
     { id: 'planos-4', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: 'In the short term, I want to improve my English. In the long term, I plan to work in Canada.', pergunta: 'Qual é o plano de longo prazo?', opcoes: ['Trabalhar no Canadá', 'Melhorar o inglês', 'Mudar de empresa no Brasil'], resposta: 0 },
     { id: 'planos-5', tipo: 'ordenar', habilidade: 'gramatica', dif: 2, palavras: ['My', 'goal', 'is', 'to', 'lead', 'a', 'team'], resposta: 'My goal is to lead a team' },
     { id: 'planos-6', tipo: 'traduzir', habilidade: 'escrita', tag: 'falsos-cognatos', dif: 3, pt: 'Eu pretendo fazer um mestrado no exterior.', aceitas: ["I plan to do a master's degree abroad", "I intend to do a master's degree abroad", "I plan to do a master's abroad", "I plan to study for a master's degree abroad", "I'm planning to do a master's degree abroad"] },
-    { id: 'planos-7', tipo: 'escuta', habilidade: 'escuta', dif: 3, audio: "Honestly, I'd like to grow here. In five years, I see myself leading the analytics team.", pergunta: 'Onde a pessoa se vê em 5 anos?', opcoes: ['Liderando o time de análise na empresa', 'Em outra empresa', 'Morando fora do país'], resposta: 0 },
+    { id: 'planos-7', tipo: 'escuta', habilidade: 'escuta', dif: 3, audio: "Honestly, I'd like to grow here. In five years, I see myself leading the analytics team.", pergunta: 'Onde a pessoa se vê em 5 anos?', opcoes: ['Liderando o time de análise na empresa', 'Em outra empresa, numa área diferente', 'Morando fora do país com a família'], resposta: 0 },
     { id: 'planos-8', tipo: 'ditado', habilidade: 'escuta', dif: 2, audio: "I'd like to work abroad.", resposta: ["I'd like to work abroad", 'I would like to work abroad'] },
   ],
   tarefa: {
@@ -868,6 +868,15 @@ M.push({
 });
 
 require('./trilha-zero').TRILHA_ZERO.forEach(m => M.push(m));
+const { EXPLICACOES_ZERO } = require('./explicacoes-zero');
+for (const m of M) for (const e of m.exercicios) if (!e.explica && EXPLICACOES_ZERO[e.id]) e.explica = EXPLICACOES_ZERO[e.id];
+
+// Uma frase para falar em voz alta por missão: o exemplo mais curto (3 a 8 palavras) que não termina em pergunta longa.
+for (const m of M) {
+  if (m.exercicios.some(e => e.tipo === 'fala')) continue;
+  const cand = m.exemplos.filter(x => { const n = x.en.trim().split(/\s+/).length; return n >= 3 && n <= 8; }).sort((a, b) => a.en.length - b.en.length)[0];
+  if (cand) m.exercicios.push({ id: `${m.id}-fala`, tipo: 'fala', habilidade: 'fala', dif: m.nivel === 'A1' ? 1 : 2, frase: cand.en, audio: cand.en, pt: cand.pt });
+}
 
 const POR_ID = Object.fromEntries(M.map(m => [m.id, m]));
 const TODOS_EXERCICIOS = Object.fromEntries(M.flatMap(m => m.exercicios.map(e => [e.id, { ...e, missao: m.id }])));

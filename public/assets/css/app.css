@@ -958,3 +958,9 @@ button.status__item{font:inherit;cursor:pointer;color:var(--tinta)}
 
 /* nenhuma tela pode ganhar rolagem lateral (no celular ela alarga a janela e desalinha a barra fixa de baixo) */
 html,body{overflow-x:clip}
+
+.frase-fala{display:grid;gap:.3rem;text-align:center;padding:.6rem 0}.frase-fala__en{font-family:var(--f-titulo);font-size:1.5rem;color:var(--azul-forte);margin:0}
+.btn-falar[aria-pressed=true]{--b:var(--coral,#E5484D);animation:gira-pulso 1s ease-in-out infinite}
+.fala-eco{min-height:1.4em;text-align:center;margin:0}
+@keyframes gira-pulso{50%{transform:scale(1.06)}}
+@media (prefers-reduced-motion:reduce){.btn-falar[aria-pressed=true]{animation:none}}

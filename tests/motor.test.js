@@ -262,3 +262,30 @@ test('lição e treino: no máximo 10 questões, e menos (7) quando tem áudio',
   const t = APR.montarTreino({ tags: [{ tag: 'present-simple', nome: 'x' }], pessoais: [], pesos: { ler: 0.3, escrever: 0.3, ouvir: 0.4 }, quantos: 12, semente: 's' });
   assert.ok(t.itens.length <= 7);
 });
+
+test('trilhas: todo exercício errado explica o porquê (própria ou padrão) e há uma frase para falar por missão', () => {
+  const { corrigirExercicio } = require('../src/motor/correcao');
+  for (const m of MISSOES) {
+    assert.ok(m.exercicios.some(e => e.tipo === 'fala' && e.frase && e.audio), `${m.id} sem exercício de fala`);
+    for (const e of m.exercicios) {
+      const erro = e.tipo === 'fala' ? 'banana' : e.opcoes ? e.opcoes[(e.resposta + 1) % e.opcoes.length] : e.tipo === 'ordenar' ? 'x' : 'zzz';
+      const r = corrigirExercicio(e, erro);
+      if (!r.correto && ['escolha', 'leitura'].includes(e.tipo) && !e.explica) continue;   // escolha sem texto próprio: o app já mostra a alternativa certa
+      assert.ok(r.explica, `${e.id} errou e ficou sem explicação`);
+    }
+  }
+});
+
+test('fala: um tropeço do reconhecimento de voz conta, outra frase não', () => {
+  const { corrigirExercicio } = require('../src/motor/correcao');
+  const ex = { id: 'f', tipo: 'fala', habilidade: 'fala', frase: 'Good morning, how are you?', audio: 'Good morning, how are you?' };
+  assert.equal(corrigirExercicio(ex, 'good morning how are you').correto, true);
+  assert.equal(corrigirExercicio(ex, 'Good mornin, how are you').correto, true);
+  assert.equal(corrigirExercicio(ex, 'I like pizza').correto, false);
+});
+
+test('trilha do zero: cada missão com conversa tem cenário próprio e a dificuldade sobe nas últimas', () => {
+  const zero = MISSOES.filter(m => m.id.startsWith('zero'));
+  assert.ok(new Set(zero.map(m => m.conversa)).size >= 8, 'poucos cenários de conversa na trilha do zero');
+  assert.ok(zero.slice(-4).every(m => m.exercicios.some(e => e.dif >= 2)), 'as últimas missões do zero ainda são só nível 1');
+});
