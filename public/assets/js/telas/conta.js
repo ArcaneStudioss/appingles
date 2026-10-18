@@ -125,12 +125,12 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
       h('label', { class: `tema-op tema-op--${c}` }, h('input', { type: 'radio', name: 'pr-tema', value: v, checked: atual === v }), h('span', {}, h('i', { 'aria-hidden': 'true' }), r))));
     const vel = h('select', { id: 'pr-vel' }, [['0.85', 'Mais devagar'], ['1', 'Normal'], ['1.1', 'Um pouco mais rápido']].map(([v, r]) => h('option', { value: v, selected: (localStorageGet('velocidade') || '1') === v }, r)));
     const lista = vozesEn();
-    const voz = h('select', { id: 'pr-voz' }, h('option', { value: '' }, 'Automática (a mais natural do aparelho)'), lista.map(v => h('option', { value: v.name, selected: localStorageGet('voz') === v.name }, `${v.name} (${v.lang})`)));
+    const voz = h('select', { id: 'pr-voz' }, h('option', { value: '' }, 'Tuiuiú (a voz do app)'), lista.map(v => h('option', { value: v.name, selected: localStorageGet('voz') === v.name }, `${v.name} (${v.lang})`)));
     const ok = h('button', { type: 'button', class: 'btn' }, 'Salvar');
     const j = janela({ titulo: 'Preferências deste aparelho', corpo: h('div', {},
       h('div', { class: 'campo' }, h('span', { class: 'rotulo' }, 'Tema'), tema),
       h('div', { class: 'campo' }, h('label', { for: 'pr-vel' }, 'Velocidade do áudio'), vel, h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => { localStorageSet('velocidade', vel.value); localStorageSet('voz', voz.value); falar('This is how the audio sounds.'); } } }, icone('speaker-high'), 'Testar')),
-      lista.length ? h('div', { class: 'campo' }, h('label', { for: 'pr-voz' }, 'Voz do Tuiuiú em inglês'), voz, h('p', { class: 'ajuda' }, 'As vozes vêm do seu aparelho. As "natural" ou "online" soam mais humanas; no Android e no Windows dá para baixar mais vozes nas configurações de idioma.')) : null), acoes: [ok] });
+      lista.length ? h('div', { class: 'campo' }, h('label', { for: 'pr-voz' }, 'Voz em inglês'), voz, h('p', { class: 'ajuda' }, 'A voz do Tuiuiú é a do app, igual em todo aparelho. Se escolher outra, usamos uma voz do seu aparelho (as "natural" ou "online" soam mais humanas).')) : null), acoes: [ok] });
     ok.addEventListener('click', () => {
       const t = tema.querySelector('input:checked')?.value || 'sistema';
       localStorageSet('tema', t); localStorageSet('velocidade', vel.value); localStorageSet('voz', voz.value);

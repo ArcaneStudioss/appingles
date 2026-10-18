@@ -151,7 +151,26 @@ export function melhorVoz(lista) {
   const nota = v => (BOA.test(v.name) ? 10 : 0) + (ROBO.test(v.name) ? -20 : 0) + (/en-US/i.test(v.lang) ? 3 : /en-GB/i.test(v.lang) ? 2 : 0) + (v.localService === false ? 1 : 0);
   return lista.slice().sort((a, b) => nota(b) - nota(a))[0];
 }
+// Voz do Tuiuiú: frases do conteúdo já vêm gravadas (mp3 gerado uma vez e guardado). O que não tem gravação cai na voz do aparelho.
+const PASTA_VOZ = '/assets/audio/tuiuiu/';
+let mapaVoz = null, tocandoVoz = null;
+try { fetch(PASTA_VOZ + 'mapa.json?v=__V__').then(r => (r.ok ? r.json() : null)).then(j => { mapaVoz = j; }).catch(() => {}); } catch {}
+export function pararVoz() { try { tocandoVoz?.pause(); } catch {} tocandoVoz = null; if ('speechSynthesis' in window) speechSynthesis.cancel(); }
 export function falar(texto, { velocidade = 1 } = {}) {
+  const arq = !localStorageGet('voz') && mapaVoz && mapaVoz[String(texto).trim()];
+  if (arq) {
+    pararVoz();
+    const a = new Audio(PASTA_VOZ + arq + '?v=__V__');
+    a.playbackRate = Math.max(0.6, Math.min(1.2, velocidade * (Number(localStorageGet('velocidade')) || 1)));
+    a.preservesPitch = true;
+    tocandoVoz = a;
+    a.play().catch(() => { tocandoVoz = null; falarNavegador(texto, { velocidade }); });
+    return true;
+  }
+  return falarNavegador(texto, { velocidade });
+}
+function falarNavegador(texto, { velocidade = 1 } = {}) {
+  try { tocandoVoz?.pause(); } catch {} tocandoVoz = null;
   if (!('speechSynthesis' in window)) { toast('Seu navegador não tem leitura de voz. Use "Ver o texto".'); return false; }
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(texto);
