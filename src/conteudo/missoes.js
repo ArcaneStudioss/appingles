@@ -867,6 +867,8 @@ M.push({
   conversa: 'entrevista-geral',
 });
 
+require('./trilha-zero').TRILHA_ZERO.forEach(m => M.push(m));
+
 const POR_ID = Object.fromEntries(M.map(m => [m.id, m]));
 const TODOS_EXERCICIOS = Object.fromEntries(M.flatMap(m => m.exercicios.map(e => [e.id, { ...e, missao: m.id }])));
 

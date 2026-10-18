@@ -3,6 +3,13 @@
 // "essenciais" são as que entram mesmo quando o prazo é curto.
 
 const OBJETIVOS = {
+  zero: {
+    nome: 'Começar do zero',
+    frase: 'Aprender inglês desde o primeiro dia: sons, cumprimentos, se apresentar e conversar um minuto sobre você.',
+    missoes: ['zero-sons', 'zero-oi-tchau', 'zero-nome-origem', 'zero-numeros', 'zero-to-be', 'zero-familia', 'zero-cores-casa', 'zero-rotina', 'zero-comida', 'zero-lugares', 'zero-gostos', 'zero-conversa'],
+    essenciais: ['zero-sons', 'zero-oi-tchau', 'zero-nome-origem', 'zero-to-be', 'zero-conversa'],
+    exemploMeta: 'Conversar um minuto em inglês sobre mim: nome, de onde sou, idade, o que gosto.',
+  },
   entrevista: {
     nome: 'Entrevista de emprego',
     frase: 'Chegar na entrevista sabendo se apresentar, contar sua experiência e responder às perguntas mais comuns.',

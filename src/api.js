@@ -343,17 +343,20 @@ function criar(db) {
     if (emAndamento.has(chave)) throw new ErroHttp(409, 'Já estamos corrigindo seu teste.');
     emAndamento.add(chave);
     try {
-      if (!b.respostas || typeof b.respostas !== 'object' || Array.isArray(b.respostas)) throw new ErroHttp(422, 'Respostas inválidas.');
+      const nunca = b.nunca === true;       // "nunca estudei inglês": começa no A1 sem fazer o teste
+      if (!nunca && (!b.respostas || typeof b.respostas !== 'object' || Array.isArray(b.respostas))) throw new ErroHttp(422, 'Respostas inválidas.');
       const respostas = {};
       for (const item of nivelamentoConteudo.ITENS) {
-        const r = b.respostas[item.id];
+        const r = nunca ? null : b.respostas[item.id];
         if (!r || typeof r !== 'object') continue;
         respostas[item.id] = { resposta: V.str(r.resposta ?? '', 300, { campo: 'Resposta' }), tempoMs: Math.max(0, Math.min(600000, Number(r.tempoMs) | 0)), naoSei: r.naoSei === true };
       }
-      if (Object.keys(respostas).length < 8) throw new ErroHttp(422, 'Responda pelo menos 8 perguntas (pode marcar "não sei").');
+      if (!nunca && Object.keys(respostas).length < 8) throw new ErroHttp(422, 'Responda pelo menos 8 perguntas (pode marcar "não sei").');
       const escrita = V.str(b.escrita, 2000, { campo: 'Escrita' });
       const fala = V.str(b.fala, 500, { campo: 'Fala' });
-      const resultado = corrigirNivelamento({ respostas, escrita, fala });
+      const resultado = nunca
+        ? { nivel: 'A1', porHabilidade: {}, fortes: [], atencao: [], pistas: [], resumo: ['Você disse que está começando do zero. Vamos do primeiro dia, bem devagar, com muito áudio.'], confianca: 'baixa', totalRespondido: 0, nuncaEstudou: true, aviso: 'Sem teste: começamos no nível mais básico. Se for fácil demais, o app ajusta conforme você responde.' }
+        : corrigirNivelamento({ respostas, escrita, fala });
       transacao(db, () => {
         q('INSERT INTO nivelamentos (user_id, feito_em, resultado) VALUES (?, ?, ?)').run(uid, agoraISO(), JSON.stringify(resultado));
         for (const item of nivelamentoConteudo.ITENS) {

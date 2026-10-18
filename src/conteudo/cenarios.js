@@ -52,6 +52,13 @@ const CENARIOS = {
     roteiro: ['Can I see your passport, please?', 'How many nights are you staying?', 'Would you like breakfast included?', 'Is there anything else I can help you with?', 'Do you need any recommendations for dinner?'],
     ajuda: ['Yes, I have a reservation under ...', "I'm staying for ... nights.", 'Could you ...?', 'What time is ...?'],
   },
+  'zero-conhecer': {
+    titulo: 'Conhecendo o Tuiuiú',
+    papel: 'Tuiuiu, a friendly blue macaw who talks very slowly with a complete beginner. Use only very short, simple sentences (max 8 words), present tense, basic words. Always give the Portuguese meaning in brackets after hard words.',
+    abertura: 'Hello! I am Tuiuiu. What is your name?',
+    roteiro: ['Nice to meet you! Where are you from?', 'How old are you?', 'Do you like music?', 'What do you do every day?', 'Great! See you tomorrow!'],
+    ajuda: ['My name is ...', 'I am from ...', 'I am ... years old.', 'I like ...', 'Bye!'],
+  },
   'fim-de-semana': {
     titulo: 'Papo de segunda-feira',
     papel: 'a relaxed coworker called Ben chatting at the coffee machine on a Monday morning',

@@ -1,6 +1,6 @@
 // Teste de nivelamento: uma pergunta por tela, "não sei" sem culpa, escrita e fala opcionais, resultado com incerteza.
 import { api } from '../api.js?v=__V__';
-import { h, ocupado, icone, falar, temVoz, temMicrofone, ouvirMicrofone, toast } from '../ui.js?v=__V__';
+import { h, ocupado, icone, falar, temVoz, temMicrofone, ouvirMicrofone, toast, confirmar } from '../ui.js?v=__V__';
 import { lou, louFala, som, confete } from '../diversao.js?v=__V__';
 
 const NOMES = { gramatica: 'Gramática', vocabulario: 'Vocabulário', leitura: 'Leitura', escuta: 'Escuta', escrita: 'Escrita', fala: 'Fala' };
@@ -24,10 +24,11 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
         h('li', {}, 'Não sabe? Toque em "Não sei". Chutar só deixa o plano pior para você.'),
         h('li', {}, 'O resultado é uma estimativa para montar o plano, não um certificado.')),
       h('div', { class: 'folha teste-audio' },
-        h('p', {}, 'As perguntas de escuta usam a voz do seu navegador. Teste o som:'),
+        h('p', {}, 'As perguntas de escuta usam a voz do Tuiuiú. Teste o som:'),
         h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => { if (!falar('Hello! Can you hear me well?', { velocidade: 0.95 })) return; } } }, icone('speaker-high'), 'Testar áudio'),
         temVoz() ? null : h('p', { class: 'ajuda' }, 'Se não ouvir nada, confira o volume. Em alguns aparelhos a voz em inglês precisa ser instalada nas configurações.')),
-      h('button', { type: 'button', class: 'btn btn-bloco', on: { click: () => { i = 0; pergunta(); } } }, 'Começar', icone('arrow-right')));
+      h('button', { type: 'button', class: 'btn btn-bloco', on: { click: () => { i = 0; pergunta(); } } }, 'Começar', icone('arrow-right')),
+      anterior ? null : h('button', { type: 'button', class: 'btn btn-texto btn-bloco', on: { click: nuncaEstudei } }, icone('smiley'), 'Nunca estudei inglês: começar do zero'));
   }
 
   function progresso() { return h('div', { class: 'barra-progresso', role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': itens.length, 'aria-valuenow': i }, h('span', { style: `transform:scaleX(${(i / itens.length).toFixed(3)})` })); }
@@ -86,6 +87,16 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
         h('button', { type: 'button', class: 'btn', on: { click: enviar } }, 'Ver meu resultado')));
   }
 
+  async function nuncaEstudei() {
+    if (!await confirmar({ titulo: 'Começar do zero?', texto: 'Pulamos o teste e começamos pelos sons e cumprimentos, bem devagar. Se ficar fácil demais, o app ajusta.', ok: 'Começar do zero', cancelar: 'Voltar' })) return;
+    caixa.replaceChildren(h('div', { class: 'folha vazio' }, h('p', { class: 'bilhete' }, 'Montando seu plano...')));
+    try {
+      const r = await api('/nivelamento', { metodo: 'POST', corpo: { nunca: true } });
+      await carregarEu();
+      resultado(r.resultado, r.plano);
+    } catch (e) { toast(e.message, { tipo: 'erro' }); intro(); }
+  }
+
   async function enviar() {
     caixa.replaceChildren(h('div', { class: 'folha vazio' }, h('p', { class: 'bilhete' }, 'Corrigindo...'), h('p', {}, 'Montando seu diagnóstico e o seu plano.')));
     try {
@@ -107,12 +118,12 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
         h('p', { class: 'chip' }, 'Nível estimado'),
         h('p', { class: 'nivel-grande' }, r.nivel),
         h('p', {}, DESCR[r.nivel]),
-        h('p', { class: 'ajuda' }, r.aviso, r.confianca === 'baixa' ? ' Como você respondeu poucas perguntas, a confiança é baixa.' : '')),
-      h('h2', {}, 'Por habilidade'),
-      h('ul', { class: 'barras' }, hab.map(([k, v]) => h('li', {},
+        h('p', { class: 'ajuda' }, r.aviso, r.confianca === 'baixa' && !r.nuncaEstudou ? ' Como você respondeu poucas perguntas, a confiança é baixa.' : '')),
+      hab.length ? h('h2', {}, 'Por habilidade') : null,
+      hab.length ? h('ul', { class: 'barras' }, hab.map(([k, v]) => h('li', {},
         h('span', { class: 'barras-rotulo' }, NOMES[k], v.estimativaFraca ? h('small', {}, ' (estimativa simples)') : null),
         h('span', { class: 'barras-trilho', 'aria-hidden': 'true' }, h('span', { style: `transform:scaleX(${((NIVEIS.indexOf(v.nivel) + 1) / 5).toFixed(2)})` })),
-        h('strong', {}, v.nivel)))),
+        h('strong', {}, v.nivel))))) : null,
       h('div', { class: 'folha com-margem' }, r.resumo.map(t => h('p', {}, t)),
         r.pistas.length ? h('p', {}, 'Pistas para observar (ainda são hipóteses, vamos confirmar com as próximas atividades): ', r.pistas.map(p => p.nome.toLowerCase()).join('; '), '.') : null),
       h('button', { type: 'button', class: 'btn btn-bloco', on: { click: () => ir('#/plano') } }, plano ? 'Ver meu plano' : 'Continuar', icone('arrow-right')));

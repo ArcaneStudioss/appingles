@@ -187,3 +187,15 @@ test('Perfil de aprendizagem e treino focado: retrato por modo, preferência, tr
   assert.equal(novo.treino.versao, 1);
   assert.equal((await R('GET', '/aprendizagem')).treino.pronto, true);
 });
+
+test('"começar do zero": pula o teste, vai para o A1 e a primeira lição é a dos sons, com no máximo 10 questões', async () => {
+  await R('PUT', '/perfil', { objetivo: 'zero', objetivo_detalhe: '', prazo: null, minutos_dia: 10, dias_semana: 5, area: '', interesses: [] });
+  const { plano, resultado } = await R('POST', '/nivelamento', { nunca: true });
+  assert.equal(resultado.nivel, 'A1');
+  assert.equal(plano.objetivo, 'zero');
+  assert.equal(plano.missoes[0].id, 'zero-sons');
+  const { licao } = await R('GET', '/licao');
+  assert.equal(licao.missao.id, 'zero-sons');
+  const n = licao.blocos.reduce((s, b) => s + (b.exercicios ? b.exercicios.length : 0), 0);
+  assert.ok(n > 0 && n <= 10, 'questões: ' + n);
+});
