@@ -1,11 +1,11 @@
-// Tela principal: saudação, medidores do dia, Lou com o porquê da aula, a aula de hoje (o "pacotinho"),
+// Tela principal: saudação, medidores do dia, Tuiuiú com o porquê da aula, a aula de hoje (o "pacotinho"),
 // quatro atalhos grandes (cada um com a cor da sua atividade) e o álbum de missões.
 // Sem vidas e sem "ofensiva" que se perde: os dias do mês só somam.
 import { api } from '../api.js?v=__V__';
 import { h, icone, dataBR, plural, toast, janela } from '../ui.js?v=__V__';
 import { louFala, lou } from '../diversao.js?v=__V__';
 
-const CONQ = { 'primeiro-passo': 'Primeiro passo: teste de nível feito', 'primeira-licao': 'Primeira lição concluída', 'primeira-conversa': 'Primeira conversa', 'primeira-demonstracao': 'Primeira missão demonstrada', retido: 'Missão mantida depois de dias', 'foco-superado': 'Superou uma dificuldade', 'revisoes-50': '50 revisões', material: 'Estudou com material seu', 'licoes-10': '10 lições', 'dias-3': '3 dias de estudo', 'dias-10': '10 dias de estudo', 'dias-30': '30 dias de estudo', 'dias-60': '60 dias de estudo', radio: 'Primeiro episódio da Rádio Lou',
+const CONQ = { 'primeiro-passo': 'Primeiro passo: teste de nível feito', 'primeira-licao': 'Primeira lição concluída', 'primeira-conversa': 'Primeira conversa', 'primeira-demonstracao': 'Primeira missão demonstrada', retido: 'Missão mantida depois de dias', 'foco-superado': 'Superou uma dificuldade', 'revisoes-50': '50 revisões', material: 'Estudou com material seu', 'licoes-10': '10 lições', 'dias-3': '3 dias de estudo', 'dias-10': '10 dias de estudo', 'dias-30': '30 dias de estudo', 'dias-60': '60 dias de estudo', radio: 'Primeiro episódio da Rádio Tuiuiú',
   'seq-3': '3 dias seguidos', 'seq-7': '1 semana seguida', 'seq-14': '2 semanas seguidas', 'seq-30': '30 dias seguidos', 'seq-60': '60 dias seguidos', 'seq-100': '100 dias seguidos', 'seq-200': '200 dias seguidos', 'seq-365': '1 ano seguido' };
 export const nomeConquista = c => CONQ[c] || (c.startsWith('volta') ? 'Que bom te ver de volta' : c);
 
@@ -68,7 +68,7 @@ function verSequencia(seq, diasNoMes) {
       h('li', {}, h('strong', {}, String(diasNoMes)), 'dias neste mês')),
     seq.proximoPremio ? h('p', { class: 'aviso-suave' }, icone('medal'), h('span', {}, `Faltam ${plural(seq.faltam, 'dia', 'dias')} para a figurinha especial de ${seq.proximoPremio} dias.`)) : null,
     h('ul', { class: 'lista-check' },
-      h('li', {}, 'Qualquer estudo conta: aula, revisão, conversa ou episódio da Rádio Lou.'),
+      h('li', {}, 'Qualquer estudo conta: aula, revisão, conversa ou episódio da Rádio Tuiuiú.'),
       h('li', {}, 'A cada 7 dias seguidos você ganha um escudo (guarda até 2). Se faltar um dia, o escudo salva a sequência sozinho.'),
       h('li', {}, 'Se a sequência recomeçar, nada se perde: o recorde e as figurinhas ficam no seu álbum.'))) });
 }
@@ -108,22 +108,22 @@ export async function telaHoje(el, { ir }) {
         : h('a', { class: 'btn btn-bloco btn-grande', href: '#/licao' }, icone('play'), L.iniciada ? 'Continuar a aula' : 'Bora começar')));
   }
 
-  // Rádio Lou: o episódio de hoje, feito com os tropeços da pessoa
+  // Rádio Tuiuiú: o episódio de hoje, feito com os tropeços da pessoa
   if (d.radio && a.acesso === 'completo') {
     const r = d.radio;
     const sub = r.ouvido ? 'Ouvido hoje. Dá para ouvir de novo.' : r.pronto ? `${r.minutos} min · ${r.titulo}` : r.tropecos ? `Feito com ${plural(r.tropecos, 'tropeço seu', 'tropeços seus')} · uns 3 min` : 'Sobre a sua missão · uns 3 min';
     principal.append(h('a', { class: 'radio-card c-rosa' + (r.ouvido ? ' radio-card--ouvido' : ''), href: '#/podcast' },
       h('span', { class: 'radio-card__dupla', 'aria-hidden': 'true' }, lou('feliz', { tamanho: 46, rotulo: '' }), lou('oi', { tamanho: 46, rotulo: '', mia: true })),
-      h('span', { class: 'radio-card__txt' }, h('strong', {}, 'Rádio Lou'), h('small', {}, sub)),
+      h('span', { class: 'radio-card__txt' }, h('strong', {}, 'Rádio Tuiuiú'), h('small', {}, sub)),
       h('span', { class: 'radio-card__play', 'aria-hidden': 'true' }, icone(r.ouvido ? 'check' : 'play'))));
   }
 
-  // atalhos: o próximo passo recomendado ganha o selo "Sugestão do Lou"
+  // atalhos: o próximo passo recomendado ganha o selo "Sugestão do Tuiuiú"
   const pr = d.proximo;
   const sugere = pr.acao === 'revisar' || pr.acao === 'conversar' ? pr.acao : null;
   const atalho = (chave, cor, href, ic, titulo, sub, num) => h('a', { class: `atalho c-${cor}`, href },
     h('span', { class: 'bolha' }, icone(ic)), num ? h('span', { class: 'atalho__num', 'aria-hidden': 'true' }, String(num)) : null,
-    h('span', {}, h('strong', {}, titulo), h('small', {}, sugere === chave ? 'Sugestão do Lou' : sub)));
+    h('span', {}, h('strong', {}, titulo), h('small', {}, sugere === chave ? 'Sugestão do Tuiuiú' : sub)));
   principal.append(h('nav', { class: 'atalhos', 'aria-label': 'Atividades' },
     atalho('revisar', 'sol', '#/revisar', 'cards', 'Revisar', d.revisoesPendentes ? plural(d.revisoesPendentes, 'cartão te esperando', 'cartões te esperando') : 'tudo em dia', d.revisoesPendentes),
     atalho('conversar', 'menta', pr.acao === 'conversar' && pr.cenario ? `#/conversar?c=${pr.cenario}` : '#/conversar', 'chats', 'Conversar', 'treine falando'),

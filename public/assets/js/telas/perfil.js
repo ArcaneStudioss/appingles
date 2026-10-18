@@ -47,7 +47,7 @@ export async function telaPerfil(el, { estado, ir, carregarEu }) {
     caixa.replaceChildren(barra());
     if (passo === 0) {
       caixa.append(
-        louFala('oi', h('p', {}, editando ? 'Mudou alguma coisa? Sem problema, o plano se ajusta.' : `Oi, ${estado.eu.usuario.nome.split(' ')[0]}! Eu sou o Lou. Vou montar seu plano em 4 perguntas.`)),
+        louFala('oi', h('p', {}, editando ? 'Mudou alguma coisa? Sem problema, o plano se ajusta.' : `Oi, ${estado.eu.usuario.nome.split(' ')[0]}! Eu sou o Tuiuiú. Vou montar seu plano em 4 perguntas.`)),
         h('h1', {}, 'Para que você precisa do inglês agora?'),
         h('p', { class: 'ajuda' }, 'Escolha o principal. O curso inteiro vai girar em torno dele, e você pode mudar depois.'),
         h('div', { class: 'opcoes-grandes', role: 'radiogroup' }, objetivos.map(o => { const [ic, cor] = VISUAL[o.id] || ['target', 'azul']; return h('label', { class: `opcao-grande c-${cor}` },

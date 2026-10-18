@@ -1,7 +1,7 @@
 {
   "name": "Inglou · inglês com plano personalizado",
   "short_name": "Inglou",
-  "description": "Seu inglês, seu plano: aula do dia, Rádio Lou, revisões e conversas.",
+  "description": "Seu inglês, seu plano: aula do dia, Rádio Tuiuiú, revisões e conversas.",
   "id": "/app/",
   "start_url": "/app/#/hoje",
   "scope": "/app/",
@@ -19,6 +19,6 @@
   ],
   "shortcuts": [
     { "name": "Aula de hoje", "url": "/app/#/licao", "icons": [{ "src": "/assets/img/icone-192.png?v=arara1", "sizes": "192x192" }] },
-    { "name": "Rádio Lou", "url": "/app/#/podcast", "icons": [{ "src": "/assets/img/icone-192.png?v=arara1", "sizes": "192x192" }] }
+    { "name": "Rádio Tuiuiú", "url": "/app/#/podcast", "icons": [{ "src": "/assets/img/icone-192.png?v=arara1", "sizes": "192x192" }] }
   ]
 }

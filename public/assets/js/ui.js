@@ -154,7 +154,7 @@ export function falar(texto, { velocidade = 1 } = {}) {
   speechSynthesis.speak(u);
   return true;
 }
-// "Ler pra mim": o Lou lê em voz alta, em português, o que está no balão (ajuda quem lê pouco ou está começando)
+// "Ler pra mim": o Tuiuiú lê em voz alta, em português, o que está no balão (ajuda quem lê pouco ou está começando)
 export function falarPt(texto, aoFim) {
   if (!('speechSynthesis' in window)) { toast('Seu navegador não tem leitura de voz.'); return false; }
   speechSynthesis.cancel();

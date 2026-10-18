@@ -1,4 +1,7 @@
-# Inglou na VPS da Arcane: projeto Docker próprio "inglou" (padrão dos outros projetos: node:22-alpine que busca o código no GitHub ao iniciar).
+# Inglou na VPS da Arcane: DUAS cópias (projetos "inglou" e "inglou-b") atrás do mesmo endereço, para atualizar sem cair.
+# Esta é a cópia A. Cópia B = docker-compose-b.yml (mesmo arquivo, com banco compartilhado e backup desligado).
+# Atualizar: reiniciar "inglou", esperar ficar saudável, reiniciar "inglou-b" (ver docs/DEPLOY.md). Nunca as duas ao mesmo tempo.
+# Padrão dos outros projetos da VPS: node:22-alpine que busca o código no GitHub ao iniciar.
 # Nenhum segredo neste arquivo: GH_TOKEN, ANTHROPIC_API_KEY e BACKUP_S3_* vêm das variáveis do projeto (.env do projeto, na VPS).
 # Para atualizar o app depois de um push: reiniciar o projeto (o container baixa a versão nova do GitHub).
 services:
@@ -46,12 +49,14 @@ services:
         unset GH_TOKEN AUTH
         npm ci --omit=dev --no-audit --no-fund
         exec node --disable-warning=ExperimentalWarning server.js
+    stop_grace_period: 15s
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/saude"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
+      interval: 10s
+      timeout: 3s
+      retries: 3
       start_period: 90s
+      start_interval: 2s
     labels:
       - traefik.enable=true
       - traefik.http.routers.inglou.rule=Host(`inglou.arcanestudios.io`)

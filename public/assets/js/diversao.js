@@ -1,19 +1,19 @@
-// Lou (o mascote: uma arara-azul), sons sintetizados e confete. Tudo respeita "menos movimento"
+// Tuiuiú (o mascote: uma arara-azul), sons sintetizados e confete. Tudo respeita "menos movimento"
 // e a preferência de som deste aparelho. Nada aqui pune o aluno: o erro tem um som suave, não um alarme.
 import { localStorageGet, falarPt } from './ui.js?v=__V__';
 
 const NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs = {}, ...filhos) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); e.append(...filhos); return e; };
 
-// Lou: uma arara-azul (o orgulho do Brasil). A Mia, a amiga que fala inglês na Rádio Lou, é uma arara-vermelha.
-// humor: oi | feliz | pensando | ops | festa. As cores do Lou vêm de variáveis (--arara-*), então acompanham Dia e Noite;
+// Tuiuiú: uma arara-azul (o orgulho do Brasil). A Mia, a amiga que fala inglês na Rádio Tuiuiú, é uma arara-vermelha.
+// humor: oi | feliz | pensando | ops | festa. As cores do Tuiuiú vêm de variáveis (--arara-*), então acompanham Dia e Noite;
 // o segundo valor de cada var() é a cor de reserva (página de vendas e ícones, onde não há tema).
 const TINTA_OLHO = '#16224A';
 const PALETAS = {
   lou: { corpo: 'var(--arara-1,#2447D0)', sombra: 'var(--arara-2,#1A33A0)', luz: 'var(--arara-3,#6C8DFF)', bico: '#3A4254', bicoLuz: '#7A849B', rosto: null, anel: '#FFC83D', bochecha: '#FFC83D' },
   mia: { corpo: '#E8404E', sombra: '#B02634', luz: '#FF8A92', bico: '#EBD9BC', bicoLuz: '#FFF6E6', rosto: '#FFF8F2', anel: null, bochecha: null },
 };
-export function lou(humor = 'oi', { tamanho = 96, rotulo = 'Lou, a arara-azul do Inglou', mia = false } = {}) {
+export function lou(humor = 'oi', { tamanho = 96, rotulo = 'Tuiuiú, a arara-azul do Inglou', mia = false } = {}) {
   const P = mia ? PALETAS.mia : PALETAS.lou;
   const s = el('svg', { viewBox: '0 0 120 120', width: tamanho, height: tamanho, class: `lou lou--${humor}${mia ? ' lou--mia' : ''}`, role: 'img', 'aria-label': rotulo });
   const corpo = el('g', { class: 'lou__corpo' });
@@ -60,14 +60,14 @@ export function lou(humor = 'oi', { tamanho = 96, rotulo = 'Lou, a arara-azul do
   return s;
 }
 
-// Lou falando: mascote + balão com o texto
+// Tuiuiú falando: mascote + balão com o texto
 export function louFala(humor, ...conteudo) {
   const d = document.createElement('div'); d.className = 'lou-fala';
   const b = document.createElement('div'); b.className = 'lou-fala__balao'; b.append(...conteudo.flat().filter(x => x != null && x !== false));
-  // botão "Ouvir": o Lou lê o balão em português (pedagógico: serve para quem ainda lê devagar)
+  // botão "Ouvir": o Tuiuiú lê o balão em português (pedagógico: serve para quem ainda lê devagar)
   const ouvir = document.createElement('button');
   ouvir.type = 'button'; ouvir.className = 'lou-fala__ouvir'; ouvir.setAttribute('aria-pressed', 'false');
-  ouvir.setAttribute('aria-label', 'Ouvir o Lou ler esta mensagem');
+  ouvir.setAttribute('aria-label', 'Ouvir o Tuiuiú ler esta mensagem');
   const svg = el('svg', { class: 'ico', 'aria-hidden': 'true' }, el('use', { href: '/assets/icones/sprite.svg?v=__V__#i-speaker-high' }));
   ouvir.append(svg, document.createTextNode('Ouvir'));
   ouvir.addEventListener('click', () => {

@@ -142,7 +142,7 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
     if (podeInstalarDireto()) return;
     const passos = (titulo, lista) => h('div', {}, h('h3', {}, titulo), h('ol', { class: 'passos-instalar' }, lista.map(t => h('li', {}, t))));
     janela({ titulo: 'Instalar no celular', corpo: h('div', {},
-      h('p', {}, 'O Inglou instala direto do navegador, sem loja. Fica com ícone do Lou na tela inicial e abre em tela cheia.'),
+      h('p', {}, 'O Inglou instala direto do navegador, sem loja. Fica com ícone do Tuiuiú na tela inicial e abre em tela cheia.'),
       ehIphone() ? null : passos('Android (Chrome)', ['Abra o Inglou no Chrome.', 'Toque nos 3 pontinhos, no canto de cima.', 'Toque em "Instalar app" (ou "Adicionar à tela inicial").']),
       ehIphone() || !/android/i.test(navigator.userAgent) ? passos('iPhone (Safari)', ['Abra o Inglou no Safari (não vale outro navegador).', 'Toque no botão Compartilhar, o quadrado com a setinha.', 'Role e toque em "Adicionar à Tela de Início".']) : null) });
   }
@@ -167,7 +167,7 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
       h('button', { class: 'btn btn-texto btn-peq', on: { click: apagar } }, icone('trash'), 'Apagar histórico')),
     cartao('notebook', 'Seus registros', 'Textos, conversas e cartões que você produziu.',
       h('a', { class: 'btn btn-sec btn-peq', href: '#/conversar' }, 'Conversas'), h('a', { class: 'btn btn-sec btn-peq', href: '#/material' }, 'Materiais'), h('a', { class: 'btn btn-sec btn-peq', href: '#/revisar' }, 'Cartões')),
-    jaInstalado() ? null : cartao('seal-check', 'Instalar no celular', 'Ícone do Lou na tela inicial e abre em tela cheia, como um app.', h('button', { class: 'btn btn-sec btn-peq', on: { click: instalar } }, icone('download-simple'), 'Instalar')),
+    jaInstalado() ? null : cartao('seal-check', 'Instalar no celular', 'Ícone do Tuiuiú na tela inicial e abre em tela cheia, como um app.', h('button', { class: 'btn btn-sec btn-peq', on: { click: instalar } }, icone('download-simple'), 'Instalar')),
     cartao('gear', 'Preferências', 'Dia ou noite e velocidade do áudio neste aparelho.', h('button', { class: 'btn btn-sec btn-peq', on: { click: preferencias } }, 'Configurar')),
     cartao('lock-key', 'Segurança', 'Senha da conta.', h('button', { class: 'btn btn-sec btn-peq', on: { click: trocarSenha } }, 'Alterar senha')),
     h('div', { class: 'linha-acoes rodape-conta' },

@@ -19,13 +19,13 @@ export async function telaConversar(el, { ir }) {
     catch (e) { toast(e.message, { tipo: 'erro' }); ocupado(btn, false); }
   };
   el.append(
-    h('header', { class: 'cabeca c-menta' }, h('span', { class: 'bolha' }, icone('chats')), h('div', {}, h('h1', {}, 'Conversar'), h('p', { class: 'ajuda' }, 'Escolha uma situação e converse com o Lou em inglês. O que travar vira a sua próxima aula.'))),
+    h('header', { class: 'cabeca c-menta' }, h('span', { class: 'bolha' }, icone('chats')), h('div', {}, h('h1', {}, 'Conversar'), h('p', { class: 'ajuda' }, 'Escolha uma situação e converse com o Tuiuiú em inglês. O que travar vira a sua próxima aula.'))),
     ia ? null : h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, 'Modo de prática: o tutor segue um roteiro do cenário e aponta os erros mais comuns. Com a IA ligada, a conversa fica livre e a correção, completa.')),
     h('ul', { class: 'cenarios' }, [...cenarios].sort((a, b) => (b.recomendado || b.id === pre) - (a.recomendado || a.id === pre)).map((c, k) => {
       const rec = c.recomendado || c.id === pre;
       const b = h('button', { type: 'button', class: `cenario c-${rec ? 'menta' : CORES[k % CORES.length]}` + (rec ? ' cenario--rec' : ''), on: { click: () => iniciar(c.id, b) } },
         rec ? lou('feliz', { tamanho: 64, rotulo: '' }) : h('span', { class: 'bolha' }, icone(iconeCenario(c.titulo))),
-        h('span', { class: 'cenario__txt' }, rec ? h('small', {}, 'Sugestão do Lou: combina com a sua missão') : null, h('strong', {}, c.titulo)));
+        h('span', { class: 'cenario__txt' }, rec ? h('small', {}, 'Sugestão do Tuiuiú: combina com a sua missão') : null, h('strong', {}, c.titulo)));
       return h('li', {}, b);
     })),
     conversas.length ? h('section', { class: 'tela' }, h('h2', {}, 'Conversas anteriores'), h('ul', { class: 'lista-simples' }, conversas.slice(0, 15).map(c => h('li', {}, h('a', { href: '#/conversa/' + c.id }, c.titulo), h('small', {}, ` ${dataBR(c.iniciada_em)}${c.terminada_em ? '' : ' · em aberto'}`))))) : null);

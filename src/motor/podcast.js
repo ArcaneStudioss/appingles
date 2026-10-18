@@ -1,6 +1,6 @@
 'use strict';
-// Rádio Lou: um episódio curto por dia, montado com os tropeços do próprio aluno.
-// Dois apresentadores: o Lou explica em português; a Mia dá voz ao inglês (exemplos e "repita comigo").
+// Rádio Tuiuiú: um episódio curto por dia, montado com os tropeços do próprio aluno.
+// Dois apresentadores: o Tuiuiú explica em português; a Mia dá voz ao inglês (exemplos e "repita comigo").
 // Sem IA, o roteiro sai do catálogo de dificuldades + as frases que o aluno realmente escreveu.
 // Com IA, o tutor escreve um roteiro mais natural (ver ia.podcast), mas o treino continua vindo do catálogo
 // (gabarito conferido no servidor, nunca enviado ao navegador).
@@ -39,7 +39,7 @@ function roteiroDeTropecos(tropecos, { nome }) {
   const falas = [];
   const lou = (texto, riscado = null) => falas.push({ quem: 'lou', texto, riscado });
   const mia = (texto, repita = false) => falas.push({ quem: 'mia', texto, repita });
-  lou(`Oi, ${nome}! Aqui é o Lou, e este é o seu episódio de hoje da Rádio Lou.`);
+  lou(`Oi, ${nome}! Aqui é o Tuiuiú, e este é o seu episódio de hoje da Rádio Tuiuiú.`);
   lou('A Mia está comigo. Ela vai dar voz ao inglês.');
   mia(`Hi, ${nome}! Nice to see you again.`);
   lou(`Juntei ${tropecos.length === 1 ? 'uma coisa' : tropecos.length + ' coisas'} em que você tropeçou nos últimos dias. Errar é normal: é assim que a gente descobre o que treinar.`);
@@ -71,7 +71,7 @@ function roteiroDeMissao(missao, { nome }) {
   const falas = [];
   const lou = (texto) => falas.push({ quem: 'lou', texto });
   const mia = (texto, repita = false) => falas.push({ quem: 'mia', texto, repita });
-  lou(`Oi, ${nome}! Aqui é o Lou, na Rádio Lou.`);
+  lou(`Oi, ${nome}! Aqui é o Tuiuiú, na Rádio Tuiuiú.`);
   lou('Ainda não juntei tropeços seus: eles aparecem depois das aulas e conversas. Então hoje o episódio é sobre a sua missão.');
   if (!m) { lou('Faça a aula de hoje e uma conversa curta. Amanhã o episódio já vem com o que você precisa treinar.'); return falas; }
   lou(`A missão é: ${m.titulo}. No fim dela você vai conseguir dizer: ${m.podeFazer}`);

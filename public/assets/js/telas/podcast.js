@@ -1,4 +1,4 @@
-// Rádio Lou: um episódio curto por dia com os tropeços do aluno. O Lou explica em português, a Mia fala inglês.
+// Rádio Tuiuiú: um episódio curto por dia com os tropeços do aluno. O Tuiuiú explica em português, a Mia fala inglês.
 // O áudio sai da voz do próprio aparelho (sem custo e sem mandar nada a terceiros). O roteiro fica na tela,
 // com a fala atual em destaque (dá para ler junto). Nas falas "repita", o player espera a pessoa repetir.
 // No fim, um treino rápido com o mesmo assunto (o gabarito é conferido no servidor).
@@ -19,8 +19,8 @@ function escolherVozes() {
 }
 
 export async function telaPodcast(el) {
-  const capa = h('section', { class: 'radio-capa c-rosa', 'aria-live': 'polite' }, h('div', { class: 'radio-capa__carregando' }, lou('pensando', { tamanho: 72, rotulo: '' }), h('p', {}, 'O Lou está montando o seu episódio...')));
-  el.append(h('header', { class: 'cabeca c-rosa' }, h('span', { class: 'bolha' }, icone('headphones')), h('div', {}, h('h1', {}, 'Rádio Lou'), h('p', { class: 'ajuda' }, 'Um episódio por dia, feito com o que você mais errou. Ouça, repita junto e treine no fim.'))), capa);
+  const capa = h('section', { class: 'radio-capa c-rosa', 'aria-live': 'polite' }, h('div', { class: 'radio-capa__carregando' }, lou('pensando', { tamanho: 72, rotulo: '' }), h('p', {}, 'O Tuiuiú está montando o seu episódio...')));
+  el.append(h('header', { class: 'cabeca c-rosa' }, h('span', { class: 'bolha' }, icone('headphones')), h('div', {}, h('h1', {}, 'Rádio Tuiuiú'), h('p', { class: 'ajuda' }, 'Um episódio por dia, feito com o que você mais errou. Ouça, repita junto e treine no fim.'))), capa);
   const { episodio: ep, aviso } = await api('/podcast');
   if (aviso) toast(aviso);
   const falas = ep.falas;
@@ -37,7 +37,7 @@ export async function telaPodcast(el) {
   const btnVel = h('button', { type: 'button', class: 'radio-vel', 'aria-pressed': String(devagar), on: { click: () => { devagar = !devagar; localStorageSet('radio-devagar', devagar ? 'sim' : 'nao'); btnVel.setAttribute('aria-pressed', String(devagar)); btnVel.lastChild.textContent = devagar ? 'Devagar' : 'Normal'; if (tocando) tocar(i); } } }, icone('clock'), h('span', {}, devagar ? 'Devagar' : 'Normal'));
   capa.replaceChildren(
     h('div', { class: 'radio-capa__palco' },
-      h('div', { class: 'radio-capa__dupla' }, lou('feliz', { tamanho: 78, rotulo: 'Lou' }), ondas, lou('oi', { tamanho: 78, rotulo: 'Mia', mia: true })),
+      h('div', { class: 'radio-capa__dupla' }, lou('feliz', { tamanho: 78, rotulo: 'Tuiuiú' }), ondas, lou('oi', { tamanho: 78, rotulo: 'Mia', mia: true })),
       h('p', { class: 'rotulo-pequeno' }, `Episódio de hoje · ${ep.minutos} min`),
       h('h2', {}, ep.titulo),
       h('div', { class: 'linha-acoes radio-capa__chips' },
@@ -50,7 +50,7 @@ export async function telaPodcast(el) {
   // ---------- roteiro (lê junto; toque numa fala para ir até ela)
   const roteiro = h('ol', { class: 'roteiro', 'aria-label': 'Roteiro do episódio' }, falas.map((f, k) => h('li', { class: `roteiro__fala roteiro__fala--${f.quem}` + (f.repita ? ' roteiro__fala--repita' : '') },
     h('button', { type: 'button', class: 'roteiro__btn', on: { click: () => tocar(k) } },
-      h('span', { class: 'roteiro__quem' }, lou(f.quem === 'mia' ? 'oi' : 'feliz', { tamanho: 30, rotulo: '', mia: f.quem === 'mia' }), f.quem === 'mia' ? 'Mia' : 'Lou'),
+      h('span', { class: 'roteiro__quem' }, lou(f.quem === 'mia' ? 'oi' : 'feliz', { tamanho: 30, rotulo: '', mia: f.quem === 'mia' }), f.quem === 'mia' ? 'Mia' : 'Tuiuiú'),
       f.riscado ? h('span', { class: 'roteiro__riscado riscado', lang: 'en' }, f.riscado) : null,
       h('span', { class: 'roteiro__texto', lang: f.lingua === 'en' ? 'en' : 'pt-BR' }, f.texto),
       f.repita ? h('span', { class: 'chip c-rosa roteiro__sua-vez' }, icone('microphone'), 'Sua vez: repita em voz alta') : null))));
@@ -59,7 +59,7 @@ export async function telaPodcast(el) {
     roteiro.querySelectorAll('.roteiro__fala').forEach((li, k) => { li.classList.toggle('agora', k === i); li.classList.toggle('ja', k < i); });
     fitas.querySelectorAll('i').forEach((f, k) => { f.classList.toggle('agora', k === i); f.classList.toggle('ja', k < i); });
     const f = falas[i];
-    quemFala.textContent = !f ? 'Fim do episódio' : f.repita ? 'Sua vez: repita depois da Mia' : f.quem === 'mia' ? 'A Mia está falando (inglês)' : 'O Lou está falando';
+    quemFala.textContent = !f ? 'Fim do episódio' : f.repita ? 'Sua vez: repita depois da Mia' : f.quem === 'mia' ? 'A Mia está falando (inglês)' : 'O Tuiuiú está falando';
     capa.dataset.quem = f?.quem || '';
   }
   function rolar() { const li = roteiro.children[i]; if (li && tocando) li.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }

@@ -736,7 +736,7 @@ function criar(db) {
     return { modo: 'catalogo', aviso, resposta: `Sem o tutor de IA ativo, consigo explicar estes pontos comuns: ${DIFICULDADES.map(d => d.nome.toLowerCase()).join('; ')}. Tente perguntar usando uma dessas palavras.` };
   });
 
-  // ---------- Rádio Lou: um episódio por dia com os tropeços do aluno ----------
+  // ---------- Rádio Tuiuiú: um episódio por dia com os tropeços do aluno ----------
   function tropecosDe(uid, h) {
     const desde = somarDias(h, -21);
     return radio.coletarTropecos({
