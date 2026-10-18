@@ -39,9 +39,9 @@ export function lou(humor = 'oi', { tamanho = 96, rotulo = 'Tuiuiú, a arara-azu
   const olhos = el('g', { class: 'lou__olhos' });
   for (const x of [42, 78]) {
     if (feliz) { olhos.append(traco(`M${x - 7} 49 Q${x} 37 ${x + 7} 49`, TINTA_OLHO, 4.5)); continue; }
-    const dx = humor === 'pensando' ? 2.5 : 0, dy = humor === 'pensando' ? -3 : humor === 'ops' ? 2.5 : 0, r = humor === 'ops' ? 3.2 : 4.6;
-    if (P.anel) olhos.append(el('circle', { cx: x, cy: 46, r: 12, fill: P.anel }));
-    olhos.append(el('ellipse', { cx: x, cy: 46, rx: 8.6, ry: 9.6, fill: '#fff' }), el('circle', { cx: x + dx, cy: 47 + dy, r, fill: TINTA_OLHO }), el('circle', { cx: x + dx + 1.4, cy: 45 + dy, r: 1.4, fill: '#fff' }));
+    const dx = humor === 'pensando' ? 2.5 : 0, dy = humor === 'pensando' ? -3 : humor === 'ops' ? 2.5 : 0, r = humor === 'ops' ? 2.8 : 4;
+    if (P.anel) olhos.append(el('circle', { cx: x, cy: 46, r: 9.5, fill: P.anel }));
+    olhos.append(el('ellipse', { cx: x, cy: 46, rx: 6.6, ry: 7.2, fill: '#fff' }), el('circle', { cx: x + dx, cy: 47 + dy, r, fill: TINTA_OLHO }), el('circle', { cx: x + dx + 1.2, cy: 45.5 + dy, r: 1.2, fill: '#fff' }));
   }
   corpo.append(olhos,
     el('circle', { cx: 28, cy: 62, r: 4.5, fill: '#FF9FB2', opacity: '.5' }), el('circle', { cx: 92, cy: 62, r: 4.5, fill: '#FF9FB2', opacity: '.5' }));
