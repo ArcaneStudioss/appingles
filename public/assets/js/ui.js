@@ -154,6 +154,19 @@ export function falar(texto, { velocidade = 1 } = {}) {
   speechSynthesis.speak(u);
   return true;
 }
+// "Ler pra mim": o Lou lê em voz alta, em português, o que está no balão (ajuda quem lê pouco ou está começando)
+export function falarPt(texto, aoFim) {
+  if (!('speechSynthesis' in window)) { toast('Seu navegador não tem leitura de voz.'); return false; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(texto);
+  const todas = speechSynthesis.getVoices();
+  const voz = todas.find(v => /^pt[-_]BR/i.test(v.lang) && /natural|google|luciana|francisca/i.test(v.name)) || todas.find(v => /^pt[-_]BR/i.test(v.lang)) || todas.find(v => /^pt/i.test(v.lang));
+  if (voz) u.voice = voz;
+  u.lang = voz?.lang || 'pt-BR'; u.rate = 1;
+  u.onend = u.onerror = () => aoFim?.();
+  speechSynthesis.speak(u);
+  return true;
+}
 export function botaoOuvir(texto, { velocidade = 1, rotulo = 'Ouvir' } = {}) {
   return h('button', { type: 'button', class: 'btn btn-sec btn-ouvir', on: { click: () => falar(texto, { velocidade }) } }, icone('speaker-high'), rotulo);
 }

@@ -9,8 +9,9 @@ export async function telaEntrar(el, { estado, ir, carregarEu }) {
   let modo = new URLSearchParams(location.hash.split('?')[1] || '').get('modo') === 'cadastro' ? 'cadastro' : 'entrar';
   const caixa = h('div', { class: 'entrar folha' });
   el.append(h('div', { class: 'entrar-envoltorio' },
-    lou('oi', { tamanho: 110 }),
-    h('p', { class: 'bilhete entrar-bilhete' }, 'Oi! Eu sou o Lou. Bora destravar seu inglês?'),
+    lou('oi', { tamanho: 120 }),
+    h('h1', { class: 'entrar-bilhete' }, 'Oi! Eu sou o Lou.'),
+    h('p', { class: 'ajuda centro' }, 'Vamos montar seu álbum de inglês juntos? Cada aula é uma figurinha nova.'),
     caixa,
     h('p', { class: 'ajuda centro' }, '30 dias grátis, sem cartão. ', h('a', { href: '/' }, 'Conhecer o Inglou'))));
 

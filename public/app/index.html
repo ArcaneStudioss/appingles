@@ -6,13 +6,12 @@
 <title>Inglou · seu inglês, seu plano</title>
 <meta name="description" content="Sua área de estudo: lição do dia, revisões, conversas e progresso.">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#F7F9FF" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0D1526" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#EDF2FF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B1330" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="preload" href="/assets/fontes/nunito.woff2?v=__V__" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fontes/fredoka.woff2?v=__V__" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/css/base.css?v=__V__">
 <link rel="stylesheet" href="/assets/css/app.css?v=__V__">
 <script type="module" src="/assets/js/app.js?v=__V__"></script>
 </head>
@@ -22,18 +21,21 @@
   <header class="topo-app">
     <a class="logo" href="#/hoje" aria-label="Inglou, início">ing<i>lou</i></a>
     <nav class="nav" aria-label="Principal" hidden>
-      <a href="#/hoje" data-rota="hoje"><svg class="ico" aria-hidden="true"><use href="/assets/icones/sprite.svg?v=__V__#i-house"></use></svg><span>Hoje</span></a>
-      <a href="#/revisar" data-rota="revisar"><svg class="ico" aria-hidden="true"><use href="/assets/icones/sprite.svg?v=__V__#i-cards"></use></svg><span>Revisar</span></a>
-      <a href="#/conversar" data-rota="conversar"><svg class="ico" aria-hidden="true"><use href="/assets/icones/sprite.svg?v=__V__#i-chats"></use></svg><span>Conversar</span></a>
-      <a href="#/progresso" data-rota="progresso"><svg class="ico" aria-hidden="true"><use href="/assets/icones/sprite.svg?v=__V__#i-chart-line-up"></use></svg><span>Progresso</span></a>
-      <a href="#/material" data-rota="material" class="so-pc"><svg class="ico" aria-hidden="true"><use href="/assets/icones/sprite.svg?v=__V__#i-file-text"></use></svg><span>Seu material</span></a>
-      <a href="#/duvidas" data-rota="duvidas" class="so-pc"><svg class="ico" aria-hidden="true"><use href="/assets/icones/sprite.svg?v=__V__#i-question"></use></svg><span>Dúvidas</span></a>
-      <a href="#/conta" data-rota="conta"><svg class="ico" aria-hidden="true"><use href="/assets/icones/sprite.svg?v=__V__#i-user-circle"></use></svg><span>Conta</span></a>
+      <a href="#/hoje" data-rota="hoje" class="c-azul"><span class="nav__ico"><svg class="ico" aria-hidden="true"><use href="/assets/icones/sprite.svg?v=__V__#i-house"></use></svg></span><span>Hoje</span></a>
+      <a href="#/revisar" data-rota="revisar" class="c-sol"><span class="nav__ico"><svg class="ico" aria-hidden="true"><use href="/assets/icones/sprite.svg?v=__V__#i-cards"></use></svg></span><span>Revisar</span></a>
+      <a href="#/conversar" data-rota="conversar" class="c-menta"><span class="nav__ico"><svg class="ico" aria-hidden="true"><use href="/assets/icones/sprite.svg?v=__V__#i-chats"></use></svg></span><span>Conversar</span></a>
+      <a href="#/progresso" data-rota="progresso" class="c-lilas"><span class="nav__ico"><svg class="ico" aria-hidden="true"><use href="/assets/icones/sprite.svg?v=__V__#i-book-open-text"></use></svg></span><span>Álbum</span></a>
+      <a href="#/material" data-rota="material" class="c-turquesa so-pc"><span class="nav__ico"><svg class="ico" aria-hidden="true"><use href="/assets/icones/sprite.svg?v=__V__#i-file-text"></use></svg></span><span>Meu texto</span></a>
+      <a href="#/duvidas" data-rota="duvidas" class="c-coral so-pc"><span class="nav__ico"><svg class="ico" aria-hidden="true"><use href="/assets/icones/sprite.svg?v=__V__#i-question"></use></svg></span><span>Dúvidas</span></a>
+      <a href="#/conta" data-rota="conta" class="c-azul"><span class="nav__ico"><svg class="ico" aria-hidden="true"><use href="/assets/icones/sprite.svg?v=__V__#i-user-circle"></use></svg></span><span>Eu</span></a>
     </nav>
+    <div class="topo-app__fim" data-rotulo="Dia ou noite">
+      <button type="button" class="tema-troca" aria-pressed="false" aria-label="Trocar para o tema noite"><span class="tema-troca__astro" aria-hidden="true"></span></button>
+    </div>
   </header>
   <main id="conteudo" class="palco" tabindex="-1">
     <noscript><div class="folha"><h1>Precisamos do JavaScript</h1><p>A área de estudo é interativa. Ative o JavaScript do navegador para continuar. O <a href="/">site</a> e a <a href="/politica-de-privacidade/">política de privacidade</a> funcionam sem ele.</p></div></noscript>
-    <div class="carregando-tela" aria-live="polite">Abrindo seu caderno...</div>
+    <div class="carregando-tela" aria-live="polite">Abrindo seu álbum...</div>
   </main>
 </div>
 </body>

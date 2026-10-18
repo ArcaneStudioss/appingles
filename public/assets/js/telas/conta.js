@@ -1,5 +1,6 @@
 // Conta: cartões com estado + botão; tudo que se preenche abre em janela (regra de telas limpas).
 import { api } from '../api.js?v=__V__';
+import { lou } from '../diversao.js?v=__V__';
 import { h, icone, toast, formulario, confirmar, janela, dataBR, localStorageGet, localStorageSet, ocupado, falar } from '../ui.js?v=__V__';
 
 const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -17,8 +18,9 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
   const lem = p.lembrete || {};
   const e = ass.estado;
 
-  const cartao = (icon, titulo, estadoTxt, ...botoes) => h('section', { class: 'folha cartao-conta' },
-    h('div', { class: 'cartao-conta__info' }, icone(icon), h('div', {}, h('h2', {}, titulo), h('p', { class: 'ajuda' }, estadoTxt))),
+  const CORES = { target: 'azul', 'graduation-cap': 'lilas', bell: 'sol', 'seal-check': 'menta', 'shield-check': 'turquesa', notebook: 'coral', gear: 'azul', 'lock-key': 'lilas' };
+  const cartao = (icon, titulo, estadoTxt, ...botoes) => h('section', { class: `folha cartao-conta c-${CORES[icon] || 'azul'}` },
+    h('div', { class: 'cartao-conta__info' }, h('span', { class: 'bolha' }, icone(icon)), h('div', {}, h('h2', {}, titulo), h('p', { class: 'ajuda' }, estadoTxt))),
     h('div', { class: 'linha-acoes' }, botoes));
 
   // --- assinatura
@@ -117,15 +119,18 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
     if (r) toast('Senha alterada. Outras sessões foram encerradas.', { tipo: 'ok' });
   }
   function preferencias() {
-    const tema = h('select', { id: 'pr-tema' }, [['sistema', 'Igual ao aparelho'], ['claro', 'Claro'], ['escuro', 'Escuro']].map(([v, r]) => h('option', { value: v, selected: (localStorageGet('tema') || 'sistema') === v }, r)));
+    const atual = localStorageGet('tema') || 'sistema';
+    const tema = h('div', { class: 'temas', role: 'radiogroup', 'aria-label': 'Tema' }, [['claro', 'Dia', 'dia'], ['escuro', 'Noite', 'noite'], ['sistema', 'Igual ao aparelho', 'auto']].map(([v, r, c]) =>
+      h('label', { class: `tema-op tema-op--${c}` }, h('input', { type: 'radio', name: 'pr-tema', value: v, checked: atual === v }), h('span', {}, h('i', { 'aria-hidden': 'true' }), r))));
     const vel = h('select', { id: 'pr-vel' }, [['0.85', 'Mais devagar'], ['1', 'Normal'], ['1.1', 'Um pouco mais rápido']].map(([v, r]) => h('option', { value: v, selected: (localStorageGet('velocidade') || '1') === v }, r)));
     const ok = h('button', { type: 'button', class: 'btn' }, 'Salvar');
     const j = janela({ titulo: 'Preferências deste aparelho', corpo: h('div', {},
-      h('div', { class: 'campo' }, h('label', { for: 'pr-tema' }, 'Tema'), tema),
+      h('div', { class: 'campo' }, h('span', { class: 'rotulo' }, 'Tema'), tema),
       h('div', { class: 'campo' }, h('label', { for: 'pr-vel' }, 'Velocidade do áudio'), vel, h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => { localStorageSet('velocidade', vel.value); falar('This is how the audio sounds.'); } } }, icone('speaker-high'), 'Testar'))), acoes: [ok] });
     ok.addEventListener('click', () => {
-      localStorageSet('tema', tema.value); localStorageSet('velocidade', vel.value);
-      if (tema.value === 'sistema') delete document.documentElement.dataset.tema; else document.documentElement.dataset.tema = tema.value;
+      const t = tema.querySelector('input:checked')?.value || 'sistema';
+      localStorageSet('tema', t); localStorageSet('velocidade', vel.value);
+      dispatchEvent(new CustomEvent('inglou:tema'));
       j.fechar(true); toast('Preferências salvas.', { tipo: 'ok' });
     });
   }
@@ -133,7 +138,7 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
   function render() { ir('#/conta'); }
 
   el.append(
-    h('header', { class: 'cabeca' }, h('h1', {}, 'Conta'), h('p', { class: 'ajuda' }, `${eu.usuario.nome} · ${eu.usuario.email}`)),
+    h('header', { class: 'cabeca' }, lou('feliz', { tamanho: 64, rotulo: '' }), h('div', {}, h('h1', {}, eu.usuario.nome), h('p', { class: 'ajuda' }, eu.usuario.email))),
     cartao('target', 'Objetivo e rotina', `${p.objetivo_nome || '-'}${p.prazo ? ' até ' + dataBR(p.prazo) : ', sem prazo'} · ${p.minutos_dia} min/dia, ${p.dias_semana} dias/semana`,
       h('a', { class: 'btn btn-sec btn-peq', href: '#/perfil' }, icone('pencil-simple'), 'Alterar'), h('a', { class: 'btn btn-texto btn-peq', href: '#/plano' }, 'Ver plano')),
     cartao('graduation-cap', 'Teste de nível', eu.nivel ? `Nível estimado: ${eu.nivel}. Refaça quando sentir que evoluiu.` : 'Ainda não feito.',
@@ -150,7 +155,7 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
       h('button', { class: 'btn btn-texto btn-peq', on: { click: apagar } }, icone('trash'), 'Apagar histórico')),
     cartao('notebook', 'Seus registros', 'Textos, conversas e cartões que você produziu.',
       h('a', { class: 'btn btn-sec btn-peq', href: '#/conversar' }, 'Conversas'), h('a', { class: 'btn btn-sec btn-peq', href: '#/material' }, 'Materiais'), h('a', { class: 'btn btn-sec btn-peq', href: '#/revisar' }, 'Cartões')),
-    cartao('gear', 'Preferências', 'Tema e velocidade do áudio neste aparelho.', h('button', { class: 'btn btn-sec btn-peq', on: { click: preferencias } }, 'Configurar')),
+    cartao('gear', 'Preferências', 'Dia ou noite e velocidade do áudio neste aparelho.', h('button', { class: 'btn btn-sec btn-peq', on: { click: preferencias } }, 'Configurar')),
     cartao('lock-key', 'Segurança', 'Senha da conta.', h('button', { class: 'btn btn-sec btn-peq', on: { click: trocarSenha } }, 'Alterar senha')),
     h('div', { class: 'linha-acoes rodape-conta' },
       h('button', { class: 'btn btn-sec', on: { click: async () => { await api('/auth/sair', { metodo: 'POST' }); estado.eu = null; location.hash = '#/entrar'; } } }, icone('sign-out'), 'Sair'),

@@ -5,6 +5,11 @@ import { nomeConquista } from './hoje.js?v=__V__';
 import { lou, louFala } from '../diversao.js?v=__V__';
 
 
+// cada cenário ganha um ícone que conta a situação sem precisar ler
+const ICONE_CENARIO = [[/entrevista/i, 'briefcase'], [/reuni|equipe/i, 'users-three'], [/cliente|atend/i, 'storefront'], [/hotel|viagem|aeroporto/i, 'airplane'], [/colega|conhecendo/i, 'hand-waving'], [/segunda|papo|fim de semana/i, 'coffee']];
+const iconeCenario = t => (ICONE_CENARIO.find(([r]) => r.test(t)) || [0, 'chats'])[1];
+const CORES = ['menta', 'turquesa', 'lilas', 'sol', 'coral', 'azul'];
+
 export async function telaConversar(el, { ir }) {
   const [{ cenarios, ia }, { conversas }] = await Promise.all([api('/conversas/cenarios'), api('/conversas')]);
   const pre = new URLSearchParams(location.hash.split('?')[1] || '').get('c');
@@ -14,14 +19,16 @@ export async function telaConversar(el, { ir }) {
     catch (e) { toast(e.message, { tipo: 'erro' }); ocupado(btn, false); }
   };
   el.append(
-    h('header', { class: 'cabeca' }, h('h1', {}, 'Conversar'), h('p', { class: 'ajuda' }, 'Escreva (ou fale) como numa conversa de verdade. O que travar vira a sua próxima aula.')),
+    h('header', { class: 'cabeca c-menta' }, h('span', { class: 'bolha' }, icone('chats')), h('div', {}, h('h1', {}, 'Conversar'), h('p', { class: 'ajuda' }, 'Escolha uma situação e converse com o Lou em inglês. O que travar vira a sua próxima aula.'))),
     ia ? null : h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, 'Modo de prática: o tutor segue um roteiro do cenário e aponta os erros mais comuns. Com a IA ligada, a conversa fica livre e a correção, completa.')),
-    h('ul', { class: 'cenarios' }, cenarios.map(c => {
-      const b = h('button', { type: 'button', class: 'cenario folha' + (c.recomendado || c.id === pre ? ' cenario--rec' : ''), on: { click: () => iniciar(c.id, b) } },
-        lou(c.recomendado ? 'feliz' : 'oi', { tamanho: 52, rotulo: '' }), h('span', { class: 'cenario__txt' }, h('strong', {}, c.titulo), c.recomendado ? h('small', { class: 'bilhete pequeno' }, 'combina com a sua missão atual') : null), icone('arrow-right'));
+    h('ul', { class: 'cenarios' }, [...cenarios].sort((a, b) => (b.recomendado || b.id === pre) - (a.recomendado || a.id === pre)).map((c, k) => {
+      const rec = c.recomendado || c.id === pre;
+      const b = h('button', { type: 'button', class: `cenario c-${rec ? 'menta' : CORES[k % CORES.length]}` + (rec ? ' cenario--rec' : ''), on: { click: () => iniciar(c.id, b) } },
+        rec ? lou('feliz', { tamanho: 64, rotulo: '' }) : h('span', { class: 'bolha' }, icone(iconeCenario(c.titulo))),
+        h('span', { class: 'cenario__txt' }, rec ? h('small', {}, 'Sugestão do Lou: combina com a sua missão') : null, h('strong', {}, c.titulo)));
       return h('li', {}, b);
     })),
-    conversas.length ? h('section', {}, h('h2', {}, 'Conversas anteriores'), h('ul', { class: 'lista-simples' }, conversas.slice(0, 15).map(c => h('li', {}, h('a', { href: '#/conversa/' + c.id }, c.titulo), h('small', {}, ` ${dataBR(c.iniciada_em)}${c.terminada_em ? '' : ' · em aberto'}`))))) : null);
+    conversas.length ? h('section', { class: 'tela' }, h('h2', {}, 'Conversas anteriores'), h('ul', { class: 'lista-simples' }, conversas.slice(0, 15).map(c => h('li', {}, h('a', { href: '#/conversa/' + c.id }, c.titulo), h('small', {}, ` ${dataBR(c.iniciada_em)}${c.terminada_em ? '' : ' · em aberto'}`))))) : null);
 }
 
 export async function telaConversa(el, { param, ir }) {
@@ -31,7 +38,7 @@ export async function telaConversa(el, { param, ir }) {
   const lista = h('ol', { class: 'chat', 'aria-live': 'polite' });
   const balao = (m) => {
     const li = h('li', { class: 'msg msg--' + m.papel },
-      m.papel === 'tutor' ? h('span', { class: 'msg__avatar' }, lou('oi', { tamanho: 40, rotulo: '' })) : null,
+      m.papel === 'tutor' ? h('span', { class: 'msg__avatar' }, lou('oi', { tamanho: 44, rotulo: '' })) : null,
       h('div', { class: 'msg__balao', lang: 'en' }, m.texto,
         m.papel === 'tutor' ? h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir', on: { click: () => falar(m.texto) } }, icone('speaker-high')) : null));
     return li;
@@ -90,7 +97,7 @@ export async function telaConversa(el, { param, ir }) {
     const r = await api(`/conversas/${conversa.id}/encerrar`, { metodo: 'POST' });
     form.hidden = true;
     for (const c of r.conquistas || []) toast('Conquista: ' + nomeConquista(c), { tipo: 'ok' });
-    el.append(h('section', { class: 'folha com-margem resumo-conversa' },
+    el.append(h('section', { class: 'folha com-margem resumo-conversa c-menta' },
       h('p', { class: 'bilhete' }, 'Resumo da conversa'),
       h('p', {}, `${r.falas} ${r.falas === 1 ? 'fala sua' : 'falas suas'}, ${r.semAjuda} sem ajuda.`),
       r.pontos.length ? h('div', {}, h('h3', {}, 'O que apareceu'), h('ul', {}, r.pontos.map(p => h('li', {}, h('strong', {}, p.nome), ': ', p.exemplos.slice(0, 2).map(x => `“${x.trecho}” → “${x.sugestao}”`).join('; '))))) : null,

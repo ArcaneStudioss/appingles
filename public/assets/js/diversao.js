@@ -1,6 +1,6 @@
 // Lou (o mascote: um balãozinho de fala), sons sintetizados e confete. Tudo respeita "menos movimento"
 // e a preferência de som deste aparelho. Nada aqui pune o aluno: o erro tem um som suave, não um alarme.
-import { localStorageGet } from './ui.js?v=__V__';
+import { localStorageGet, falarPt } from './ui.js?v=__V__';
 
 const NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs = {}, ...filhos) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); e.append(...filhos); return e; };
@@ -33,6 +33,18 @@ export function lou(humor = 'oi', { tamanho = 96, rotulo = 'Lou, o mascote do In
 export function louFala(humor, ...conteudo) {
   const d = document.createElement('div'); d.className = 'lou-fala';
   const b = document.createElement('div'); b.className = 'lou-fala__balao'; b.append(...conteudo.flat().filter(x => x != null && x !== false));
+  // botão "Ouvir": o Lou lê o balão em português (pedagógico: serve para quem ainda lê devagar)
+  const ouvir = document.createElement('button');
+  ouvir.type = 'button'; ouvir.className = 'lou-fala__ouvir'; ouvir.setAttribute('aria-pressed', 'false');
+  ouvir.setAttribute('aria-label', 'Ouvir o Lou ler esta mensagem');
+  const svg = el('svg', { class: 'ico', 'aria-hidden': 'true' }, el('use', { href: '/assets/icones/sprite.svg?v=__V__#i-speaker-high' }));
+  ouvir.append(svg, document.createTextNode('Ouvir'));
+  ouvir.addEventListener('click', () => {
+    if (ouvir.getAttribute('aria-pressed') === 'true') { speechSynthesis.cancel(); ouvir.setAttribute('aria-pressed', 'false'); return; }
+    const texto = [...b.querySelectorAll('p,li')].map(x => x.textContent.trim()).filter(Boolean).join('. ') || b.textContent.replace(/Ouvir$/, '');
+    if (falarPt(texto, () => ouvir.setAttribute('aria-pressed', 'false'))) ouvir.setAttribute('aria-pressed', 'true');
+  });
+  if ('speechSynthesis' in window) b.append(ouvir);
   d.append(lou(humor, { tamanho: 72 }), b);
   return d;
 }

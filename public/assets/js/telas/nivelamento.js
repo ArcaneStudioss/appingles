@@ -45,9 +45,9 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
     } else corpo.push(h('p', { class: 'enunciado', lang: it.enunciado && /[a-z]/i.test(it.enunciado) && !/[ãçé]/.test(it.enunciado) ? 'en' : 'pt-BR' }, it.enunciado));
     caixa.replaceChildren(
       progresso(),
-      h('p', { class: 'chip chip-neutro' }, NOMES[it.habilidade]),
+      h('div', { class: 'linha-acoes' }, h('p', { class: 'chip c-lilas' }, `Pergunta ${i + 1} de ${itens.length}`), h('p', { class: 'chip chip-neutro' }, NOMES[it.habilidade])),
       ...corpo,
-      h('div', { class: 'opcoes', role: 'group', 'aria-label': 'Alternativas' }, it.opcoes.map(o => h('button', { type: 'button', class: 'opcao', lang: it.tipo === 'escolha' && /^[A-Za-z]/.test(o) && !/[ãçéáíóú]/.test(o) ? 'en' : null, on: { click: () => responder(o) } }, o))),
+      h('div', { class: 'opcoes', role: 'group', 'aria-label': 'Alternativas' }, it.opcoes.map((o, k) => h('button', { type: 'button', class: 'opcao', lang: it.tipo === 'escolha' && /^[A-Za-z]/.test(o) && !/[ãçéáíóú]/.test(o) ? 'en' : null, on: { click: () => responder(o) } }, h('span', { class: 'opcao__tecla', 'aria-hidden': 'true' }, String(k + 1)), h('span', {}, o)))),
       h('div', { class: 'linha-acoes' },
         h('button', { type: 'button', class: 'btn btn-texto', on: { click: () => responder('', true) } }, 'Não sei'),
         i > 0 ? h('button', { type: 'button', class: 'btn btn-texto', on: { click: () => { i--; pergunta(); } } }, icone('caret-left'), 'Voltar') : null));

@@ -1,19 +1,21 @@
 // Progresso: separa o que foi FEITO (atividade) do que foi DEMONSTRADO (usou sozinho, com evidência).
 import { api } from '../api.js?v=__V__';
 import { h, icone, dataBR, toast, plural } from '../ui.js?v=__V__';
-import { nomeConquista } from './hoje.js?v=__V__';
+import { nomeConquista, album } from './hoje.js?v=__V__';
 
 const NOMES = { gramatica: 'Gramática', vocabulario: 'Vocabulário', leitura: 'Leitura', escuta: 'Escuta', escrita: 'Escrita', fala: 'Fala' };
 const CONF = { baixa: 'confiança baixa', media: 'confiança média', alta: 'confiança alta' };
 const STATUS_H = { hipotese: 'hipótese', confirmando: 'as atividades recentes confirmam', melhorando: 'já está melhorando' };
 
 export async function telaProgresso(el) {
-  const p = await api('/progresso');
+  const [p, pl] = await Promise.all([api('/progresso'), api('/plano').catch(() => null)]);
   const c = p.concluido, d = p.demonstrado;
   const hab = Object.entries(p.habilidades).filter(([, v]) => v.n > 0 || v.nivel);
 
   el.append(
-    h('header', { class: 'cabeca' }, h('h1', {}, 'Seu progresso'), p.objetivo ? h('p', { class: 'ajuda' }, icone('target'), ' ', p.objetivo.nome, p.objetivo.prazo ? ` · até ${dataBR(p.objetivo.prazo)}` : '') : null),
+    h('header', { class: 'cabeca c-lilas' }, h('span', { class: 'bolha' }, icone('book-open-text')), h('div', {}, h('h1', {}, 'Meu álbum'), p.objetivo ? h('p', { class: 'ajuda' }, icone('target'), ' ', p.objetivo.nome, p.objetivo.prazo ? ` · até ${dataBR(p.objetivo.prazo)}` : '') : null)),
+    pl?.plano ? album(pl.plano, { titulo: 'Páginas do álbum', classe: 'album--todo' }) : null,
+    p.conquistas.length ? h('section', { class: 'folha c-sol' }, h('h2', {}, 'Figurinhas especiais'), h('ul', { class: 'conquistas' }, p.conquistas.map(x => h('li', {}, h('span', { class: 'medalha' }, icone('medal')), nomeConquista(x.codigo))))) : null,
 
     h('div', { class: 'duas' },
       h('section', { class: 'folha' },
@@ -40,7 +42,7 @@ export async function telaProgresso(el) {
         h('strong', {}, v.pct == null ? '-' : `${v.pct}%`)))),
       h('p', { class: 'ajuda' }, 'Porcentagem de acertos nas últimas 20 atividades de cada habilidade.', hab.some(([, v]) => v.tendencia === 'subindo') ? ' Subindo em: ' + hab.filter(([, v]) => v.tendencia === 'subindo').map(([k]) => NOMES[k].toLowerCase()).join(', ') + '.' : '')) : null,
 
-    h('section', { class: 'folha com-margem' },
+    h('section', { class: 'folha com-margem c-coral' },
       h('h2', {}, 'Onde você trava (hipóteses)'),
       p.hipoteses.length ? h('ul', { class: 'hipoteses' }, p.hipoteses.map(x => {
         const li = h('li', {},
@@ -63,7 +65,7 @@ export async function telaProgresso(el) {
       h('h2', {}, 'Próximas metas'),
       p.proximas.length ? h('ol', {}, p.proximas.map(m => h('li', {}, h('strong', {}, m.titulo), h('p', { class: 'ajuda' }, m.podeFazer)))) : h('p', {}, 'Você passou por todas as missões do plano. Que tal refazer o teste de nível ou ampliar o objetivo?'),
       p.objetivo ? h('p', { class: 'ajuda' }, p.objetivo.compromisso) : null,
-      h('a', { class: 'btn btn-sec', href: '#/plano' }, icone('path'), 'Ver a trilha completa')),
+      h('a', { class: 'btn btn-sec', href: '#/plano' }, icone('path'), 'Ver o plano completo')),
 
-    p.conquistas.length ? h('section', {}, h('h2', {}, 'Conquistas'), h('ul', { class: 'conquistas' }, p.conquistas.map(x => h('li', {}, h('span', { class: 'medalha' }, icone('medal')), nomeConquista(x.codigo))))) : null);
+  );
 }

@@ -4,6 +4,10 @@ import { h, ocupado, icone, toast } from '../ui.js?v=__V__';
 import { lou, louFala } from '../diversao.js?v=__V__';
 
 
+// cada objetivo tem ícone e cor: dá para escolher olhando, sem ler tudo
+const VISUAL = { entrevista: ['briefcase', 'azul'], trabalho: ['users-three', 'lilas'], clientes: ['storefront', 'menta'], viagem: ['airplane', 'turquesa'], estudar: ['graduation-cap', 'sol'], conversa: ['chats', 'coral'] };
+const MINUTOS = { 10: ['lightning', 'sol'], 15: ['clock', 'azul'], 20: ['target', 'coral'] };
+
 const somarMeses = m => { const d = new Date(); d.setMonth(d.getMonth() + m); return d.toISOString().slice(0, 10); };
 const somarDias = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
 
@@ -46,9 +50,9 @@ export async function telaPerfil(el, { estado, ir, carregarEu }) {
         louFala('oi', h('p', {}, editando ? 'Mudou alguma coisa? Sem problema, o plano se ajusta.' : `Oi, ${estado.eu.usuario.nome.split(' ')[0]}! Eu sou o Lou. Vou montar seu plano em 4 perguntas.`)),
         h('h1', {}, 'Para que você precisa do inglês agora?'),
         h('p', { class: 'ajuda' }, 'Escolha o principal. O curso inteiro vai girar em torno dele, e você pode mudar depois.'),
-        h('div', { class: 'opcoes-grandes', role: 'radiogroup' }, objetivos.map(o => h('label', { class: 'opcao-grande' },
+        h('div', { class: 'opcoes-grandes', role: 'radiogroup' }, objetivos.map(o => { const [ic, cor] = VISUAL[o.id] || ['target', 'azul']; return h('label', { class: `opcao-grande c-${cor}` },
           h('input', { type: 'radio', name: 'objetivo', value: o.id, checked: dados.objetivo === o.id, on: { change: () => { dados.objetivo = o.id; } } }),
-          h('span', { class: 'caixa' }, h('strong', {}, o.nome), h('small', {}, o.frase))))),
+          h('span', { class: 'caixa' }, h('span', { class: 'bolha' }, icone(ic)), h('span', {}, h('strong', {}, o.nome), h('small', {}, o.frase)))); })),
         ...navegacao(() => (dados.objetivo ? null : 'Escolha um objetivo para continuar.')));
     }
     if (passo === 1) {
@@ -86,11 +90,11 @@ export async function telaPerfil(el, { estado, ir, carregarEu }) {
         ...navegacao(() => null));
     }
     if (passo === 3) {
-      const opcoesMin = [10, 15, 20].map(m => h('label', { class: 'opcao-grande' },
+      const opcoesMin = [10, 15, 20].map(m => h('label', { class: `opcao-grande c-${MINUTOS[m][1]}` },
         h('input', { type: 'radio', name: 'min', checked: dados.minutos_dia === m, on: { change: () => { dados.minutos_dia = m; } } }),
-        h('span', { class: 'caixa' }, h('strong', {}, `${m} minutos por dia`), h('small', {}, m === 10 ? 'Para dias corridos. Progresso real, mais gradual.' : m === 15 ? 'O equilíbrio mais comum.' : 'Para quem tem um prazo apertado.'))));
+        h('span', { class: 'caixa' }, h('span', { class: 'bolha' }, icone(MINUTOS[m][0])), h('span', {}, h('strong', {}, `${m} minutos por dia`), h('small', {}, m === 10 ? 'Para dias corridos. Progresso real, mais gradual.' : m === 15 ? 'O equilíbrio mais comum.' : 'Para quem tem um prazo apertado.')))));
       const dias = h('input', { type: 'range', id: 'p-dias', min: 1, max: 7, step: 1, value: dados.dias_semana });
-      const rot = h('output', { for: 'p-dias', class: 'chip' }, `${dados.dias_semana} dias por semana`);
+      const rot = h('output', { for: 'p-dias', class: 'chip saida-dias' }, `${dados.dias_semana} dias por semana`);
       dias.addEventListener('input', () => { dados.dias_semana = Number(dias.value); rot.textContent = `${dias.value} ${dias.value === '1' ? 'dia' : 'dias'} por semana`; });
       caixa.append(
         h('h1', {}, 'Quanto tempo cabe na sua rotina?'),

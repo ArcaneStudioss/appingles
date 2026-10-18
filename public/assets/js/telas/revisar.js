@@ -20,10 +20,10 @@ export async function telaRevisar(el) {
 
   function vazio() {
     caixa.replaceChildren(
-      h('header', { class: 'cabeca' }, h('h1', {}, 'Revisar')),
+      h('header', { class: 'cabeca c-sol' }, h('span', { class: 'bolha' }, icone('cards')), h('div', {}, h('h1', {}, 'Revisar'))),
       louFala(feitos ? 'festa' : 'feliz', h('p', {}, feitos ? `${plural(feitos, 'cartão revisado', 'cartões revisados')}. Até a próxima!` : 'Nada para revisar agora. Você está em dia!')),
       h('div', { class: 'folha vazio' }, h('p', {}, 'Os cartões voltam no dia certo para você não esquecer. Eles nascem das lições, dos seus erros nas conversas e dos seus materiais.'),
-        h('div', { class: 'linha-acoes' }, h('a', { class: 'btn btn-sec', href: '#/hoje' }, 'Voltar para hoje'), h('button', { class: 'btn btn-sec', on: { click: novo } }, icone('plus'), 'Criar um cartão'), h('button', { class: 'btn btn-texto', on: { click: gerenciar } }, 'Ver todos os cartões'))));
+        h('div', { class: 'linha-acoes' }, h('a', { class: 'btn', href: '#/hoje' }, 'Voltar para hoje'), h('button', { class: 'btn btn-sec', on: { click: novo } }, icone('plus'), 'Criar um cartão'), h('button', { class: 'btn btn-texto', on: { click: gerenciar } }, 'Ver todos os cartões'))));
   }
 
   async function novo() {
@@ -37,7 +37,7 @@ export async function telaRevisar(el) {
 
   async function gerenciar() {
     const { cartoes } = await api('/cartoes');
-    caixa.replaceChildren(h('header', { class: 'cabeca' }, h('h1', {}, 'Seus cartões'), h('p', { class: 'ajuda' }, `${cartoes.length} no total. Corrija ou apague o que não fizer sentido.`)),
+    caixa.replaceChildren(h('header', { class: 'cabeca c-sol' }, h('span', { class: 'bolha' }, icone('cards')), h('div', {}, h('h1', {}, 'Seus cartões'), h('p', { class: 'ajuda' }, `${cartoes.length} no total. Corrija ou apague o que não fizer sentido.`))),
       h('ul', { class: 'lista-cartoes' }, cartoes.map(c => h('li', { class: 'folha' },
         h('div', {}, h('strong', { lang: 'en' }, c.frente), h('p', {}, c.verso), c.exemplo ? h('em', { lang: 'en' }, c.exemplo) : null, h('p', { class: 'ajuda' }, `${TIPO[c.tipo] || c.tipo} · volta em ${c.vence_em.split('-').reverse().join('/')}`)),
         h('div', { class: 'linha-acoes' },
@@ -64,9 +64,11 @@ export async function telaRevisar(el) {
         c.exemplo ? h('p', { class: 'exemplo', lang: 'en' }, c.exemplo) : null,
         c.nota ? h('p', { class: 'ajuda' }, c.nota) : null,
         h('button', { type: 'button', class: 'btn btn-sec btn-peq', on: { click: e => { e.stopPropagation(); falar(c.exemplo || textoIngles); } } }, icone('speaker-high'), 'Ouvir')));
-    const notas = h('div', { class: 'notas', hidden: true, role: 'group', 'aria-label': 'Como foi?' },
-      [[0, 'Não lembrei'], [3, 'Difícil'], [4, 'Bom'], [5, 'Fácil']].map(([n, r]) => h('button', { type: 'button', class: 'btn ' + (n === 4 ? '' : 'btn-sec'), on: { click: () => avaliar(n) } }, r)));
-    const virar = h('button', { type: 'button', class: 'btn btn-bloco', on: { click: () => { cartao.classList.add('virado'); virar.hidden = true; notas.hidden = false; notas.querySelector('.btn:not(.btn-sec)').focus(); if (!producao) falar(textoIngles); } } }, 'Mostrar resposta');
+    // carinhas: dizer como foi é mais fácil do que dar nota (e a carinha decide quando o cartão volta)
+    const notas = h('div', { class: 'notas', hidden: true, role: 'group', 'aria-label': 'Como foi lembrar?' },
+      [[0, 'Esqueci', 'smiley-x-eyes', 'coral'], [3, 'Difícil', 'smiley-nervous', 'sol'], [4, 'Lembrei', 'smiley', 'azul'], [5, 'Fácil', 'smiley-wink', 'menta']].map(([n, r, ic, cor]) =>
+        h('button', { type: 'button', class: `nota c-${cor}`, dados: { nota: n }, on: { click: () => avaliar(n) } }, h('span', { class: 'nota__cara' }, icone(ic)), r)));
+    const virar = h('button', { type: 'button', class: 'btn btn-bloco btn-grande btn-virar', on: { click: () => { cartao.classList.add('virado'); virar.hidden = true; notas.hidden = false; notas.querySelector('[data-nota="4"]').focus(); if (!producao) falar(textoIngles); } } }, icone('arrow-counter-clockwise'), 'Virar o cartão');
     async function avaliar(n) {
       notas.querySelectorAll('button').forEach(b => { b.disabled = true; });
       try {
@@ -77,10 +79,12 @@ export async function telaRevisar(el) {
         proximo();
       } catch (e) { toast(e.message, { tipo: 'erro' }); notas.querySelectorAll('button').forEach(b => { b.disabled = false; }); }
     }
+    const n = feitos + fila.length + 1;
     caixa.replaceChildren(
-      h('header', { class: 'cabeca' }, h('h1', {}, 'Revisar'), h('p', { class: 'ajuda' }, `${feitos} feitos · ${fila.length + 1} na fila${total > 30 ? ` (de ${total})` : ''}`)),
+      h('header', { class: 'cabeca c-sol' }, h('span', { class: 'bolha' }, icone('cards')), h('div', {}, h('h1', {}, 'Revisar'), h('p', { class: 'ajuda' }, `Cartão ${feitos + 1} de ${n}${total > 30 ? ` (de ${total} no total)` : ''}`))),
+      n <= 40 ? h('div', { class: 'revisar__fila', 'aria-hidden': 'true' }, Array.from({ length: n }, (_, k) => h('span', { class: k < feitos ? 'feito' : k === feitos ? 'agora' : '' }))) : null,
       cartao, virar, notas,
-      h('p', { class: 'ajuda centro' }, 'Seja honesto na nota: ela decide quando o cartão volta.'));
+      h('p', { class: 'ajuda centro' }, 'Seja sincero: a carinha decide quando o cartão volta.'));
     cartao.focus({ preventScroll: true });
   }
 

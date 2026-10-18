@@ -12,10 +12,10 @@ export async function telaMaterial(el, { ir }) {
     if (r?.id) { if (r.aviso) toast(r.aviso); ir('#/material/' + r.id); }
   };
   el.append(
-    h('header', { class: 'cabeca' }, h('h1', {}, 'Estudar com o seu material'), h('p', { class: 'ajuda' }, 'Traga o que você vai usar de verdade. Transformamos em vocabulário do seu nível, exercícios e perguntas de simulação.')),
-    h('button', { type: 'button', class: 'btn', on: { click: novo } }, icone('plus'), 'Novo material'),
+    h('header', { class: 'cabeca c-turquesa' }, h('span', { class: 'bolha' }, icone('file-text')), h('div', {}, h('h1', {}, 'Meu texto'), h('p', { class: 'ajuda' }, 'Traga o que você vai usar de verdade. Viram palavras do seu nível, exercícios e perguntas de simulação.'))),
+    h('button', { type: 'button', class: 'btn btn-cor c-turquesa', on: { click: novo } }, icone('plus'), 'Novo texto'),
     materiais.length ? h('ul', { class: 'lista-simples' }, materiais.map(m => h('li', {}, h('a', { href: '#/material/' + m.id }, m.titulo), h('small', {}, ' ' + dataBR(m.criado_em)))))
-      : h('div', { class: 'folha vazio' }, h('p', { class: 'bilhete' }, 'Ideia'), h('p', {}, 'Tem uma entrevista? Cole a descrição da vaga. Vamos tirar dela as palavras que o recrutador vai usar e as perguntas que ele pode fazer.')));
+      : h('div', { class: 'folha vazio c-turquesa' }, h('p', { class: 'bilhete' }, 'Ideia'), h('p', {}, 'Tem uma entrevista? Cole a descrição da vaga. Vamos tirar dela as palavras que o recrutador vai usar e as perguntas que ele pode fazer.')));
 }
 
 export async function telaMaterialItem(el, { param, ir }) {

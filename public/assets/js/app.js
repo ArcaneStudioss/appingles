@@ -1,6 +1,7 @@
 // Inglou · casca do app: rotas por hash, estado do aluno e navegação.
 import { api } from './api.js?v=__V__';
-import { h, limpar, toast, localStorageGet } from './ui.js?v=__V__';
+import { h, limpar, toast, localStorageGet, localStorageSet } from './ui.js?v=__V__';
+import { som, lou } from './diversao.js?v=__V__';
 import { telaEntrar } from './telas/entrar.js?v=__V__';
 import { telaPerfil } from './telas/perfil.js?v=__V__';
 import { telaNivelamento } from './telas/nivelamento.js?v=__V__';
@@ -18,9 +19,23 @@ const palco = document.getElementById('conteudo');
 const nav = document.querySelector('.nav');
 export const estado = { eu: null };
 
-// tema escolhido neste aparelho (claro/escuro/sistema)
-const tema = localStorageGet('tema');
-if (tema === 'claro' || tema === 'escuro') document.documentElement.dataset.tema = tema;
+// tema Dia/Noite: escolhido neste aparelho (claro/escuro) ou igual ao sistema
+const btnTema = document.querySelector('.tema-troca');
+const escuroSistema = matchMedia('(prefers-color-scheme: dark)');
+export function aplicarTema(t = localStorageGet('tema')) {
+  if (t === 'claro' || t === 'escuro') document.documentElement.dataset.tema = t; else delete document.documentElement.dataset.tema;
+  const noite = t === 'escuro' || (t !== 'claro' && escuroSistema.matches);
+  btnTema.setAttribute('aria-pressed', String(noite));
+  btnTema.setAttribute('aria-label', noite ? 'Tema noite ligado. Trocar para o tema dia' : 'Tema dia ligado. Trocar para o tema noite');
+  for (const m of document.querySelectorAll('meta[name="theme-color"]')) m.content = noite ? '#0B1330' : '#EDF2FF';
+}
+aplicarTema();
+escuroSistema.addEventListener?.('change', () => aplicarTema());
+addEventListener('inglou:tema', () => aplicarTema());
+btnTema.addEventListener('click', () => {
+  const t = btnTema.getAttribute('aria-pressed') === 'true' ? 'claro' : 'escuro';
+  localStorageSet('tema', t); aplicarTema(t); som('toque');
+});
 
 const ROTAS = {
   entrar: telaEntrar, perfil: telaPerfil, nivelamento: telaNivelamento, hoje: telaHoje, plano: telaPlano,
@@ -56,6 +71,7 @@ async function render() {
     const ativo = a.dataset.rota === nome || (nome === 'conversa' && a.dataset.rota === 'conversar');
     a.toggleAttribute('aria-current', ativo); if (ativo) a.setAttribute('aria-current', 'page');
   }
+  document.body.dataset.rota = rota;
   const alvo = h('div', { class: 'tela' });
   limpar(palco).append(alvo);
   try {
@@ -63,7 +79,7 @@ async function render() {
   } catch (e) {
     console.error(e);
     if (meu !== renderizando) return;
-    limpar(alvo).append(h('div', { class: 'folha vazio' }, h('h1', {}, 'Algo não carregou'), h('p', {}, e.message || 'Tente de novo em instantes.'), h('button', { class: 'btn', on: { click: render } }, 'Tentar de novo')));
+    limpar(alvo).append(h('div', { class: 'folha vazio' }, lou('ops', { tamanho: 96 }), h('h1', {}, 'Algo não carregou'), h('p', {}, e.message || 'Tente de novo em instantes.'), h('button', { class: 'btn', on: { click: render } }, 'Tentar de novo')));
   }
   if (meu === renderizando) { palco.focus({ preventScroll: true }); scrollTo(0, 0); }
 }

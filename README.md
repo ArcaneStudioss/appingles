@@ -16,6 +16,9 @@ Sem `ANTHROPIC_API_KEY` o app funciona inteiro no **modo de prática**: conversa
 
 Variáveis: ver `.env.example`.
 
+## Interface: "o álbum do Lou" (18/10/2026)
+O app é um álbum de figurinhas: cada missão é uma página, cada aula feita cola uma figurinha, a tarefa final vira a figurinha brilhante. Cada atividade tem sempre a mesma cor e ícone (aula azul, revisar sol, conversar menta, álbum lilás, meu texto turquesa, dúvidas coral). Interruptor Dia/Noite sempre à vista; o Lou lê em voz alta (português) o que está no balão dele; revisão com carinhas; a lição mostra a etapa (Entender, Praticar, Ouvir, Sua vez) e o Lou anda no trilho de progresso. O app usa só `assets/css/app.css` (a página pública continua com `base.css` + `landing.css`).
+
 ## Estrutura
 
 ```
