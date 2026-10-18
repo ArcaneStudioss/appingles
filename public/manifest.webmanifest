@@ -12,13 +12,13 @@
   "lang": "pt-BR",
   "categories": ["education"],
   "icons": [
-    { "src": "/assets/img/icone-192.png?v=arara2", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/assets/img/icone-512.png?v=arara2", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/assets/img/icone-maskable-512.png?v=arara2", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
-    { "src": "/favicon.svg?v=arara2", "sizes": "any", "type": "image/svg+xml" }
+    { "src": "/assets/img/icone-192.png?v=arara3", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/img/icone-512.png?v=arara3", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/img/icone-maskable-512.png?v=arara3", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/favicon.svg?v=arara3", "sizes": "any", "type": "image/svg+xml" }
   ],
   "shortcuts": [
-    { "name": "Aula de hoje", "url": "/app/#/licao", "icons": [{ "src": "/assets/img/icone-192.png?v=arara2", "sizes": "192x192" }] },
-    { "name": "Rádio Tuiuiú", "url": "/app/#/podcast", "icons": [{ "src": "/assets/img/icone-192.png?v=arara2", "sizes": "192x192" }] }
+    { "name": "Aula de hoje", "url": "/app/#/licao", "icons": [{ "src": "/assets/img/icone-192.png?v=arara3", "sizes": "192x192" }] },
+    { "name": "Rádio Tuiuiú", "url": "/app/#/podcast", "icons": [{ "src": "/assets/img/icone-192.png?v=arara3", "sizes": "192x192" }] }
   ]
 }
