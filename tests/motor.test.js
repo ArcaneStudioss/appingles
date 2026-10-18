@@ -165,3 +165,23 @@ test('Rádio Lou: tropeços vêm dos erros do aluno; roteiro não fala a frase e
   assert.equal(validarFalasIa([{ quem: 'lou', texto: 'oi' }]), null);
   assert.equal(validarFalasIa(Array.from({ length: 8 }, () => ({ quem: 'hacker', texto: 'x' }))), null);
 });
+
+test('limite de login é compartilhado entre cópias do app (duas conexões ao mesmo banco não dobram o limite)', () => {
+  const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+  const { abrir } = require('../src/db');
+  const { limitadorBanco } = require('../src/auth');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'inglou-lim-'));
+  try {
+    const dbA = abrir(dir), dbB = abrir(dir);              // duas cópias abrindo o mesmo arquivo
+    const a = limitadorBanco(dbA, 'login-conta', { janelaMs: 60e3, max: 8 });
+    const b = limitadorBanco(dbB, 'login-conta', { janelaMs: 60e3, max: 8 });
+    let liberadas = 0;
+    for (let i = 0; i < 12; i++) if ((i % 2 ? a : b).tentar('ana@teste.com')) liberadas++;
+    assert.equal(liberadas, 8, 'no total só 8 tentativas passam, não 16');
+    assert.ok(a.tentar('outra@teste.com'), 'outra conta tem o próprio contador');
+    a.limpar('ana@teste.com');
+    assert.ok(b.tentar('ana@teste.com'), 'login certo zera o contador, vale nas duas cópias');
+    assert.equal(dbA.prepare('SELECT COUNT(*) n FROM limites WHERE chave LIKE ?').get('%@%').n, 0, 'e-mail nunca é gravado em texto');
+    dbA.close(); dbB.close();
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});

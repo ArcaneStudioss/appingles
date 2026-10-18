@@ -99,6 +99,10 @@ const MIGRACOES = [
      data TEXT NOT NULL, criado_em TEXT NOT NULL, dados TEXT NOT NULL, respondidos TEXT NOT NULL DEFAULT '{}',
      ouvido_em TEXT, UNIQUE(user_id, data)
    );`,
+  // 3: limites de tentativas (login e cadastro) compartilhados entre as cópias do app
+  `CREATE TABLE limites (
+     nome TEXT NOT NULL, chave TEXT NOT NULL, inicio INTEGER NOT NULL, n INTEGER NOT NULL, PRIMARY KEY(nome, chave)
+   );`,
 ];
 
 function abrir(dir) {

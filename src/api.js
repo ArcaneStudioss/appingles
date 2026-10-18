@@ -53,15 +53,16 @@ const V = {
 
 // ---------- limitadores ----------
 const limGeral = auth.limitador({ janelaMs: 60e3, max: 600 });
-const limLoginIp = auth.limitador({ janelaMs: 15 * 60e3, max: 20 });
-const limLoginConta = auth.limitador({ janelaMs: 15 * 60e3, max: 8 });
-const limCadastro = auth.limitador({ janelaMs: 60 * 60e3, max: 8 });
 const limIa = auth.limitador({ janelaMs: 60e3, max: 20 });
 const emAndamento = new Set();   // trava de clique duplo por usuário+ação
 
 function criar(db) {
   const agoraISO = () => new Date().toISOString();
   const q = (sql) => db.prepare(sql);
+  // limites de segurança (login e cadastro) valem para todas as cópias do app; o geral e o da IA são por cópia (só anti-sobrecarga)
+  const limLoginIp = auth.limitadorBanco(db, 'login-ip', { janelaMs: 15 * 60e3, max: 20 });
+  const limLoginConta = auth.limitadorBanco(db, 'login-conta', { janelaMs: 15 * 60e3, max: 8 });
+  const limCadastro = auth.limitadorBanco(db, 'cadastro', { janelaMs: 60 * 60e3, max: 8 });
 
   // ---------- sessão ----------
   function usuarioDaSessao(req) {

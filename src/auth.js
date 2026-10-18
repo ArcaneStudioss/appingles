@@ -55,4 +55,25 @@ function limitador({ janelaMs, max, teto = 20000 }) {
   };
 }
 
-module.exports = { hashSenha, conferirSenha, HASH_FALSO, senhaFraca, novoToken, hashToken, limitador, SESSAO_DIAS };
+// Limitador compartilhado entre cópias do app (tabela `limites` no mesmo SQLite): uma única instrução atômica conta a tentativa,
+// então duas cópias rodando juntas não dobram o limite. A chave vai como hash (não grava e-mail nem IP em texto).
+function limitadorBanco(db, nome, { janelaMs, max }) {
+  const conta = db.prepare(`INSERT INTO limites (nome, chave, inicio, n) VALUES (?, ?, ?, 1)
+    ON CONFLICT(nome, chave) DO UPDATE SET n = CASE WHEN inicio <= ?4 THEN 1 ELSE n + 1 END, inicio = CASE WHEN inicio <= ?4 THEN ?3 ELSE inicio END
+    RETURNING n`);
+  const apagar = db.prepare('DELETE FROM limites WHERE nome = ? AND chave = ?');
+  const faxina = db.prepare('DELETE FROM limites WHERE inicio < ?');
+  const h = chave => crypto.createHash('sha256').update(nome + '\u0000' + String(chave)).digest('hex').slice(0, 32);
+  let chamadas = 0;
+  return {
+    tentar(chave) {
+      const agora = Date.now();
+      const n = conta.get(nome, h(chave), agora, agora - janelaMs).n;
+      if (++chamadas % 200 === 0) faxina.run(agora - 24 * 3600e3);
+      return n <= max;
+    },
+    limpar(chave) { apagar.run(nome, h(chave)); },
+  };
+}
+
+module.exports = { limitadorBanco, hashSenha, conferirSenha, HASH_FALSO, senhaFraca, novoToken, hashToken, limitador, SESSAO_DIAS };

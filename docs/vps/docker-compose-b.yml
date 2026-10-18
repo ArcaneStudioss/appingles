@@ -63,6 +63,9 @@ services:
       - traefik.http.routers.inglou.rule=Host(`inglou.arcanestudios.io`)
       - traefik.http.routers.inglou.entrypoints=websecure
       - traefik.http.routers.inglou.tls.certresolver=letsencrypt
+      - traefik.http.routers.inglou.middlewares=inglou-retry
+      - traefik.http.middlewares.inglou-retry.retry.attempts=3
+      - traefik.http.middlewares.inglou-retry.retry.initialinterval=100ms
       - traefik.http.services.inglou.loadbalancer.server.port=8080
 volumes:
   codigo:
