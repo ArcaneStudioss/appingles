@@ -1,6 +1,6 @@
 // Inglou · casca do app: rotas por hash, estado do aluno e navegação.
 import { api } from './api.js?v=__V__';
-import { h, limpar, toast, localStorageGet, localStorageSet } from './ui.js?v=__V__';
+import { h, limpar, toast, icone, janela, localStorageGet, localStorageSet } from './ui.js?v=__V__';
 import { som, lou } from './diversao.js?v=__V__';
 import './instalar.js?v=__V__';
 import { telaEntrar } from './telas/entrar.js?v=__V__';
@@ -42,6 +42,22 @@ btnTema.addEventListener('click', () => {
   localStorageSet('tema', t); aplicarTema(t); som('toque');
 });
 
+// "Mais": no celular a doca tem 4 abas; o resto mora numa janela com cartões grandes (cada um com a cor da sua atividade)
+const MAIS = [
+  { rota: 'podcast', cor: 'rosa', ic: 'headphones', t: 'Rádio Tuiuiú', s: 'um episódio por dia, feito com os seus tropeços' },
+  { rota: 'treino', cor: 'limao', ic: 'target', t: 'Meu treino', s: 'perguntas só nas suas dificuldades' },
+  { rota: 'sobmedida', cor: 'turquesa', ic: 'graduation-cap', t: 'Sob medida', s: 'prova, entrevista ou viagem com data' },
+  { rota: 'material', cor: 'turquesa', ic: 'file-text', t: 'Meu texto', s: 'estude com um material seu' },
+  { rota: 'aprender', cor: 'limao', ic: 'compass', t: 'Meu jeito', s: 'veja como você aprende, pelos seus acertos' },
+  { rota: 'duvidas', cor: 'coral', ic: 'question', t: 'Dúvidas', s: 'pergunte ao tutor' },
+  { rota: 'conta', cor: 'azul', ic: 'user-circle', t: 'Eu', s: 'conta, plano e lembretes' },
+];
+const btnMais = document.querySelector('.nav__mais');
+btnMais?.addEventListener('click', () => {
+  janela({ titulo: 'Mais para você', corpo: h('ul', { class: 'mais-lista' }, MAIS.map(m => h('li', {},
+    h('a', { class: 'mais-item c-' + m.cor, href: '#/' + m.rota }, h('span', { class: 'bolha' }, icone(m.ic)), h('span', {}, h('strong', {}, m.t), h('small', {}, m.s)))))) });
+});
+
 const ROTAS = {
   entrar: telaEntrar, perfil: telaPerfil, nivelamento: telaNivelamento, hoje: telaHoje, plano: telaPlano,
   licao: telaLicao, revisar: telaRevisar, conversar: telaConversar, conversa: telaConversa, progresso: telaProgresso,
@@ -80,6 +96,7 @@ async function render() {
     const ativo = a.dataset.rota === nome || (nome === 'conversa' && a.dataset.rota === 'conversar');
     a.toggleAttribute('aria-current', ativo); if (ativo) a.setAttribute('aria-current', 'page');
   }
+  if (btnMais) { const noMais = MAIS.some(m => m.rota === nome); btnMais.toggleAttribute('aria-current', noMais); if (noMais) btnMais.setAttribute('aria-current', 'page'); }
   document.body.dataset.rota = rota;
   const alvo = h('div', { class: 'tela' });
   limpar(palco).append(alvo);

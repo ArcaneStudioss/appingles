@@ -96,8 +96,9 @@ export async function telaHoje(el, { ir }) {
   if (a.status === 'teste' && a.diasRestantes <= 5) principal.append(h('div', { class: 'aviso-suave' }, icone('info'), h('p', {}, `Seu teste grátis termina em ${plural(a.diasRestantes, 'dia', 'dias')} (${dataBR(a.ate)}). Nada é cobrado sozinho. `, h('a', { href: '#/conta' }, 'Ver planos'))));
   if (a.acesso === 'livre') principal.append(h('div', { class: 'aviso-suave' }, icone('info'), h('p', {}, 'Você está no acesso livre: seus cartões e seu progresso continuam aqui. ', h('a', { href: '#/conta' }, 'Voltar ao plano completo'))));
 
+  let balao = null;
   if (L) {
-    principal.append(louFala(feita ? 'feliz' : 'oi', h('p', {}, feita ? 'Aula de hoje feita! Que tal revisar uns cartões ou conversar um pouco?' : (L.porque?.[0] || 'Sua aula de hoje está pronta.'))));
+    balao = louFala(feita ? 'feliz' : 'oi', h('p', {}, feita ? 'Aula de hoje feita! Que tal revisar uns cartões ou conversar um pouco?' : (L.porque?.[0] || 'Sua aula de hoje está pronta.')));
     principal.append(h('section', { class: 'aula' + (feita ? ' aula--feita' : ''), 'aria-labelledby': 'aula-t' },
       feita ? null : h('span', { class: 'aula__pacote', 'aria-hidden': 'true' }, L.missao ? String(L.missao.parte) : '+'),
       h('div', { class: 'aula__topo' }, h('span', { class: 'chip chip-sol' }, icone('clock'), `${L.minutos} min`), feita ? h('span', { class: 'chip' }, icone('check'), 'Feita') : L.missao ? h('span', { class: 'chip' }, `Figurinha ${L.missao.parte} de ${L.missao.total}`) : null),
@@ -141,6 +142,14 @@ export async function telaHoje(el, { ir }) {
     atalho('duvidas', 'coral', '#/duvidas', 'question', 'Dúvida', 'pergunte ao tutor')));
   if (pr.acao === 'assinatura') principal.append(h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, pr.texto, ' ', h('a', { href: '#/conta' }, 'Ver planos'))));
   if (d.novasConquistas?.length) principal.append(h('p', { class: 'conquista-recente' }, h('span', { class: 'medalha medalha--peq' }, icone('medal')), 'Nova figurinha: ', nomeConquista(d.novasConquistas[0])));
+
+  // celular primeiro: a aula de hoje vem logo depois da saudação (e dos avisos); o balão e o painel do dia vêm em seguida
+  const aulaEl = principal.querySelector('.aula'), statusEl = principal.querySelector('.status');
+  if (aulaEl) {
+    const depois = [balao, statusEl].filter(Boolean);
+    const ancora = [...principal.querySelectorAll('.aviso-suave')].filter(a => statusEl && statusEl.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_FOLLOWING).pop() || principal.querySelector('.saudacao');
+    ancora.after(aulaEl, ...depois);
+  }
 
   const lado = h('div', { class: 'hoje__col hoje__col--lado' });
   if (p?.plano) lado.append(album(p.plano, { licaoFeita: feita }));

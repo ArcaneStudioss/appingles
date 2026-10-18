@@ -14,21 +14,29 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
   const caixa = h('div', { class: 'nivelamento' });
   el.append(caixa);
 
+  // quem escolheu "Começar do zero" no perfil não precisa de teste: o caminho sem teste vira o botão principal
+  const doZero = estado?.eu?.perfil?.objetivo === 'zero' && !anterior;
+
   function intro() {
+    const botaoTeste = h('button', { type: 'button', class: doZero ? 'btn btn-texto btn-bloco' : 'btn btn-bloco', on: { click: () => { i = 0; pergunta(); } } }, doZero ? 'Já sei um pouco: fazer o teste' : 'Começar', doZero ? null : icone('arrow-right'));
+    const botaoZero = h('button', { type: 'button', class: doZero ? 'btn btn-bloco' : 'btn btn-texto btn-bloco', on: { click: () => nuncaEstudei(doZero) } }, icone('smiley'), doZero ? 'Começar do zero, sem teste' : 'Nunca estudei inglês: começar do zero');
     caixa.replaceChildren(
-      louFala('pensando', h('p', {}, anterior ? 'Refazendo o teste? Ótimo para ver a evolução.' : 'Antes de montar o plano, quero tirar um retrato de agora. Sem pressão!')),
-      h('h1', {}, 'Teste de nível'),
-      h('ul', { class: 'lista-check' },
+      louFala('pensando', h('p', {}, anterior ? 'Refazendo o teste? Ótimo para ver a evolução.' : doZero ? 'Você disse que está começando. Então nada de teste: vamos direto ao primeiro passo!' : 'Antes de montar o plano, quero tirar um retrato de agora. Sem pressão!')),
+      h('h1', {}, doZero ? 'Vamos começar?' : 'Teste de nível'),
+      doZero ? h('ul', { class: 'lista-check' },
+        h('li', {}, 'Começamos pelos sons e cumprimentos, bem devagar, com muito áudio.'),
+        h('li', {}, 'Lições de uns 10 minutos, com explicação em português.'),
+        h('li', {}, 'Se ficar fácil demais, o app percebe e ajusta o ritmo.'))
+      : h('ul', { class: 'lista-check' },
         h('li', {}, `${itens.length} perguntas rápidas de gramática, vocabulário, leitura e escuta (uns 8 minutos).`),
         h('li', {}, 'Escrita e fala no fim, se você quiser.'),
         h('li', {}, 'Não sabe? Toque em "Não sei". Chutar só deixa o plano pior para você.'),
         h('li', {}, 'O resultado é uma estimativa para montar o plano, não um certificado.')),
-      h('div', { class: 'folha teste-audio' },
+      doZero ? null : h('div', { class: 'folha teste-audio' },
         h('p', {}, 'As perguntas de escuta usam a voz do Tuiuiú. Teste o som:'),
         h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => { if (!falar('Hello! Can you hear me well?', { velocidade: 0.95 })) return; } } }, icone('speaker-high'), 'Testar áudio'),
         temVoz() ? null : h('p', { class: 'ajuda' }, 'Se não ouvir nada, confira o volume. Em alguns aparelhos a voz em inglês precisa ser instalada nas configurações.')),
-      h('button', { type: 'button', class: 'btn btn-bloco', on: { click: () => { i = 0; pergunta(); } } }, 'Começar', icone('arrow-right')),
-      anterior ? null : h('button', { type: 'button', class: 'btn btn-texto btn-bloco', on: { click: nuncaEstudei } }, icone('smiley'), 'Nunca estudei inglês: começar do zero'));
+      ...(doZero ? [botaoZero, botaoTeste] : [botaoTeste, anterior ? null : botaoZero]));
   }
 
   function progresso() { return h('div', { class: 'barra-progresso', role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': itens.length, 'aria-valuenow': i }, h('span', { style: `transform:scaleX(${(i / itens.length).toFixed(3)})` })); }
@@ -86,8 +94,8 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
         h('button', { type: 'button', class: 'btn', on: { click: enviar } }, 'Ver meu resultado')));
   }
 
-  async function nuncaEstudei() {
-    if (!await confirmar({ titulo: 'Começar do zero?', texto: 'Pulamos o teste e começamos pelos sons e cumprimentos, bem devagar. Se ficar fácil demais, o app ajusta.', ok: 'Começar do zero', cancelar: 'Voltar' })) return;
+  async function nuncaEstudei(jaEscolheu = false) {
+    if (!jaEscolheu && !await confirmar({ titulo: 'Começar do zero?', texto: 'Pulamos o teste e começamos pelos sons e cumprimentos, bem devagar. Se ficar fácil demais, o app ajusta.', ok: 'Começar do zero', cancelar: 'Voltar' })) return;
     caixa.replaceChildren(h('div', { class: 'folha vazio' }, h('p', { class: 'bilhete' }, 'Montando seu plano...')));
     try {
       const r = await api('/nivelamento', { metodo: 'POST', corpo: { nunca: true } });
