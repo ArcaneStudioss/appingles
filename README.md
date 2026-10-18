@@ -19,6 +19,9 @@ Variáveis: ver `.env.example`.
 ## Interface: "o álbum do Tuiuiú" (18/10/2026)
 O app é um álbum de figurinhas: cada missão é uma página, cada aula feita cola uma figurinha, a tarefa final vira a figurinha brilhante. Cada atividade tem sempre a mesma cor e ícone (aula azul, revisar sol, conversar menta, álbum lilás, meu texto turquesa, dúvidas coral). Interruptor Dia/Noite sempre à vista; o Tuiuiú lê em voz alta (português) o que está no balão dele; revisão com carinhas; a lição mostra a etapa (Entender, Praticar, Ouvir, Sua vez) e o Tuiuiú anda no trilho de progresso. O app usa só `assets/css/app.css` (a página pública continua com `base.css` + `landing.css`).
 
+## Navegação no celular (18/10/2026)
+A doca de baixo tem 4 abas (Hoje, Revisar, Conversar, Álbum) e o botão **Mais**, que abre uma janela com Rádio Tuiuiú, Meu treino, Sob medida, Meu texto, Meu jeito, Dúvidas e Eu (antes esses recursos só apareciam no PC). Na tela Hoje a aula do dia vem logo abaixo da saudação. Quem escolheu "Começar do zero" no perfil vê o caminho sem teste como botão principal do nivelamento.
+
 ## Sequência e Rádio Tuiuiú (18/10/2026)
 - **Sequência de dias** (`src/motor/sequencia.js`): calculada de `dias_estudo`, sem castigo. Hoje sem estudo não quebra; a cada 7 dias seguidos ganha 1 escudo (até 2) que salva um dia perdido; o recorde fica. Prêmios viram figurinhas especiais aos 3, 7, 14, 30, 60, 100, 200 e 365 dias.
 - **Rádio Tuiuiú** (`src/motor/podcast.js`, tela `#/podcast`): um episódio por dia com os tropeços dos últimos 21 dias (focos + respostas erradas). O Tuiuiú explica em português, a Mia fala inglês, com pausas de "repita". A frase errada aparece riscada e nunca é falada. Sem IA, o roteiro sai do catálogo; com IA, `ia.podcast` escreve (limite `podcast` por mês). Treino no fim, corrigido no servidor. Ouvir até o fim conta como dia de estudo. Áudio pela voz do aparelho (sem custo).
