@@ -14,6 +14,7 @@ import { telaProgresso } from './telas/progresso.js?v=__V__';
 import { telaMaterial, telaMaterialItem } from './telas/material.js?v=__V__';
 import { telaDuvidas } from './telas/duvidas.js?v=__V__';
 import { telaConta } from './telas/conta.js?v=__V__';
+import { telaPodcast } from './telas/podcast.js?v=__V__';
 
 const palco = document.getElementById('conteudo');
 const nav = document.querySelector('.nav');
@@ -40,7 +41,7 @@ btnTema.addEventListener('click', () => {
 const ROTAS = {
   entrar: telaEntrar, perfil: telaPerfil, nivelamento: telaNivelamento, hoje: telaHoje, plano: telaPlano,
   licao: telaLicao, revisar: telaRevisar, conversar: telaConversar, conversa: telaConversa, progresso: telaProgresso,
-  material: telaMaterial, 'material-item': telaMaterialItem, duvidas: telaDuvidas, conta: telaConta,
+  material: telaMaterial, 'material-item': telaMaterialItem, duvidas: telaDuvidas, conta: telaConta, podcast: telaPodcast,
 };
 const LIVRES = new Set(['entrar']);
 const ONBOARDING = new Set(['perfil', 'nivelamento', 'plano']);
@@ -54,6 +55,8 @@ export const ir = rota => { if (location.hash === rota) render(); else location.
 let renderizando = 0;
 async function render() {
   const meu = ++renderizando;
+  // janela aberta não atravessa a troca de tela
+  for (const d of document.querySelectorAll('dialog.janela[open]')) d.querySelector('.janela__x')?.click();
   const [, nome = 'hoje', param] = (location.hash || '#/hoje').match(/^#\/([\w-]+)(?:\/([\w-]+))?/) || [];
   let rota = nome === 'material' && param ? 'material-item' : nome === 'conversa' ? 'conversa' : nome;
   if (!ROTAS[rota]) rota = 'hoje';

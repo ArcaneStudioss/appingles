@@ -127,3 +127,41 @@ test('assinatura: teste sem cobrança vira acesso livre; assinar no teste não p
   assert.equal(estado(c, '2026-12-10').acesso, 'completo');
   assert.equal(estado(c, '2026-12-18').acesso, 'livre');
 });
+
+test('sequência: hoje sem estudo não quebra; escudo a cada 7 dias salva um dia; recorde fica', () => {
+  const { calcularSequencia } = require('../src/motor/sequencia');
+  const { somarDias } = require('../src/motor/util');
+  const h = '2026-10-18', d = n => somarDias(h, -n);
+  assert.equal(calcularSequencia([], h).atual, 0);
+  assert.equal(calcularSequencia([d(1), d(2), d(3)], h).atual, 3);              // hoje ainda não estudou: segue valendo
+  assert.equal(calcularSequencia([h, d(1), d(2)], h).estudouHoje, true);
+  const comEscudo = calcularSequencia([2, 3, 4, 5, 6, 7, 8, 9].map(d), h);     // 8 seguidos, faltou ontem
+  assert.equal(comEscudo.atual, 8); assert.equal(comEscudo.escudos, 0); assert.deepEqual(comEscudo.protegidos, [d(1)]);
+  const semEscudo = calcularSequencia([d(1), d(2), d(4), d(5), d(6)], h);       // faltou um dia sem escudo
+  assert.equal(semEscudo.atual, 2); assert.equal(semEscudo.recorde, 3);
+  assert.equal(semEscudo.proximoPremio, 3);
+});
+
+test('Rádio Lou: tropeços vêm dos erros do aluno; roteiro não fala a frase errada; treino sem gabarito no cliente', () => {
+  const { coletarTropecos, montarEpisodio, validarFalasIa } = require('../src/motor/podcast');
+  const { paraCliente } = require('../src/motor/licao');
+  const h = '2026-10-18';
+  const tr = coletarTropecos({
+    focos: [{ tag: 'idade-have', trecho: 'I have 25 years', correcao: "I'm 25.", origem: 'conversa', criado_em: '2026-10-17T10:00:00Z', status: 'novo' },
+      { tag: 'make-do', trecho: 'I made a question', origem: 'conversa', criado_em: '2026-09-01T10:00:00Z', status: 'novo' }],   // antigo: fica de fora
+    tentativas: [{ tag: 'perguntas-do', correto: 0, em: '2026-10-16T10:00:00Z', origem: 'conversa', resposta: 'You like coffee?' }, { tag: 'perguntas-do', correto: 1, em: '2026-10-16T10:00:00Z' }],
+  }, h);
+  assert.deepEqual(tr.map(t => t.tag), ['idade-have', 'perguntas-do']);
+  const ep = montarEpisodio({ tropecos: tr, missao: { id: 'apresentar' }, nome: 'Ana' });
+  assert.ok(ep.falas.some(f => f.quem === 'mia' && f.repita));
+  assert.ok(ep.falas.every(f => !f.texto.includes('I have 25 years')), 'a frase errada não é falada');
+  assert.ok(ep.falas.some(f => f.riscado === 'I have 25 years'), 'aparece riscada');
+  assert.ok(ep.falas.filter(f => f.quem === 'mia').every(f => f.lingua === 'en'));
+  assert.ok(ep.treino.length >= 3 && ep.treino.every(e => e.id.startsWith('radio:')));
+  const cliente = paraCliente({ blocos: [{ exercicios: ep.treino }] }, 's').blocos[0].exercicios;
+  assert.ok(cliente.every(e => e.resposta === undefined && e.aceitas === undefined));
+  const semErros = montarEpisodio({ tropecos: [], missao: { id: 'apresentar' }, nome: 'Ana' });
+  assert.ok(semErros.falas.length > 5 && semErros.treino.length > 0);
+  assert.equal(validarFalasIa([{ quem: 'lou', texto: 'oi' }]), null);
+  assert.equal(validarFalasIa(Array.from({ length: 8 }, () => ({ quem: 'hacker', texto: 'x' }))), null);
+});

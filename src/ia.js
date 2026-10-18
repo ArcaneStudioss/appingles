@@ -161,6 +161,17 @@ async function gerarExercicios({ missao, perfil, nivel, tags }) {
   return { exercicios: dados.exercicios || [], uso };
 }
 
+// Rádio Lou: roteiro de um episódio curto (2 a 4 minutos) sobre os tropeços do aluno.
+// As frases do aluno vão como dado (<aluno>); a frase errada nunca é falada, só a versão natural.
+async function podcast({ tropecos, perfil, nivel, nome }) {
+  const system = `${BASE}\n\nYou write the script of a short, warm two-host audio lesson ("Rádio Lou", 2 to 4 minutes) built from THIS student's recent mistakes.\nHosts: "lou" is a friendly Brazilian tutor who speaks ONLY Brazilian Portuguese (short, simple, spoken sentences; explains the rule and why; can quote short English words). "mia" is a native speaker who speaks ONLY English, at the student's level (clear, short sentences); she says the natural versions and the examples.\nRules: open by greeting the student by first name; cover each mistake in order: what happened (Lou, without reading the wrong sentence aloud), the natural version (Mia), the rule in plain Portuguese (Lou), 2 examples connected to the student's goal and area (Mia), then one line Mia says for the student to repeat (repita=true). Close with a 1-sentence recap and a goodbye. 18 to 34 lines total. Each line under 40 words. No jokes at the student's expense, no promises of fluency.\n${contexto(perfil, nivel)}`;
+  const lista = tropecos.map((t, i) => `${i + 1}. ${t.nome} (tag ${t.tag}, ${t.vezes}x recently)${t.trecho ? `; the student wrote: <aluno>${String(t.trecho).slice(0, 160)}</aluno>` : ''}${t.correcao ? `; suggested fix: ${String(t.correcao).slice(0, 160)}` : ''}`).join('\n');
+  const schema = { type: 'object', properties: { falas: { type: 'array', items: { type: 'object', properties: { quem: { type: 'string', enum: ['lou', 'mia'] }, texto: { type: 'string' }, repita: { type: 'boolean' } }, required: ['quem', 'texto', 'repita'], additionalProperties: false } } }, required: ['falas'], additionalProperties: false };
+  const mensagens = [{ role: 'user', content: `Student first name: ${String(nome).slice(0, 40)}\nMistakes to cover:\n${lista}` }];
+  const { dados, uso } = await chamar({ tarefa: 'material', system, mensagens, schema, maxTokens: 4000, esforco: 'low' });
+  return { falas: dados.falas || [], uso };
+}
+
 // ---------- simulação (IA_FAKE) ----------
 function simular(tarefa, mensagens, schema) {
   const ultimo = String(mensagens[mensagens.length - 1]?.content || '');
@@ -177,8 +188,13 @@ function simular(tarefa, mensagens, schema) {
     { tipo: 'lacuna', enunciado: '', frase: "I'm responsible ___ the night shift.", pt: '', opcoes: [], correta: 0, respostas_aceitas: ['for'], explicacao: 'Responsible for.' },
     { tipo: 'traduzir', enunciado: '', frase: '', pt: 'Eu trabalho no pronto-socorro.', opcoes: [], correta: 0, respostas_aceitas: ['I work in the emergency room', 'I work in the ER'], explicacao: 'Pronto-socorro = emergency room.' },
     { tipo: 'lacuna', enunciado: '', frase: 'sem lacuna aqui', pt: '', opcoes: [], correta: 0, respostas_aceitas: ['x'], explicacao: 'item inválido de propósito (o servidor descarta)' }] }, uso };
+  if (p.falas) return { dados: { falas: [
+    { quem: 'lou', texto: '(simulado) Oi! Aqui é o Lou, na Rádio Lou.', repita: false }, { quem: 'mia', texto: 'Hi there!', repita: false },
+    { quem: 'lou', texto: '(simulado) Hoje vamos falar dos seus tropeços.', repita: false }, { quem: 'mia', texto: "I'm 25 years old.", repita: false },
+    { quem: 'lou', texto: '(simulado) Idade em inglês usa o verbo to be.', repita: false }, { quem: 'mia', texto: "I'm 25.", repita: true },
+    { quem: 'lou', texto: '(simulado) Até amanhã!', repita: false }] }, uso };
   if (p.vocab) return { dados: { tipo: 'vaga', resumo: '(simulado) A hospital needs a nurse.', resumo_pt: '(simulado) Um hospital precisa de enfermeiro.', vocab: [{ en: 'triage', pt: 'triagem', ex: 'Experience in triage is required.' }], exercicios: [{ frase: 'Experience in ___ is required.', resposta: 'triage', dica: 'triagem' }], compreensao: [{ pergunta: 'O que a vaga pede?', opcoes: ['Experiência em triagem', 'Carteira de motorista', 'Inglês fluente'], correta: 0 }], dialogo: [{ quem: 'Recruiter', fala: 'Tell me about triage.' }], simulacao: ['Tell me about your triage experience.'] }, uso };
   return { dados: {}, uso };
 }
 
-module.exports = { ativo, conversar, avaliarProducao, tutor, processarMaterial, gerarExercicios, MODELOS };
+module.exports = { ativo, conversar, avaliarProducao, tutor, processarMaterial, gerarExercicios, podcast, MODELOS };

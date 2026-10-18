@@ -2,10 +2,11 @@
 // quatro atalhos grandes (cada um com a cor da sua atividade) e o álbum de missões.
 // Sem vidas e sem "ofensiva" que se perde: os dias do mês só somam.
 import { api } from '../api.js?v=__V__';
-import { h, icone, dataBR, plural, toast } from '../ui.js?v=__V__';
+import { h, icone, dataBR, plural, toast, janela } from '../ui.js?v=__V__';
 import { louFala, lou } from '../diversao.js?v=__V__';
 
-const CONQ = { 'primeiro-passo': 'Primeiro passo: teste de nível feito', 'primeira-licao': 'Primeira lição concluída', 'primeira-conversa': 'Primeira conversa', 'primeira-demonstracao': 'Primeira missão demonstrada', retido: 'Missão mantida depois de dias', 'foco-superado': 'Superou uma dificuldade', 'revisoes-50': '50 revisões', material: 'Estudou com material seu', 'licoes-10': '10 lições', 'dias-3': '3 dias de estudo', 'dias-10': '10 dias de estudo', 'dias-30': '30 dias de estudo', 'dias-60': '60 dias de estudo' };
+const CONQ = { 'primeiro-passo': 'Primeiro passo: teste de nível feito', 'primeira-licao': 'Primeira lição concluída', 'primeira-conversa': 'Primeira conversa', 'primeira-demonstracao': 'Primeira missão demonstrada', retido: 'Missão mantida depois de dias', 'foco-superado': 'Superou uma dificuldade', 'revisoes-50': '50 revisões', material: 'Estudou com material seu', 'licoes-10': '10 lições', 'dias-3': '3 dias de estudo', 'dias-10': '10 dias de estudo', 'dias-30': '30 dias de estudo', 'dias-60': '60 dias de estudo', radio: 'Primeiro episódio da Rádio Lou',
+  'seq-3': '3 dias seguidos', 'seq-7': '1 semana seguida', 'seq-14': '2 semanas seguidas', 'seq-30': '30 dias seguidos', 'seq-60': '60 dias seguidos', 'seq-100': '100 dias seguidos', 'seq-200': '200 dias seguidos', 'seq-365': '1 ano seguido' };
 export const nomeConquista = c => CONQ[c] || (c.startsWith('volta') ? 'Que bom te ver de volta' : c);
 
 // ---------- álbum: cada missão é uma página; cada parte, uma figurinha; a tarefa final, a figurinha brilhante
@@ -50,6 +51,28 @@ export function album(plano, { licaoFeita = false, titulo = 'Seu álbum', classe
     h('p', { class: 'album__dica' }, icone('caret-right'), 'Deslize para os lados para ver as páginas. Toque numa figurinha para saber mais.'));
 }
 
+// ---------- sequência: pílula no topo + janela que explica (escudos, recorde, próxima figurinha)
+const DIA_CURTO = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+function verSequencia(seq, diasNoMes) {
+  const semana = h('ol', { class: 'seq-semana', 'aria-label': 'Últimos 7 dias' }, seq.semana.map(d => {
+    const dia = DIA_CURTO[new Date(d.data + 'T12:00:00Z').getUTCDay()];
+    const rot = { estudou: 'estudou', escudo: 'salvo pelo escudo', hoje: 'hoje, ainda dá tempo', nao: 'sem estudo' }[d.estado];
+    return h('li', { class: 'seq-dia seq-dia--' + d.estado, 'aria-label': `${dia}: ${rot}` }, h('span', { class: 'seq-dia__bola' }, d.estado === 'estudou' ? icone('flame') : d.estado === 'escudo' ? icone('shield-check') : null), h('small', {}, dia));
+  }));
+  janela({ titulo: seq.atual ? `${seq.atual} ${seq.atual === 1 ? 'dia seguido' : 'dias seguidos'}!` : 'Comece sua sequência hoje', corpo: h('div', { class: 'seq-janela' },
+    semana,
+    h('ul', { class: 'numeros' },
+      h('li', {}, h('strong', {}, String(seq.atual)), 'seguidos agora'),
+      h('li', {}, h('strong', {}, String(seq.recorde)), 'seu recorde'),
+      h('li', {}, h('strong', {}, String(seq.escudos)), seq.escudos === 1 ? 'escudo guardado' : 'escudos guardados'),
+      h('li', {}, h('strong', {}, String(diasNoMes)), 'dias neste mês')),
+    seq.proximoPremio ? h('p', { class: 'aviso-suave' }, icone('medal'), h('span', {}, `Faltam ${plural(seq.faltam, 'dia', 'dias')} para a figurinha especial de ${seq.proximoPremio} dias.`)) : null,
+    h('ul', { class: 'lista-check' },
+      h('li', {}, 'Qualquer estudo conta: aula, revisão, conversa ou episódio da Rádio Lou.'),
+      h('li', {}, 'A cada 7 dias seguidos você ganha um escudo (guarda até 2). Se faltar um dia, o escudo salva a sequência sozinho.'),
+      h('li', {}, 'Se a sequência recomeçar, nada se perde: o recorde e as figurinhas ficam no seu álbum.'))) });
+}
+
 // ---------- tela
 export async function telaHoje(el, { ir }) {
   const [d, p] = await Promise.all([api('/hoje'), api('/plano').catch(() => null)]);
@@ -67,7 +90,8 @@ export async function telaHoje(el, { ir }) {
     h('div', { class: 'status', role: 'list', 'aria-label': 'Seu dia' },
       h('a', { role: 'listitem', class: 'status__item c-sol', href: '#/progresso', 'aria-label': `${d.pontosHoje} pontos hoje` }, icone('sparkle'), h('strong', {}, String(d.pontosHoje)), h('span', {}, 'pontos')),
       h('a', { role: 'listitem', class: 'status__item', href: '#/progresso', 'aria-label': `Meta de hoje: ${d.meta.feitos} de ${d.meta.minutos} minutos` }, h('span', { class: 'anel', style: `--p:${pct.toFixed(3)}` }, h('span', { class: 'anel-cheio' })), h('strong', {}, `${d.meta.feitos}/${d.meta.minutos}`), h('span', {}, 'min')),
-      h('a', { role: 'listitem', class: 'status__item c-lilas', href: '#/progresso', 'aria-label': `${d.diasNoMes} dias de estudo neste mês` }, icone('calendar-plus'), h('strong', {}, String(d.diasNoMes)), h('span', {}, d.diasNoMes === 1 ? 'dia' : 'dias'))));
+      h('button', { type: 'button', role: 'listitem', class: 'status__item status__item--seq c-coral' + (d.sequencia.estudouHoje ? ' acesa' : ''), 'aria-label': `Sequência: ${d.sequencia.atual} dias seguidos${d.sequencia.escudos ? `, ${d.sequencia.escudos} escudos` : ''}. Ver detalhes`, on: { click: () => verSequencia(d.sequencia, d.diasNoMes) } },
+        icone('flame'), h('strong', {}, String(d.sequencia.atual)), h('span', {}, 'seguidos'), d.sequencia.escudos ? h('span', { class: 'seq-escudos', 'aria-hidden': 'true' }, icone('shield-check'), String(d.sequencia.escudos)) : null)));
 
   if (a.status === 'teste' && a.diasRestantes <= 5) principal.append(h('div', { class: 'aviso-suave' }, icone('info'), h('p', {}, `Seu teste grátis termina em ${plural(a.diasRestantes, 'dia', 'dias')} (${dataBR(a.ate)}). Nada é cobrado sozinho. `, h('a', { href: '#/conta' }, 'Ver planos'))));
   if (a.acesso === 'livre') principal.append(h('div', { class: 'aviso-suave' }, icone('info'), h('p', {}, 'Você está no acesso livre: seus cartões e seu progresso continuam aqui. ', h('a', { href: '#/conta' }, 'Voltar ao plano completo'))));
@@ -82,6 +106,16 @@ export async function telaHoje(el, { ir }) {
       L.missao ? h('p', { class: 'aula__meta' }, icone('target'), h('span', {}, 'No fim da missão você vai conseguir: ', h('strong', {}, `“${L.missao.podeFazer}”`))) : null,
       feita ? h('a', { class: 'btn btn-sec btn-bloco', href: '#/licao' }, icone('repeat'), 'Rever a aula')
         : h('a', { class: 'btn btn-bloco btn-grande', href: '#/licao' }, icone('play'), L.iniciada ? 'Continuar a aula' : 'Bora começar')));
+  }
+
+  // Rádio Lou: o episódio de hoje, feito com os tropeços da pessoa
+  if (d.radio && a.acesso === 'completo') {
+    const r = d.radio;
+    const sub = r.ouvido ? 'Ouvido hoje. Dá para ouvir de novo.' : r.pronto ? `${r.minutos} min · ${r.titulo}` : r.tropecos ? `Feito com ${plural(r.tropecos, 'tropeço seu', 'tropeços seus')} · uns 3 min` : 'Sobre a sua missão · uns 3 min';
+    principal.append(h('a', { class: 'radio-card c-rosa' + (r.ouvido ? ' radio-card--ouvido' : ''), href: '#/podcast' },
+      h('span', { class: 'radio-card__dupla', 'aria-hidden': 'true' }, lou('feliz', { tamanho: 46, rotulo: '' }), lou('oi', { tamanho: 46, rotulo: '', mia: true })),
+      h('span', { class: 'radio-card__txt' }, h('strong', {}, 'Rádio Lou'), h('small', {}, sub)),
+      h('span', { class: 'radio-card__play', 'aria-hidden': 'true' }, icone(r.ouvido ? 'check' : 'play'))));
   }
 
   // atalhos: o próximo passo recomendado ganha o selo "Sugestão do Lou"

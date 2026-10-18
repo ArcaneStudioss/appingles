@@ -6,12 +6,13 @@ const NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs = {}, ...filhos) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); e.append(...filhos); return e; };
 
 // humor: oi | feliz | pensando | ops | festa
-export function lou(humor = 'oi', { tamanho = 96, rotulo = 'Lou, o mascote do Inglou' } = {}) {
-  const s = el('svg', { viewBox: '0 0 120 120', width: tamanho, height: tamanho, class: `lou lou--${humor}`, role: 'img', 'aria-label': rotulo });
+// cor: a Mia (a amiga que fala inglês na Rádio Lou) é o mesmo balãozinho em rosa, com o rabinho para o outro lado
+export function lou(humor = 'oi', { tamanho = 96, rotulo = 'Lou, o mascote do Inglou', mia = false } = {}) {
+  const s = el('svg', { viewBox: '0 0 120 120', width: tamanho, height: tamanho, class: `lou lou--${humor}${mia ? ' lou--mia' : ''}`, role: 'img', 'aria-label': rotulo });
   const corpo = el('g', { class: 'lou__corpo' });
   // balão de fala com rabinho
   corpo.append(
-    el('path', { d: 'M22 28 Q22 12 40 12 H84 Q102 12 102 30 V70 Q102 88 84 88 H50 L32 104 L36 88 Q22 86 22 70 Z', fill: 'var(--caneta)' }),
+    el('path', { d: 'M22 28 Q22 12 40 12 H84 Q102 12 102 30 V70 Q102 88 84 88 H50 L32 104 L36 88 Q22 86 22 70 Z', fill: mia ? 'var(--rosa)' : 'var(--caneta)' }),
     el('path', { d: 'M30 24 Q34 18 44 18', stroke: '#fff', 'stroke-width': '4', 'stroke-linecap': 'round', fill: 'none', opacity: '.35' }));
   const olhos = el('g', { class: 'lou__olhos' });
   if (humor === 'feliz' || humor === 'festa') {

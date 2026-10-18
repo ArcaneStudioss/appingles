@@ -19,6 +19,8 @@ const { agendar } = require('./motor/srs');
 const { turnoOffline } = require('./motor/conversa');
 const { processarOffline } = require('./motor/material');
 const { hoje, somarDias, diasEntre, embaralhar, palavras, normalizar } = require('./motor/util');
+const { calcularSequencia, premiosAlcancados } = require('./motor/sequencia');
+const radio = require('./motor/podcast');
 
 // ---------- validação ----------
 const V = {
@@ -171,8 +173,11 @@ function criar(db) {
     if (antes && diasEntre(antes, h) >= 7 && conquistar(uid, 'volta:' + h.slice(0, 7))) novas.push('volta');
     const dias = q('SELECT COUNT(*) n FROM dias_estudo WHERE user_id = ?').get(uid).n;
     for (const m of [3, 10, 30, 60]) if (dias >= m && conquistar(uid, 'dias-' + m)) novas.push('dias-' + m);
+    // sequência: cada marco vira uma figurinha especial (e fica, mesmo se a sequência recomeçar)
+    for (const m of premiosAlcancados(sequenciaDe(uid, h))) if (conquistar(uid, 'seq-' + m)) novas.push('seq-' + m);
     return novas;
   }
+  const sequenciaDe = (uid, h) => calcularSequencia(q('SELECT data FROM dias_estudo WHERE user_id = ? AND data >= ? ORDER BY data').all(uid, somarDias(h, -400)).map(r => r.data), h);
 
   // ---------- plano e lição ----------
   function gerarPlano(uid, h) {
@@ -404,7 +409,8 @@ function criar(db) {
       meta: { minutos: p.meta_diaria || 15, feitos: Math.round(minutosHoje) },
       foco: focoNovo ? { nome: POR_TAG[focoNovo.tag]?.nome, origem: focoNovo.origem } : null,
       objetivo: { nome: plano.objetivoNome, prazo: plano.prazo, metaRealista: plano.metaRealista },
-      assinatura: est, novasConquistas, pontosHoje, diasNoMes,
+      assinatura: est, novasConquistas, pontosHoje, diasNoMes, sequencia: sequenciaDe(uid, h),
+      radio: radioResumo(uid, h),
     };
   });
 
@@ -730,6 +736,87 @@ function criar(db) {
     return { modo: 'catalogo', aviso, resposta: `Sem o tutor de IA ativo, consigo explicar estes pontos comuns: ${DIFICULDADES.map(d => d.nome.toLowerCase()).join('; ')}. Tente perguntar usando uma dessas palavras.` };
   });
 
+  // ---------- Rádio Lou: um episódio por dia com os tropeços do aluno ----------
+  function tropecosDe(uid, h) {
+    const desde = somarDias(h, -21);
+    return radio.coletarTropecos({
+      focos: q('SELECT tag, trecho, correcao, origem, criado_em, status FROM focos WHERE user_id = ? AND criado_em >= ? ORDER BY criado_em DESC LIMIT 50').all(uid, desde),
+      tentativas: q('SELECT tag, correto, em, origem, resposta FROM tentativas WHERE user_id = ? AND correto = 0 AND tag IS NOT NULL AND em >= ? ORDER BY em DESC LIMIT 300').all(uid, desde),
+    }, h);
+  }
+  function radioResumo(uid, h) {
+    const ep = q('SELECT dados, ouvido_em FROM podcasts WHERE user_id = ? AND data = ?').get(uid, h);
+    if (ep) { const d = lerJson(ep.dados, {}); return { pronto: true, titulo: d.titulo, minutos: d.minutos, ouvido: !!ep.ouvido_em, tropecos: (d.tropecos || []).length }; }
+    return { pronto: false, tropecos: tropecosDe(uid, h).length };
+  }
+  const episodioParaCliente = (ep) => {
+    const d = lerJson(ep.dados, {});
+    return { data: ep.data, titulo: d.titulo, minutos: d.minutos, modo: d.modo, tropecos: d.tropecos, falas: d.falas, ouvido: !!ep.ouvido_em,
+      treino: paraCliente({ blocos: [{ exercicios: d.treino || [] }] }, `radio:${ep.data}`).blocos[0].exercicios, respondidos: lerJson(ep.respondidos, {}) };
+  };
+  rota('GET', '/podcast', async (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid);
+    exigirAcessoCompleto(uid, h);
+    const existe = q('SELECT * FROM podcasts WHERE user_id = ? AND data = ?').get(uid, h);
+    if (existe) return { episodio: episodioParaCliente(existe) };
+    const chave = 'radio' + uid;
+    if (emAndamento.has(chave)) throw new ErroHttp(409, 'O episódio está sendo preparado. Tente de novo em instantes.');
+    emAndamento.add(chave);
+    try {
+      const tropecos = tropecosDe(uid, h);
+      const plano = planoDe(uid);
+      const missao = plano ? missaoAtual(plano, competenciasDe(uid)) : null;
+      const nome = ctx.u.nome.split(' ')[0];
+      let falasIa = null, aviso = null;
+      if (tropecos.length) {
+        const perm = podeIa(uid, 'podcast', h);
+        if (perm.pode) {
+          try {
+            const r = await ia.podcast({ tropecos, perfil: perfilDe(uid), nivel: nivelamentoDe(uid)?.nivel, nome });
+            contarIa(uid, 'podcast', h, r.uso);
+            falasIa = radio.validarFalasIa(r.falas);
+          } catch (e) { console.error('[ia] podcast falhou:', e.message); }
+        } else if (perm.motivo !== 'sem_ia') aviso = avisoIa(perm.motivo);
+      }
+      const ep = radio.montarEpisodio({ tropecos, missao, nome, falasIa });
+      q('INSERT OR IGNORE INTO podcasts (user_id, data, criado_em, dados) VALUES (?, ?, ?, ?)').run(uid, h, agoraISO(), JSON.stringify(ep));
+      return { episodio: episodioParaCliente(q('SELECT * FROM podcasts WHERE user_id = ? AND data = ?').get(uid, h)), aviso };
+    } finally { emAndamento.delete(chave); }
+  });
+  rota('POST', '/podcast/responder', (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid), b = ctx.corpo;
+    exigirAcessoCompleto(uid, h);
+    const itemId = V.str(b.itemId, 80, { min: 1, campo: 'Item' });
+    const resposta = V.str(b.resposta, 500, { campo: 'Resposta' });
+    const ep = q('SELECT * FROM podcasts WHERE user_id = ? AND data = ?').get(uid, h);
+    if (!ep) throw new ErroHttp(404, 'Episódio não encontrado.');
+    const ex = acharExercicio({ blocos: [{ exercicios: lerJson(ep.dados, {}).treino || [] }] }, itemId);
+    if (!ex) throw new ErroHttp(404, 'Exercício não encontrado.');
+    const resp = lerJson(ep.respondidos, {});
+    if (resp[itemId]) return { ...resp[itemId], repetida: true };
+    const r = corrigirExercicio(ex, resposta);
+    transacao(db, () => {
+      const atual = lerJson(q('SELECT respondidos FROM podcasts WHERE id = ? AND user_id = ?').get(ep.id, uid).respondidos, {});
+      if (atual[itemId]) return;
+      atual[itemId] = { correto: r.correto, quase: r.quase, esperado: r.esperado, explica: r.explica, achados: r.achados, resposta };
+      q('UPDATE podcasts SET respondidos = ? WHERE id = ? AND user_id = ?').run(JSON.stringify(atual), ep.id, uid);
+      registrarTentativa(uid, { item_id: itemId, missao: ex.missao || null, habilidade: ex.habilidade, tag: ex.tag, formato: ex.tipo === 'escolha' ? 'reconhecimento' : 'producao', modalidade: 'texto', correto: r.correto, tempo_ms: b.tempoMs, dica: b.dica === true, origem: 'podcast', contexto: 'radio', resposta });
+    });
+    return { correto: r.correto, quase: r.quase, esperado: r.esperado, explica: r.explica, achados: r.achados };
+  });
+  // ouviu o episódio até o fim: conta como dia de estudo (e pode render figurinha de sequência)
+  rota('POST', '/podcast/ouvido', (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid);
+    const ep = q('SELECT id, dados, ouvido_em FROM podcasts WHERE user_id = ? AND data = ?').get(uid, h);
+    if (!ep) throw new ErroHttp(404, 'Episódio não encontrado.');
+    if (ep.ouvido_em) return { ok: true, conquistas: [] };
+    const minutos = Math.min(10, lerJson(ep.dados, {}).minutos || 2);
+    q('UPDATE podcasts SET ouvido_em = ? WHERE id = ? AND user_id = ?').run(agoraISO(), ep.id, uid);
+    const conq = somarMinutos(uid, h, minutos);
+    if (conquistar(uid, 'radio')) conq.push('radio');
+    return { ok: true, conquistas: conq, sequencia: sequenciaDe(uid, h) };
+  });
+
   // Materiais do aluno
   rota('GET', '/materiais', (ctx) => ({ materiais: q('SELECT id, titulo, criado_em FROM materiais WHERE user_id = ? ORDER BY id DESC LIMIT 100').all(ctx.u.id) }));
   const materialParaCliente = (m) => {
@@ -894,22 +981,22 @@ function criar(db) {
   rota('GET', '/dados', (ctx) => {
     const uid = ctx.u.id;
     const conta = t => q(`SELECT COUNT(*) n FROM ${t} WHERE user_id = ?`).get(uid).n;
-    return { contagem: { tentativas: conta('tentativas'), licoes: conta('licoes'), cartoes: conta('cartoes'), revisoes: conta('revisoes'), conversas: conta('conversas'), amostras: conta('amostras'), materiais: conta('materiais'), nivelamentos: conta('nivelamentos'), focos: conta('focos') }, ia: ia.ativo() };
+    return { contagem: { tentativas: conta('tentativas'), licoes: conta('licoes'), cartoes: conta('cartoes'), revisoes: conta('revisoes'), conversas: conta('conversas'), amostras: conta('amostras'), materiais: conta('materiais'), nivelamentos: conta('nivelamentos'), focos: conta('focos'), podcasts: conta('podcasts') }, ia: ia.ativo() };
   });
   rota('GET', '/dados/exportar', (ctx) => {
     const uid = ctx.u.id;
     const tudo = t => q(`SELECT * FROM ${t} WHERE user_id = ?`).all(uid);
     const u = q('SELECT nome, email, criado_em, consentiu_em FROM usuarios WHERE id = ?').get(uid);
     ctx.res.setHeader('Content-Disposition', `attachment; filename="inglou-meus-dados-${hojeDe(uid)}.json"`);
-    return { exportadoEm: agoraISO(), conta: u, perfil: perfilDe(uid), assinatura: assinaturaDe(uid), nivelamentos: tudo('nivelamentos'), planos: tudo('planos'), licoes: tudo('licoes'), tentativas: tudo('tentativas'), cartoes: tudo('cartoes'), revisoes: tudo('revisoes'), conversas: tudo('conversas'), focos: tudo('focos'), amostras: tudo('amostras'), competencias: tudo('competencias'), materiais: tudo('materiais'), conquistas: tudo('conquistas'), uso_ia: tudo('uso_ia'), dias_estudo: tudo('dias_estudo') };
+    return { exportadoEm: agoraISO(), conta: u, perfil: perfilDe(uid), assinatura: assinaturaDe(uid), nivelamentos: tudo('nivelamentos'), planos: tudo('planos'), licoes: tudo('licoes'), tentativas: tudo('tentativas'), cartoes: tudo('cartoes'), revisoes: tudo('revisoes'), conversas: tudo('conversas'), focos: tudo('focos'), amostras: tudo('amostras'), competencias: tudo('competencias'), materiais: tudo('materiais'), conquistas: tudo('conquistas'), uso_ia: tudo('uso_ia'), dias_estudo: tudo('dias_estudo'), podcasts: tudo('podcasts') };
   });
   const ESCOPOS = {
-    respostas: ['tentativas', 'revisoes', 'focos', 'descartes'],
+    respostas: ['tentativas', 'revisoes', 'focos', 'descartes', 'podcasts'],
     conversas: ['conversas'],
     amostras: ['amostras'],
     cartoes: ['cartoes', 'revisoes'],
     materiais: ['materiais'],
-    tudo: ['tentativas', 'revisoes', 'focos', 'descartes', 'conversas', 'amostras', 'cartoes', 'materiais', 'licoes', 'competencias', 'conquistas', 'dias_estudo', 'nivelamentos', 'planos'],
+    tudo: ['tentativas', 'revisoes', 'focos', 'descartes', 'conversas', 'amostras', 'cartoes', 'materiais', 'licoes', 'competencias', 'conquistas', 'dias_estudo', 'nivelamentos', 'planos', 'podcasts'],
   };
   rota('POST', '/dados/apagar', (ctx) => {
     const uid = ctx.u.id;

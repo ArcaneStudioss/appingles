@@ -93,6 +93,12 @@ const MIGRACOES = [
      user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE, data TEXT NOT NULL, minutos REAL DEFAULT 0,
      PRIMARY KEY(user_id, data)
    );`,
+  // 2: Rádio Lou (um episódio por dia, com o treino e as respostas)
+  `CREATE TABLE podcasts (
+     id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+     data TEXT NOT NULL, criado_em TEXT NOT NULL, dados TEXT NOT NULL, respondidos TEXT NOT NULL DEFAULT '{}',
+     ouvido_em TEXT, UNIQUE(user_id, data)
+   );`,
 ];
 
 function abrir(dir) {

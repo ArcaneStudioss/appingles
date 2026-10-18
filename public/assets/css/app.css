@@ -20,6 +20,7 @@
   --lilas:#7C5CE6; --lilas-forte:#4A2FB0; --lilas-fundo:#EBE5FF; --lilas-sombra:#5539C2; --lilas-sobre:#FDFEFF;
   --coral:#FF7A59; --coral-forte:#A63A1B; --coral-fundo:#FFE8E0; --coral-sombra:#D65636; --coral-sobre:#3D1003;
   --turquesa:#17A6C9; --turquesa-forte:#09657D; --turquesa-fundo:#DAF3FA; --turquesa-sombra:#0D84A2; --turquesa-sobre:#03303B;
+  --rosa:#E0559A; --rosa-forte:#9E2560; --rosa-fundo:#FFE6F1; --rosa-sombra:#B93A78; --rosa-sobre:#FFF7FB;
   --perigo:#B3261E;
   --ceu:radial-gradient(color-mix(in srgb,var(--azul) 13%,transparent) 1.2px,transparent 1.6px) 0 0/24px 24px;
   --sombra:0 1px 2px rgba(22,34,74,.06),0 10px 28px rgba(22,34,74,.08);
@@ -46,6 +47,7 @@
   --lilas:#AA97FF; --lilas-forte:#D2C8FF; --lilas-fundo:#2C2562; --lilas-sombra:#7461D6; --lilas-sobre:#160F3D;
   --coral:#FF9779; --coral-forte:#FFC3B1; --coral-fundo:#43252B; --coral-sombra:#CC6549; --coral-sobre:#3D1003;
   --turquesa:#55CBE8; --turquesa-forte:#A1E5F5; --turquesa-fundo:#10394B; --turquesa-sombra:#2496B3; --turquesa-sobre:#03303B;
+  --rosa:#FF8CC1; --rosa-forte:#FFC4DE; --rosa-fundo:#45203A; --rosa-sombra:#CC5F95; --rosa-sobre:#3A0A22;
   --perigo:#FF8A80;
   --ceu:radial-gradient(1.5px 1.5px at 12% 18%,#fff9 50%,transparent 51%),radial-gradient(1px 1px at 72% 9%,#fffc 50%,transparent 51%),radial-gradient(1.5px 1.5px at 42% 63%,#fff7 50%,transparent 51%),radial-gradient(1px 1px at 88% 44%,#fffa 50%,transparent 51%),radial-gradient(1px 1px at 24% 86%,#fff8 50%,transparent 51%),radial-gradient(2px 2px at 58% 33%,#ffe9a8aa 50%,transparent 51%) 0 0/320px 320px;
   --sombra:0 1px 2px rgba(0,0,0,.3),0 12px 30px rgba(0,0,0,.28);
@@ -61,6 +63,7 @@
   --lilas:#AA97FF; --lilas-forte:#D2C8FF; --lilas-fundo:#2C2562; --lilas-sombra:#7461D6; --lilas-sobre:#160F3D;
   --coral:#FF9779; --coral-forte:#FFC3B1; --coral-fundo:#43252B; --coral-sombra:#CC6549; --coral-sobre:#3D1003;
   --turquesa:#55CBE8; --turquesa-forte:#A1E5F5; --turquesa-fundo:#10394B; --turquesa-sombra:#2496B3; --turquesa-sobre:#03303B;
+  --rosa:#FF8CC1; --rosa-forte:#FFC4DE; --rosa-fundo:#45203A; --rosa-sombra:#CC5F95; --rosa-sobre:#3A0A22;
   --perigo:#FF8A80;
   --ceu:radial-gradient(1.5px 1.5px at 12% 18%,#fff9 50%,transparent 51%),radial-gradient(1px 1px at 72% 9%,#fffc 50%,transparent 51%),radial-gradient(1.5px 1.5px at 42% 63%,#fff7 50%,transparent 51%),radial-gradient(1px 1px at 88% 44%,#fffa 50%,transparent 51%),radial-gradient(1px 1px at 24% 86%,#fff8 50%,transparent 51%),radial-gradient(2px 2px at 58% 33%,#ffe9a8aa 50%,transparent 51%) 0 0/320px 320px;
   --sombra:0 1px 2px rgba(0,0,0,.3),0 12px 30px rgba(0,0,0,.28);
@@ -73,6 +76,7 @@
 .c-menta{--c:var(--menta);--c-forte:var(--menta-forte);--c-fundo:var(--menta-fundo);--c-sombra:var(--menta-sombra);--c-sobre:var(--menta-sobre)}
 .c-lilas{--c:var(--lilas);--c-forte:var(--lilas-forte);--c-fundo:var(--lilas-fundo);--c-sombra:var(--lilas-sombra);--c-sobre:var(--lilas-sobre)}
 .c-coral{--c:var(--coral);--c-forte:var(--coral-forte);--c-fundo:var(--coral-fundo);--c-sombra:var(--coral-sombra);--c-sobre:var(--coral-sobre)}
+.c-rosa{--c:var(--rosa);--c-forte:var(--rosa-forte);--c-fundo:var(--rosa-fundo);--c-sombra:var(--rosa-sombra);--c-sobre:var(--rosa-sobre)}
 .c-turquesa{--c:var(--turquesa);--c-forte:var(--turquesa-forte);--c-fundo:var(--turquesa-fundo);--c-sombra:var(--turquesa-sombra);--c-sobre:var(--turquesa-sobre)}
 
 /* ---------- base ---------- */
@@ -125,10 +129,10 @@ label{font-weight:800;display:block;margin-bottom:.35em}
 .erro-campo{color:var(--perigo);font-size:.94rem;font-weight:800;margin:0}
 .erro-campo:empty{display:none}
 input,textarea,select,button{font:inherit;color:inherit}
-input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select{-webkit-appearance:none;appearance:none;width:100%;background:var(--cartao);border:2px solid var(--borda-forte);border-radius:var(--raio-p);padding:.75em .95em;min-height:52px;transition:border-color .18s,box-shadow .18s;caret-color:var(--azul);font-weight:700}
+:where(input:not([type=checkbox]):not([type=radio]):not([type=range])),textarea,select{-webkit-appearance:none;appearance:none;width:100%;background:var(--cartao);border:2px solid var(--borda-forte);border-radius:var(--raio-p);padding:.75em .95em;min-height:52px;transition:border-color .18s,box-shadow .18s;caret-color:var(--azul);font-weight:700}
 textarea{min-height:130px;resize:vertical;line-height:1.5}
-input:hover,textarea:hover,select:hover{border-color:color-mix(in srgb,var(--azul) 45%,var(--borda-forte))}
-input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;border-color:var(--azul);box-shadow:0 0 0 5px color-mix(in srgb,var(--azul) 20%,transparent)}
+:where(input):hover,textarea:hover,select:hover{border-color:color-mix(in srgb,var(--azul) 45%,var(--borda-forte))}
+:where(input):focus-visible,textarea:focus-visible,select:focus-visible{outline:none;border-color:var(--azul);box-shadow:0 0 0 5px color-mix(in srgb,var(--azul) 20%,transparent)}
 ::placeholder{color:var(--tinta-3);opacity:1;font-weight:600}
 input:-webkit-autofill,textarea:-webkit-autofill{-webkit-box-shadow:0 0 0 1000px var(--cartao) inset;-webkit-text-fill-color:var(--tinta);transition:background-color 9999s}
 select{padding-right:2.6em;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%237F96D8' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 1em center}
@@ -272,7 +276,7 @@ body.foco-total .topo-app{display:none}
 .saudacao h1{font-size:clamp(1.7rem,7.5vw,2.3rem);margin:0}
 .saudacao p{margin:0;color:var(--tinta-2)}
 /* medidores do dia: três pílulas */
-.status{display:grid;grid-template-columns:repeat(3,auto);justify-content:start;gap:.45rem}
+.status{display:flex;flex-wrap:wrap;gap:.45rem}
 .status__item{display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .7rem .35rem .35rem;white-space:nowrap;border-radius:99px;background:var(--cartao);border:2px solid var(--borda);text-decoration:none;color:var(--tinta);font-size:.9rem}
 .status__item strong{font-family:var(--f-titulo);font-weight:600;font-size:1.1rem}
 .status__item span{color:var(--tinta-2);font-weight:700}
@@ -772,3 +776,91 @@ body.foco-total .ui-toasts{bottom:calc(150px + env(safe-area-inset-bottom))}
 .cenario .bolha{width:46px;height:46px;border-radius:14px}
 .vazio .linha-acoes{justify-content:center}
 @media (min-width:960px){.hoje .album__dica,.album--todo .album__dica{display:none}}
+
+/* ==========================================================================
+   SEQUÊNCIA DE DIAS (pílula + janela) e RÁDIO LOU
+   ========================================================================== */
+button.status__item{font:inherit;cursor:pointer;color:var(--tinta)}
+.status__item--seq .ico:first-child{background:var(--cartao-2);color:var(--tinta-3)}
+.status__item--seq.acesa .ico:first-child{background:linear-gradient(160deg,var(--sol),var(--coral));color:#FFF8F0}
+@media (prefers-reduced-motion:no-preference){.status__item--seq.acesa .ico:first-child{animation:chama-viva 1.6s ease-in-out infinite}}
+@keyframes chama-viva{50%{transform:scale(1.12) rotate(-4deg)}}
+.seq-escudos{display:inline-flex;align-items:center;gap:.1rem;margin-left:.1rem;color:var(--turquesa-forte)!important;font-weight:800}
+.seq-escudos .ico{width:1.1rem!important;height:1.1rem!important;padding:0!important;background:none!important;color:var(--turquesa)!important}
+.seq-janela{display:grid;gap:1rem}
+.seq-semana{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(7,1fr);gap:.3rem;text-align:center}
+.seq-dia{display:grid;justify-items:center;gap:.25rem;font-weight:800;color:var(--tinta-2)}
+.seq-dia__bola{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--cartao-2);border:2.5px dashed var(--borda-forte)}
+.seq-dia__bola .ico{width:1.2rem;height:1.2rem}
+.seq-dia--estudou .seq-dia__bola{border:0;background:linear-gradient(160deg,var(--sol),var(--coral));color:#FFF8F0;box-shadow:0 3px 0 var(--coral-sombra)}
+.seq-dia--escudo .seq-dia__bola{border:0;background:var(--turquesa);color:var(--turquesa-sobre)}
+.seq-dia--hoje .seq-dia__bola{border-style:solid;border-color:var(--coral)}
+
+/* cartão da Rádio na tela Hoje */
+.radio-card{display:flex;align-items:center;gap:.8rem;padding:.85rem 1rem;border-radius:var(--raio);text-decoration:none;color:var(--tinta);background:linear-gradient(120deg,var(--rosa-fundo),var(--lilas-fundo));border:2px solid color-mix(in srgb,var(--rosa) 35%,transparent);box-shadow:0 5px 0 color-mix(in srgb,var(--rosa) 40%,transparent);transition:transform .12s var(--ease),box-shadow .12s}
+.radio-card:hover{transform:translateY(-2px)}
+.radio-card:active{transform:translateY(5px);box-shadow:none}
+.radio-card__dupla{display:flex;flex:none}
+.radio-card__dupla .lou+.lou{margin-left:-14px}
+.radio-card__txt{display:grid;gap:.1rem;flex:1;min-width:0}
+.radio-card__txt strong{font-family:var(--f-titulo);font-weight:600;font-size:1.15rem;color:var(--rosa-forte)}
+.radio-card__txt small{color:var(--tinta-2);font-size:.88rem;line-height:1.3}
+.radio-card__play{display:grid;place-items:center;width:46px;height:46px;flex:none;border-radius:50%;background:var(--rosa);color:var(--rosa-sobre);box-shadow:0 4px 0 var(--rosa-sombra)}
+.radio-card--ouvido .radio-card__play{background:var(--menta);color:var(--menta-sobre);box-shadow:0 4px 0 var(--menta-sombra)}
+
+/* player */
+.lou--mia{transform:scaleX(-1)}
+.radio-capa{--r1:#E0559A;--r2:#7C5CE6;position:relative;display:grid;gap:.9rem;padding:1.2rem 1.1rem 1.1rem;border-radius:28px;background:linear-gradient(150deg,var(--r1),var(--r2));color:#FFF8FC;box-shadow:0 7px 0 #8E2E6A;overflow:hidden;isolation:isolate}
+.radio-capa::before{content:"";position:absolute;inset:0;z-index:-1;background:repeating-radial-gradient(circle at 50% 120%,transparent 0 22px,rgba(255,255,255,.07) 22px 24px)}
+.radio-capa .rotulo-pequeno{color:rgba(255,248,252,.85);margin:0}
+.radio-capa h2{color:#FFF8FC;margin:0;font-size:clamp(1.3rem,5.4vw,1.7rem)}
+.radio-capa .chip{background:rgba(255,255,255,.2);color:#FFF8FC}
+.radio-capa .chip-ok{background:#B9F5D6;color:#04281B}
+.radio-capa__carregando{display:grid;justify-items:center;gap:.4rem;padding:1.5rem 0;text-align:center;font-weight:800}
+.radio-capa__palco{display:grid;gap:.45rem;text-align:center;justify-items:center}
+.radio-capa__dupla{display:flex;align-items:flex-end;gap:.4rem}
+.radio-capa .lou{transition:transform .3s var(--mola)}
+.radio-capa[data-quem="lou"].tocando .lou:not(.lou--mia){transform:scale(1.12) translateY(-4px)}
+.radio-capa[data-quem="mia"].tocando .lou--mia{transform:scaleX(-1) scale(1.12) translateY(-4px)}
+.radio-ondas{display:flex;align-items:center;gap:4px;height:46px;padding-bottom:18px}
+.radio-ondas i{width:6px;height:10px;border-radius:99px;background:#FFF8FC;opacity:.55;transform-origin:50% 100%}
+@media (prefers-reduced-motion:no-preference){
+  .radio-capa.tocando:not(.repita) .radio-ondas i{animation:onda-barra .9s ease-in-out infinite}
+  .radio-ondas i:nth-child(2){animation-delay:.12s!important}.radio-ondas i:nth-child(3){animation-delay:.24s!important}.radio-ondas i:nth-child(4){animation-delay:.36s!important}.radio-ondas i:nth-child(5){animation-delay:.48s!important}
+}
+@keyframes onda-barra{50%{transform:scaleY(2.6);opacity:1}}
+.radio-capa__chips{justify-content:center}
+.radio-fitas{display:flex;gap:3px}
+.radio-fita{flex:1;height:8px;border-radius:99px;background:rgba(255,255,255,.25)}
+.radio-fita.ja{background:rgba(255,255,255,.75)}
+.radio-fita.agora{background:var(--sol);transform:scaleY(1.5)}
+.radio-capa__quem{margin:0;text-align:center;font-weight:800;min-height:1.5em}
+.radio-capa.repita .radio-capa__quem{background:var(--sol);color:var(--sol-sobre);border-radius:99px;padding:.2rem .8rem;justify-self:center}
+@media (prefers-reduced-motion:no-preference){.radio-capa.repita .radio-capa__quem{animation:quica 1.2s var(--mola) infinite}}
+.radio-controles{display:grid;grid-template-columns:1fr auto auto auto 1fr;align-items:center;gap:.6rem}
+.radio-play{display:grid;place-items:center;width:78px;height:78px;border-radius:50%;border:0;background:#FFF8FC;color:#B93A78;cursor:pointer;box-shadow:0 6px 0 rgba(60,10,40,.35);transition:transform .12s var(--ease)}
+.radio-play .ico{width:2.3rem;height:2.3rem}
+.radio-play:active{transform:translateY(6px);box-shadow:none}
+.radio-play:focus-visible,.radio-ctrl:focus-visible,.radio-vel:focus-visible{outline:3px solid #FFF8FC;outline-offset:3px}
+.radio-ctrl{display:grid;place-items:center;width:50px;height:50px;border-radius:50%;border:0;background:rgba(255,255,255,.2);color:#FFF8FC;cursor:pointer}
+.radio-ctrl .ico{width:1.5rem;height:1.5rem}
+.radio-vel{justify-self:start;display:inline-flex;align-items:center;gap:.3rem;height:38px;padding:0 .75rem;border-radius:99px;border:0;background:rgba(255,255,255,.18);color:#FFF8FC;font:800 .82rem/1 var(--f-texto);cursor:pointer}
+.radio-vel[aria-pressed="true"]{background:var(--sol);color:var(--sol-sobre)}
+.radio-vel--fantasma{visibility:hidden}
+.radio-tropecos{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:.5rem}
+.radio-tropecos li{display:grid;padding:.55rem .85rem;border-radius:var(--raio-p);background:var(--rosa-fundo);border:2px solid color-mix(in srgb,var(--rosa) 30%,transparent)}
+.radio-tropecos strong{color:var(--rosa-forte);font-size:.95rem}
+.radio-tropecos small{color:var(--tinta-2);font-size:.8rem}
+.radio-roteiro summary{display:flex;align-items:center;gap:.4rem;font-family:var(--f-titulo);font-weight:600;font-size:1.15rem}
+.roteiro{list-style:none;padding:0;margin:.8rem 0 0;display:grid;gap:.45rem;max-height:60dvh;overflow:auto;padding-right:.2rem}
+.roteiro__btn{display:grid;gap:.2rem;width:100%;text-align:left;padding:.6rem .75rem;border-radius:16px;border:2px solid transparent;background:var(--cartao-2);color:var(--tinta);font:600 1rem/1.45 var(--f-texto);cursor:pointer;transition:background .2s,border-color .2s}
+.roteiro__fala--mia .roteiro__btn{background:var(--rosa-fundo)}
+.roteiro__quem{display:inline-flex;align-items:center;gap:.35rem;font-weight:800;font-size:.8rem;color:var(--tinta-2);text-transform:uppercase;letter-spacing:.05em}
+.roteiro__fala--mia .roteiro__texto{font-weight:800;color:var(--rosa-forte);font-size:1.06rem}
+.roteiro__riscado{font-weight:700}
+.roteiro__sua-vez{margin-top:.2rem}
+.roteiro__fala.ja .roteiro__btn{opacity:.6}
+.roteiro__fala.agora .roteiro__btn{opacity:1;border-color:var(--rosa);box-shadow:0 3px 0 var(--rosa-sombra)}
+.radio-treino{display:grid;gap:.6rem}
+.radio-treino h2{display:flex;align-items:center;gap:.3rem;margin:0}
+@media (min-width:960px){.radio-capa{padding:1.6rem 1.6rem 1.4rem}.tela:has(.radio-capa){max-width:820px}}

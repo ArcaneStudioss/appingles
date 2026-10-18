@@ -113,3 +113,19 @@ test('material da vida do aluno vira vocabulário, exercícios e cartões', asyn
   assert.ok((await R('POST', `/materiais/${id}/responder`, { itemId: 'mat:0', resposta: 'triage' })).correto);
   assert.equal((await R('POST', `/materiais/${id}/cartoes`, { indices: [0] })).criados, 1);
 });
+
+test('Rádio Lou: episódio do dia com os tropeços, treino corrigido no servidor e ouvir conta na sequência', async () => {
+  const { episodio } = await R('GET', '/podcast');
+  assert.ok(episodio.falas.length >= 6);
+  assert.ok(episodio.tropecos.length >= 1, 'os erros das conversas viram assunto do episódio');
+  assert.ok(!JSON.stringify(episodio.treino).match(/"(resposta|aceitas)"/), 'gabarito não vai ao navegador');
+  assert.equal((await R('GET', '/podcast')).episodio.titulo, episodio.titulo, 'um episódio por dia');
+  const ex = episodio.treino[0];
+  const r = await R('POST', '/podcast/responder', { itemId: ex.id, resposta: ex.opcoes ? ex.opcoes[0] : 'x' });
+  assert.equal(typeof r.correto, 'boolean');
+  assert.ok((await R('POST', '/podcast/responder', { itemId: ex.id, resposta: 'outra' })).repetida, 'clique duplo não conta duas vezes');
+  const ouvido = await R('POST', '/podcast/ouvido');
+  assert.ok(ouvido.sequencia.estudouHoje);
+  const hoje = await R('GET', '/hoje');
+  assert.ok(hoje.radio.ouvido && hoje.sequencia.atual >= 1);
+});
