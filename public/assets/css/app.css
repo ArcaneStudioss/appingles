@@ -958,3 +958,13 @@ button.status__item{font:inherit;cursor:pointer;color:var(--tinta)}
 
 /* nenhuma tela pode ganhar rolagem lateral (no celular ela alarga a janela e desalinha a barra fixa de baixo) */
 html,body{overflow-x:clip}
+
+/* toque numa palavra: sublinhado pontilhado discreto, alvo de toque confortável */
+.palavra-toque{all:unset;cursor:pointer;border-bottom:2px dotted color-mix(in srgb,currentColor 45%,transparent);border-radius:3px;padding:.12em .02em;-webkit-tap-highlight-color:transparent}
+.palavra-toque:hover,.palavra-toque:focus-visible{background:color-mix(in srgb,var(--turquesa) 22%,transparent)}
+.palavra-toque:focus-visible{outline:2px solid var(--turquesa);outline-offset:2px}
+.sentidos{list-style:decimal;margin:.4rem 0 0;padding-left:1.3rem;display:grid;gap:.9rem}
+.sentido__classe{opacity:.75;font-style:italic}
+.sentido__ex{margin:.2rem 0 0;line-height:1.45}
+.sentido--aqui{border-left:4px solid var(--turquesa);padding-left:.6rem;margin-left:-.6rem}
+.sentido .chip{margin-left:.5rem}

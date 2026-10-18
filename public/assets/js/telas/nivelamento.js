@@ -1,6 +1,6 @@
 // Teste de nivelamento: uma pergunta por tela, "não sei" sem culpa, escrita e fala opcionais, resultado com incerteza.
 import { api } from '../api.js?v=__V__';
-import { h, ocupado, icone, falar, temVoz, temMicrofone, ouvirMicrofone, toast } from '../ui.js?v=__V__';
+import { h, ocupado, icone, falar, temVoz, temMicrofone, ouvirMicrofone, toast, palavrasToque } from '../ui.js?v=__V__';
 import { lou, louFala, som, confete } from '../diversao.js?v=__V__';
 
 const NOMES = { gramatica: 'Gramática', vocabulario: 'Vocabulário', leitura: 'Leitura', escuta: 'Escuta', escrita: 'Escrita', fala: 'Fala' };
@@ -38,7 +38,7 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
     inicioItem = performance.now();
     const responder = (resposta, naoSei = false) => { respostas[it.id] = { resposta, naoSei, tempoMs: Math.round(performance.now() - inicioItem) }; i++; pergunta(); };
     const corpo = [];
-    if (it.tipo === 'leitura') corpo.push(h('blockquote', { class: 'texto-leitura', lang: 'en' }, it.texto), h('p', { class: 'enunciado' }, it.pergunta));
+    if (it.tipo === 'leitura') corpo.push(h('blockquote', { class: 'texto-leitura', lang: 'en' }, palavrasToque(it.texto)), h('p', { class: 'enunciado' }, it.pergunta));
     else if (it.tipo === 'escuta') {
       setTimeout(() => falar(it.audio, { velocidade: it.velocidade }), 350);
       corpo.push(h('div', { class: 'escuta-caixa' }, h('button', { type: 'button', class: 'btn btn-ouvir-grande', on: { click: () => falar(it.audio, { velocidade: it.velocidade }) } }, icone('speaker-high'), 'Ouvir de novo'), h('p', { class: 'ajuda' }, 'Pode ouvir quantas vezes quiser.')), h('p', { class: 'enunciado' }, it.pergunta));
@@ -70,20 +70,22 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
     if (!temMicrofone()) return enviar();
     const saida = h('p', { class: 'transcricao', lang: 'en', 'aria-live': 'polite' }, fala || '');
     let rec = null;
+    const soltar = () => { try { rec?.abort(); } catch {} rec = null; };
     const gravar = h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => {
       if (rec) { rec.stop(); return; }
       gravar.lastChild.textContent = 'Parar';
       rec = ouvirMicrofone({ aoTexto: t => { fala = t; saida.textContent = t; }, aoFim: () => { rec = null; gravar.lastChild.textContent = 'Gravar de novo'; } });
+      if (!rec) gravar.lastChild.textContent = 'Gravar de novo';
     } } }, icone('microphone'), h('span', {}, 'Gravar'));
     caixa.replaceChildren(
       h('p', { class: 'chip chip-neutro' }, 'Fala (opcional)'),
       h('h2', {}, 'Leia em voz alta'),
-      h('blockquote', { class: 'texto-leitura', lang: 'en' }, abertas.fala.alvo + '.'),
+      h('blockquote', { class: 'texto-leitura', lang: 'en' }, palavrasToque(abertas.fala.alvo + '.')),
       gravar, saida,
       h('p', { class: 'ajuda' }, 'O reconhecimento de voz é feito pelo seu navegador (no Chrome, pelo serviço do Google). Não guardamos o áudio, só o texto reconhecido. Sotaque não é erro: medimos se dá para entender.'),
       h('div', { class: 'linha-acoes' },
-        h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => { fala = ''; enviar(); } } }, 'Pular'),
-        h('button', { type: 'button', class: 'btn', on: { click: enviar } }, 'Ver meu resultado')));
+        h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => { soltar(); fala = ''; enviar(); } } }, 'Pular'),
+        h('button', { type: 'button', class: 'btn', on: { click: () => { soltar(); enviar(); } } }, 'Ver meu resultado')));
   }
 
   async function enviar() {

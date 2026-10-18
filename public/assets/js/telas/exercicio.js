@@ -1,7 +1,7 @@
 // Componente de exercício. Padrão de jogo: escolhe ou escreve, toca em "Conferir",
 // e uma folha de resposta sobe de baixo (azul quando acerta, coral suave quando é "quase").
 // Teclado: 1 a 9 escolhem alternativas, Enter confere e continua. A correção vem do servidor.
-import { h, icone, falar, toast, ocupado } from '../ui.js?v=__V__';
+import { h, icone, falar, toast, ocupado, palavrasToque } from '../ui.js?v=__V__';
 import { lou, som } from '../diversao.js?v=__V__';
 
 const ehIngles = s => /^[\x20-\x7E’‘]+$/.test(s || '');
@@ -25,7 +25,7 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
       h('button', { type: 'button', class: 'btn btn-ouvir-grande', 'aria-label': 'Ouvir o áudio', on: { click: () => falar(ex.audio, { velocidade: vel }) } }, icone('speaker-high')),
       h('button', { type: 'button', class: 'btn btn-sec btn-ouvir-devagar', 'aria-label': 'Ouvir mais devagar', on: { click: () => falar(ex.audio, { velocidade: 0.7 }) } }, h('span', { class: 'tartaruga', 'aria-hidden': 'true' }, 'devagar'))));
   }
-  if (ex.tipo === 'leitura') area.append(h('blockquote', { class: 'texto-leitura', lang: 'en' }, ex.texto));
+  if (ex.tipo === 'leitura') area.append(h('blockquote', { class: 'texto-leitura', lang: 'en' }, palavrasToque(ex.texto)));
   const titulo = ex.enunciado || ex.pergunta || ({ lacuna: 'Complete a frase', ordenar: 'Monte a frase', ditado: 'Escreva o que você ouviu', traduzir: 'Escreva em inglês', pares: 'Toque nos pares que combinam', corrigir: 'Corrija a frase' })[ex.tipo];
   raiz.append(h('h2', { class: 'enunciado', lang: ehIngles(titulo) ? 'en' : null }, titulo));
   if (ex.tipo === 'escuta' && ex.pergunta && ex.enunciado) raiz.append(h('p', {}, ex.pergunta));

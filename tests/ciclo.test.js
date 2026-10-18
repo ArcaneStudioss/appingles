@@ -186,3 +186,10 @@ test('Perfil de aprendizagem e treino focado: retrato por modo, preferência, tr
   assert.equal(novo.treino.versao, 1);
   assert.equal((await R('GET', '/aprendizagem')).treino.pronto, true);
 });
+
+test('toque numa palavra devolve alguns sentidos e rejeita o que não é palavra', async () => {
+  const r = await R('POST', '/palavra', { palavra: 'Office', frase: 'I go to the office on Tuesdays.' });
+  assert.ok(r.sentidos.length >= 1 && r.sentidos.filter(s => s.no_contexto).length === 1);
+  assert.ok(!('uso' in r));
+  await assert.rejects(R('POST', '/palavra', { palavra: '<img src=x>', frase: '' }));
+});
