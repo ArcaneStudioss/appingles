@@ -41,8 +41,7 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
     const corpo = [];
     if (it.tipo === 'leitura') corpo.push(h('blockquote', { class: 'texto-leitura', lang: 'en' }, it.texto), h('p', { class: 'enunciado' }, it.pergunta));
     else if (it.tipo === 'escuta') {
-      setTimeout(() => falar(it.audio, { velocidade: it.velocidade }), 350);
-      corpo.push(h('div', { class: 'escuta-caixa' }, h('button', { type: 'button', class: 'btn btn-ouvir-grande', on: { click: () => falar(it.audio, { velocidade: it.velocidade }) } }, icone('speaker-high'), 'Ouvir de novo'), h('p', { class: 'ajuda' }, 'Pode ouvir quantas vezes quiser.')), h('p', { class: 'enunciado' }, it.pergunta));
+      corpo.push(h('div', { class: 'escuta-caixa' }, h('button', { type: 'button', class: 'btn btn-ouvir-grande', on: { click: () => falar(it.audio, { velocidade: it.velocidade }) } }, icone('speaker-high'), 'Ouvir'), h('p', { class: 'ajuda' }, 'O áudio só toca quando você tocar no botão. Pode ouvir quantas vezes quiser.')), h('p', { class: 'enunciado' }, it.pergunta));
     } else corpo.push(h('p', { class: 'enunciado', lang: it.enunciado && /[a-z]/i.test(it.enunciado) && !/[ãçé]/.test(it.enunciado) ? 'en' : 'pt-BR' }, it.enunciado));
     caixa.replaceChildren(
       progresso(),

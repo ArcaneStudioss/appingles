@@ -20,10 +20,10 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
   const habilitar = (sim) => { btnConferir.disabled = !sim; };
 
   if (ex.tipo === 'escuta' || ex.tipo === 'ditado') {
-    setTimeout(() => falar(ex.audio, { velocidade: vel }), 300);
     area.append(h('div', { class: 'escuta-caixa' },
       h('button', { type: 'button', class: 'btn btn-ouvir-grande', 'aria-label': 'Ouvir o áudio', on: { click: () => falar(ex.audio, { velocidade: vel }) } }, icone('speaker-high')),
-      h('button', { type: 'button', class: 'btn btn-sec btn-ouvir-devagar', 'aria-label': 'Ouvir mais devagar', on: { click: () => falar(ex.audio, { velocidade: 0.7 }) } }, h('span', { class: 'tartaruga', 'aria-hidden': 'true' }, 'devagar'))));
+      h('button', { type: 'button', class: 'btn btn-sec btn-ouvir-devagar', 'aria-label': 'Ouvir mais devagar', on: { click: () => falar(ex.audio, { velocidade: 0.7 }) } }, h('span', { class: 'tartaruga', 'aria-hidden': 'true' }, 'devagar')),
+      h('p', { class: 'ajuda' }, 'Toque no botão para ouvir. O áudio não toca sozinho.')));
   }
   if (ex.tipo === 'leitura') area.append(h('blockquote', { class: 'texto-leitura', lang: 'en' }, ex.texto));
   const titulo = ex.enunciado || ex.pergunta || ({ lacuna: 'Complete a frase', ordenar: 'Monte a frase', ditado: 'Escreva o que você ouviu', traduzir: 'Escreva em inglês', pares: 'Toque nos pares que combinam', corrigir: 'Corrija a frase' })[ex.tipo];

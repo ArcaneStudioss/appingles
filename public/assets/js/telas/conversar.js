@@ -83,7 +83,6 @@ export async function telaConversa(el, { param, ir }) {
       digitando.remove();
       const n = notas(r.correcoes); if (n) lista.append(n);
       lista.append(balao({ papel: 'tutor', texto: r.resposta }));
-      falar(r.resposta);
       if (r.aviso && r.aviso !== avisoMostrado) { toast(r.aviso); avisoMostrado = r.aviso; }
       for (const c of r.conquistas || []) toast('Conquista: ' + nomeConquista(c), { tipo: 'ok' });
       if (r.encerrar) { terminada = true; await encerrar(); }
@@ -110,6 +109,6 @@ export async function telaConversa(el, { param, ir }) {
       h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: async () => { if (await confirmar({ titulo: 'Apagar esta conversa?', texto: 'Some do seu histórico. Os cartões e focos já criados a partir dela continuam (você pode apagar na revisão).', ok: 'Apagar', perigo: true })) { await api('/conversas/' + conversa.id, { metodo: 'DELETE' }); ir('#/conversar'); } } } }, icone('trash'), h('span', { class: 'oculto' }, 'Apagar conversa'))),
     lista, terminada ? null : form);
   if (terminada) encerrar();
-  else { campo.focus({ preventScroll: true }); if (msgs.length === 1) falar(msgs[0].texto); }
+  else { campo.focus({ preventScroll: true }); }
   lista.lastElementChild?.scrollIntoView({ block: 'end' });
 }
