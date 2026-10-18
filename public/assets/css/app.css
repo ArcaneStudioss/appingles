@@ -864,3 +864,5 @@ button.status__item{font:inherit;cursor:pointer;color:var(--tinta)}
 .radio-treino{display:grid;gap:.6rem}
 .radio-treino h2{display:flex;align-items:center;gap:.3rem;margin:0}
 @media (min-width:960px){.radio-capa{padding:1.6rem 1.6rem 1.4rem}.tela:has(.radio-capa){max-width:820px}}
+
+.passos-instalar{padding-left:1.3rem;display:grid;gap:.4rem}

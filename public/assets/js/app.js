@@ -2,6 +2,7 @@
 import { api } from './api.js?v=__V__';
 import { h, limpar, toast, localStorageGet, localStorageSet } from './ui.js?v=__V__';
 import { som, lou } from './diversao.js?v=__V__';
+import './instalar.js?v=__V__';
 import { telaEntrar } from './telas/entrar.js?v=__V__';
 import { telaPerfil } from './telas/perfil.js?v=__V__';
 import { telaNivelamento } from './telas/nivelamento.js?v=__V__';
