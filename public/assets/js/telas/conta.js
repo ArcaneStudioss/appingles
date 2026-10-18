@@ -2,7 +2,7 @@
 import { api } from '../api.js?v=__V__';
 import { lou } from '../diversao.js?v=__V__';
 import { jaInstalado, instalarApp, podeInstalarDireto, ehIphone } from '../instalar.js?v=__V__';
-import { h, icone, toast, formulario, confirmar, janela, dataBR, localStorageGet, localStorageSet, ocupado, falar } from '../ui.js?v=__V__';
+import { h, icone, toast, formulario, confirmar, janela, dataBR, localStorageGet, localStorageSet, ocupado, falar, vozesEn } from '../ui.js?v=__V__';
 
 const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const EXPLICA_DADOS = [
@@ -124,13 +124,16 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
     const tema = h('div', { class: 'temas', role: 'radiogroup', 'aria-label': 'Tema' }, [['claro', 'Dia', 'dia'], ['escuro', 'Noite', 'noite'], ['sistema', 'Igual ao aparelho', 'auto']].map(([v, r, c]) =>
       h('label', { class: `tema-op tema-op--${c}` }, h('input', { type: 'radio', name: 'pr-tema', value: v, checked: atual === v }), h('span', {}, h('i', { 'aria-hidden': 'true' }), r))));
     const vel = h('select', { id: 'pr-vel' }, [['0.85', 'Mais devagar'], ['1', 'Normal'], ['1.1', 'Um pouco mais rápido']].map(([v, r]) => h('option', { value: v, selected: (localStorageGet('velocidade') || '1') === v }, r)));
+    const lista = vozesEn();
+    const voz = h('select', { id: 'pr-voz' }, h('option', { value: '' }, 'Automática (a mais natural do aparelho)'), lista.map(v => h('option', { value: v.name, selected: localStorageGet('voz') === v.name }, `${v.name} (${v.lang})`)));
     const ok = h('button', { type: 'button', class: 'btn' }, 'Salvar');
     const j = janela({ titulo: 'Preferências deste aparelho', corpo: h('div', {},
       h('div', { class: 'campo' }, h('span', { class: 'rotulo' }, 'Tema'), tema),
-      h('div', { class: 'campo' }, h('label', { for: 'pr-vel' }, 'Velocidade do áudio'), vel, h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => { localStorageSet('velocidade', vel.value); falar('This is how the audio sounds.'); } } }, icone('speaker-high'), 'Testar'))), acoes: [ok] });
+      h('div', { class: 'campo' }, h('label', { for: 'pr-vel' }, 'Velocidade do áudio'), vel, h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => { localStorageSet('velocidade', vel.value); localStorageSet('voz', voz.value); falar('This is how the audio sounds.'); } } }, icone('speaker-high'), 'Testar')),
+      lista.length ? h('div', { class: 'campo' }, h('label', { for: 'pr-voz' }, 'Voz do Tuiuiú em inglês'), voz, h('p', { class: 'ajuda' }, 'As vozes vêm do seu aparelho. As "natural" ou "online" soam mais humanas; no Android e no Windows dá para baixar mais vozes nas configurações de idioma.')) : null), acoes: [ok] });
     ok.addEventListener('click', () => {
       const t = tema.querySelector('input:checked')?.value || 'sistema';
-      localStorageSet('tema', t); localStorageSet('velocidade', vel.value);
+      localStorageSet('tema', t); localStorageSet('velocidade', vel.value); localStorageSet('voz', voz.value);
       dispatchEvent(new CustomEvent('inglou:tema'));
       j.fechar(true); toast('Preferências salvas.', { tipo: 'ok' });
     });

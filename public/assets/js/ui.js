@@ -142,14 +142,24 @@ let vozes = [];
 function carregarVozes() { vozes = (window.speechSynthesis?.getVoices() || []).filter(v => /^en(-|_|$)/i.test(v.lang)); }
 if ('speechSynthesis' in window) { carregarVozes(); speechSynthesis.addEventListener?.('voiceschanged', carregarVozes); }
 export const temVoz = () => 'speechSynthesis' in window && (vozes.length > 0 || speechSynthesis.getVoices().length > 0);
+// Escolhe a voz mais humana que o aparelho tem: neurais/"naturais" primeiro, depois as de qualidade (Siri, Google, Samantha),
+// e por último as robóticas (eSpeak, compactas). Inglês americano ou britânico, de preferência.
+const BOA = /natural|neural|online|premium|enhanced|siri|aria|jenny|ava|emma|libby|sonia|samantha|serena|karen|google (us|uk)/i;
+const ROBO = /espeak|compact|festival|pico/i;
+export const vozesEn = () => { carregarVozes(); return vozes.slice().sort((a, b) => a.name.localeCompare(b.name)); };
+export function melhorVoz(lista) {
+  const nota = v => (BOA.test(v.name) ? 10 : 0) + (ROBO.test(v.name) ? -20 : 0) + (/en-US/i.test(v.lang) ? 3 : /en-GB/i.test(v.lang) ? 2 : 0) + (v.localService === false ? 1 : 0);
+  return lista.slice().sort((a, b) => nota(b) - nota(a))[0];
+}
 export function falar(texto, { velocidade = 1 } = {}) {
   if (!('speechSynthesis' in window)) { toast('Seu navegador não tem leitura de voz. Use "Ver o texto".'); return false; }
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(texto);
   const pref = localStorageGet('voz') || '';
-  const voz = vozes.find(v => v.name === pref) || vozes.find(v => /en-US/i.test(v.lang) && /natural|google|samantha|aria|jenny/i.test(v.name)) || vozes.find(v => /en-US/i.test(v.lang)) || vozes[0];
+  const voz = vozes.find(v => v.name === pref) || melhorVoz(vozes);
   if (voz) u.voice = voz;
   u.lang = voz?.lang || 'en-US';
+  u.pitch = 1.05;                      // um tom um pouco mais vivo, de mascote simpático
   u.rate = Math.max(0.6, Math.min(1.2, velocidade * (Number(localStorageGet('velocidade')) || 1)));
   speechSynthesis.speak(u);
   return true;

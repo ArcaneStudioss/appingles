@@ -1,11 +1,11 @@
 'use strict';
-// Teste de nivelamento (~15 minutos). Itens ordenados por nível dentro de cada habilidade.
+// Teste de nivelamento (15 perguntas, uns 8 minutos). Itens ordenados por nível dentro de cada habilidade.
 // O resultado é uma ESTIMATIVA para montar o plano, não uma certificação (o app diz isso ao aluno).
 // Escrita e fala são opcionais: entram no diagnóstico se o aluno fizer.
 
 const NIVEIS = ['A1', 'A2', 'B1', 'B2', 'C1'];
 
-const ITENS = [
+const BANCO = [
   // ---- gramática
   { id: 'n-g1', habilidade: 'gramatica', nivel: 'A1', tipo: 'escolha', enunciado: 'She ___ a teacher.', opcoes: ['is', 'are', 'am', 'be'], resposta: 0, tag: 'terceira-pessoa' },
   { id: 'n-g2', habilidade: 'gramatica', nivel: 'A1', tipo: 'escolha', enunciado: '___ you like coffee?', opcoes: ['Do', 'Does', 'Are', 'Is'], resposta: 0, tag: 'perguntas-do' },
@@ -37,10 +37,16 @@ const ITENS = [
   { id: 'n-e5', habilidade: 'escuta', nivel: 'C1', tipo: 'escuta', audio: "Frankly, the proposal's merits are outweighed by the logistical headaches it would create for the regional teams.", pergunta: 'Qual é a opinião?', opcoes: ['Os problemas de logística pesam mais que as vantagens', 'A proposta é ótima para as equipes regionais', 'As equipes regionais criaram a proposta', 'A logística já foi resolvida'], resposta: 0, velocidade: 1.05 },
 ];
 
+// Teste de entrada: 15 perguntas (25 cansava). Cobre os 5 níveis em gramática e 4 em vocabulário, leitura e escuta.
+// O resto fica como reserva para refazer o teste sem repetir as mesmas perguntas.
+const ENTRADA = ['n-g1', 'n-g3', 'n-g5', 'n-g7', 'n-g9', 'n-v1', 'n-v4', 'n-v6', 'n-l1', 'n-l3', 'n-l4', 'n-e1', 'n-e2', 'n-e3', 'n-e4'];
+const ITENS = BANCO.filter(i => ENTRADA.includes(i.id));
+const RESERVA = BANCO.filter(i => !ENTRADA.includes(i.id));
+
 // Tarefas abertas opcionais
 const ABERTAS = {
   escrita: { id: 'n-escrita', habilidade: 'escrita', enunciado: 'Escreva de 3 a 5 frases em inglês: quem você é, o que você faz e por que quer melhorar seu inglês.', minPalavras: 15 },
   fala: { id: 'n-fala', habilidade: 'fala', enunciado: 'Leia em voz alta: "I usually work from home, but I go to the office on Tuesdays."', alvo: 'I usually work from home, but I go to the office on Tuesdays' },
 };
 
-module.exports = { NIVEIS, ITENS, ABERTAS };
+module.exports = { NIVEIS, ITENS, RESERVA, ABERTAS };

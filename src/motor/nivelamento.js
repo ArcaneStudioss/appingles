@@ -79,7 +79,7 @@ function corrigir(entrada) {
   const pistas = Object.keys(tagsErradas).filter(t => POR_TAG[t]).map(t => ({ tag: t, nome: POR_TAG[t].nome }));
 
   const total = Object.keys(respostas).length;
-  const confianca = total >= 20 ? 'media' : 'baixa';
+  const confianca = total >= 12 ? 'media' : 'baixa';
   const audioVsTexto = porHabilidade.escuta && porHabilidade.leitura ? NIVEIS.indexOf(porHabilidade.leitura.nivel) - NIVEIS.indexOf(porHabilidade.escuta.nivel) : 0;
 
   const resumo = [];

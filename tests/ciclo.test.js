@@ -34,6 +34,7 @@ after(() => { db?.close(); srv.kill(); fs.rmSync(DIR, { recursive: true, force: 
 test('objetivo de entrevista monta a trilha de entrevista e a lição traz exercícios da situação do aluno', async () => {
   await R('PUT', '/perfil', { objetivo: 'entrevista', objetivo_detalhe: 'Entrevista para enfermeiro num hospital no Canadá', prazo: null, minutos_dia: 15, dias_semana: 5, area: 'enfermagem', interesses: ['saúde'] });
   const { itens } = await R('GET', '/nivelamento');
+  assert.equal(itens.length, 15, 'o teste de entrada tem 15 perguntas');
   const { plano } = await R('POST', '/nivelamento', { respostas: Object.fromEntries(itens.map(i => [i.id, { resposta: i.opcoes[0], tempoMs: 3000 }])), escrita: '', fala: '' });
   assert.equal(plano.objetivo, 'entrevista');
   assert.ok(plano.missoes.some(m => m.id === 'perguntas-entrevista'));

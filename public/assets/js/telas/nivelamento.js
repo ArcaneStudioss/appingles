@@ -19,7 +19,7 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
       louFala('pensando', h('p', {}, anterior ? 'Refazendo o teste? Ótimo para ver a evolução.' : 'Antes de montar o plano, quero tirar um retrato de agora. Sem pressão!')),
       h('h1', {}, 'Teste de nível'),
       h('ul', { class: 'lista-check' },
-        h('li', {}, `${itens.length} perguntas rápidas de gramática, vocabulário, leitura e escuta (uns 12 minutos).`),
+        h('li', {}, `${itens.length} perguntas rápidas de gramática, vocabulário, leitura e escuta (uns 8 minutos).`),
         h('li', {}, 'Escrita e fala no fim, se você quiser.'),
         h('li', {}, 'Não sabe? Toque em "Não sei". Chutar só deixa o plano pior para você.'),
         h('li', {}, 'O resultado é uma estimativa para montar o plano, não um certificado.')),
