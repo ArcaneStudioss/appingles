@@ -12,7 +12,7 @@ const { DIFICULDADES, POR_TAG } = require('./conteudo/dificuldades');
 const nivelamentoConteudo = require('./conteudo/nivelamento');
 const { corrigir: corrigirNivelamento } = require('./motor/nivelamento');
 const { montarPlano, licoesPorMissao } = require('./motor/plano');
-const { montarLicao, paraCliente, acharExercicio, missaoAtual } = require('./motor/licao');
+const { montarLicao, paraCliente, acharExercicio, missaoAtual, validarExerciciosIa } = require('./motor/licao');
 const { corrigirExercicio, avaliarProducao } = require('./motor/correcao');
 const modelo = require('./motor/modelo');
 const { agendar } = require('./motor/srs');
@@ -409,11 +409,38 @@ function criar(db) {
   });
 
   // Lição
-  rota('GET', '/licao', (ctx) => {
+  // Na primeira abertura da lição, com IA ligada: 3 exercícios escritos com a situação real do aluno.
+  async function personalizarLicao(uid, h, lic) {
+    if (lic.iniciada_em || Object.keys(lic.respondidos).length || !lic.dados.missao || lic.dados.personalizada !== undefined) return lic;
+    const marcar = (dados) => { q('UPDATE licoes SET dados = ? WHERE id = ? AND user_id = ?').run(JSON.stringify(dados), lic.id, uid); return { ...lic, dados }; };
+    const perm = podeIa(uid, 'licao', h);
+    if (!perm.pode) return marcar({ ...lic.dados, personalizada: false });
+    const chave = 'pers' + uid;
+    if (emAndamento.has(chave)) return lic;
+    emAndamento.add(chave);
+    try {
+      const def = POR_ID[lic.dados.missao.id];
+      const p = perfilDe(uid);
+      const r = await ia.gerarExercicios({ missao: def, perfil: p, nivel: nivelamentoDe(uid)?.nivel, tags: def.tags });
+      contarIa(uid, 'licao', h, r.uso);
+      const exs = validarExerciciosIa(r.exercicios, def.id, def.tags[0]);
+      if (!exs.length) return marcar({ ...lic.dados, personalizada: false });
+      const dados = { ...lic.dados, personalizada: true, blocos: lic.dados.blocos.slice() };
+      // entra depois da primeira prática da missão (ou no fim, se não houver)
+      const pos = dados.blocos.findIndex(b => b.tipo === 'exercicios' && b.exercicios?.some(e => e.missao === def.id && e.tipo !== 'pares'));
+      dados.blocos.splice(pos >= 0 ? pos + 1 : dados.blocos.length, 0, { tipo: 'exercicios', titulo: 'Feitos para a sua situação', exercicios: exs, personalizado: true });
+      dados.porque = [...dados.porque, `Incluímos ${exs.length} exercícios escritos com a sua situação${p.area ? ` (${p.area})` : ''}${p.objetivo_detalhe ? ': “' + p.objetivo_detalhe.slice(0, 90) + (p.objetivo_detalhe.length > 90 ? '...' : '') + '”' : ''}.`];
+      return marcar(dados);
+    } catch (e) { console.error('[ia] exercícios personalizados falharam:', e.message); return marcar({ ...lic.dados, personalizada: false }); }
+    finally { emAndamento.delete(chave); }
+  }
+
+  rota('GET', '/licao', async (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid);
     exigirAcessoCompleto(uid, h);
-    const lic = licaoDeHoje(uid, h);
+    let lic = licaoDeHoje(uid, h);
     if (!lic) throw new ErroHttp(409, 'Seu plano ainda não está pronto.');
+    lic = await personalizarLicao(uid, h, lic);
     if (!lic.iniciada_em) q('UPDATE licoes SET iniciada_em = ? WHERE id = ? AND user_id = ?').run(agoraISO(), lic.id, uid);
     return { licao: paraCliente(lic.dados, `${uid}:${h}`), respondidos: lic.respondidos, status: lic.status, ia: ia.ativo() };
   });

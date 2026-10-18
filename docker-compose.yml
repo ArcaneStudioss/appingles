@@ -1,0 +1,23 @@
+# Inglou na VPS da Arcane (Docker + Traefik, DNS na Cloudflare). Ver docs/DEPLOY.md antes de subir.
+# Projeto Docker próprio ("inglou"); não mexe em nenhum container existente.
+services:
+  app:
+    build: .
+    image: inglou:latest
+    restart: unless-stopped
+    env_file: .env            # segredos ficam no servidor, nunca no repositório
+    volumes:
+      - dados:/dados          # banco + backups locais (a cópia fora do servidor vai para R2/B2)
+    networks: [traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.inglou.rule=Host(`inglou.arcanestudios.io`)
+      - traefik.http.routers.inglou.entrypoints=websecure
+      - traefik.http.routers.inglou.tls=true
+      - traefik.http.routers.inglou.tls.certresolver=letsencrypt
+      - traefik.http.services.inglou.loadbalancer.server.port=8080
+volumes:
+  dados:
+networks:
+  traefik:
+    external: true   # conferir o nome da rede do Traefik na VPS (docker network ls)

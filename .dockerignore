@@ -1,0 +1,9 @@
+node_modules
+dados
+backups
+.git
+.env
+.env.*
+tests
+docs
+*.db*

@@ -44,7 +44,7 @@ const DIFICULDADES = [
       contraste: 'Compare: "I work here" (fato atual) x "I\'ve worked here for 3 years" (desde quando). Em entrevista, a segunda é a que responde "há quanto tempo?".',
     },
     detectores: [
-      { re: /\bi(?:'m| am)? (?:work|working|live|living|study|studying) (?:here |there |at [a-z]+ |in [a-z]+ |as an? [a-z]+ )?(?:since\b|for (?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|many|a few) (?:years?|months?|weeks?))/i, sugestao: "I've worked / I've been working ... since/for ...", confianca: 'alta' },
+      { re: /\bi(?:'m| am)? (?:work|working|live|living|study|studying)(?: (?:here|there|at|in|for|as|with|from home|remotely)(?: [a-z]+){0,3})? (?:since\b|for (?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|many|a few) (?:years?|months?|weeks?))/i, sugestao: "I've worked / I've been working ... since/for ...", confianca: 'alta' },
       { re: /\bsince (?:\d+|one|two|three|four|five|six|seven|eight|nine|ten) (?:years?|months?|weeks?|days?)\b/i, sugestao: 'for ... years (since é para o ponto de início)', confianca: 'alta' },
     ],
     exercicios: [

@@ -11,11 +11,11 @@ const PLANOS = {
 };
 
 const LIMITES = {
-  teste: { conversa: 150, avaliacao: 30, tutor: 60, material: 5 },
-  pago: { conversa: 400, avaliacao: 60, tutor: 150, material: 10 },
-  livre: { conversa: 0, avaliacao: 0, tutor: 0, material: 0 },
+  teste: { conversa: 150, avaliacao: 30, tutor: 60, material: 5, licao: 30 },
+  pago: { conversa: 400, avaliacao: 60, tutor: 150, material: 10, licao: 31 },
+  livre: { conversa: 0, avaliacao: 0, tutor: 0, material: 0, licao: 0 },
 };
-const NOMES_USO = { conversa: 'mensagens de conversa com IA', avaliacao: 'correções detalhadas com IA', tutor: 'perguntas ao tutor', material: 'materiais seus processados com IA' };
+const NOMES_USO = { conversa: 'mensagens de conversa com IA', avaliacao: 'correções detalhadas com IA', tutor: 'perguntas ao tutor', material: 'materiais seus processados com IA', licao: 'lições com exercícios feitos para a sua situação' };
 
 const INCLUI = {
   completo: ['Plano personalizado pelo seu objetivo e prazo', 'Lição diária de 10 a 20 minutos', 'Flashcards com repetição espaçada e áudio', 'Conversas que viram a aula do dia seguinte', 'Correção de escrita', 'Estudo com seus próprios materiais', 'Painel de progresso com o que você já demonstrou'],

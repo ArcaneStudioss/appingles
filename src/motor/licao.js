@@ -235,4 +235,21 @@ function acharExercicio(licaoCompleta, id) {
   return null;
 }
 
-module.exports = { montarLicao, paraCliente, acharExercicio, exerciciosDaTag, missaoAtual };
+// Exercícios vindos da IA: só entra o que tem forma válida e uma resposta certa clara.
+function validarExerciciosIa(lista, missaoId, tag) {
+  const ok = [];
+  const txt = (s, max) => typeof s === 'string' && s.trim().length > 0 && s.length <= max;
+  for (const e of (Array.isArray(lista) ? lista : []).slice(0, 6)) {
+    const base = { id: `ia:${missaoId}:${ok.length}`, habilidade: e.tipo === 'traduzir' ? 'escrita' : 'gramatica', tag: tag || null, dif: 2, missao: missaoId, personalizado: true, explica: txt(e.explicacao, 300) ? e.explicacao : null };
+    if (e.tipo === 'escolha' && txt(e.enunciado, 200) && Array.isArray(e.opcoes) && e.opcoes.length >= 2 && e.opcoes.length <= 5 && e.opcoes.every(o => txt(o, 160)) && new Set(e.opcoes).size === e.opcoes.length && Number.isInteger(e.correta) && e.correta >= 0 && e.correta < e.opcoes.length)
+      ok.push({ ...base, tipo: 'escolha', enunciado: e.enunciado, opcoes: e.opcoes, resposta: e.correta });
+    else if (e.tipo === 'lacuna' && txt(e.frase, 200) && e.frase.split('___').length === 2 && Array.isArray(e.respostas_aceitas) && e.respostas_aceitas.length && e.respostas_aceitas.every(r => txt(r, 60)))
+      ok.push({ ...base, tipo: 'lacuna', frase: e.frase, resposta: e.respostas_aceitas });
+    else if (e.tipo === 'traduzir' && txt(e.pt, 200) && Array.isArray(e.respostas_aceitas) && e.respostas_aceitas.length && e.respostas_aceitas.every(r => txt(r, 200)))
+      ok.push({ ...base, tipo: 'traduzir', pt: e.pt, aceitas: e.respostas_aceitas });
+    if (ok.length >= 3) break;
+  }
+  return ok;
+}
+
+module.exports = { montarLicao, paraCliente, acharExercicio, exerciciosDaTag, missaoAtual, validarExerciciosIa };

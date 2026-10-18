@@ -17,7 +17,9 @@ const MODELOS = {
 };
 
 let cliente = null;
-function ativo() { return !!(Anthropic && (process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN) && process.env.IA_DESLIGADA !== '1'); }
+// IA_FAKE=1: respostas simuladas e determinísticas, para testar os caminhos com IA sem custo (nunca em produção)
+const FAKE = process.env.IA_FAKE === '1' && process.env.NODE_ENV !== 'production';
+function ativo() { if (FAKE) return true; return !!(Anthropic && (process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN) && process.env.IA_DESLIGADA !== '1'); }
 function obterCliente() {
   if (!cliente) cliente = new Anthropic({ timeout: 45_000, maxRetries: 1 });
   return cliente;
@@ -50,6 +52,7 @@ const schemaCorrecoes = {
 };
 
 async function chamar({ tarefa, system, mensagens, schema, maxTokens = 2000, esforco = 'low' }) {
+  if (FAKE) return simular(tarefa, mensagens, schema);
   const params = {
     model: MODELOS[tarefa] || PADRAO,
     max_tokens: maxTokens,
@@ -136,4 +139,46 @@ async function processarMaterial({ titulo, texto, perfil, nivel }) {
   return { ...dados, modo: 'ia', uso };
 }
 
-module.exports = { ativo, conversar, avaliarProducao, tutor, processarMaterial, MODELOS };
+// Exercícios feitos com a situação real do aluno (área + o que ele escreveu no objetivo).
+async function gerarExercicios({ missao, perfil, nivel, tags }) {
+  const system = `${BASE}\n\nYou write short practice exercises for ONE mission of the student's plan. Every sentence must be about the student's real situation (their area, their goal, their own words), so it feels written for them. Natural, correct English at their level. Exactly one correct answer per item. Portuguese for instructions and for "pt".\n${contexto(perfil, nivel)}`;
+  const schema = {
+    type: 'object',
+    properties: { exercicios: { type: 'array', items: { type: 'object', properties: {
+      tipo: { type: 'string', enum: ['escolha', 'lacuna', 'traduzir'] },
+      enunciado: { type: 'string', description: 'instruction in Portuguese (escolha) or empty' },
+      frase: { type: 'string', description: 'lacuna: English sentence with exactly one ___ ; otherwise empty' },
+      pt: { type: 'string', description: 'traduzir: Portuguese sentence to translate; otherwise empty' },
+      opcoes: { type: 'array', items: { type: 'string' }, description: 'escolha: 3 English options; otherwise empty' },
+      correta: { type: 'integer', description: 'escolha: index of the correct option; otherwise 0' },
+      respostas_aceitas: { type: 'array', items: { type: 'string' }, description: 'lacuna/traduzir: all acceptable answers; otherwise empty' },
+      explicacao: { type: 'string', description: 'one short sentence in Portuguese' },
+    }, required: ['tipo', 'enunciado', 'frase', 'pt', 'opcoes', 'correta', 'respostas_aceitas', 'explicacao'], additionalProperties: false } } },
+    required: ['exercicios'], additionalProperties: false,
+  };
+  const mensagens = [{ role: 'user', content: `Mission: "${missao.titulo}". Can-do: "${missao.podeFazer}". Grammar focus: ${tags.join(', ') || 'none'}. Structure the student is learning: ${missao.explicacao.estrutura.join(' | ')}.\nWrite 3 exercises: 1 escolha, 1 lacuna, 1 traduzir.` }];
+  const { dados, uso } = await chamar({ tarefa: 'material', system, mensagens, schema, maxTokens: 3000, esforco: 'low' });
+  return { exercicios: dados.exercicios || [], uso };
+}
+
+// ---------- simulação (IA_FAKE) ----------
+function simular(tarefa, mensagens, schema) {
+  const ultimo = String(mensagens[mensagens.length - 1]?.content || '');
+  const aluno = (ultimo.match(/<aluno>([\s\S]*?)<\/aluno>/) || [])[1] || '';
+  const { detectar } = require('./conteudo/dificuldades');
+  const correcoes = detectar(aluno).filter(a => a.confianca !== 'baixa').map(a => ({ trecho: a.trecho, sugestao: a.sugestao, explicacao: a.explicacao, tag: a.tag, confianca: a.confianca }));
+  const uso = { entrada: 100, saida: 50, cache: 0, modelo: 'simulado' };
+  if (!schema) return { texto: '(simulado) Resposta do tutor sobre: ' + aluno.slice(0, 80), uso };
+  const p = schema.properties;
+  if (p.resposta && p.encerrar) return { dados: { resposta: '(simulado) Interesting! Tell me more?', correcoes, encerrar: false }, uso };
+  if (p.cumpre_tarefa) { const n = (aluno.match(/[A-Za-z']+/g) || []).length; return { dados: { cumpre_tarefa: n >= 20, elementos_faltando: [], erros_graves: correcoes.length, nota: n >= 20 && !correcoes.length ? 90 : 60, comentario: '(simulado) Boa estrutura.', versao_melhorada: aluno, correcoes }, uso }; }
+  if (p.exercicios && p.exercicios.items.properties.respostas_aceitas) return { dados: { exercicios: [
+    { tipo: 'escolha', enunciado: 'Escolha a melhor frase para a sua entrevista:', frase: '', pt: '', opcoes: ["I've worked as a nurse for six years.", 'I work as nurse since six years.', 'I am nurse for six years.'], correta: 0, respostas_aceitas: [], explicacao: 'Começou e continua: present perfect + for.' },
+    { tipo: 'lacuna', enunciado: '', frase: "I'm responsible ___ the night shift.", pt: '', opcoes: [], correta: 0, respostas_aceitas: ['for'], explicacao: 'Responsible for.' },
+    { tipo: 'traduzir', enunciado: '', frase: '', pt: 'Eu trabalho no pronto-socorro.', opcoes: [], correta: 0, respostas_aceitas: ['I work in the emergency room', 'I work in the ER'], explicacao: 'Pronto-socorro = emergency room.' },
+    { tipo: 'lacuna', enunciado: '', frase: 'sem lacuna aqui', pt: '', opcoes: [], correta: 0, respostas_aceitas: ['x'], explicacao: 'item inválido de propósito (o servidor descarta)' }] }, uso };
+  if (p.vocab) return { dados: { tipo: 'vaga', resumo: '(simulado) A hospital needs a nurse.', resumo_pt: '(simulado) Um hospital precisa de enfermeiro.', vocab: [{ en: 'triage', pt: 'triagem', ex: 'Experience in triage is required.' }], exercicios: [{ frase: 'Experience in ___ is required.', resposta: 'triage', dica: 'triagem' }], compreensao: [{ pergunta: 'O que a vaga pede?', opcoes: ['Experiência em triagem', 'Carteira de motorista', 'Inglês fluente'], correta: 0 }], dialogo: [{ quem: 'Recruiter', fala: 'Tell me about triage.' }], simulacao: ['Tell me about your triage experience.'] }, uso };
+  return { dados: {}, uso };
+}
+
+module.exports = { ativo, conversar, avaliarProducao, tutor, processarMaterial, gerarExercicios, MODELOS };

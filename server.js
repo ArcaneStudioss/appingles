@@ -6,12 +6,16 @@ const path = require('node:path');
 const { cabecalhos, erro, servir, ErroHttp, VERSAO } = require('./src/http');
 const { abrir } = require('./src/db');
 const { criar } = require('./src/api');
+const { criarBackup } = require('./src/backup-lib');
 
 // Arquivos públicos: lista branca PUBLICO e recusa de \u0000, controle e '..' ficam em src/http.js (função servir).
 const PORTA = Number(process.env.PORT) || 8080;
 const DADOS = path.resolve(process.env.DATA_DIR || path.join(__dirname, 'dados'));
 const db = abrir(DADOS);
 const api = criar(db);
+// backup diário automático (03h em diante), cifrado, com cópia fora do servidor se BACKUP_S3_* estiver definido
+process.env.BACKUP_S3_PREFIXO ??= 'inglou/';
+if (process.env.BACKUP_DESLIGADO !== '1') criarBackup({ dir: DADOS, bancos: { contas: db } }).agendar();
 
 const servidor = http.createServer(async (req, res) => {
   try {
