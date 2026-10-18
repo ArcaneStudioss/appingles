@@ -12,7 +12,7 @@
   --tinta:#14213D; --grafite:#4C5B74; --apagado:#5F6D86;
   --caneta:#2563EB; --caneta-forte:#1E3A8A; --caneta-fundo:#E3ECFF; --destaque-texto:#FFFFFF; --btn-sombra:#1A4BB8;
   --marca:#D3E3FF; --marca-tinta:#14213D;
-  --sol:#FFC83D; --sol-sombra:#E0A100; --sol-fundo:#FFF6DB;
+  --sol:#FFC83D; --sol-sombra:#E0A100; --sol-fundo:#FFF6DB; --arara-1:#2447D0; --arara-2:#1A33A0; --arara-3:#6C8DFF;
   --quase:#FF8A65; --quase-fundo:#FFF1EC; --quase-tinta:#A33A1E;
   --perigo:#A3352B;
   --sombra:0 1px 2px rgba(19,32,58,.06),0 8px 24px rgba(19,32,58,.07);
@@ -31,7 +31,7 @@
     --tinta:#E8EEF8; --grafite:#A5B2C8; --apagado:#7C8AA3;
     --caneta:#7FA6FF; --caneta-forte:#A8C3FF; --caneta-fundo:#1B2C52; --destaque-texto:#0B1530; --btn-sombra:#4A73CF;
     --marca:#24407A; --marca-tinta:#EEF3FF; --perigo:#E58A80;
-    --sol:#FFC83D; --sol-sombra:#B88400; --sol-fundo:#3A3115; --quase:#FF9C7E; --quase-fundo:#3A231C; --quase-tinta:#FFC2AE;
+    --arara-1:#5C80F5; --arara-2:#3D5CD0; --arara-3:#A9C0FF; --sol:#FFC83D; --sol-sombra:#B88400; --sol-fundo:#3A3115; --quase:#FF9C7E; --quase-fundo:#3A231C; --quase-tinta:#FFC2AE;
     --sombra:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.25);
     color-scheme:dark;
   }

@@ -23,6 +23,9 @@ O app é um álbum de figurinhas: cada missão é uma página, cada aula feita c
 - **Sequência de dias** (`src/motor/sequencia.js`): calculada de `dias_estudo`, sem castigo. Hoje sem estudo não quebra; a cada 7 dias seguidos ganha 1 escudo (até 2) que salva um dia perdido; o recorde fica. Prêmios viram figurinhas especiais aos 3, 7, 14, 30, 60, 100, 200 e 365 dias.
 - **Rádio Lou** (`src/motor/podcast.js`, tela `#/podcast`): um episódio por dia com os tropeços dos últimos 21 dias (focos + respostas erradas). O Lou explica em português, a Mia fala inglês, com pausas de "repita". A frase errada aparece riscada e nunca é falada. Sem IA, o roteiro sai do catálogo; com IA, `ia.podcast` escreve (limite `podcast` por mês). Treino no fim, corrigido no servidor. Ouvir até o fim conta como dia de estudo. Áudio pela voz do aparelho (sem custo).
 
+## Mascote
+**Lou é uma arara-azul-grande** (orgulho do Brasil; azul-cobalto, anel e bochechas amarelos, bico curvo). A **Mia**, que dá voz ao inglês na Rádio Lou, é uma **arara-vermelha**. Desenho em `public/assets/js/diversao.js` (função `lou`, 5 humores, cores por variável `--arara-*` que acompanham Dia/Noite). Ícones do app e favicon: arara sobre fundo amarelo (`public/assets/img/`, `public/favicon.svg`).
+
 ## Estrutura
 
 ```
