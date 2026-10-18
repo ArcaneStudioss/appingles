@@ -1,0 +1,10 @@
+{
+  "name": "Inglou · inglês com plano personalizado",
+  "short_name": "Inglou",
+  "start_url": "/app/#/hoje",
+  "display": "standalone",
+  "background_color": "#F6F8FC",
+  "theme_color": "#2152C4",
+  "lang": "pt-BR",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "inglou",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plataforma de inglês com plano personalizado pelo objetivo do aluno (MVP).",
+  "main": "server.js",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server.js",
+    "dev": "PAGAMENTO_MODO=simulado node --disable-warning=ExperimentalWarning server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test tests/*.test.js",
+    "backup": "node --disable-warning=ExperimentalWarning scripts/backup.js",
+    "restaurar": "node --disable-warning=ExperimentalWarning scripts/restaurar.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.135.0"
+  }
+}

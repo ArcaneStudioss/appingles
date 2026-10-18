@@ -1,0 +1,64 @@
+'use strict';
+// Cenários de conversa. Com IA, viram a "persona" do tutor; sem IA, o roteiro abaixo conduz a conversa
+// (perguntas em sequência + correção pelos detectores de dificuldades).
+
+const CENARIOS = {
+  apresentacao: {
+    titulo: 'Conhecendo um colega novo',
+    papel: 'a friendly new coworker from Canada called Sam, meeting the student in their first video call',
+    abertura: "Hi! I'm Sam, I just joined the team. Nice to meet you! So, tell me a bit about yourself. What do you do here?",
+    roteiro: ['How long have you been working in this area?', 'Where are you based?', 'What do you like most about your job?', 'What do you usually do after work?', 'Nice! Is there anything I should know about the team?'],
+    ajuda: ["I'm a/an ... and I work with ...", "I've been working in this area for ...", "I'm based in ...", 'What I like most is ...'],
+  },
+  'entrevista-trajetoria': {
+    titulo: 'Entrevista: sua trajetória',
+    papel: 'a calm, professional recruiter called Jordan interviewing the student for a job in their area',
+    abertura: "Hi, thanks for joining. I'm Jordan, from the recruiting team. Let's start: can you walk me through your resume?",
+    roteiro: ['What was your first job in this area?', 'Why did you decide to change jobs?', 'How long have you been in your current position?', 'What did you learn in your previous job?', 'What are you looking for in your next position?'],
+    ajuda: ['I started as a/an ... in ...', 'Then I moved to ...', "I've been at ... since ...", "I'm looking for ..."],
+  },
+  'entrevista-projeto': {
+    titulo: 'Entrevista: um projeto seu',
+    papel: 'a hiring manager called Alex who asks behavioral questions and follow-up questions about real situations',
+    abertura: "Nice to meet you. I'd like to hear about your work. Can you tell me about a project you're proud of?",
+    roteiro: ['What was the biggest challenge?', 'What exactly was your role?', 'What did you do when something went wrong?', 'What was the result?', 'What would you do differently today?'],
+    ajuda: ['The problem was that ...', 'I was in charge of ...', 'I ... and ...', 'As a result, ...'],
+  },
+  'entrevista-geral': {
+    titulo: 'Entrevista completa',
+    papel: 'a recruiter called Taylor running a 15-minute first interview with common interview questions',
+    abertura: "Hi, I'm Taylor. Thanks for your time today. To start, tell me about yourself.",
+    roteiro: ['Why are you interested in this position?', 'What are your main strengths?', 'Tell me about something you are trying to improve.', 'Where do you see yourself in five years?', 'Do you have any questions for me?'],
+    ajuda: ["I'm interested in this position because ...", 'One of my strengths is ... For example, ...', "Something I'm working on is ...", "In five years, I'd like to ..."],
+  },
+  reuniao: {
+    titulo: 'Reunião de equipe',
+    papel: 'a project manager called Priya leading a short team meeting and asking the student for opinions',
+    abertura: "Okay, let's start. We need to decide if we launch the new feature this month or next month. What do you think?",
+    roteiro: ['Some people think we should wait. Do you agree?', 'What would be the biggest risk for you?', 'Do you have any other suggestion?', 'Who should we talk to before deciding?', 'Great. Can you send a short summary by email after the meeting?'],
+    ajuda: ['I think ...', 'I agree with ... / I see your point, but ...', 'What if we ...?', "I'll follow up by email."],
+  },
+  cliente: {
+    titulo: 'Atendendo um cliente',
+    papel: 'a polite but slightly impatient customer called Chris who has a problem with an order or service from the student\'s business',
+    abertura: "Hi, I ordered something from you last week, and it hasn't arrived yet. Can you help me?",
+    roteiro: ['I ordered it on Monday. The order number is 4471.', 'It was supposed to arrive in three days.', 'Can you send it today?', 'Is there any discount because of the delay?', 'Okay. How will I know when it ships?'],
+    ajuda: ["I'm sorry to hear that.", 'Could you give me your order number?', "I'll check ... and ...", 'We can ... or ...'],
+  },
+  viagem: {
+    titulo: 'Na recepção do hotel',
+    papel: 'a hotel receptionist called Maria in Lisbon helping a guest who has just arrived',
+    abertura: 'Good evening, welcome to Hotel Atlântico! Do you have a reservation?',
+    roteiro: ['Can I see your passport, please?', 'How many nights are you staying?', 'Would you like breakfast included?', 'Is there anything else I can help you with?', 'Do you need any recommendations for dinner?'],
+    ajuda: ['Yes, I have a reservation under ...', "I'm staying for ... nights.", 'Could you ...?', 'What time is ...?'],
+  },
+  'fim-de-semana': {
+    titulo: 'Papo de segunda-feira',
+    papel: 'a relaxed coworker called Ben chatting at the coffee machine on a Monday morning',
+    abertura: 'Morning! How was your weekend?',
+    roteiro: ['Oh nice! What else did you do?', 'Did you go out on Sunday?', 'That sounds good. Do you do that often?', 'Mine was quiet. I just watched a movie. Do you have any plans for next weekend?', 'Cool! Well, I need to go to a meeting. See you later!'],
+    ajuda: ['It was ...', 'On Saturday I ...', 'On Sunday we ...', 'What about you?'],
+  },
+};
+
+module.exports = { CENARIOS };

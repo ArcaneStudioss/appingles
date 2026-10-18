@@ -1,0 +1,120 @@
+// Teste de nivelamento: uma pergunta por tela, "não sei" sem culpa, escrita e fala opcionais, resultado com incerteza.
+import { api } from '../api.js?v=__V__';
+import { h, ocupado, icone, falar, temVoz, temMicrofone, ouvirMicrofone, toast } from '../ui.js?v=__V__';
+
+const NOMES = { gramatica: 'Gramática', vocabulario: 'Vocabulário', leitura: 'Leitura', escuta: 'Escuta', escrita: 'Escrita', fala: 'Fala' };
+const NIVEIS = ['A1', 'A2', 'B1', 'B2', 'C1'];
+const DESCR = { A1: 'Primeiros passos: frases bem simples do dia a dia.', A2: 'Básico: se comunica em situações simples e conhecidas.', B1: 'Intermediário: se vira na maioria das situações e conta experiências.', B2: 'Intermediário avançado: discute assuntos com certa naturalidade.', C1: 'Avançado: usa o inglês com flexibilidade no trabalho e nos estudos.' };
+
+export async function telaNivelamento(el, { estado, ir, carregarEu }) {
+  const { itens, abertas, anterior } = await api('/nivelamento');
+  const respostas = {};
+  let i = -1, escrita = '', fala = '', inicioItem = 0;
+  const caixa = h('div', { class: 'nivelamento' });
+  el.append(caixa);
+
+  function intro() {
+    caixa.replaceChildren(
+      h('p', { class: 'bilhete' }, anterior ? 'Refazendo o teste. Ótimo para ver a evolução.' : 'Antes de montar o plano, um retrato de agora.'),
+      h('h1', {}, 'Teste de nível'),
+      h('ul', { class: 'lista-check' },
+        h('li', {}, `${itens.length} perguntas rápidas de gramática, vocabulário, leitura e escuta (uns 12 minutos).`),
+        h('li', {}, 'Escrita e fala no fim, se você quiser.'),
+        h('li', {}, 'Não sabe? Toque em "Não sei". Chutar só deixa o plano pior para você.'),
+        h('li', {}, 'O resultado é uma estimativa para montar o plano, não um certificado.')),
+      h('div', { class: 'folha teste-audio' },
+        h('p', {}, 'As perguntas de escuta usam a voz do seu navegador. Teste o som:'),
+        h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => { if (!falar('Hello! Can you hear me well?', { velocidade: 0.95 })) return; } } }, icone('speaker-high'), 'Testar áudio'),
+        temVoz() ? null : h('p', { class: 'ajuda' }, 'Se não ouvir nada, confira o volume. Em alguns aparelhos a voz em inglês precisa ser instalada nas configurações.')),
+      h('button', { type: 'button', class: 'btn btn-bloco', on: { click: () => { i = 0; pergunta(); } } }, 'Começar', icone('arrow-right')));
+  }
+
+  function progresso() { return h('div', { class: 'barra-progresso', role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': itens.length, 'aria-valuenow': i }, h('span', { style: `transform:scaleX(${(i / itens.length).toFixed(3)})` })); }
+
+  function pergunta() {
+    if (i >= itens.length) return abertaEscrita();
+    const it = itens[i];
+    inicioItem = performance.now();
+    const responder = (resposta, naoSei = false) => { respostas[it.id] = { resposta, naoSei, tempoMs: Math.round(performance.now() - inicioItem) }; i++; pergunta(); };
+    const corpo = [];
+    if (it.tipo === 'leitura') corpo.push(h('blockquote', { class: 'texto-leitura', lang: 'en' }, it.texto), h('p', { class: 'enunciado' }, it.pergunta));
+    else if (it.tipo === 'escuta') {
+      setTimeout(() => falar(it.audio, { velocidade: it.velocidade }), 350);
+      corpo.push(h('div', { class: 'escuta-caixa' }, h('button', { type: 'button', class: 'btn btn-ouvir-grande', on: { click: () => falar(it.audio, { velocidade: it.velocidade }) } }, icone('speaker-high'), 'Ouvir de novo'), h('p', { class: 'ajuda' }, 'Pode ouvir quantas vezes quiser.')), h('p', { class: 'enunciado' }, it.pergunta));
+    } else corpo.push(h('p', { class: 'enunciado', lang: it.enunciado && /[a-z]/i.test(it.enunciado) && !/[ãçé]/.test(it.enunciado) ? 'en' : 'pt-BR' }, it.enunciado));
+    caixa.replaceChildren(
+      progresso(),
+      h('p', { class: 'chip chip-neutro' }, NOMES[it.habilidade]),
+      ...corpo,
+      h('div', { class: 'opcoes', role: 'group', 'aria-label': 'Alternativas' }, it.opcoes.map(o => h('button', { type: 'button', class: 'opcao', lang: it.tipo === 'escolha' && /^[A-Za-z]/.test(o) && !/[ãçéáíóú]/.test(o) ? 'en' : null, on: { click: () => responder(o) } }, o))),
+      h('div', { class: 'linha-acoes' },
+        h('button', { type: 'button', class: 'btn btn-texto', on: { click: () => responder('', true) } }, 'Não sei'),
+        i > 0 ? h('button', { type: 'button', class: 'btn btn-texto', on: { click: () => { i--; pergunta(); } } }, icone('caret-left'), 'Voltar') : null));
+    caixa.querySelector('.opcao')?.focus({ preventScroll: true });
+  }
+
+  function abertaEscrita() {
+    const t = h('textarea', { id: 'n-escrita', rows: 5, maxlength: 2000, lang: 'en', spellcheck: 'false', placeholder: 'Hi, my name is...' });
+    t.value = escrita;
+    caixa.replaceChildren(progresso(),
+      h('p', { class: 'chip chip-neutro' }, 'Escrita (opcional)'),
+      h('h2', {}, abertas.escrita.enunciado),
+      h('div', { class: 'campo' }, h('label', { for: 'n-escrita', class: 'oculto' }, 'Seu texto'), t, h('small', {}, 'Sem tradutor, por favor: erros nos ajudam a te conhecer.')),
+      h('div', { class: 'linha-acoes' },
+        h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => { escrita = ''; abertaFala(); } } }, 'Pular'),
+        h('button', { type: 'button', class: 'btn', on: { click: () => { escrita = t.value; abertaFala(); } } }, 'Continuar', icone('arrow-right'))));
+  }
+
+  function abertaFala() {
+    if (!temMicrofone()) return enviar();
+    const saida = h('p', { class: 'transcricao', lang: 'en', 'aria-live': 'polite' }, fala || '');
+    let rec = null;
+    const gravar = h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => {
+      if (rec) { rec.stop(); return; }
+      gravar.lastChild.textContent = 'Parar';
+      rec = ouvirMicrofone({ aoTexto: t => { fala = t; saida.textContent = t; }, aoFim: () => { rec = null; gravar.lastChild.textContent = 'Gravar de novo'; } });
+    } } }, icone('microphone'), h('span', {}, 'Gravar'));
+    caixa.replaceChildren(
+      h('p', { class: 'chip chip-neutro' }, 'Fala (opcional)'),
+      h('h2', {}, 'Leia em voz alta'),
+      h('blockquote', { class: 'texto-leitura', lang: 'en' }, abertas.fala.alvo + '.'),
+      gravar, saida,
+      h('p', { class: 'ajuda' }, 'O reconhecimento de voz é feito pelo seu navegador (no Chrome, pelo serviço do Google). Não guardamos o áudio, só o texto reconhecido. Sotaque não é erro: medimos se dá para entender.'),
+      h('div', { class: 'linha-acoes' },
+        h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => { fala = ''; enviar(); } } }, 'Pular'),
+        h('button', { type: 'button', class: 'btn', on: { click: enviar } }, 'Ver meu resultado')));
+  }
+
+  async function enviar() {
+    caixa.replaceChildren(h('div', { class: 'folha vazio' }, h('p', { class: 'bilhete' }, 'Corrigindo...'), h('p', {}, 'Montando seu diagnóstico e o seu plano.')));
+    try {
+      const r = await api('/nivelamento', { metodo: 'POST', corpo: { respostas, escrita, fala } });
+      await carregarEu();
+      resultado(r.resultado, r.plano);
+    } catch (e) {
+      toast(e.message, { tipo: 'erro' });
+      caixa.replaceChildren(h('div', { class: 'folha vazio' }, h('p', {}, e.message), h('button', { class: 'btn', on: { click: enviar } }, 'Tentar de novo')));
+    }
+  }
+
+  function resultado(r, plano) {
+    const hab = Object.entries(r.porHabilidade);
+    caixa.replaceChildren(
+      h('p', { class: 'bilhete' }, 'Pronto. Aqui está o retrato de hoje.'),
+      h('div', { class: 'folha resultado-nivel' },
+        h('p', { class: 'chip' }, 'Nível estimado'),
+        h('p', { class: 'nivel-grande' }, r.nivel),
+        h('p', {}, DESCR[r.nivel]),
+        h('p', { class: 'ajuda' }, r.aviso, r.confianca === 'baixa' ? ' Como você respondeu poucas perguntas, a confiança é baixa.' : '')),
+      h('h2', {}, 'Por habilidade'),
+      h('ul', { class: 'barras' }, hab.map(([k, v]) => h('li', {},
+        h('span', { class: 'barras-rotulo' }, NOMES[k], v.estimativaFraca ? h('small', {}, ' (estimativa simples)') : null),
+        h('span', { class: 'barras-trilho', 'aria-hidden': 'true' }, h('span', { style: `transform:scaleX(${((NIVEIS.indexOf(v.nivel) + 1) / 5).toFixed(2)})` })),
+        h('strong', {}, v.nivel)))),
+      h('div', { class: 'folha com-margem' }, r.resumo.map(t => h('p', {}, t)),
+        r.pistas.length ? h('p', {}, 'Pistas para observar (ainda são hipóteses, vamos confirmar com as próximas atividades): ', r.pistas.map(p => p.nome.toLowerCase()).join('; '), '.') : null),
+      h('button', { type: 'button', class: 'btn btn-bloco', on: { click: () => ir('#/plano') } }, plano ? 'Ver meu plano' : 'Continuar', icone('arrow-right')));
+  }
+
+  intro();
+}
