@@ -1,5 +1,7 @@
 # Deploy do Inglou na VPS da Arcane
 
+> **No ar desde 18/10/2026** em https://inglou.arcanestudios.io (projeto Docker `inglou`, VPS 2051121). O que está valendo hoje é `docs/vps/docker-compose.yml` (container `node:22-alpine` que baixa o código do GitHub ao iniciar, no mesmo padrão dos outros projetos da VPS; sem Dockerfile e sem rede externa). Segredos (`GH_TOKEN`, `ANTHROPIC_API_KEY`, `BACKUP_S3_*`) ficam só nas variáveis do projeto na Hostinger, nunca no repositório. Para atualizar depois de um push: reiniciar o projeto `inglou` (o container busca a versão nova) e conferir os dados depois. Backup diário automático para o bucket `inglou` do R2 (conferido: "fora do servidor: ok"). A seção abaixo é o plano original com Dockerfile, mantida como referência.
+
 Padrão da base (`playbooks/deploy-vps.md`): projeto Docker próprio, Traefik com Let's Encrypt, DNS na Cloudflare com proxy. **Só criar coisas novas; não mexer em containers existentes.**
 
 ## Antes de subir (decisões do Gabriel)

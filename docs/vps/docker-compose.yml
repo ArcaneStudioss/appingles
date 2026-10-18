@@ -1,0 +1,63 @@
+# Inglou na VPS da Arcane: projeto Docker próprio "inglou" (padrão dos outros projetos: node:22-alpine que busca o código no GitHub ao iniciar).
+# Nenhum segredo neste arquivo: GH_TOKEN, ANTHROPIC_API_KEY e BACKUP_S3_* vêm das variáveis do projeto (.env do projeto, na VPS).
+# Para atualizar o app depois de um push: reiniciar o projeto (o container baixa a versão nova do GitHub).
+services:
+  app:
+    image: node:22-alpine
+    restart: unless-stopped
+    working_dir: /codigo
+    environment:
+      NODE_ENV: production
+      PORT: "8080"
+      DATA_DIR: /dados
+      SITE_URL: https://inglou.arcanestudios.io
+      PAGAMENTO_MODO: desligado
+      REPO_BRANCH: ${REPO_BRANCH:-main}
+      GH_TOKEN: ${GH_TOKEN}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      IA_MODELO: claude-sonnet-5-5
+      IA_MODELO_CONVERSA: claude-haiku-5-5
+      IA_MODELO_TUTOR: claude-haiku-5-5
+      IA_MODELO_AVALIACAO: claude-sonnet-5-5
+      IA_MODELO_MATERIAL: claude-sonnet-5-5
+      BACKUP_S3_ENDPOINT: https://649bb192835ec55e4caeba945d2c97f5.r2.cloudflarestorage.com
+      BACKUP_S3_BUCKET: inglou
+      BACKUP_S3_REGIAO: auto
+      BACKUP_S3_PREFIXO: inglou/
+      BACKUP_S3_CHAVE_ID: ${BACKUP_S3_CHAVE_ID:-}
+      BACKUP_S3_SEGREDO: ${BACKUP_S3_SEGREDO:-}
+    volumes:
+      - codigo:/codigo
+      - dados:/dados
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -eu
+        apk add --no-cache git >/dev/null
+        AUTH="Authorization: Basic $$(printf 'x-access-token:%s' "$$GH_TOKEN" | base64 | tr -d '\n')"
+        REPO=https://github.com/arcanestudioss/appingles.git
+        if [ ! -d .git ]; then
+          git init -q . && git remote add origin "$$REPO"
+        fi
+        git -c http.extraHeader="$$AUTH" fetch --depth 1 origin "$$REPO_BRANCH"
+        git reset -q --hard FETCH_HEAD
+        echo "codigo: $$(git rev-parse --short HEAD) ($$REPO_BRANCH)"
+        unset GH_TOKEN AUTH
+        npm ci --omit=dev --no-audit --no-fund
+        exec node --disable-warning=ExperimentalWarning server.js
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/saude"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.inglou.rule=Host(`inglou.arcanestudios.io`)
+      - traefik.http.routers.inglou.entrypoints=websecure
+      - traefik.http.routers.inglou.tls.certresolver=letsencrypt
+      - traefik.http.services.inglou.loadbalancer.server.port=8080
+volumes:
+  codigo:
+  dados:
