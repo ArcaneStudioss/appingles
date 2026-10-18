@@ -17,6 +17,8 @@ import { telaDuvidas } from './telas/duvidas.js?v=__V__';
 import { telaConta } from './telas/conta.js?v=__V__';
 import { telaPodcast } from './telas/podcast.js?v=__V__';
 import { telaSobMedida, telaEstudo, telaAssunto, telaSimulado } from './telas/sobmedida.js?v=__V__';
+import { telaAprender } from './telas/aprender.js?v=__V__';
+import { telaTreino } from './telas/treino.js?v=__V__';
 
 const palco = document.getElementById('conteudo');
 const nav = document.querySelector('.nav');
@@ -44,7 +46,7 @@ const ROTAS = {
   entrar: telaEntrar, perfil: telaPerfil, nivelamento: telaNivelamento, hoje: telaHoje, plano: telaPlano,
   licao: telaLicao, revisar: telaRevisar, conversar: telaConversar, conversa: telaConversa, progresso: telaProgresso,
   material: telaMaterial, 'material-item': telaMaterialItem, duvidas: telaDuvidas, conta: telaConta, podcast: telaPodcast,
-  sobmedida: telaSobMedida, estudo: telaEstudo, assunto: telaAssunto, simulado: telaSimulado,
+  aprender: telaAprender, treino: telaTreino, sobmedida: telaSobMedida, estudo: telaEstudo, assunto: telaAssunto, simulado: telaSimulado,
 };
 const LIVRES = new Set(['entrar']);
 const ONBOARDING = new Set(['perfil', 'nivelamento', 'plano']);
@@ -72,8 +74,8 @@ async function render() {
     if (passo === 'perfil' && rota !== 'perfil') { location.hash = '#/perfil'; return; }
     if (passo === 'nivelamento' && !['perfil', 'nivelamento'].includes(rota)) { location.hash = '#/nivelamento'; return; }
   }
-  nav.hidden = !estado.eu || ONBOARDING.has(rota) || LIVRES.has(rota) || rota === 'licao' || rota === 'simulado';
-  document.body.classList.toggle('foco-total', rota === 'licao' || rota === 'nivelamento' || rota === 'simulado');
+  nav.hidden = !estado.eu || ONBOARDING.has(rota) || LIVRES.has(rota) || rota === 'licao' || rota === 'simulado' || rota === 'treino';
+  document.body.classList.toggle('foco-total', rota === 'licao' || rota === 'nivelamento' || rota === 'simulado' || rota === 'treino');
   for (const a of nav.querySelectorAll('a')) {
     const ativo = a.dataset.rota === nome || (nome === 'conversa' && a.dataset.rota === 'conversar');
     a.toggleAttribute('aria-current', ativo); if (ativo) a.setAttribute('aria-current', 'page');

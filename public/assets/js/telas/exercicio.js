@@ -26,7 +26,7 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
       h('button', { type: 'button', class: 'btn btn-sec btn-ouvir-devagar', 'aria-label': 'Ouvir mais devagar', on: { click: () => falar(ex.audio, { velocidade: 0.7 }) } }, h('span', { class: 'tartaruga', 'aria-hidden': 'true' }, 'devagar'))));
   }
   if (ex.tipo === 'leitura') area.append(h('blockquote', { class: 'texto-leitura', lang: 'en' }, ex.texto));
-  const titulo = ex.enunciado || ex.pergunta || ({ lacuna: 'Complete a frase', ordenar: 'Monte a frase', ditado: 'Escreva o que você ouviu', traduzir: 'Escreva em inglês', pares: 'Toque nos pares que combinam' })[ex.tipo];
+  const titulo = ex.enunciado || ex.pergunta || ({ lacuna: 'Complete a frase', ordenar: 'Monte a frase', ditado: 'Escreva o que você ouviu', traduzir: 'Escreva em inglês', pares: 'Toque nos pares que combinam', corrigir: 'Corrija a frase' })[ex.tipo];
   raiz.append(h('h2', { class: 'enunciado', lang: ehIngles(titulo) ? 'en' : null }, titulo));
   if (ex.tipo === 'escuta' && ex.pergunta && ex.enunciado) raiz.append(h('p', {}, ex.pergunta));
 
@@ -118,10 +118,12 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
     });
     pegarResposta = () => [...montada.children].map(b => b.textContent).join(' ') + (ex.sufixo || '');
     area.append(montada, banco);
-  } else if (ex.tipo === 'ditado' || ex.tipo === 'traduzir') {
+  } else if (ex.tipo === 'ditado' || ex.tipo === 'traduzir' || ex.tipo === 'corrigir') {
+    if (ex.tipo === 'corrigir') area.append(h('p', { class: 'ajuda' }, 'Isto você escreveu. Corrija e confira:'), h('p', { class: 'errado-caixa riscado', lang: 'en' }, ex.errado));
     if (ex.tipo === 'traduzir') area.append(h('div', { class: 'frase-pt' }, lou('pensando', { tamanho: 52, rotulo: '' }), h('p', { class: 'balao-pt' }, ex.pt)));
     const campo = h('textarea', { class: 'resposta-livre', rows: 3, lang: 'en', autocapitalize: 'sentences', spellcheck: 'false', maxlength: 300, placeholder: 'Escreva em inglês', 'aria-label': 'Sua resposta em inglês' });
-    campo.addEventListener('input', () => habilitar(!!campo.value.trim()));
+    if (ex.tipo === 'corrigir') campo.value = ex.errado;   // a pessoa edita a própria frase
+    campo.addEventListener('input', () => habilitar(!!campo.value.trim() && (ex.tipo !== 'corrigir' || campo.value.trim() !== ex.errado)));
     campo.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); conferido ? btnConferir.click() : conferir(); } });
     pegarResposta = () => campo.value.trim();
     area.append(campo);

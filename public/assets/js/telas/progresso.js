@@ -14,6 +14,7 @@ export async function telaProgresso(el) {
 
   el.append(
     h('header', { class: 'cabeca c-lilas' }, h('span', { class: 'bolha' }, icone('book-open-text')), h('div', {}, h('h1', {}, 'Meu álbum'), p.objetivo ? h('p', { class: 'ajuda' }, icone('target'), ' ', p.objetivo.nome, p.objetivo.prazo ? ` · até ${dataBR(p.objetivo.prazo)}` : '') : null)),
+    h('a', { class: 'treino-card c-limao', href: '#/aprender' }, h('span', { class: 'bolha' }, icone('compass')), h('span', { class: 'treino-card__txt' }, h('strong', {}, 'Meu jeito de aprender'), h('small', {}, 'como você vai ao ler, escrever e ouvir, e onde mais erra')), icone('caret-right')),
     pl?.plano ? album(pl.plano, { titulo: 'Páginas do álbum', classe: 'album--todo' }) : null,
     p.conquistas.length ? h('section', { class: 'folha c-sol' }, h('h2', {}, 'Figurinhas especiais'), h('ul', { class: 'conquistas' }, p.conquistas.map(x => h('li', {}, h('span', { class: 'medalha' }, icone('medal')), nomeConquista(x.codigo))))) : null,
 

@@ -163,3 +163,26 @@ test('Estudo sob medida: cria, abre assunto, responde, conclui, faz o simulado; 
   await R('DELETE', `/sobmedida/${id}`);
   assert.equal((await R('GET', '/sobmedida')).estudos.length, 0);
 });
+
+test('Perfil de aprendizagem e treino focado: retrato por modo, preferência, treino sem gabarito, erro só dele vira "corrija a frase"', async () => {
+  const ap = await R('GET', '/aprendizagem');
+  assert.ok(ap.retrato.modos.ler && ap.retrato.modos.escrever && ap.retrato.modos.ouvir && Array.isArray(ap.percepcoes));
+  assert.ok(ap.dificuldades.length >= 1, 'as conversas do ciclo geraram dificuldades');
+  assert.deepEqual((await R('PUT', '/aprendizagem/preferencias', { estilos: ['ouvir', 'ouvir', 'ler'] })).estilos, ['ouvir', 'ler']);
+  await assert.rejects(R('PUT', '/aprendizagem/preferencias', { estilos: ['visual'] }), /422/, 'não aceita rótulos fora de ler/escrever/ouvir/falar');
+  const { treino } = await R('GET', '/treino');
+  assert.ok(treino.itens.length >= 3 && treino.porque.length >= 2);
+  assert.ok(!JSON.stringify(treino.itens).match(/"(resposta|aceitas|_fonte|_modo)"/), 'gabarito não vai ao navegador');
+  assert.equal((await R('GET', '/treino')).treino.itens.length, treino.itens.length, 'um treino por dia');
+  for (const ex of treino.itens) {
+    const r = await R('POST', '/treino/responder', { itemId: ex.id, resposta: ex.opcoes ? ex.opcoes[0] : 'x', tempoMs: 2500 });
+    assert.equal(typeof r.correto, 'boolean');
+  }
+  assert.ok((await R('POST', '/treino/responder', { itemId: treino.itens[0].id, resposta: 'outra' })).repetida);
+  const fim = await R('POST', '/treino/concluir');
+  assert.equal(fim.total, treino.itens.length);
+  assert.ok((await R('GET', '/hoje')).treino.concluido, 'aparece na tela Hoje');
+  const novo = await R('POST', '/treino/novo');
+  assert.equal(novo.treino.versao, 1);
+  assert.equal((await R('GET', '/aprendizagem')).treino.pronto, true);
+});

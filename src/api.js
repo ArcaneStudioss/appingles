@@ -22,6 +22,7 @@ const { hoje, somarDias, diasEntre, embaralhar, palavras, normalizar } = require
 const { calcularSequencia, premiosAlcancados } = require('./motor/sequencia');
 const radio = require('./motor/podcast');
 const estudoMotor = require('./motor/estudo');
+const APR = require('./motor/aprendizagem');
 const { respostaCerta: respostaDe } = require('./motor/correcao');
 
 // ---------- validação ----------
@@ -157,7 +158,11 @@ function criar(db) {
   function registrarAchados(uid, achados, { origem, cenario = null, contexto = null }, h) {
     const novos = [];
     for (const a of achados) {
-      if (!a.tag || a.tag === 'outro' || !POR_TAG[a.tag] || a.confianca === 'baixa') continue;
+      if (a.confianca === 'baixa' || !a.trecho) continue;
+      if (!a.tag || a.tag === 'outro' || !POR_TAG[a.tag]) {   // erro só dele: não está no catálogo, mas entra na revisão e no "corrija a frase" do treino
+        if (a.sugestao) criarCartao(uid, { frente: `Como dizer melhor: "${String(a.trecho).slice(0, 120)}"`, verso: String(a.sugestao).slice(0, 200), tipo: 'erro', origem, tag: null, nota_origem: a.explicacao }, h);
+        continue;
+      }
       const aberto = q("SELECT id FROM focos WHERE user_id = ? AND tag = ? AND status IN ('novo','praticando') LIMIT 1").get(uid, a.tag);
       if (aberto) q('UPDATE focos SET trecho = ?, correcao = ?, origem = ?, cenario = ? WHERE id = ? AND user_id = ?').run(String(a.trecho).slice(0, 200), String(a.sugestao || '').slice(0, 200), origem, cenario, aberto.id, uid);
       else { q('INSERT INTO focos (user_id, tag, origem, cenario, trecho, correcao, criado_em) VALUES (?,?,?,?,?,?,?)').run(uid, a.tag, origem, cenario, String(a.trecho).slice(0, 200), String(a.sugestao || '').slice(0, 200), agoraISO()); novos.push(a.tag); }
@@ -412,7 +417,7 @@ function criar(db) {
       meta: { minutos: p.meta_diaria || 15, feitos: Math.round(minutosHoje) },
       foco: focoNovo ? { nome: POR_TAG[focoNovo.tag]?.nome, origem: focoNovo.origem } : null,
       objetivo: { nome: plano.objetivoNome, prazo: plano.prazo, metaRealista: plano.metaRealista },
-      assinatura: est, novasConquistas, pontosHoje, diasNoMes, sequencia: sequenciaDe(uid, h), estudo: estudoResumo(uid, h),
+      assinatura: est, novasConquistas, pontosHoje, diasNoMes, sequencia: sequenciaDe(uid, h), estudo: estudoResumo(uid, h), treino: treinoResumo(uid, h),
       radio: radioResumo(uid, h),
     };
   });
@@ -737,6 +742,134 @@ function criar(db) {
       return { modo: 'catalogo', aviso, resposta: `${d.nome}\n\n${d.regra}\n\nPortuguês: ${d.contraste.pt}\nInglês: ${d.contraste.en}\n${d.contraste.nota}\n\nExemplos:\n${d.abordagens.exemplos.slice(0, 3).map(e => '• ' + e).join('\n')}\n\nNão tenho certeza de que era exatamente isso que você perguntou. Sem o tutor de IA, eu respondo só sobre os pontos mais comuns.` };
     }
     return { modo: 'catalogo', aviso, resposta: `Sem o tutor de IA ativo, consigo explicar estes pontos comuns: ${DIFICULDADES.map(d => d.nome.toLowerCase()).join('; ')}. Tente perguntar usando uma dessas palavras.` };
+  });
+
+  // ---------- Perfil de aprendizagem e treino focado nas dificuldades ----------
+  const ESTILOS = ['ler', 'escrever', 'ouvir', 'falar'];
+  const estilosDe = uid => { const l = lerJson(q('SELECT estilos FROM perfis WHERE user_id = ?').get(uid)?.estilos, []); return Array.isArray(l) ? l.filter(e => ESTILOS.includes(e)) : []; };
+  const cartoesPessoais = uid => q("SELECT id, frente, verso, nota_origem, origem, criado_em FROM cartoes WHERE user_id = ? AND tipo = 'erro' AND tag IS NULL AND frente LIKE 'Como dizer melhor:%' ORDER BY criado_em DESC LIMIT 40").all(uid);
+  function dadosDeAprendizagem(uid) {
+    const n = nivelamentoDe(uid), tent = tentativasDe(uid, 60), estilos = estilosDe(uid);
+    const retr = APR.retrato(tent, n), difs = APR.dificuldades(tent, focosDe(uid)), pessoais = APR.errosPessoais(cartoesPessoais(uid));
+    const vistos = {}; for (const t of tent) if (t.item_id) vistos[t.item_id] = { acertou: !!t.correto };
+    return { n, tent, estilos, retr, difs, pessoais, vistos, pesos: APR.pesosDeModos(retr, estilos) };
+  }
+  function treinoResumo(uid, h) {
+    const t = q('SELECT concluido_em, dados FROM treinos WHERE user_id = ? AND data = ?').get(uid, h);
+    if (t) { const d = lerJson(t.dados, {}); return { pronto: true, concluido: !!t.concluido_em, quantos: (d.itens || []).length, tags: (d.tags || []).map(x => x.nome) }; }
+    const { difs } = dadosDeAprendizagem(uid);
+    return { pronto: false, concluido: false, quantos: 0, tags: difs.filter(d => d.status !== 'superada').slice(0, 2).map(d => d.nome) };
+  }
+  rota('GET', '/aprendizagem', (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid);
+    const d = dadosDeAprendizagem(uid);
+    return {
+      retrato: { modos: d.retr.modos, nivel: d.retr.nivel, total: d.retr.total }, percepcoes: APR.percepcoes(d.retr, d.estilos), pesos: d.pesos,
+      dificuldades: d.difs.slice(0, 8), pessoais: d.pessoais.slice(0, 8), preferencias: { estilos: d.estilos },
+      treino: treinoResumo(uid, h), ia: ia.ativo(),
+    };
+  });
+  rota('PUT', '/aprendizagem/preferencias', (ctx) => {
+    const l = ctx.corpo.estilos;
+    if (!Array.isArray(l) || l.length > 4 || !l.every(e => ESTILOS.includes(e))) throw new ErroHttp(422, 'Escolha entre ler, escrever, ouvir e falar.');
+    q('UPDATE perfis SET estilos = ? WHERE user_id = ?').run(JSON.stringify([...new Set(l)]), ctx.u.id);
+    return { ok: true, estilos: [...new Set(l)] };
+  });
+
+  const treinoParaCliente = (row) => {
+    const d = lerJson(row.dados, {});
+    return { data: row.data, porque: d.porque || [], tags: d.tags || [], modos: d.modos || {}, pessoais: d.pessoais || 0, versao: d.versao || 0, modo: d.modo || 'catalogo',
+      concluido: !!row.concluido_em, itens: exercicioParaCliente(d.itens || [], `treino:${uid0(row)}:${row.data}:${d.versao || 0}`), respondidos: lerJson(row.respondidos, {}) };
+  };
+  const uid0 = row => row.user_id;
+  async function criarTreino(uid, h, versao) {
+    const chave = 'treino' + uid;
+    if (emAndamento.has(chave)) throw new ErroHttp(409, 'Estamos montando o seu treino. Tente de novo em instantes.');
+    emAndamento.add(chave);
+    try {
+      const d = dadosDeAprendizagem(uid), p = perfilDe(uid);
+      let tags = d.difs.filter(x => x.status !== 'superada').slice(0, 3);
+      if (!tags.length) {   // ainda sem dificuldades registradas: começa pelos pontos da missão de hoje
+        const plano = planoDe(uid), m = plano ? missaoAtual(plano, competenciasDe(uid)) : null;
+        tags = (POR_ID[m?.id]?.tags || []).filter(t => POR_TAG[t]).slice(0, 2).map(t => ({ tag: t, nome: POR_TAG[t].nome, erros: 0, total: 0, seu: null }));
+      }
+      if (!tags.length && !d.pessoais.length) throw new ErroHttp(422, 'Ainda não sei o que treinar com você. Faça a aula de hoje e uma conversa: o que travar vira treino.');
+      // IA: frases novas, na área do aluno, sobre o erro real dele (só nas 2 principais, só se a cota deixar)
+      const bancoIa = {};
+      const perm = podeIa(uid, 'treino', h);
+      if (perm.pode && tags.length) {
+        await Promise.all(tags.slice(0, 2).map(async t => {
+          try {
+            const r = await ia.treinarTag({ nome: t.nome, regra: POR_TAG[t.tag].regra, erros: [t.seu, ...d.tent.filter(x => x.tag === t.tag && !x.correto && x.resposta && x.origem !== 'licao').slice(-3).map(x => x.resposta)].filter(Boolean), perfil: p, nivel: d.n?.nivel });
+            contarIa(uid, 'treino', h, r.uso);
+            const ok = validarExerciciosIa(r.exercicios, `tr-${t.tag}`, t.tag, 6);
+            if (ok.length) bancoIa[t.tag] = ok;
+          } catch (e) { console.error('[ia] treino falhou:', e.message); }
+        }));
+      }
+      const quantos = (p.minutos_dia || 15) <= 10 ? 6 : (p.minutos_dia || 15) >= 20 ? 10 : 8;
+      const m = APR.montarTreino({ tags, pessoais: d.pessoais, pesos: d.pesos, quantos, bancoIa, vistos: d.vistos, semente: `${uid}:${h}:${versao}` });
+      if (m.itens.length < 3) throw new ErroHttp(422, 'Ainda tenho pouco material para o seu treino. Faça a aula de hoje e volte.');
+      const dados = { itens: m.itens, modos: m.modos, tags: m.tags, pessoais: m.pessoais, versao, modo: Object.keys(bancoIa).length ? 'ia' : 'catalogo', porque: APR.explicarTreino({ difs: tags, pesos: d.pesos, retr: d.retr, estilos: d.estilos, pessoais: m.pessoais }) };
+      q('DELETE FROM treinos WHERE user_id = ? AND data = ?').run(uid, h);
+      q('INSERT INTO treinos (user_id, data, criado_em, dados) VALUES (?, ?, ?, ?)').run(uid, h, agoraISO(), JSON.stringify(dados));
+      return q('SELECT * FROM treinos WHERE user_id = ? AND data = ?').get(uid, h);
+    } finally { emAndamento.delete(chave); }
+  }
+  rota('GET', '/treino', async (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid);
+    exigirAcessoCompleto(uid, h);
+    const row = q('SELECT * FROM treinos WHERE user_id = ? AND data = ?').get(uid, h) || await criarTreino(uid, h, 0);
+    return { treino: treinoParaCliente(row), ia: ia.ativo() };
+  });
+  rota('POST', '/treino/novo', async (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid);
+    exigirAcessoCompleto(uid, h);
+    const atual = q('SELECT dados FROM treinos WHERE user_id = ? AND data = ?').get(uid, h);
+    const versao = (lerJson(atual?.dados, {}).versao || 0) + 1;
+    if (versao > 3) throw new ErroHttp(429, 'Hoje já foram 3 treinos novos. Amanhã tem mais, com o que você errou hoje.');
+    return { treino: treinoParaCliente(await criarTreino(uid, h, versao)) };
+  });
+  rota('POST', '/treino/responder', (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid), b = ctx.corpo;
+    exigirAcessoCompleto(uid, h);
+    const itemId = V.str(b.itemId, 20, { min: 1, campo: 'Item' });
+    const resposta = V.str(b.resposta, 500, { campo: 'Resposta' });
+    const row = q('SELECT * FROM treinos WHERE user_id = ? AND data = ?').get(uid, h);
+    if (!row) throw new ErroHttp(404, 'Treino não encontrado.');
+    const d = lerJson(row.dados, {}), ex = (d.itens || []).find(i => i.id === itemId);
+    if (!ex) throw new ErroHttp(404, 'Exercício não encontrado.');
+    const resp = lerJson(row.respondidos, {});
+    if (resp[itemId]) return { ...resp[itemId], repetida: true };
+    const r = corrigirExercicio(ex, resposta);
+    transacao(db, () => {
+      const atual = lerJson(q('SELECT respondidos FROM treinos WHERE id = ? AND user_id = ?').get(row.id, uid).respondidos, {});
+      if (atual[itemId]) return;
+      atual[itemId] = { correto: r.correto, quase: r.quase, esperado: r.esperado, explica: r.explica, achados: r.achados, resposta };
+      q('UPDATE treinos SET respondidos = ? WHERE id = ? AND user_id = ?').run(JSON.stringify(atual), row.id, uid);
+      registrarTentativa(uid, { item_id: String(ex._fonte || '').startsWith('pessoal:') ? null : ex._fonte, habilidade: ex.habilidade, tag: ex.tag, formato: ex.tipo === 'escolha' ? 'reconhecimento' : 'producao', modalidade: ex.tipo === 'ditado' ? 'audio' : 'texto', correto: r.correto, tempo_ms: b.tempoMs, dica: b.dica === true, origem: 'treino', contexto: 'treino', resposta });
+      if (!r.correto && ex.tipo === 'traduzir') criarCartao(uid, { frente: ex.pt, verso: r.esperado, tipo: 'erro', origem: 'treino', tag: ex.tag, nota_origem: r.explica }, h);
+      if (!r.correto && ex.tipo === 'lacuna' && ex.frase) criarCartao(uid, { frente: ex.frase, verso: ex.frase.replace('___', ex.resposta[0]), tipo: 'erro', origem: 'treino', tag: ex.tag, nota_origem: r.explica }, h);
+    });
+    return { correto: r.correto, quase: r.quase, esperado: r.esperado, explica: r.explica, achados: r.achados, textoAudio: ex.tipo === 'ditado' ? ex.audio : null };
+  });
+  rota('POST', '/treino/concluir', (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid);
+    exigirAcessoCompleto(uid, h);
+    const row = q('SELECT * FROM treinos WHERE user_id = ? AND data = ?').get(uid, h);
+    if (!row) throw new ErroHttp(404, 'Treino não encontrado.');
+    const d = lerJson(row.dados, {}), resp = lerJson(row.respondidos, {});
+    const feitos = (d.itens || []).filter(i => resp[i.id]), certos = feitos.filter(i => resp[i.id].correto).length;
+    const porTag = {};
+    for (const i of feitos) { const nome = i.tag ? POR_TAG[i.tag]?.nome : 'Suas frases'; const x = (porTag[nome || 'Outros'] ||= { nome: nome || 'Outros', certos: 0, total: 0 }); x.total++; if (resp[i.id].correto) x.certos++; }
+    const conq = [];
+    if (!row.concluido_em) {
+      q('UPDATE treinos SET concluido_em = ? WHERE id = ? AND user_id = ?').run(agoraISO(), row.id, uid);
+      conq.push(...somarMinutos(uid, h, 5 + Math.min(8, feitos.length)));
+      if (conquistar(uid, 'treino-1')) conq.push('treino-1');
+      if (q('SELECT COUNT(*) n FROM treinos WHERE user_id = ? AND concluido_em IS NOT NULL').get(uid).n >= 7 && conquistar(uid, 'treino-7')) conq.push('treino-7');
+    }
+    return { ok: true, certos, total: (d.itens || []).length, feitos: feitos.length, porTag: Object.values(porTag), conquistas: conq };
   });
 
   // ---------- Estudo sob medida: prova, entrevista, viagem... com assuntos, mini-aulas e simulado ----------
@@ -1204,23 +1337,23 @@ function criar(db) {
   rota('GET', '/dados', (ctx) => {
     const uid = ctx.u.id;
     const conta = t => q(`SELECT COUNT(*) n FROM ${t} WHERE user_id = ?`).get(uid).n;
-    return { contagem: { tentativas: conta('tentativas'), licoes: conta('licoes'), cartoes: conta('cartoes'), revisoes: conta('revisoes'), conversas: conta('conversas'), amostras: conta('amostras'), materiais: conta('materiais'), nivelamentos: conta('nivelamentos'), focos: conta('focos'), podcasts: conta('podcasts'), estudos: conta('estudos') }, ia: ia.ativo() };
+    return { contagem: { tentativas: conta('tentativas'), licoes: conta('licoes'), cartoes: conta('cartoes'), revisoes: conta('revisoes'), conversas: conta('conversas'), amostras: conta('amostras'), materiais: conta('materiais'), nivelamentos: conta('nivelamentos'), focos: conta('focos'), podcasts: conta('podcasts'), estudos: conta('estudos'), treinos: conta('treinos') }, ia: ia.ativo() };
   });
   rota('GET', '/dados/exportar', (ctx) => {
     const uid = ctx.u.id;
     const tudo = t => q(`SELECT * FROM ${t} WHERE user_id = ?`).all(uid);
     const u = q('SELECT nome, email, criado_em, consentiu_em FROM usuarios WHERE id = ?').get(uid);
     ctx.res.setHeader('Content-Disposition', `attachment; filename="inglou-meus-dados-${hojeDe(uid)}.json"`);
-    return { exportadoEm: agoraISO(), conta: u, perfil: perfilDe(uid), assinatura: assinaturaDe(uid), nivelamentos: tudo('nivelamentos'), planos: tudo('planos'), licoes: tudo('licoes'), tentativas: tudo('tentativas'), cartoes: tudo('cartoes'), revisoes: tudo('revisoes'), conversas: tudo('conversas'), focos: tudo('focos'), amostras: tudo('amostras'), competencias: tudo('competencias'), materiais: tudo('materiais'), conquistas: tudo('conquistas'), uso_ia: tudo('uso_ia'), dias_estudo: tudo('dias_estudo'), podcasts: tudo('podcasts'), estudos: tudo('estudos') };
+    return { exportadoEm: agoraISO(), conta: u, perfil: perfilDe(uid), assinatura: assinaturaDe(uid), nivelamentos: tudo('nivelamentos'), planos: tudo('planos'), licoes: tudo('licoes'), tentativas: tudo('tentativas'), cartoes: tudo('cartoes'), revisoes: tudo('revisoes'), conversas: tudo('conversas'), focos: tudo('focos'), amostras: tudo('amostras'), competencias: tudo('competencias'), materiais: tudo('materiais'), conquistas: tudo('conquistas'), uso_ia: tudo('uso_ia'), dias_estudo: tudo('dias_estudo'), podcasts: tudo('podcasts'), estudos: tudo('estudos'), treinos: tudo('treinos') };
   });
   const ESCOPOS = {
-    respostas: ['tentativas', 'revisoes', 'focos', 'descartes', 'podcasts'],
+    respostas: ['tentativas', 'revisoes', 'focos', 'descartes', 'podcasts', 'treinos'],
     conversas: ['conversas'],
     amostras: ['amostras'],
     cartoes: ['cartoes', 'revisoes'],
     materiais: ['materiais'],
     estudos: ['estudos'],
-    tudo: ['tentativas', 'revisoes', 'focos', 'descartes', 'conversas', 'amostras', 'cartoes', 'materiais', 'licoes', 'competencias', 'conquistas', 'dias_estudo', 'nivelamentos', 'planos', 'podcasts', 'estudos'],
+    tudo: ['tentativas', 'revisoes', 'focos', 'descartes', 'conversas', 'amostras', 'cartoes', 'materiais', 'licoes', 'competencias', 'conquistas', 'dias_estudo', 'nivelamentos', 'planos', 'podcasts', 'estudos', 'treinos'],
   };
   rota('POST', '/dados/apagar', (ctx) => {
     const uid = ctx.u.id;

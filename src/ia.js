@@ -200,6 +200,21 @@ async function estudarAssunto({ assunto, porque, estudo, material, perfil, nivel
   return { ...dados, uso };
 }
 
+// Treino de UMA dificuldade do aluno: frases novas, na área e no objetivo dele, parecidas com o erro que ele realmente cometeu.
+async function treinarTag({ nome, regra, erros, perfil, nivel }) {
+  const system = `${BASE}\n\nYou write practice exercises for ONE specific difficulty of THIS student. The mistakes the student really made are inside <aluno>: use them only to understand what goes wrong, and NEVER present a wrong sentence as correct. Write NEW sentences about the student's own area, goal and interests, in correct natural English at their level. Exactly 6 items: 2 escolha, 2 lacuna, 2 traduzir. One single correct answer each. Instructions, "pt" and "explicacao" in Brazilian Portuguese (explicacao: one short sentence on the rule).\n${contexto(perfil, nivel)}`;
+  const item = { type: 'object', properties: {
+    tipo: { type: 'string', enum: ['escolha', 'lacuna', 'traduzir'] }, enunciado: { type: 'string' }, frase: { type: 'string', description: 'lacuna: English sentence with exactly one ___ ; otherwise empty' },
+    pt: { type: 'string', description: 'traduzir: Portuguese sentence; otherwise empty' }, opcoes: { type: 'array', items: { type: 'string' } }, correta: { type: 'integer' },
+    respostas_aceitas: { type: 'array', items: { type: 'string' } }, explicacao: { type: 'string' },
+  }, required: ['tipo', 'enunciado', 'frase', 'pt', 'opcoes', 'correta', 'respostas_aceitas', 'explicacao'], additionalProperties: false };
+  const schema = { type: 'object', properties: { exercicios: { type: 'array', items: item } }, required: ['exercicios'], additionalProperties: false };
+  const lista = (erros || []).slice(0, 4).map(e => `<aluno>${String(e).slice(0, 160)}</aluno>`).join('\n');
+  const mensagens = [{ role: 'user', content: `Difficulty: ${nome}. Rule (Portuguese): ${regra}\nMistakes this student made:\n${lista || '(none recorded yet; use the typical mistake of Brazilian learners)'}` }];
+  const { dados, uso } = await chamar({ tarefa: 'material', system, mensagens, schema, maxTokens: 3000, esforco: 'low' });
+  return { exercicios: dados.exercicios || [], uso };
+}
+
 // ---------- simulação (IA_FAKE) ----------
 function simular(tarefa, mensagens, schema) {
   const ultimo = String(mensagens[mensagens.length - 1]?.content || '');
@@ -235,4 +250,4 @@ function simular(tarefa, mensagens, schema) {
   return { dados: {}, uso };
 }
 
-module.exports = { ativo, conversar, avaliarProducao, tutor, processarMaterial, gerarExercicios, podcast, planejarEstudo, estudarAssunto, MODELOS };
+module.exports = { ativo, conversar, avaliarProducao, tutor, processarMaterial, gerarExercicios, podcast, planejarEstudo, estudarAssunto, treinarTag, MODELOS };

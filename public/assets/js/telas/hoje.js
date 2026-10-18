@@ -5,7 +5,7 @@ import { api } from '../api.js?v=__V__';
 import { h, icone, dataBR, plural, toast, janela } from '../ui.js?v=__V__';
 import { louFala, lou } from '../diversao.js?v=__V__';
 
-const CONQ = { 'primeiro-passo': 'Primeiro passo: teste de nível feito', 'primeira-licao': 'Primeira lição concluída', 'primeira-conversa': 'Primeira conversa', 'primeira-demonstracao': 'Primeira missão demonstrada', retido: 'Missão mantida depois de dias', 'foco-superado': 'Superou uma dificuldade', 'revisoes-50': '50 revisões', material: 'Estudou com material seu', 'licoes-10': '10 lições', 'dias-3': '3 dias de estudo', 'dias-10': '10 dias de estudo', 'dias-30': '30 dias de estudo', 'dias-60': '60 dias de estudo', radio: 'Primeiro episódio da Rádio Tuiuiú', 'estudo-1': 'Primeiro assunto do estudo sob medida', 'estudo-completo': 'Estudo sob medida completo', 'simulado-1': 'Primeiro simulado',
+const CONQ = { 'primeiro-passo': 'Primeiro passo: teste de nível feito', 'primeira-licao': 'Primeira lição concluída', 'primeira-conversa': 'Primeira conversa', 'primeira-demonstracao': 'Primeira missão demonstrada', retido: 'Missão mantida depois de dias', 'foco-superado': 'Superou uma dificuldade', 'revisoes-50': '50 revisões', material: 'Estudou com material seu', 'licoes-10': '10 lições', 'dias-3': '3 dias de estudo', 'dias-10': '10 dias de estudo', 'dias-30': '30 dias de estudo', 'dias-60': '60 dias de estudo', radio: 'Primeiro episódio da Rádio Tuiuiú', 'estudo-1': 'Primeiro assunto do estudo sob medida', 'estudo-completo': 'Estudo sob medida completo', 'simulado-1': 'Primeiro simulado', 'treino-1': 'Primeiro treino focado', 'treino-7': '7 treinos focados',
   'seq-3': '3 dias seguidos', 'seq-7': '1 semana seguida', 'seq-14': '2 semanas seguidas', 'seq-30': '30 dias seguidos', 'seq-60': '60 dias seguidos', 'seq-100': '100 dias seguidos', 'seq-200': '200 dias seguidos', 'seq-365': '1 ano seguido' };
 export const nomeConquista = c => CONQ[c] || (c.startsWith('volta') ? 'Que bom te ver de volta' : c);
 
@@ -106,6 +106,16 @@ export async function telaHoje(el, { ir }) {
       L.missao ? h('p', { class: 'aula__meta' }, icone('target'), h('span', {}, 'No fim da missão você vai conseguir: ', h('strong', {}, `“${L.missao.podeFazer}”`))) : null,
       feita ? h('a', { class: 'btn btn-sec btn-bloco', href: '#/licao' }, icone('repeat'), 'Rever a aula')
         : h('a', { class: 'btn btn-bloco btn-grande', href: '#/licao' }, icone('play'), L.iniciada ? 'Continuar a aula' : 'Bora começar')));
+  }
+
+  // Treino focado: 100% nas dificuldades da pessoa (sem dificuldade registrada ainda, o cartão leva ao "Meu jeito de aprender")
+  if (d.treino && a.acesso === 'completo') {
+    const t = d.treino, pronto = t.pronto || t.tags.length;
+    principal.append(h('a', { class: 'treino-card c-limao' + (t.concluido ? ' treino-card--feito' : ''), href: pronto ? '#/treino' : '#/aprender' },
+      h('span', { class: 'bolha' }, icone(pronto ? 'target' : 'compass')),
+      h('span', { class: 'treino-card__txt' }, h('strong', {}, t.concluido ? 'Treino de hoje feito' : pronto ? 'Meu treino de hoje' : 'Meu jeito de aprender'),
+        h('small', {}, t.concluido ? 'Quer mais um? Dá para fazer outro.' : pronto ? (t.tags.length ? `Foco: ${t.tags.join('; ').toLowerCase()}${t.quantos ? ` · ${t.quantos} perguntas` : ''}` : `${t.quantos} perguntas só para você`) : 'veja como você aprende, pelos seus acertos')),
+      h('span', { class: 'radio-card__play', 'aria-hidden': 'true' }, icone(t.concluido ? 'check' : 'play'))));
   }
 
   // Rádio Tuiuiú: o episódio de hoje, feito com os tropeços da pessoa

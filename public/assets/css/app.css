@@ -22,6 +22,7 @@
   --turquesa:#17A6C9; --turquesa-forte:#09657D; --turquesa-fundo:#DAF3FA; --turquesa-sombra:#0D84A2; --turquesa-sobre:#03303B;
   --rosa:#E0559A; --rosa-forte:#9E2560; --rosa-fundo:#FFE6F1; --rosa-sombra:#B93A78; --rosa-sobre:#FFF7FB;
   --arara-1:#2447D0; --arara-2:#1A33A0; --arara-3:#6C8DFF;
+  --limao:#7DB800; --limao-forte:#436700; --limao-fundo:#EDF8CC; --limao-sombra:#5C8A00; --limao-sobre:#1B2A00;
   --perigo:#B3261E;
   --ceu:radial-gradient(color-mix(in srgb,var(--azul) 13%,transparent) 1.2px,transparent 1.6px) 0 0/24px 24px;
   --sombra:0 1px 2px rgba(22,34,74,.06),0 10px 28px rgba(22,34,74,.08);
@@ -50,6 +51,7 @@
   --turquesa:#55CBE8; --turquesa-forte:#A1E5F5; --turquesa-fundo:#10394B; --turquesa-sombra:#2496B3; --turquesa-sobre:#03303B;
   --rosa:#FF8CC1; --rosa-forte:#FFC4DE; --rosa-fundo:#45203A; --rosa-sombra:#CC5F95; --rosa-sobre:#3A0A22;
   --arara-1:#5C80F5; --arara-2:#3D5CD0; --arara-3:#A9C0FF;
+  --limao:#B9E54E; --limao-forte:#D8F596; --limao-fundo:#2E3B10; --limao-sombra:#84AC1E; --limao-sobre:#192500;
   --perigo:#FF8A80;
   --ceu:radial-gradient(1.5px 1.5px at 12% 18%,#fff9 50%,transparent 51%),radial-gradient(1px 1px at 72% 9%,#fffc 50%,transparent 51%),radial-gradient(1.5px 1.5px at 42% 63%,#fff7 50%,transparent 51%),radial-gradient(1px 1px at 88% 44%,#fffa 50%,transparent 51%),radial-gradient(1px 1px at 24% 86%,#fff8 50%,transparent 51%),radial-gradient(2px 2px at 58% 33%,#ffe9a8aa 50%,transparent 51%) 0 0/320px 320px;
   --sombra:0 1px 2px rgba(0,0,0,.3),0 12px 30px rgba(0,0,0,.28);
@@ -67,6 +69,7 @@
   --turquesa:#55CBE8; --turquesa-forte:#A1E5F5; --turquesa-fundo:#10394B; --turquesa-sombra:#2496B3; --turquesa-sobre:#03303B;
   --rosa:#FF8CC1; --rosa-forte:#FFC4DE; --rosa-fundo:#45203A; --rosa-sombra:#CC5F95; --rosa-sobre:#3A0A22;
   --arara-1:#5C80F5; --arara-2:#3D5CD0; --arara-3:#A9C0FF;
+  --limao:#B9E54E; --limao-forte:#D8F596; --limao-fundo:#2E3B10; --limao-sombra:#84AC1E; --limao-sobre:#192500;
   --perigo:#FF8A80;
   --ceu:radial-gradient(1.5px 1.5px at 12% 18%,#fff9 50%,transparent 51%),radial-gradient(1px 1px at 72% 9%,#fffc 50%,transparent 51%),radial-gradient(1.5px 1.5px at 42% 63%,#fff7 50%,transparent 51%),radial-gradient(1px 1px at 88% 44%,#fffa 50%,transparent 51%),radial-gradient(1px 1px at 24% 86%,#fff8 50%,transparent 51%),radial-gradient(2px 2px at 58% 33%,#ffe9a8aa 50%,transparent 51%) 0 0/320px 320px;
   --sombra:0 1px 2px rgba(0,0,0,.3),0 12px 30px rgba(0,0,0,.28);
@@ -80,6 +83,7 @@
 .c-lilas{--c:var(--lilas);--c-forte:var(--lilas-forte);--c-fundo:var(--lilas-fundo);--c-sombra:var(--lilas-sombra);--c-sobre:var(--lilas-sobre)}
 .c-coral{--c:var(--coral);--c-forte:var(--coral-forte);--c-fundo:var(--coral-fundo);--c-sombra:var(--coral-sombra);--c-sobre:var(--coral-sobre)}
 .c-rosa{--c:var(--rosa);--c-forte:var(--rosa-forte);--c-fundo:var(--rosa-fundo);--c-sombra:var(--rosa-sombra);--c-sobre:var(--rosa-sobre)}
+.c-limao{--c:var(--limao);--c-forte:var(--limao-forte);--c-fundo:var(--limao-fundo);--c-sombra:var(--limao-sombra);--c-sobre:var(--limao-sobre)}
 .c-turquesa{--c:var(--turquesa);--c-forte:var(--turquesa-forte);--c-fundo:var(--turquesa-fundo);--c-sombra:var(--turquesa-sombra);--c-sobre:var(--turquesa-sobre)}
 
 /* ---------- base ---------- */
@@ -407,7 +411,7 @@ body.foco-total .topo-app{display:none}
 .licao-topo{display:flex;align-items:center;gap:.6rem;position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--fundo) 90%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:.7rem 0 .5rem;padding-top:max(.7rem,env(safe-area-inset-top))}
 .licao-palco{min-height:60dvh;padding-top:.6rem}
 /* trilho da lição: o Lou anda junto com o progresso */
-.trilho{position:relative;flex:1;height:18px;border-radius:99px;background:var(--borda)}
+.trilho{position:relative;flex:1;height:18px;border-radius:99px;background:var(--borda);margin-inline:20px}   /* folga dos dois lados: o Tuiuiú que anda na barra passa meio corpo da ponta */
 .trilho__cheio{position:absolute;inset:0;border-radius:99px;background:linear-gradient(90deg,var(--azul),var(--turquesa));transform-origin:0 50%;transform:scaleX(var(--p,0));transition:transform .5s var(--ease)}
 .trilho__cheio::after{content:"";position:absolute;left:10px;right:10px;top:4px;height:4px;border-radius:99px;background:rgba(255,255,255,.4)}
 .trilho__lou{position:absolute;top:50%;left:0;width:100%;height:0;transform:translateX(calc(var(--p,0) * 100%));transition:transform .5s var(--mola);pointer-events:none}
@@ -909,3 +913,48 @@ button.status__item{font:inherit;cursor:pointer;color:var(--tinta)}
 .detalhe--errado{border-left:6px solid var(--coral)}
 .simulado{display:grid;gap:1rem}
 @media (min-width:560px){.assunto{padding:.9rem 1.1rem}}
+
+/* ==========================================================================
+   MEU TREINO E MEU JEITO DE APRENDER
+   ========================================================================== */
+.treino-card{display:flex;align-items:center;gap:.8rem;padding:.85rem 1rem;border-radius:var(--raio);text-decoration:none;color:var(--tinta);background:var(--c-fundo);border:2px solid color-mix(in srgb,var(--c) 38%,transparent);box-shadow:0 5px 0 color-mix(in srgb,var(--c) 42%,transparent);transition:transform .12s var(--ease),box-shadow .12s}
+.treino-card:active{transform:translateY(5px);box-shadow:none}
+@media (hover:hover){.treino-card:hover{transform:translateY(-2px)}}
+.treino-card__txt{display:grid;gap:.1rem;flex:1;min-width:0}
+.treino-card__txt strong{font-family:var(--f-titulo);font-weight:600;font-size:1.15rem;color:var(--c-forte)}
+.treino-card__txt small{color:var(--tinta-2);font-size:.88rem;line-height:1.3}
+.treino-card .radio-card__play{background:var(--c);color:var(--c-sobre);box-shadow:0 4px 0 var(--c-sombra)}
+.treino-card--feito .radio-card__play{background:var(--menta);color:var(--menta-sobre);box-shadow:0 4px 0 var(--menta-sombra)}
+.treino-card>.ico:last-child{color:var(--c-forte)}
+.treino-modos,.treino-tags{display:flex;flex-wrap:wrap;gap:.4rem}
+.errado-caixa{margin:0;padding:.7rem .9rem;border-radius:var(--raio-p);background:var(--coral-fundo);font-size:1.1rem;font-weight:700}
+.modos{list-style:none;padding:0;margin:.4rem 0 .6rem;display:grid;gap:.8rem}
+.modo{display:flex;align-items:center;gap:.8rem}
+.modo__txt{display:grid;gap:.3rem;flex:1;min-width:0}
+.modo__topo{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem}
+.modo__txt small{color:var(--tinta-2);line-height:1.3}
+.modo__pct{font-family:var(--f-titulo);font-weight:600;font-size:1.5rem;color:var(--c-forte);min-width:3.2rem;text-align:right}
+.modo__pct--vazio{color:var(--tinta-3)}
+.percepcao{display:grid;gap:.15rem}
+.percepcao p{margin:0}
+.dificuldades{list-style:none;padding:0;margin:.4rem 0 0;display:grid;gap:1rem}
+.dificuldade{display:grid;gap:.3rem;padding:.9rem 1rem;border-radius:var(--raio-p);background:var(--cartao-2);border:2px solid var(--borda)}
+.dificuldade--ok{background:linear-gradient(120deg,var(--cartao-2) 60%,var(--menta-fundo))}
+.dificuldade__topo{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.4rem}
+.dificuldade__topo strong{font-family:var(--f-titulo);font-weight:600;font-size:1.08rem}
+.dificuldade p{margin:0}
+.dificuldade small{color:var(--tinta-2)}
+.dificuldade .estudo-barra{--c:var(--coral)}
+.pessoais{list-style:none;padding:0;margin:.4rem 0 0;display:grid;gap:.8rem}
+.escolhas-modo{display:grid;gap:.6rem;margin:.6rem 0}
+.escolha-modo{position:relative;margin:0}
+.escolha-modo input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+.escolha-modo>span{display:flex;align-items:center;gap:.8rem;padding:.7rem .9rem;border-radius:var(--raio-p);border:2px solid var(--borda);background:var(--cartao);transition:border-color .15s,background .15s}
+.escolha-modo>span>span:last-child{display:grid}
+.escolha-modo small{color:var(--tinta-2);font-weight:600}
+.escolha-modo input:checked+span{border-color:var(--c);background:var(--c-fundo)}
+.escolha-modo input:focus-visible+span{outline:3px solid var(--azul);outline-offset:2px}
+@media (min-width:960px){.modos{grid-template-columns:1fr}}
+
+/* nenhuma tela pode ganhar rolagem lateral (no celular ela alarga a janela e desalinha a barra fixa de baixo) */
+html,body{overflow-x:clip}

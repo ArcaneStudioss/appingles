@@ -10,6 +10,7 @@ function respostaCerta(ex) {
     case 'ordenar': return ex.resposta + (ex.sufixo || '');
     case 'lacuna': case 'ditado': return ex.resposta[0];
     case 'traduzir': return ex.aceitas[0] + (ex.sufixo || '');
+    case 'corrigir': return ex.aceitas[0];
     case 'pares': return 'todos os pares';
     default: return '';
   }
@@ -29,14 +30,14 @@ function corrigirExercicio(ex, resposta) {
     const m = /^erros:(\d{1,2})$/.exec(String(resposta || ''));
     r = { correto: !!m && Number(m[1]) === 0, quase: !!m && Number(m[1]) === 1 };
     if (r.quase) r.correto = true;          // um tropeço em 5 pares ainda conta como acerto
-  } else if (ex.tipo === 'traduzir') {
+  } else if (ex.tipo === 'traduzir' || ex.tipo === 'corrigir') {
     r = comparar(resposta, ex.aceitas);
   } else {
     r = { correto: false, quase: false };
   }
   const out = { correto: r.correto, quase: r.quase, esperado: respostaCerta(ex), explica: ex.explica || null, achados: [] };
   // Em respostas digitadas erradas, procurar o erro típico para explicar o "porquê"
-  if (!r.correto && ['lacuna', 'traduzir', 'ditado'].includes(ex.tipo) && typeof resposta === 'string') {
+  if (!r.correto && ['lacuna', 'traduzir', 'ditado', 'corrigir'].includes(ex.tipo) && typeof resposta === 'string') {
     out.achados = detectar(resposta).filter(a => a.confianca !== 'baixa');
   }
   if (!r.correto && ex.tag && POR_TAG[ex.tag] && !out.explica) out.explica = POR_TAG[ex.tag].regra;

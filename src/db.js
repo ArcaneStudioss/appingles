@@ -110,6 +110,13 @@ const MIGRACOES = [
      descricao TEXT, material TEXT, assuntos TEXT NOT NULL DEFAULT '[]', simulado TEXT, modo TEXT
    );
    CREATE INDEX estudos_user ON estudos(user_id, ativo);`,
+  // 5: preferência de modo (ler, escrever, ouvir) e treino diário focado nas dificuldades
+  `ALTER TABLE perfis ADD COLUMN estilos TEXT NOT NULL DEFAULT '[]';
+   CREATE TABLE treinos (
+     id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+     data TEXT NOT NULL, criado_em TEXT NOT NULL, dados TEXT NOT NULL, respondidos TEXT NOT NULL DEFAULT '{}',
+     concluido_em TEXT, UNIQUE(user_id, data)
+   );`,
 ];
 
 function abrir(dir) {

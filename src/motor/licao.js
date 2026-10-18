@@ -210,6 +210,7 @@ function paraCliente(licao, semente) {
     if (e.texto) base.texto = e.texto;
     if (e.pergunta) base.pergunta = e.pergunta;
     if (e.audio) base.audio = e.audio;
+    if (e.errado) base.errado = e.errado;
     if (e.palavras) base.palavras = embaralhar(e.palavras, `${semente}:${e.id}:p`);
     if (e.dica) base.dica = e.dica;
     if (e.sufixo) base.sufixo = e.sufixo;
