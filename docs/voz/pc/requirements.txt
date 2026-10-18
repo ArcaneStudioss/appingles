@@ -1,0 +1,6 @@
+torch
+torchaudio
+omnivoice
+soundfile
+numpy
+faster-whisper
