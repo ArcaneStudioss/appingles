@@ -16,6 +16,7 @@ import { telaMaterial, telaMaterialItem } from './telas/material.js?v=__V__';
 import { telaDuvidas } from './telas/duvidas.js?v=__V__';
 import { telaConta } from './telas/conta.js?v=__V__';
 import { telaPodcast } from './telas/podcast.js?v=__V__';
+import { telaSobMedida, telaEstudo, telaAssunto, telaSimulado } from './telas/sobmedida.js?v=__V__';
 
 const palco = document.getElementById('conteudo');
 const nav = document.querySelector('.nav');
@@ -43,6 +44,7 @@ const ROTAS = {
   entrar: telaEntrar, perfil: telaPerfil, nivelamento: telaNivelamento, hoje: telaHoje, plano: telaPlano,
   licao: telaLicao, revisar: telaRevisar, conversar: telaConversar, conversa: telaConversa, progresso: telaProgresso,
   material: telaMaterial, 'material-item': telaMaterialItem, duvidas: telaDuvidas, conta: telaConta, podcast: telaPodcast,
+  sobmedida: telaSobMedida, estudo: telaEstudo, assunto: telaAssunto, simulado: telaSimulado,
 };
 const LIVRES = new Set(['entrar']);
 const ONBOARDING = new Set(['perfil', 'nivelamento', 'plano']);
@@ -58,8 +60,9 @@ async function render() {
   const meu = ++renderizando;
   // janela aberta não atravessa a troca de tela
   for (const d of document.querySelectorAll('dialog.janela[open]')) d.querySelector('.janela__x')?.click();
-  const [, nome = 'hoje', param] = (location.hash || '#/hoje').match(/^#\/([\w-]+)(?:\/([\w-]+))?/) || [];
+  const [, nome = 'hoje', param, param2] = (location.hash || '#/hoje').match(/^#\/([\w-]+)(?:\/([\w-]+))?(?:\/([\w-]+))?/) || [];
   let rota = nome === 'material' && param ? 'material-item' : nome === 'conversa' ? 'conversa' : nome;
+  if (nome === 'sobmedida' && param) rota = param2 === 'simulado' ? 'simulado' : param2 ? 'assunto' : 'estudo';
   if (!ROTAS[rota]) rota = 'hoje';
   if (!LIVRES.has(rota)) {
     if (!estado.eu) await carregarEu();
@@ -69,8 +72,8 @@ async function render() {
     if (passo === 'perfil' && rota !== 'perfil') { location.hash = '#/perfil'; return; }
     if (passo === 'nivelamento' && !['perfil', 'nivelamento'].includes(rota)) { location.hash = '#/nivelamento'; return; }
   }
-  nav.hidden = !estado.eu || ONBOARDING.has(rota) || LIVRES.has(rota) || rota === 'licao';
-  document.body.classList.toggle('foco-total', rota === 'licao' || rota === 'nivelamento');
+  nav.hidden = !estado.eu || ONBOARDING.has(rota) || LIVRES.has(rota) || rota === 'licao' || rota === 'simulado';
+  document.body.classList.toggle('foco-total', rota === 'licao' || rota === 'nivelamento' || rota === 'simulado');
   for (const a of nav.querySelectorAll('a')) {
     const ativo = a.dataset.rota === nome || (nome === 'conversa' && a.dataset.rota === 'conversar');
     a.toggleAttribute('aria-current', ativo); if (ativo) a.setAttribute('aria-current', 'page');
@@ -79,7 +82,7 @@ async function render() {
   const alvo = h('div', { class: 'tela' });
   limpar(palco).append(alvo);
   try {
-    await ROTAS[rota](alvo, { param, estado, ir, carregarEu });
+    await ROTAS[rota](alvo, { param, param2, estado, ir, carregarEu });
   } catch (e) {
     console.error(e);
     if (meu !== renderizando) return;

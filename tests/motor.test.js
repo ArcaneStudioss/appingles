@@ -185,3 +185,26 @@ test('limite de login é compartilhado entre cópias do app (duas conexões ao m
     dbA.close(); dbB.close();
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('estudo sob medida: separa assuntos, liga ao catálogo sem acento, monta simulado intercalado e avisa o que não cobre', () => {
+  const E = require('../src/motor/estudo');
+  assert.deepEqual(E.dividirAssuntos('Present Perfect; present perfect, Preposições\n- Interpretação de texto (reading)'), ['Present Perfect', 'Preposições', 'Interpretação de texto (reading)']);
+  assert.deepEqual(E.acharTags('Preposições de lugar'), ['preposicoes']);
+  assert.deepEqual(E.acharTags('Concordância verbal: he/she/it'), ['terceira-pessoa']);
+  assert.deepEqual(E.acharTags('Phrasal verbs'), [], 'o que o catálogo não cobre fica sem tag (o app diz isso em vez de inventar)');
+  const a = E.montarAssuntos(['Present perfect', 'Phrasal verbs', 'Artigos']);
+  assert.equal(E.conteudoOffline(a[1], null, 'A2'), null, 'sem catálogo e sem texto: nada inventado');
+  const material = 'We are looking for a nurse. Responsibilities include triage and patient care. Requirements: experience in triage, strong communication skills and the ability to work night shifts. You will report to the head nurse.';
+  assert.equal(E.conteudoOffline(a[1], material, 'A2').fonte, 'material');
+  a[0].conteudo = E.conteudoOffline(a[0], null, 'A2'); a[0].visto_em = 'x';
+  a[2].conteudo = E.conteudoOffline(a[2], null, 'A2'); a[2].visto_em = 'x';
+  a[0].respondidos = { [a[0].conteudo.exercicios[0].id]: { correto: false } };
+  const sim = E.montarSimulado(a, 'semente');
+  assert.ok(sim.length >= 3 && sim.every(i => /^sim\d+$/.test(i.id)));
+  assert.ok(new Set(sim.map(i => i._assunto)).size === 2, 'intercala assuntos');
+  assert.equal(sim.filter(i => i._assunto === 'a2').length, 0, 'assunto que não foi aberto não entra no simulado');
+  const r = E.resultadoSimulado(sim, Object.fromEntries(sim.map(i => [i.id, { correto: i._assunto === 'a1' }])), a);
+  assert.ok(r.fracos.includes('Artigos') && /[Nn]ão prevê a nota/.test(r.aviso));
+  assert.equal(E.ritmo({ assuntos: a, data_alvo: '2026-10-28' }, '2026-10-18').porDia, 1);
+  assert.equal(E.ritmo({ assuntos: a, data_alvo: '2026-10-10' }, '2026-10-18').atrasado, true);
+});

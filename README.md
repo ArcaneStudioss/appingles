@@ -9,7 +9,7 @@ Requisitos: Node 22.13 ou mais novo (usa o SQLite nativo `node:sqlite`). Uma ún
 ```bash
 npm ci
 npm run dev          # http://localhost:8080 (pagamento simulado, para testar a assinatura)
-npm test             # 31 testes: segurança, motor de personalização e o ciclo completo
+npm test             # 34 testes: segurança, motor de personalização e o ciclo completo
 ```
 
 Sem `ANTHROPIC_API_KEY` o app funciona inteiro no **modo de prática**: conversa por roteiro do cenário, correção por regras (14 erros típicos de brasileiros), tutor que responde pelos pontos do catálogo. Com a chave, entram a conversa livre, a correção detalhada, os exercícios escritos com a situação do aluno e o processamento de materiais. Para testar os caminhos com IA sem gastar: `IA_FAKE=1` (só fora de produção).
@@ -22,6 +22,9 @@ O app é um álbum de figurinhas: cada missão é uma página, cada aula feita c
 ## Sequência e Rádio Tuiuiú (18/10/2026)
 - **Sequência de dias** (`src/motor/sequencia.js`): calculada de `dias_estudo`, sem castigo. Hoje sem estudo não quebra; a cada 7 dias seguidos ganha 1 escudo (até 2) que salva um dia perdido; o recorde fica. Prêmios viram figurinhas especiais aos 3, 7, 14, 30, 60, 100, 200 e 365 dias.
 - **Rádio Tuiuiú** (`src/motor/podcast.js`, tela `#/podcast`): um episódio por dia com os tropeços dos últimos 21 dias (focos + respostas erradas). O Tuiuiú explica em português, a Mia fala inglês, com pausas de "repita". A frase errada aparece riscada e nunca é falada. Sem IA, o roteiro sai do catálogo; com IA, `ia.podcast` escreve (limite `podcast` por mês). Treino no fim, corrigido no servidor. Ouvir até o fim conta como dia de estudo. Áudio pela voz do aparelho (sem custo).
+
+## Estudo sob medida (18/10/2026)
+Para quem tem uma prova, entrevista ou viagem: `#/sobmedida`. O aluno descreve o que cai (e, se quiser, cola o material e põe a data); o app separa em **assuntos** em ordem, calcula quantos por dia até a data, e cada assunto vira uma mini-aula (explicação, exemplos, palavras, dicas, 5 exercícios) criada na primeira abertura. No fim, **mini simulado** sem consulta (as perguntas saem do que o aluno já abriu; o resultado vem por assunto, com aviso de que não prevê a nota real). Os erros viram cartões de revisão e entram na Rádio Tuiuiú. Motor em `src/motor/estudo.js`; com IA, `ia.planejarEstudo` e `ia.estudarAssunto` (cota `estudo`); sem IA usa o catálogo de dificuldades e o texto colado, e avisa o que não cobre em vez de inventar. Tabela `estudos` (migração 4). Entra no export e na exclusão de dados.
 
 ## Mascote
 **Tuiuiú é uma arara-azul-grande** (orgulho do Brasil; azul-cobalto, anel e bochechas amarelos, bico curvo). A **Mia**, que dá voz ao inglês na Rádio Tuiuiú, é uma **arara-vermelha**. Desenho em `public/assets/js/diversao.js` (função `lou`, 5 humores, cores por variável `--arara-*` que acompanham Dia/Noite). Ícones do app e favicon: arara sobre fundo amarelo (`public/assets/img/`, `public/favicon.svg`).

@@ -5,7 +5,7 @@ import { api } from '../api.js?v=__V__';
 import { h, icone, dataBR, plural, toast, janela } from '../ui.js?v=__V__';
 import { louFala, lou } from '../diversao.js?v=__V__';
 
-const CONQ = { 'primeiro-passo': 'Primeiro passo: teste de nível feito', 'primeira-licao': 'Primeira lição concluída', 'primeira-conversa': 'Primeira conversa', 'primeira-demonstracao': 'Primeira missão demonstrada', retido: 'Missão mantida depois de dias', 'foco-superado': 'Superou uma dificuldade', 'revisoes-50': '50 revisões', material: 'Estudou com material seu', 'licoes-10': '10 lições', 'dias-3': '3 dias de estudo', 'dias-10': '10 dias de estudo', 'dias-30': '30 dias de estudo', 'dias-60': '60 dias de estudo', radio: 'Primeiro episódio da Rádio Tuiuiú',
+const CONQ = { 'primeiro-passo': 'Primeiro passo: teste de nível feito', 'primeira-licao': 'Primeira lição concluída', 'primeira-conversa': 'Primeira conversa', 'primeira-demonstracao': 'Primeira missão demonstrada', retido: 'Missão mantida depois de dias', 'foco-superado': 'Superou uma dificuldade', 'revisoes-50': '50 revisões', material: 'Estudou com material seu', 'licoes-10': '10 lições', 'dias-3': '3 dias de estudo', 'dias-10': '10 dias de estudo', 'dias-30': '30 dias de estudo', 'dias-60': '60 dias de estudo', radio: 'Primeiro episódio da Rádio Tuiuiú', 'estudo-1': 'Primeiro assunto do estudo sob medida', 'estudo-completo': 'Estudo sob medida completo', 'simulado-1': 'Primeiro simulado',
   'seq-3': '3 dias seguidos', 'seq-7': '1 semana seguida', 'seq-14': '2 semanas seguidas', 'seq-30': '30 dias seguidos', 'seq-60': '60 dias seguidos', 'seq-100': '100 dias seguidos', 'seq-200': '200 dias seguidos', 'seq-365': '1 ano seguido' };
 export const nomeConquista = c => CONQ[c] || (c.startsWith('volta') ? 'Que bom te ver de volta' : c);
 
@@ -127,7 +127,7 @@ export async function telaHoje(el, { ir }) {
   principal.append(h('nav', { class: 'atalhos', 'aria-label': 'Atividades' },
     atalho('revisar', 'sol', '#/revisar', 'cards', 'Revisar', d.revisoesPendentes ? plural(d.revisoesPendentes, 'cartão te esperando', 'cartões te esperando') : 'tudo em dia', d.revisoesPendentes),
     atalho('conversar', 'menta', pr.acao === 'conversar' && pr.cenario ? `#/conversar?c=${pr.cenario}` : '#/conversar', 'chats', 'Conversar', 'treine falando'),
-    atalho('material', 'turquesa', '#/material', 'file-text', 'Meu texto', 'estude com o que é seu'),
+    atalho('sobmedida', 'turquesa', d.estudo ? `#/sobmedida/${d.estudo.id}` : '#/sobmedida', 'graduation-cap', 'Sob medida', d.estudo ? `${d.estudo.titulo}: ${d.estudo.ritmo.diasRestantes == null ? plural(d.estudo.ritmo.restantes, 'assunto', 'assuntos') : d.estudo.ritmo.atrasado ? 'data passou' : d.estudo.ritmo.diasRestantes === 0 ? 'é hoje' : 'faltam ' + plural(d.estudo.ritmo.diasRestantes, 'dia', 'dias')}` : 'prova, entrevista, viagem', d.estudo?.ritmo.restantes || 0),
     atalho('duvidas', 'coral', '#/duvidas', 'question', 'Dúvida', 'pergunte ao tutor')));
   if (pr.acao === 'assinatura') principal.append(h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, pr.texto, ' ', h('a', { href: '#/conta' }, 'Ver planos'))));
   if (d.novasConquistas?.length) principal.append(h('p', { class: 'conquista-recente' }, h('span', { class: 'medalha medalha--peq' }, icone('medal')), 'Nova figurinha: ', nomeConquista(d.novasConquistas[0])));

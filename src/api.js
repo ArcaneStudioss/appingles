@@ -21,6 +21,8 @@ const { processarOffline } = require('./motor/material');
 const { hoje, somarDias, diasEntre, embaralhar, palavras, normalizar } = require('./motor/util');
 const { calcularSequencia, premiosAlcancados } = require('./motor/sequencia');
 const radio = require('./motor/podcast');
+const estudoMotor = require('./motor/estudo');
+const { respostaCerta: respostaDe } = require('./motor/correcao');
 
 // ---------- validação ----------
 const V = {
@@ -399,7 +401,7 @@ function criar(db) {
     else if (!conversaHoje) proximo = { acao: 'conversar', texto: 'Uma conversa curta para fechar o dia', cenario: POR_ID[missaoAtual(plano, competenciasDe(uid))?.id]?.conversa || 'apresentacao' };
     else proximo = { acao: 'descansar', texto: 'Por hoje está ótimo. Volte amanhã para a próxima lição.' };
     const inicioHoje = new Date(Date.now() - 864e5).toISOString();
-    const pontosHoje = 10 * q("SELECT COUNT(*) n FROM tentativas WHERE user_id = ? AND correto = 1 AND origem IN ('licao','revisao','conversa','producao','material') AND em >= ?").get(uid, inicioHoje).n
+    const pontosHoje = 10 * q("SELECT COUNT(*) n FROM tentativas WHERE user_id = ? AND correto = 1 AND origem IN ('licao','revisao','conversa','producao','material','estudo','simulado') AND em >= ?").get(uid, inicioHoje).n
       + 20 * q("SELECT COUNT(*) n FROM licoes WHERE user_id = ? AND data = ? AND status = 'concluida'").get(uid, h).n;
     const diasNoMes = q('SELECT COUNT(*) n FROM dias_estudo WHERE user_id = ? AND data LIKE ?').get(uid, h.slice(0, 7) + '%').n;
     const novasConquistas = q('SELECT codigo FROM conquistas WHERE user_id = ? AND em >= ?').all(uid, new Date(Date.now() - 864e5).toISOString()).map(r => r.codigo);
@@ -410,7 +412,7 @@ function criar(db) {
       meta: { minutos: p.meta_diaria || 15, feitos: Math.round(minutosHoje) },
       foco: focoNovo ? { nome: POR_TAG[focoNovo.tag]?.nome, origem: focoNovo.origem } : null,
       objetivo: { nome: plano.objetivoNome, prazo: plano.prazo, metaRealista: plano.metaRealista },
-      assinatura: est, novasConquistas, pontosHoje, diasNoMes, sequencia: sequenciaDe(uid, h),
+      assinatura: est, novasConquistas, pontosHoje, diasNoMes, sequencia: sequenciaDe(uid, h), estudo: estudoResumo(uid, h),
       radio: radioResumo(uid, h),
     };
   });
@@ -737,6 +739,226 @@ function criar(db) {
     return { modo: 'catalogo', aviso, resposta: `Sem o tutor de IA ativo, consigo explicar estes pontos comuns: ${DIFICULDADES.map(d => d.nome.toLowerCase()).join('; ')}. Tente perguntar usando uma dessas palavras.` };
   });
 
+  // ---------- Estudo sob medida: prova, entrevista, viagem... com assuntos, mini-aulas e simulado ----------
+  const estudoDe = (uid, id) => {
+    const r = q('SELECT * FROM estudos WHERE id = ? AND user_id = ?').get(id, uid);
+    if (!r) throw new ErroHttp(404, 'Estudo não encontrado.');
+    return { ...r, assuntos: lerJson(r.assuntos, []), simulado: lerJson(r.simulado, null) };
+  };
+  const salvarEstudo = (uid, e) => q('UPDATE estudos SET assuntos = ?, simulado = ?, titulo = ?, data_alvo = ?, ativo = ? WHERE id = ? AND user_id = ?').run(JSON.stringify(e.assuntos), e.simulado ? JSON.stringify(e.simulado) : null, e.titulo, e.data_alvo, e.ativo, e.id, uid);
+  const assuntoDe = (e, aid) => { const a = e.assuntos.find(x => x.id === aid); if (!a) throw new ErroHttp(404, 'Assunto não encontrado.'); return a; };
+  const exercicioParaCliente = (lista, semente) => paraCliente({ blocos: [{ exercicios: lista }] }, semente).blocos[0].exercicios;
+  const estudoResumoDe = (e, h) => ({ id: e.id, titulo: e.titulo, tipo: e.tipo, data_alvo: e.data_alvo, ativo: !!e.ativo, progresso: estudoMotor.progresso(e.assuntos), ritmo: estudoMotor.ritmo(e, h) });
+  function estudoResumo(uid, h) {
+    const r = q('SELECT * FROM estudos WHERE user_id = ? AND ativo = 1 ORDER BY CASE WHEN data_alvo IS NULL OR data_alvo < ? THEN 1 ELSE 0 END, data_alvo, id DESC LIMIT 1').get(uid, h);
+    if (!r) return null;
+    return estudoResumoDe({ ...r, assuntos: lerJson(r.assuntos, []) }, h);
+  }
+  const assuntoParaCliente = (e, a) => {
+    const c = a.conteudo;
+    return { id: a.id, nome: a.nome, porque: a.porque, visto: !!a.visto_em, concluido: !!a.concluido_em, ...estudoMotor.acertosDe(a), temConteudo: !!c };
+  };
+
+  rota('GET', '/sobmedida', (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid);
+    const estudos = q('SELECT * FROM estudos WHERE user_id = ? ORDER BY ativo DESC, id DESC LIMIT 50').all(uid).map(r => estudoResumoDe({ ...r, assuntos: lerJson(r.assuntos, []) }, h));
+    return { estudos, ia: ia.ativo() };
+  });
+
+  rota('POST', '/sobmedida', async (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid), b = ctx.corpo;
+    exigirAcessoCompleto(uid, h);
+    const titulo = V.str(b.titulo, 80, { min: 3, campo: 'Nome do estudo' });
+    const tipo = V.um(b.tipo, estudoMotor.TIPOS, 'Tipo');
+    const data_alvo = V.data(b.data_alvo, 'Data');
+    if (data_alvo && (data_alvo < h || diasEntre(h, data_alvo) > 400)) throw new ErroHttp(422, 'Data: escolha um dia de hoje até 400 dias à frente.');
+    const descricao = V.str(b.descricao, 1500, { min: 10, campo: 'O que você precisa estudar' });
+    const material = V.str(b.material, 8000, { campo: 'Material' });
+    if (material && material.length < 80) throw new ErroHttp(422, 'Material: cole um trecho maior (pelo menos 80 caracteres) ou deixe em branco.');
+    if (q('SELECT COUNT(*) n FROM estudos WHERE user_id = ? AND ativo = 1').get(uid).n >= 5) throw new ErroHttp(422, 'Você já tem 5 estudos em andamento. Encerre um para criar outro.');
+    const chave = 'estcria' + uid;
+    if (emAndamento.has(chave)) throw new ErroHttp(409, 'Já estamos montando um estudo.');
+    emAndamento.add(chave);
+    try {
+      let lista = null, modo = 'regras', aviso = null;
+      const perm = podeIa(uid, 'estudo', h);
+      if (perm.pode) {
+        try {
+          const r = await ia.planejarEstudo({ titulo, tipo, descricao, material, diasRestantes: data_alvo ? diasEntre(h, data_alvo) : null, perfil: perfilDe(uid), nivel: nivelamentoDe(uid)?.nivel });
+          contarIa(uid, 'estudo', h, r.uso);
+          const ok = (r.assuntos || []).filter(a => a && typeof a.nome === 'string' && a.nome.trim().length >= 2).slice(0, estudoMotor.MAX_ASSUNTOS).map(a => ({ nome: a.nome.trim(), porque: typeof a.porque === 'string' ? a.porque.trim() : null }));
+          if (ok.length >= 2) { lista = ok; modo = 'ia'; }
+        } catch (e) { console.error('[ia] plano de estudo falhou:', e.message); aviso = avisoIa('erro'); }
+      } else aviso = avisoIa(perm.motivo);
+      if (!lista) lista = estudoMotor.dividirAssuntos(descricao);
+      if (!lista.length) throw new ErroHttp(422, 'Não consegui separar assuntos. Escreva o que cai, um por linha ou separado por vírgula.');
+      const assuntos = estudoMotor.montarAssuntos(lista);
+      const r = q('INSERT INTO estudos (user_id, titulo, tipo, data_alvo, criado_em, descricao, material, assuntos, modo) VALUES (?,?,?,?,?,?,?,?,?)').run(uid, titulo, tipo, data_alvo, agoraISO(), descricao, material || null, JSON.stringify(assuntos), modo);
+      return { id: Number(r.lastInsertRowid), modo, aviso };
+    } finally { emAndamento.delete(chave); }
+  });
+
+  rota('GET', '/sobmedida/:id', (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid);
+    const e = estudoDe(uid, V.id(ctx.params.id));
+    const sim = e.simulado;
+    return { estudo: { ...estudoResumoDe(e, h), descricao: e.descricao, modo: e.modo, temMaterial: !!e.material, assuntos: e.assuntos.map(a => assuntoParaCliente(e, a)),
+      simulado: { pode: e.assuntos.some(a => a.conteudo?.exercicios?.length && a.visto_em), feito: !!sim?.resultado, resultado: sim?.resultado || null, emAndamento: !!sim && !sim.resultado } }, ia: ia.ativo() };
+  });
+
+  rota('PATCH', '/sobmedida/:id', (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid), b = ctx.corpo;
+    const e = estudoDe(uid, V.id(ctx.params.id));
+    if (b.titulo !== undefined) e.titulo = V.str(b.titulo, 80, { min: 3, campo: 'Nome do estudo' });
+    if (b.data_alvo !== undefined) {
+      const d = V.data(b.data_alvo, 'Data');
+      if (d && (d < h || diasEntre(h, d) > 400)) throw new ErroHttp(422, 'Data: escolha um dia de hoje até 400 dias à frente.');
+      e.data_alvo = d;
+    }
+    if (b.ativo !== undefined) e.ativo = b.ativo ? 1 : 0;
+    if (e.ativo && q('SELECT COUNT(*) n FROM estudos WHERE user_id = ? AND ativo = 1 AND id <> ?').get(uid, e.id).n >= 5) throw new ErroHttp(422, 'Você já tem 5 estudos em andamento.');
+    salvarEstudo(uid, e);
+    return { ok: true, estudo: estudoResumoDe(e, h) };
+  });
+
+  rota('DELETE', '/sobmedida/:id', (ctx) => {
+    const r = q('DELETE FROM estudos WHERE id = ? AND user_id = ?').run(V.id(ctx.params.id), ctx.u.id);
+    if (!r.changes) throw new ErroHttp(404, 'Estudo não encontrado.');
+    return { ok: true };
+  });
+
+  // abre um assunto: na primeira vez monta a mini-aula (IA se a cota deixar, senão o catálogo e o texto do aluno)
+  rota('GET', '/sobmedida/:id/assunto/:aid', async (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid), id = V.id(ctx.params.id);
+    exigirAcessoCompleto(uid, h);
+    let e = estudoDe(uid, id);
+    let a = assuntoDe(e, V.str(ctx.params.aid, 8, { min: 2, campo: 'Assunto' }));
+    let aviso = null;
+    if (!a.conteudo) {
+      const chave = `estass${uid}:${id}:${a.id}`;
+      if (emAndamento.has(chave)) throw new ErroHttp(409, 'Estamos montando este assunto. Tente de novo em instantes.');
+      emAndamento.add(chave);
+      try {
+        const nivel = nivelamentoDe(uid)?.nivel;
+        let c = null;
+        const perm = podeIa(uid, 'estudo', h);
+        if (perm.pode) {
+          try {
+            const r = await ia.estudarAssunto({ assunto: a.nome, porque: a.porque, estudo: e, material: e.material, perfil: perfilDe(uid), nivel });
+            contarIa(uid, 'estudo', h, r.uso);
+            c = estudoMotor.conteudoDaIa(r, a, validarExerciciosIa);
+          } catch (err) { console.error('[ia] assunto falhou:', err.message); aviso = avisoIa('erro'); }
+        } else aviso = avisoIa(perm.motivo);
+        if (!c) c = estudoMotor.conteudoOffline(a, e.material, nivel);
+        e = estudoDe(uid, id); a = assuntoDe(e, a.id);     // recarrega: outra aba pode ter mexido
+        a.conteudo = c || { fonte: 'vazio', modo: 'regras', exercicios: [], exemplos: [], vocab: [], dicas: [], explicacao: null };
+        a.visto_em ||= agoraISO();
+        salvarEstudo(uid, e);
+      } finally { emAndamento.delete(chave); }
+    } else if (!a.visto_em) { a.visto_em = agoraISO(); salvarEstudo(uid, e); }
+    const c = a.conteudo;
+    return { assunto: { ...assuntoParaCliente(e, a), fonte: c.fonte, modo: c.modo, explicacao: c.explicacao, exemplos: c.exemplos, vocab: c.vocab, dicas: c.dicas,
+      exercicios: exercicioParaCliente(c.exercicios || [], `${uid}:${id}:${a.id}`), respondidos: a.respondidos },
+      estudo: { id: e.id, titulo: e.titulo }, aviso: aviso || (c.fonte === 'vazio' ? 'Sem o tutor de IA não consigo montar este assunto do zero. Cole um texto sobre ele no estudo ou pergunte ao tutor.' : null) };
+  });
+
+  rota('POST', '/sobmedida/:id/assunto/:aid/responder', (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid), id = V.id(ctx.params.id), b = ctx.corpo;
+    exigirAcessoCompleto(uid, h);
+    const itemId = V.str(b.itemId, 60, { min: 1, campo: 'Item' });
+    const resposta = V.str(b.resposta, 500, { campo: 'Resposta' });
+    const e0 = estudoDe(uid, id), a0 = assuntoDe(e0, V.str(ctx.params.aid, 8, { min: 2, campo: 'Assunto' }));
+    const ex = acharExercicio({ blocos: [{ exercicios: a0.conteudo?.exercicios || [] }] }, itemId);
+    if (!ex) throw new ErroHttp(404, 'Exercício não encontrado.');
+    if (a0.respondidos[itemId]) return { ...a0.respondidos[itemId], repetida: true };
+    const r = corrigirExercicio(ex, resposta);
+    transacao(db, () => {
+      const e = estudoDe(uid, id), a = assuntoDe(e, a0.id);
+      if (a.respondidos[itemId]) return;
+      a.respondidos[itemId] = { correto: r.correto, quase: r.quase, esperado: r.esperado, explica: r.explica, achados: r.achados, resposta };
+      salvarEstudo(uid, e);
+      registrarTentativa(uid, { item_id: `estudo:${id}:${itemId}`, habilidade: ex.habilidade, tag: ex.tag, formato: ex.tipo === 'escolha' ? 'reconhecimento' : 'producao', modalidade: 'texto', correto: r.correto, tempo_ms: b.tempoMs, dica: b.dica === true, origem: 'estudo', contexto: `estudo:${id}`, resposta });
+      if (!r.correto && ex.tipo === 'traduzir') criarCartao(uid, { frente: ex.pt, verso: r.esperado, tipo: 'erro', origem: 'estudo', tag: ex.tag, nota_origem: r.explica }, h);
+      if (!r.correto && ex.tipo === 'lacuna' && ex.frase) criarCartao(uid, { frente: ex.frase, verso: ex.frase.replace('___', ex.resposta[0]), tipo: 'erro', origem: 'estudo', tag: ex.tag, nota_origem: r.explica }, h);
+    });
+    return { correto: r.correto, quase: r.quase, esperado: r.esperado, explica: r.explica, achados: r.achados };
+  });
+
+  rota('POST', '/sobmedida/:id/assunto/:aid/concluir', (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid), id = V.id(ctx.params.id);
+    exigirAcessoCompleto(uid, h);
+    const e = estudoDe(uid, id), a = assuntoDe(e, V.str(ctx.params.aid, 8, { min: 2, campo: 'Assunto' }));
+    const conq = [];
+    if (!a.concluido_em) {
+      a.concluido_em = agoraISO();
+      salvarEstudo(uid, e);
+      conq.push(...somarMinutos(uid, h, 6 + Math.min(10, Object.keys(a.respondidos).length)));
+      if (conquistar(uid, 'estudo-1')) conq.push('estudo-1');
+      if (e.assuntos.every(x => x.concluido_em) && conquistar(uid, 'estudo-completo')) conq.push('estudo-completo');
+    }
+    const prox = e.assuntos.find(x => !x.concluido_em);
+    return { ok: true, ...estudoMotor.acertosDe(a), proximo: prox ? { id: prox.id, nome: prox.nome } : null, progresso: estudoMotor.progresso(e.assuntos), conquistas: conq };
+  });
+
+  // simulado: as perguntas saem do que a pessoa já abriu; sem consulta; o resultado só no fim
+  const simuladoParaCliente = (e, sim) => ({
+    feito: !!sim.resultado, resultado: sim.resultado || null,
+    itens: exercicioParaCliente(sim.itens.map(i => ({ ...i })), `sim:${e.id}:${sim.criado_em}`).map(i => ({ ...i, assunto: null })),
+    detalhes: sim.resultado ? sim.detalhes : null,
+  });
+  rota('GET', '/sobmedida/:id/simulado', (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid), id = V.id(ctx.params.id);
+    exigirAcessoCompleto(uid, h);
+    const e = estudoDe(uid, id);
+    if (!e.simulado) {
+      const itens = estudoMotor.montarSimulado(e.assuntos, `${uid}:${id}:${agoraISO()}`);
+      if (itens.length < 3) throw new ErroHttp(422, 'Estude pelo menos um assunto antes: o simulado usa o que você já viu.');
+      e.simulado = { criado_em: agoraISO(), itens, resultado: null };
+      salvarEstudo(uid, e);
+    }
+    return { simulado: simuladoParaCliente(e, e.simulado), estudo: { id: e.id, titulo: e.titulo } };
+  });
+  rota('POST', '/sobmedida/:id/simulado/novo', (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid), id = V.id(ctx.params.id);
+    exigirAcessoCompleto(uid, h);
+    const e = estudoDe(uid, id);
+    const itens = estudoMotor.montarSimulado(e.assuntos, `${uid}:${id}:${agoraISO()}`);
+    if (itens.length < 3) throw new ErroHttp(422, 'Estude pelo menos um assunto antes: o simulado usa o que você já viu.');
+    e.simulado = { criado_em: agoraISO(), itens, resultado: null };
+    salvarEstudo(uid, e);
+    return { ok: true };
+  });
+  rota('POST', '/sobmedida/:id/simulado/enviar', (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid), id = V.id(ctx.params.id);
+    exigirAcessoCompleto(uid, h);
+    const e = estudoDe(uid, id);
+    if (!e.simulado) throw new ErroHttp(404, 'Simulado não encontrado.');
+    if (e.simulado.resultado) return { resultado: e.simulado.resultado, detalhes: e.simulado.detalhes, repetida: true };
+    const resp = ctx.corpo.respostas;
+    if (!resp || typeof resp !== 'object' || Array.isArray(resp)) throw new ErroHttp(422, 'Respostas inválidas.');
+    const correcoes = {}, detalhes = [];
+    for (const it of e.simulado.itens) {
+      const texto = typeof resp[it.id] === 'string' ? resp[it.id].replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').trim().slice(0, 500) : '';
+      const r = texto ? corrigirExercicio(it, texto) : { correto: false, quase: false, esperado: respostaDe(it), explica: it.explica || null, achados: [] };
+      correcoes[it.id] = r;
+      detalhes.push({ id: it.id, assunto: e.assuntos.find(a => a.id === it._assunto)?.nome || '', correto: r.correto, sua: texto, esperado: r.esperado, explica: r.explica });
+    }
+    const resultado = estudoMotor.resultadoSimulado(e.simulado.itens, correcoes, e.assuntos);
+    transacao(db, () => {
+      e.simulado.resultado = { ...resultado, em: agoraISO() }; e.simulado.detalhes = detalhes;
+      salvarEstudo(uid, e);
+      for (const it of e.simulado.itens) {
+        const c = correcoes[it.id];
+        registrarTentativa(uid, { item_id: `simulado:${id}:${it.original}`, habilidade: it.habilidade, tag: it.tag, formato: it.tipo === 'escolha' ? 'reconhecimento' : 'producao', modalidade: 'texto', correto: !!c.correto, origem: 'simulado', contexto: `estudo:${id}`, resposta: detalhes.find(d => d.id === it.id)?.sua || null });
+        if (!c.correto && it.tipo === 'traduzir') criarCartao(uid, { frente: it.pt, verso: c.esperado, tipo: 'erro', origem: 'simulado', tag: it.tag, nota_origem: c.explica }, h);
+        if (!c.correto && it.tipo === 'lacuna' && it.frase) criarCartao(uid, { frente: it.frase, verso: it.frase.replace('___', it.resposta[0]), tipo: 'erro', origem: 'simulado', tag: it.tag, nota_origem: c.explica }, h);
+      }
+    });
+    const conq = somarMinutos(uid, h, 8);
+    if (conquistar(uid, 'simulado-1')) conq.push('simulado-1');
+    return { resultado: e.simulado.resultado, detalhes, conquistas: conq };
+  });
+
   // ---------- Rádio Tuiuiú: um episódio por dia com os tropeços do aluno ----------
   function tropecosDe(uid, h) {
     const desde = somarDias(h, -21);
@@ -982,14 +1204,14 @@ function criar(db) {
   rota('GET', '/dados', (ctx) => {
     const uid = ctx.u.id;
     const conta = t => q(`SELECT COUNT(*) n FROM ${t} WHERE user_id = ?`).get(uid).n;
-    return { contagem: { tentativas: conta('tentativas'), licoes: conta('licoes'), cartoes: conta('cartoes'), revisoes: conta('revisoes'), conversas: conta('conversas'), amostras: conta('amostras'), materiais: conta('materiais'), nivelamentos: conta('nivelamentos'), focos: conta('focos'), podcasts: conta('podcasts') }, ia: ia.ativo() };
+    return { contagem: { tentativas: conta('tentativas'), licoes: conta('licoes'), cartoes: conta('cartoes'), revisoes: conta('revisoes'), conversas: conta('conversas'), amostras: conta('amostras'), materiais: conta('materiais'), nivelamentos: conta('nivelamentos'), focos: conta('focos'), podcasts: conta('podcasts'), estudos: conta('estudos') }, ia: ia.ativo() };
   });
   rota('GET', '/dados/exportar', (ctx) => {
     const uid = ctx.u.id;
     const tudo = t => q(`SELECT * FROM ${t} WHERE user_id = ?`).all(uid);
     const u = q('SELECT nome, email, criado_em, consentiu_em FROM usuarios WHERE id = ?').get(uid);
     ctx.res.setHeader('Content-Disposition', `attachment; filename="inglou-meus-dados-${hojeDe(uid)}.json"`);
-    return { exportadoEm: agoraISO(), conta: u, perfil: perfilDe(uid), assinatura: assinaturaDe(uid), nivelamentos: tudo('nivelamentos'), planos: tudo('planos'), licoes: tudo('licoes'), tentativas: tudo('tentativas'), cartoes: tudo('cartoes'), revisoes: tudo('revisoes'), conversas: tudo('conversas'), focos: tudo('focos'), amostras: tudo('amostras'), competencias: tudo('competencias'), materiais: tudo('materiais'), conquistas: tudo('conquistas'), uso_ia: tudo('uso_ia'), dias_estudo: tudo('dias_estudo'), podcasts: tudo('podcasts') };
+    return { exportadoEm: agoraISO(), conta: u, perfil: perfilDe(uid), assinatura: assinaturaDe(uid), nivelamentos: tudo('nivelamentos'), planos: tudo('planos'), licoes: tudo('licoes'), tentativas: tudo('tentativas'), cartoes: tudo('cartoes'), revisoes: tudo('revisoes'), conversas: tudo('conversas'), focos: tudo('focos'), amostras: tudo('amostras'), competencias: tudo('competencias'), materiais: tudo('materiais'), conquistas: tudo('conquistas'), uso_ia: tudo('uso_ia'), dias_estudo: tudo('dias_estudo'), podcasts: tudo('podcasts'), estudos: tudo('estudos') };
   });
   const ESCOPOS = {
     respostas: ['tentativas', 'revisoes', 'focos', 'descartes', 'podcasts'],
@@ -997,7 +1219,8 @@ function criar(db) {
     amostras: ['amostras'],
     cartoes: ['cartoes', 'revisoes'],
     materiais: ['materiais'],
-    tudo: ['tentativas', 'revisoes', 'focos', 'descartes', 'conversas', 'amostras', 'cartoes', 'materiais', 'licoes', 'competencias', 'conquistas', 'dias_estudo', 'nivelamentos', 'planos', 'podcasts'],
+    estudos: ['estudos'],
+    tudo: ['tentativas', 'revisoes', 'focos', 'descartes', 'conversas', 'amostras', 'cartoes', 'materiais', 'licoes', 'competencias', 'conquistas', 'dias_estudo', 'nivelamentos', 'planos', 'podcasts', 'estudos'],
   };
   rota('POST', '/dados/apagar', (ctx) => {
     const uid = ctx.u.id;

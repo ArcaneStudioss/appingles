@@ -129,3 +129,37 @@ test('Rádio Lou: episódio do dia com os tropeços, treino corrigido no servido
   const hoje = await R('GET', '/hoje');
   assert.ok(hoje.radio.ouvido && hoje.sequencia.atual >= 1);
 });
+
+test('Estudo sob medida: cria, abre assunto, responde, conclui, faz o simulado; gabarito não vaza e outro aluno não enxerga', async () => {
+  const { id, modo } = await R('POST', '/sobmedida', { titulo: 'Prova de inglês da faculdade', tipo: 'prova', data_alvo: null, descricao: 'present perfect, preposições, interpretação de texto', material: '' });
+  assert.equal(modo, 'ia');
+  const { estudo } = await R('GET', `/sobmedida/${id}`);
+  assert.ok(estudo.assuntos.length >= 2 && !estudo.simulado.pode, 'simulado só depois de estudar');
+  await assert.rejects(R('GET', `/sobmedida/${id}/simulado`), /422/, 'sem assunto estudado não há simulado');
+  const aid = estudo.assuntos[0].id;
+  const { assunto } = await R('GET', `/sobmedida/${id}/assunto/${aid}`);
+  assert.ok(assunto.explicacao.texto && assunto.exercicios.length >= 3);
+  assert.ok(!JSON.stringify(assunto).match(/"(resposta|aceitas)"/), 'gabarito não vai ao navegador');
+  for (const ex of assunto.exercicios) {
+    const r = await R('POST', `/sobmedida/${id}/assunto/${aid}/responder`, { itemId: ex.id, resposta: ex.opcoes ? ex.opcoes[0] : 'x', tempoMs: 3000 });
+    assert.equal(typeof r.correto, 'boolean');
+  }
+  assert.ok((await R('POST', `/sobmedida/${id}/assunto/${aid}/responder`, { itemId: assunto.exercicios[0].id, resposta: 'outra' })).repetida, 'clique duplo não conta duas vezes');
+  const fim = await R('POST', `/sobmedida/${id}/assunto/${aid}/concluir`);
+  assert.equal(fim.progresso.concluidos, 1);
+  const { simulado } = await R('GET', `/sobmedida/${id}/simulado`);
+  assert.ok(simulado.itens.length >= 3 && !JSON.stringify(simulado).match(/"(resposta|aceitas|original|_assunto)"/));
+  const respostas = Object.fromEntries(simulado.itens.map(i => [i.id, i.opcoes ? i.opcoes[0] : 'x']));
+  const env = await R('POST', `/sobmedida/${id}/simulado/enviar`, { respostas });
+  assert.equal(env.resultado.total, simulado.itens.length);
+  assert.ok(env.detalhes.every(d => 'esperado' in d));
+  assert.ok((await R('POST', `/sobmedida/${id}/simulado/enviar`, { respostas: {} })).repetida, 'reenvio não refaz a correção');
+  // outro aluno não enxerga (IDOR)
+  const r2 = await fetch(BASE + '/api/v1/auth/cadastro', { method: 'POST', headers: { 'X-Inglou': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: 'Carla', email: 'carla@ciclo.com', senha: 'girassol azul montanha 2026', consentimento: true }) });
+  const H2 = { Cookie: (r2.headers.get('set-cookie') || '').split(';')[0] };
+  for (const u of [`/sobmedida/${id}`, `/sobmedida/${id}/assunto/${aid}`, `/sobmedida/${id}/simulado`]) assert.equal((await fetch(BASE + '/api/v1' + u, { headers: H2 })).status, 404, 'IDOR: ' + u);
+  assert.equal((await fetch(BASE + '/api/v1/sobmedida/' + id, { method: 'DELETE', headers: { ...H2, 'X-Inglou': '1', 'Content-Type': 'application/json' }, body: '{}' })).status, 404);
+  assert.equal((await R('GET', '/hoje')).estudo.id, id, 'aparece na tela Hoje');
+  await R('DELETE', `/sobmedida/${id}`);
+  assert.equal((await R('GET', '/sobmedida')).estudos.length, 0);
+});

@@ -103,6 +103,13 @@ const MIGRACOES = [
   `CREATE TABLE limites (
      nome TEXT NOT NULL, chave TEXT NOT NULL, inicio INTEGER NOT NULL, n INTEGER NOT NULL, PRIMARY KEY(nome, chave)
    );`,
+  // 4: estudo sob medida (prova, entrevista, viagem...): assuntos em JSON, simulado em JSON
+  `CREATE TABLE estudos (
+     id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+     titulo TEXT NOT NULL, tipo TEXT NOT NULL, data_alvo TEXT, criado_em TEXT NOT NULL, ativo INTEGER NOT NULL DEFAULT 1,
+     descricao TEXT, material TEXT, assuntos TEXT NOT NULL DEFAULT '[]', simulado TEXT, modo TEXT
+   );
+   CREATE INDEX estudos_user ON estudos(user_id, ativo);`,
 ];
 
 function abrir(dir) {
