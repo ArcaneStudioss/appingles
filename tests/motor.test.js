@@ -316,3 +316,18 @@ test('ordenar: frase com outra ordem natural é aceita quando o conteúdo prevê
   assert.ok(corrigirExercicio(ex, 'Could you please repeat that').correto && corrigirExercicio(ex, 'Could you repeat that please').correto);
   assert.ok(!corrigirExercicio(ex, 'Could repeat you that please').correto);
 });
+
+test('dia a dia na cidade: o objetivo monta plano e cada missão nova gera lição, tarefa e conversa', () => {
+  const { POR_ID } = require('../src/conteudo/missoes');
+  const { CENARIOS } = require('../src/conteudo/cenarios');
+  const plano = montarPlano({ objetivo: 'cotidiano', minutos_dia: 15, dias_semana: 5 }, 'A2', '2026-10-19');
+  const ids = ['banco', 'clinica', 'farmacia', 'supermercado', 'padaria', 'loja-roupas'];
+  for (const id of ids) assert.ok(plano.missoes.some(m => m.id === id), `${id} fora do plano`);
+  for (const id of ids) {
+    const m = POR_ID[id];
+    assert.ok(m && m.exercicios.length >= 8 && m.tarefa.modelo && m.reteste.length === 2 && CENARIOS[m.conversa], `${id} incompleta`);
+    const p = { ...plano, missoes: plano.missoes.map(x => ({ ...x, atual: x.id === id, status: x.id === id ? 'praticando' : 'nao_iniciada', partes: 0 })) };
+    const l = montarLicao({ perfil: { minutos_dia: 15 }, plano: p, nivel: 'A2', competencias: {}, focos: [], hipoteses: [], hojeISO: '2026-10-19' });
+    assert.ok(l.blocos.some(b => b.exercicios?.length), `${id} sem exercícios na lição`);
+  }
+});

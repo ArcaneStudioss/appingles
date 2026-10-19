@@ -31,6 +31,13 @@ const OBJETIVOS = {
     essenciais: ['atender', 'pedir-repetir', 'reclamacao'],
     exemploMeta: 'Atender um cliente do começo ao fim e resolver uma reclamação simples.',
   },
+  cotidiano: {
+    nome: 'Dia a dia na cidade (banco, mercado, clínica...)',
+    frase: 'Se virar nos lugares do cotidiano em inglês: banco, clínica médica, farmácia, supermercado, padaria e lojas.',
+    missoes: ['pedir-repetir', 'supermercado', 'padaria', 'banco', 'farmacia', 'clinica', 'loja-roupas', 'small-talk', 'viagem-cidade'],
+    essenciais: ['pedir-repetir', 'supermercado', 'banco', 'clinica'],
+    exemploMeta: 'Resolver sozinho uma ida ao banco, à farmácia e ao supermercado, sem depender de tradutor.',
+  },
   viagem: {
     nome: 'Viagem',
     frase: 'Se virar no aeroporto, no hotel, no restaurante e na rua.',

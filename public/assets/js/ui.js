@@ -155,7 +155,7 @@ export function melhorVoz(lista) {
 const PASTA_VOZ = '/assets/audio/tuiuiu/';
 let mapaVoz = null, tocandoVoz = null;
 try { fetch(PASTA_VOZ + 'mapa.json?v=__V__').then(r => (r.ok ? r.json() : null)).then(j => { mapaVoz = j; }).catch(() => {}); } catch {}
-export function pararVoz() { try { tocandoVoz?.pause(); } catch {} tocandoVoz = null; if ('speechSynthesis' in window) speechSynthesis.cancel(); }
+export function pararVoz() { rodadaPt++; try { tocandoVoz?.pause(); } catch {} tocandoVoz = null; if ('speechSynthesis' in window) speechSynthesis.cancel(); }
 export function falar(texto, { velocidade = 1 } = {}) {
   const arq = !localStorageGet('voz') && mapaVoz && mapaVoz[String(texto).trim()];
   if (arq) {
@@ -184,29 +184,53 @@ function falarNavegador(texto, { velocidade = 1 } = {}) {
   return true;
 }
 // "Ler pra mim": o Tuiuiú lê em voz alta, em português, o que está no balão (ajuda quem lê pouco ou está começando).
-// Usa a voz em português do aparelho (ainda não há gravações do Tuiuiú em português). Cuidados para o iPhone/Safari:
-// cancelar e falar logo em seguida às vezes não sai nenhum som, então damos um respiro; sem voz em português ou sem som, avisamos em vez de ficar mudo.
+// Cada trecho usa a gravação do Tuiuiú quando existe (mapa.json, chave "pt:" + texto); o que não tem gravação cai na voz em português do aparelho.
+// Cuidados para o iPhone/Safari: cancelar e falar logo em seguida às vezes não sai som, então damos um respiro;
+// sem voz em português ou sem som, avisamos em vez de ficar mudo.
 export function vozPt() {
   const todas = window.speechSynthesis?.getVoices() || [];
   return todas.find(v => /^pt[-_]BR/i.test(v.lang) && /natural|google|luciana|francisca|felipe/i.test(v.name)) || todas.find(v => /^pt[-_]BR/i.test(v.lang)) || todas.find(v => /^pt/i.test(v.lang)) || null;
 }
-let dicaSemSomDada = false;
+let dicaSemSomDada = false, rodadaPt = 0;
 export function falarPt(texto, aoFim) {
-  if (!('speechSynthesis' in window)) { toast('Seu navegador não tem leitura de voz.'); return false; }
-  const voz = vozPt();
-  if (!voz && speechSynthesis.getVoices().length) toast('Seu aparelho não tem uma voz em português instalada. Dá para instalar em Ajustes, Acessibilidade, Conteúdo falado, Vozes.');
-  const falar = () => {
-    const u = new SpeechSynthesisUtterance(texto);
-    if (voz) u.voice = voz;
-    u.lang = voz?.lang || 'pt-BR'; u.rate = 1;
-    let comecou = false;
-    u.onstart = () => { comecou = true; };
-    u.onend = () => aoFim?.();
-    u.onerror = e => { aoFim?.(); if (e.error !== 'interrupted' && e.error !== 'canceled') toast('Não consegui ler em voz alta agora. Confira o volume e o modo silencioso do celular.'); };
-    speechSynthesis.speak(u);
-    setTimeout(() => { if (!comecou && !speechSynthesis.speaking) { speechSynthesis.cancel(); aoFim?.(); if (!dicaSemSomDada) { dicaSemSomDada = true; toast('Sem som? Confira o volume e se o celular não está no modo silencioso.'); } } }, 2500);
+  const trechos = (Array.isArray(texto) ? texto : [texto]).map(t => String(t).trim()).filter(Boolean);
+  if (!trechos.length) return false;
+  const gravado = t => mapaVoz && mapaVoz['pt:' + t];
+  if (!trechos.every(gravado) && !('speechSynthesis' in window)) { toast('Seu navegador não tem leitura de voz.'); return false; }
+  pararVoz();
+  const minha = ++rodadaPt;
+  const fim = () => { if (minha === rodadaPt) aoFim?.(); };
+  const proximo = k => {
+    if (minha !== rodadaPt) return;
+    if (k >= trechos.length) { fim(); return; }
+    const t = trechos[k], arq = gravado(t);
+    if (arq) {
+      const a = new Audio(PASTA_VOZ + arq + '?v=__V__');
+      tocandoVoz = a;
+      a.onended = () => proximo(k + 1);
+      a.onerror = () => falarNavegadorPt(t, () => proximo(k + 1));
+      a.play().catch(() => falarNavegadorPt(t, () => proximo(k + 1)));
+    } else falarNavegadorPt(t, () => proximo(k + 1));
   };
-  if (speechSynthesis.speaking || speechSynthesis.pending) { speechSynthesis.cancel(); setTimeout(falar, 120); } else falar();
+  const falarNavegadorPt = (t, depois) => {
+    if (!('speechSynthesis' in window)) { depois(); return; }
+    const voz = vozPt();
+    if (!voz && speechSynthesis.getVoices().length) toast('Seu aparelho não tem uma voz em português instalada. Dá para instalar em Ajustes, Acessibilidade, Conteúdo falado, Vozes.');
+    const dizer = () => {
+      if (minha !== rodadaPt) return;
+      const u = new SpeechSynthesisUtterance(t);
+      if (voz) u.voice = voz;
+      u.lang = voz?.lang || 'pt-BR'; u.rate = 1;
+      let comecou = false;
+      u.onstart = () => { comecou = true; };
+      u.onend = depois;
+      u.onerror = e => { if (e.error !== 'interrupted' && e.error !== 'canceled') { toast('Não consegui ler em voz alta agora. Confira o volume e o modo silencioso do celular.'); fim(); } };
+      speechSynthesis.speak(u);
+      setTimeout(() => { if (minha === rodadaPt && !comecou && !speechSynthesis.speaking) { speechSynthesis.cancel(); fim(); if (!dicaSemSomDada) { dicaSemSomDada = true; toast('Sem som? Confira o volume e se o celular não está no modo silencioso.'); } } }, 2500);
+    };
+    if (speechSynthesis.speaking || speechSynthesis.pending) { speechSynthesis.cancel(); setTimeout(dizer, 120); } else dizer();
+  };
+  proximo(0);
   return true;
 }
 export function botaoOuvir(texto, { velocidade = 1, rotulo = 'Ouvir' } = {}) {
