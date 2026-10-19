@@ -29,3 +29,37 @@ test('todo import relativo do app aponta para um arquivo que existe', () => {
     }
   }
 });
+
+test('Álbum Brasil: o app tem o componente da figurinha e nomeia qualquer conquista fig-*', () => {
+  const lerJs = rel => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
+  assert.ok(fs.existsSync(path.join(RAIZ, 'figurinha.js')), 'falta public/assets/js/figurinha.js');
+  assert.match(lerJs('telas/hoje.js'), /startsWith\('fig-'\)/, 'nomeConquista não trata o prefixo fig-');
+  assert.match(lerJs('telas/progresso.js'), /figurinhaBrasil/, 'o Progresso não mostra as figurinhas do Brasil');
+});
+
+test('Palavras tocáveis: módulo existe, exercício o usa, peças e opções ficam de fora e as teclas ignoram o balão', () => {
+  const lerJs = rel => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
+  assert.ok(fs.existsSync(path.join(RAIZ, 'palavras.js')), 'falta public/assets/js/palavras.js');
+  const pal = lerJs('palavras.js');
+  for (const alvo of ['.peca', '.par', '.opcao', '.balao-palavra']) assert.ok(pal.includes(alvo), `palavras.js deve ignorar ${alvo}`);
+  assert.match(pal, /\/palavras\/traduzir/);
+  assert.match(pal, /\/palavras\/duvida/);
+  const ex = lerJs('telas/exercicio.js');
+  assert.match(ex, /import \{[^}]*palavrasTocaveis[^}]*\} from '\.\.\/palavras\.js\?v=__V__'/);
+  assert.match(ex, /e\.target\.closest\?\.\('\.palavra, \.balao-palavra'\)/, 'o atalho de teclado do exercício precisa ignorar palavra e balão');
+  assert.match(lerJs('telas/revisar.js'), /duvida: 'Dúvida'/);
+});
+
+test('Palavras tocáveis (revisão): balão aberto bloqueia as teclas do exercício, foco entra no balão, uma parada de Tab por texto, sem exemplo errado', () => {
+  const lerJs = rel => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
+  const pal = lerJs('palavras.js'), ex = lerJs('telas/exercicio.js');
+  assert.match(pal, /export function balaoAberto/);
+  assert.match(ex, /import \{[^}]*balaoAberto[^}]*\} from '\.\.\/palavras\.js\?v=__V__'/);
+  assert.match(ex, /balaoAberto\(\)\) return/, 'teclas do exercício ignoradas com o balão aberto');
+  assert.match(pal, /balao\.focus\(/, 'o foco vai para o balão ao abrir');
+  assert.match(pal, /aria-disabled/, 'o botão marcado não pode usar disabled (o foco cairia no body)');
+  assert.doesNotMatch(pal, /btnDuvida\.disabled = true/);
+  assert.match(pal, /ArrowRight/, 'setas movem entre as palavras (uma parada de Tab por texto)');
+  assert.match(pal, /isConnected/, 'balão órfão não engole o próximo Escape');
+  assert.doesNotMatch(ex, /exemplo: ex\.errado/, 'a frase errada não pode virar exemplo do cartão');
+});

@@ -1013,3 +1013,38 @@ a.turma-item:hover,a.turma-item:focus-visible{border-color:var(--c-forte)}
 .banco-item input{margin-top:.25rem}
 .campo-copiar{width:100%}
 
+/* Álbum Brasil: figurinhas de adesivo redondo (foto, nome, estado, legenda em inglês que traduz ao toque) */
+.fig-brasil .ajuda{margin:.2rem 0 .6rem}
+.fig-grupo{font-size:.8rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--grafite);margin:1.1rem 0 .6rem}
+.fig-grade{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:1.4rem 1rem}
+.fig{--fig-anel:var(--sol);display:grid;justify-items:center;gap:.4rem;text-align:center}
+.fig--aviso{--fig-anel:var(--sol)} .fig--perigo{--fig-anel:var(--quase)} .fig--orgulho{--fig-anel:var(--menta-forte)}
+.fig__foto{display:block;width:min(100%,210px);height:auto;aspect-ratio:1;border-radius:50%;object-fit:cover;border:8px solid var(--cartao);box-shadow:0 0 0 3px var(--fig-anel),0 6px 14px rgba(19,32,58,.2);background:var(--linha)}
+.fig__foto--falhou,.fig__foto--vazia{display:grid;place-items:center;padding:1rem;font-size:.85rem;font-weight:700;color:var(--grafite)}
+.fig__foto--vazia{background:var(--linha);box-shadow:0 0 0 3px var(--margem);border-style:dashed;border-color:var(--margem)}
+.fig__foto--vazia .ico{width:46%;height:46%;opacity:.55}
+.fig__nome{margin:.1rem 0 0;font-family:var(--f-titulo);font-weight:700;font-size:1.05rem;line-height:1.2}
+.fig__estado{display:inline-block;padding:.22em .7em;border-radius:99px;font-size:.74rem;font-weight:800;letter-spacing:.03em;text-transform:uppercase;background:color-mix(in srgb,var(--fig-anel) 24%,var(--cartao));color:var(--tinta);border:2px solid var(--fig-anel)}
+.fig__leg{display:block;width:100%;min-height:44px;padding:.5rem .4rem;background:none;border:0;border-radius:var(--raio);font:inherit;font-size:.95rem;line-height:1.45;color:var(--tinta);cursor:pointer;text-align:center}
+.fig__leg[aria-pressed="true"]{color:var(--caneta-forte);font-style:italic}
+.fig__leg:focus-visible{outline:3px solid var(--caneta);outline-offset:2px}
+.fig__dica{margin:0;font-size:.8rem;color:var(--apagado)}
+.fig--vazia .fig__nome{color:var(--apagado)}
+
+/* Palavras tocáveis nos exercícios e o balãozinho de tradução */
+.palavra{all:unset;box-sizing:border-box;cursor:pointer;border-radius:6px;text-decoration:underline dotted;text-decoration-thickness:2px;text-underline-offset:.22em;text-decoration-color:color-mix(in srgb,var(--caneta) 55%,transparent);padding:0 .02em}
+.palavra:hover{background:color-mix(in srgb,var(--caneta) 14%,transparent)}
+.palavra:focus-visible{outline:3px solid var(--caneta);outline-offset:2px}
+.palavra[aria-expanded="true"]{background:color-mix(in srgb,var(--caneta) 22%,transparent)}
+.balao-palavra{position:relative;margin:.5rem 0 .9rem;padding:.85rem 2.8rem .85rem 1rem;background:var(--cartao);border:2px solid var(--caneta);border-radius:var(--raio);box-shadow:0 4px 0 var(--borda);display:grid;gap:.35rem}
+.balao-palavra p{margin:0}
+.balao-palavra__palavra strong{font-family:var(--f-titulo);font-size:1.15rem}
+.balao-palavra__trad{font-weight:700}
+.balao-palavra .linha-acoes{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.3rem}
+.balao-palavra .btn-peq{min-height:44px}
+.balao-palavra__fechar{position:absolute;top:.3rem;right:.3rem;width:44px;height:44px;border:0;border-radius:50%;background:none;color:var(--grafite);font-size:1.6rem;line-height:1;cursor:pointer}
+.balao-palavra__fechar:hover{background:var(--cartao-2)}
+.balao-palavra__fechar:focus-visible{outline:3px solid var(--caneta)}
+.balao-palavra .btn[aria-disabled="true"]{opacity:.7;cursor:default}
+.balao-palavra:focus{outline:none}
+.balao-palavra:focus-visible{outline:3px solid var(--caneta);outline-offset:3px}

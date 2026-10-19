@@ -106,6 +106,52 @@ test('tarefa feita sem ajuda vira "demonstrado" e, dias depois, numa situação 
   assert.ok(p.conquistas.some(c => c.codigo === 'primeira-licao'));
 });
 
+test('Álbum Brasil: lista de figurinhas vazia no começo; demonstrar a missão cola a figurinha, uma vez só', async () => {
+  const antes = await R('GET', '/figurinhas');
+  assert.equal(antes.figurinhas.length, 10);
+  assert.ok(antes.figurinhas.every(f => f.conquistada === false && f.em === null && !('conferido' in f)));
+  assert.deepEqual(antes.figurinhas.map(f => f.id).slice(0, 3), ['arara', 'mico', 'onca']);
+  // as fotos precisam ser servidas (a lista de arquivos públicos de src/http.js é fechada)
+  for (const f of antes.figurinhas) {
+    const img = await fetch(BASE + '/assets/figurinhas/' + f.arquivo);
+    assert.equal(img.status, 200, f.arquivo + ' não é servida');
+    assert.equal(img.headers.get('content-type'), 'image/jpeg');
+  }
+  // o plano do aluno passa a ter a missão da arara como a atual
+  const reg = db.prepare('SELECT id, dados FROM planos WHERE user_id = ? AND ativo = 1').get(uid);
+  const dados = JSON.parse(reg.dados);
+  dados.missoes = [{ id: 'brasil-arara', titulo: 'Brasil: arara-azul-grande', podeFazer: 'x', licoes: 1, semana: 1, essencial: false, brasil: true }];
+  db.prepare('UPDATE planos SET dados = ? WHERE id = ?').run(JSON.stringify(dados), reg.id);
+  const { plano } = await R('GET', '/plano');
+  const total = plano.missoes[0].total;
+  db.prepare("INSERT INTO competencias (user_id, missao, status, partes) VALUES (?, 'brasil-arara', 'praticando', ?) ON CONFLICT(user_id, missao) DO UPDATE SET status = 'praticando', partes = ?").run(uid, total, total);
+  db.prepare("UPDATE focos SET status = 'superado' WHERE user_id = ?").run(uid);
+  novoDia();
+  let { licao } = await R('GET', '/licao');
+  let bi = licao.blocos.findIndex(b => b.tipo === 'producao' && !b.reteste && b.missao === 'brasil-arara');
+  assert.ok(bi >= 0, 'a lição traz a tarefa final da arara');
+  const modelo = require('../src/conteudo/missoes').POR_ID['brasil-arara'].tarefa.modelo;
+  // a IA simulada (IA_FAKE) só dá a tarefa por cumprida com 20 palavras ou mais
+  const texto = modelo + ' The forest is getting smaller, so people must protect it.';
+  const r = await R('POST', '/licao/producao', { bloco: bi, texto, usouAjuda: false });
+  assert.equal(r.evento, 'demonstrado');
+  assert.ok(r.conquistas.includes('fig-arara'), 'a figurinha da arara foi concedida');
+  const depois = await R('GET', '/figurinhas');
+  const arara = depois.figurinhas.find(f => f.id === 'arara');
+  assert.equal(arara.conquistada, true); assert.ok(arara.em);
+  assert.equal(depois.figurinhas.filter(f => f.conquistada).length, 1);
+  // dias depois, o reteste mantém a missão e NÃO repete a figurinha
+  db.prepare("UPDATE competencias SET demonstrado_em = '2026-01-01T10:00:00.000Z' WHERE user_id = ? AND missao = 'brasil-arara'").run(uid);
+  novoDia();
+  ({ licao } = await R('GET', '/licao'));
+  bi = licao.blocos.findIndex(b => b.tipo === 'producao' && b.reteste && b.missao === 'brasil-arara');
+  assert.ok(bi >= 0, 'reteste da arara');
+  const r2 = await R('POST', '/licao/producao', { bloco: bi, texto: 'The macaw is a big bird. It lives in the forest and it is in danger. The forest is getting smaller and many birds need our help.', usouAjuda: false });
+  assert.equal(r2.evento, 'retido');
+  assert.ok(!r2.conquistas.includes('fig-arara'), 'figurinha não se repete no reteste');
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM conquistas WHERE user_id = ? AND codigo = 'fig-arara'").get(uid).n, 1);
+});
+
 test('material da vida do aluno vira vocabulário, exercícios e cartões', async () => {
   const { id } = await R('POST', '/materiais', { titulo: 'Vaga Toronto', texto: 'We are looking for a Registered Nurse to join our emergency department. Candidates must have experience in triage and strong communication skills.' });
   const { material } = await R('GET', '/materiais/' + id);
@@ -198,4 +244,35 @@ test('"começar do zero": pula o teste, vai para o A1 e a primeira lição é a 
   assert.equal(licao.missao.id, 'zero-sons');
   const n = licao.blocos.reduce((s, b) => s + (b.exercicios ? b.exercicios.length : 0), 0);
   assert.ok(n > 0 && n <= 10, 'questões: ' + n);
+});
+
+test('Palavras: tocar traduz pelo dicionário do app; marcar dúvida vira cartão "duvida" sem duplicar, mesmo sem tradução', async () => {
+  const t = await R('GET', '/palavras/traduzir?p=Macaws%2C');
+  assert.deepEqual(t, { palavra: 'macaw', traducao: 'arara', exemplo: 'The macaw is blue.', marcada: false });
+  const sem = await R('GET', '/palavras/traduzir?p=xylophonist');
+  assert.deepEqual(sem, { palavra: 'xylophonist', traducao: null, exemplo: null, marcada: false });
+  assert.equal((await R('GET', '/palavras/traduzir?p=')).traducao, null);
+
+  const a = await R('POST', '/palavras/duvida', { palavra: 'Macaws,', exemplo: 'The macaws live in the forest.' });
+  assert.deepEqual(a, { ok: true, jaExistia: false });
+  const b = await R('POST', '/palavras/duvida', { palavra: 'macaw', exemplo: 'The macaw is blue.' });
+  assert.deepEqual(b, { ok: true, jaExistia: true });
+  const { cartoes } = await R('GET', '/cartoes');
+  const duvidas = cartoes.filter(c => c.tipo === 'duvida');
+  assert.equal(duvidas.length, 1);
+  assert.equal(duvidas[0].frente, 'macaw');
+  assert.equal(duvidas[0].verso, 'arara');
+  assert.equal(duvidas[0].exemplo, 'The macaws live in the forest.');
+  assert.equal((await R('GET', '/palavras/traduzir?p=macaw')).marcada, true);
+  assert.equal((await R('GET', '/palavras/traduzir?p=macaws')).marcada, true, 'plural também aparece como marcada');
+
+  await R('POST', '/palavras/duvida', { palavra: 'xylophonist' });
+  const outros = (await R('GET', '/cartoes')).cartoes.find(c => c.frente === 'xylophonist');
+  assert.equal(outros.tipo, 'duvida');
+  assert.match(outros.verso, /Ainda sem tradução/);
+  // a duvida vence hoje, para voltar na revisão
+  const rev = await R('GET', '/cartoes/revisar');
+  assert.ok(rev.cartoes.some(c => c.frente === 'macaw'));
+  await assert.rejects(() => R('POST', '/palavras/duvida', {}), /422|preencha/i);
+  await assert.rejects(() => R('POST', '/palavras/duvida', { palavra: 'x'.repeat(100) }), /422|longo|inválid/i);
 });

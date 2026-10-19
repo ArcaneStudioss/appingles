@@ -5,7 +5,7 @@ import { nomeConquista } from './hoje.js?v=__V__';
 import { lou, louFala } from '../diversao.js?v=__V__';
 
 
-const TIPO = { expressao: 'Expressão', erro: 'Do seu erro', palavra: 'Palavra' };
+const TIPO = { expressao: 'Expressão', erro: 'Do seu erro', palavra: 'Palavra', duvida: 'Dúvida' };
 
 export async function telaRevisar(el) {
   const caixa = h('div', { class: 'revisar' });

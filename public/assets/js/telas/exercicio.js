@@ -3,6 +3,7 @@
 // Teclado: 1 a 9 escolhem alternativas, Enter confere e continua. A correção vem do servidor.
 import { h, icone, falar, toast, ocupado, ouvirMicrofone } from '../ui.js?v=__V__';
 import { lou, som } from '../diversao.js?v=__V__';
+import { palavrasTocaveis, balaoAberto } from '../palavras.js?v=__V__';
 
 const ehIngles = s => /^[\x20-\x7E’‘]+$/.test(s || '');
 const ELOGIOS = ['Mandou bem!', 'Isso aí!', 'Perfeito!', 'Boa!', 'Certinho!'];
@@ -35,7 +36,11 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
       h('div', { class: 'vel', role: 'group', 'aria-label': 'Velocidade do áudio' }, menos, rotuloVel, mais),
       h('p', { class: 'ajuda' }, 'Toque no botão para ouvir. O áudio não toca sozinho.')));
   }
-  if (ex.tipo === 'leitura') area.append(h('blockquote', { class: 'texto-leitura', lang: 'en' }, ex.texto));
+  if (ex.tipo === 'leitura') {
+    const texto = h('blockquote', { class: 'texto-leitura', lang: 'en' }, ex.texto);
+    area.append(texto);
+    palavrasTocaveis(texto, { exemplo: ex.texto.slice(0, 280) });
+  }
   const titulo = ex.enunciado || ex.pergunta || ({ lacuna: 'Complete a frase', ordenar: 'Monte a frase', ditado: 'Escreva o que você ouviu', traduzir: 'Escreva em inglês', fala: 'Fale em voz alta', pares: 'Toque nos pares que combinam', corrigir: 'Corrija a frase' })[ex.tipo];
   raiz.append(h('h2', { class: 'enunciado', lang: ehIngles(titulo) ? 'en' : null }, titulo));
   if (ex.tipo === 'escuta' && ex.pergunta && ex.enunciado) raiz.append(h('p', {}, ex.pergunta));
@@ -83,7 +88,7 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
       }
     }
     if (r.textoAudio) {
-      const ver = h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => ver.replaceWith(h('p', { class: 'transcricao', lang: 'en' }, r.textoAudio)) } }, icone('eye'), 'Ver o texto do áudio');
+      const ver = h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => { const t = h('p', { class: 'transcricao', lang: 'en' }, r.textoAudio); ver.replaceWith(t); palavrasTocaveis(t, { exemplo: r.textoAudio.slice(0, 280) }); } } }, icone('eye'), 'Ver o texto do áudio');
       corpo.push(ver);
     }
     folha.replaceChildren(h('div', { class: 'folha-resposta__lou' }, lou(r.correto ? 'feliz' : 'ops', { tamanho: 56, rotulo: '' })), h('div', { class: 'folha-resposta__texto' }, corpo));
@@ -115,6 +120,7 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
       if (i < partes.length - 1) { const c = h('input', { type: 'text', class: 'lacuna', 'aria-label': `Lacuna ${i + 1}`, autocapitalize: 'off', spellcheck: 'false', maxlength: 60, size: 8 }); c.addEventListener('input', () => habilitar(campos.every(x => x.value.trim()))); campos.push(c); linha.append(c); }
     });
     pegarResposta = () => campos.map(c => c.value.trim()).join(' ').trim();
+    palavrasTocaveis(linha, { exemplo: ex.frase.replace(/___/g, '...') });
     area.append(linha, ex.dica ? h('button', { type: 'button', class: 'btn btn-texto btn-peq dica', on: { click: e => { usouDica = true; e.currentTarget.replaceWith(h('span', { class: 'bilhete pequeno' }, 'dica: ' + ex.dica)); } } }, icone('lightbulb'), 'Dica') : null);
     setTimeout(() => campos[0]?.focus({ preventScroll: true }), 60);
   } else if (ex.tipo === 'ordenar') {
@@ -130,6 +136,7 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
     area.append(montada, banco);
   } else if (ex.tipo === 'ditado' || ex.tipo === 'traduzir' || ex.tipo === 'corrigir') {
     if (ex.tipo === 'corrigir') area.append(h('p', { class: 'ajuda' }, 'Isto você escreveu. Corrija e confira:'), h('p', { class: 'errado-caixa riscado', lang: 'en' }, ex.errado));
+    if (ex.tipo === 'corrigir') palavrasTocaveis(area.querySelector('.errado-caixa'), { exemplo: '' });   // a frase errada nunca vira exemplo do cartão
     if (ex.tipo === 'traduzir') area.append(h('div', { class: 'frase-pt' }, lou('pensando', { tamanho: 52, rotulo: '' }), h('p', { class: 'balao-pt' }, ex.pt)));
     const campo = h('textarea', { class: 'resposta-livre', rows: 3, lang: 'en', autocapitalize: 'sentences', spellcheck: 'false', maxlength: 300, placeholder: 'Escreva em inglês', 'aria-label': 'Sua resposta em inglês' });
     if (ex.tipo === 'corrigir') campo.value = ex.errado;   // a pessoa edita a própria frase
@@ -168,6 +175,7 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
         btnFalar),
       eco, campo,
       h('p', { class: 'ajuda' }, SR ? 'Toque no microfone e fale a frase. Se preferir, escreva o que disse.' : 'Seu aparelho não tem reconhecimento de voz. Fale em voz alta e escreva o que disse.'));
+    palavrasTocaveis(area.querySelector('.frase-fala__en'), { exemplo: ex.frase });
     pegarResposta = () => (ouvido || campo.value).trim();
   } else if (ex.tipo === 'pares') {
     // combina inglês x português; o resultado vai ao servidor como "erros:N"
@@ -193,7 +201,7 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
   // atalhos de teclado (só para o exercício visível)
   const teclas = e => {
     if (!raiz.isConnected) { document.removeEventListener('keydown', teclas); return; }
-    if (e.target.matches('input,textarea')) return;
+    if (e.target.matches('input,textarea') || e.target.closest?.('.palavra, .balao-palavra') || balaoAberto()) return;
     const n = Number(e.key);
     const ops = area.querySelectorAll('.opcao:not([disabled])');
     if (n >= 1 && n <= ops.length) { ops[n - 1].click(); e.preventDefault(); }

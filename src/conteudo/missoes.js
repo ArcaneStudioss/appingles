@@ -869,6 +869,7 @@ M.push({
 
 require('./missoes-extra').MISSOES_EXTRA.forEach(m => M.push(m));
 require('./missoes-cotidiano').MISSOES_COTIDIANO.forEach(m => M.push(m));
+require('./missoes-brasil').MISSOES_BRASIL.forEach(m => M.push(m));
 require('./trilha-zero').TRILHA_ZERO.forEach(m => M.push(m));
 const { EXPLICACOES_ZERO } = require('./explicacoes-zero');
 for (const m of M) for (const e of m.exercicios) if (!e.explica && EXPLICACOES_ZERO[e.id]) e.explica = EXPLICACOES_ZERO[e.id];

@@ -10,3 +10,4 @@ backups/
 *.pem
 *.key
 .DS_Store
+.superpowers/

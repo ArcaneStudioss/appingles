@@ -20,6 +20,8 @@ const { agendar } = require('./motor/srs');
 const { turnoOffline } = require('./motor/conversa');
 const { processarOffline } = require('./motor/material');
 const { hoje, somarDias, diasEntre, embaralhar, palavras, normalizar } = require('./motor/util');
+const { FIGURINHAS, POR_MISSAO: FIG_POR_MISSAO, codigoConquista } = require('./conteudo/figurinhas');
+const { traduzir: traduzirPalavra, limpar: limparPalavra } = require('./motor/dicionario');
 const { calcularSequencia, premiosAlcancados } = require('./motor/sequencia');
 const radio = require('./motor/podcast');
 const estudoMotor = require('./motor/estudo');
@@ -597,6 +599,8 @@ function criar(db) {
       });
       const conq = [];
       if (res.evento === 'demonstrado' && conquistar(uid, 'primeira-demonstracao')) conq.push('primeira-demonstracao');
+      const fig = res.evento === 'demonstrado' ? FIG_POR_MISSAO[bloco.missao] : null;   // Álbum Brasil: a missão temática demonstrada cola a figurinha
+      if (fig && conquistar(uid, codigoConquista(fig))) conq.push(codigoConquista(fig));
       if (res.evento === 'retido' && conquistar(uid, 'retido')) conq.push('retido');
       if (res.evento === 'foco_superado' && conquistar(uid, 'foco-superado')) conq.push('foco-superado');
       return { avaliacao: av, evento: res.evento, aviso, conquistas: conq, exemplo: bloco.semDicas ? null : POR_ID[bloco.missao]?.tarefa?.modelo || null };
@@ -639,6 +643,28 @@ function criar(db) {
   const cartaoParaCliente = c => ({ id: c.id, frente: c.frente, verso: c.verso, exemplo: c.exemplo, tipo: c.tipo, tag: c.tag, nota: c.nota_origem, vence_em: c.vence_em, repeticoes: c.repeticoes, intervalo: c.intervalo, origem: c.origem,
     // expressões: primeiro reconhecer (inglês → português); depois de acertar, produzir (português → inglês)
     modo: c.tipo === 'expressao' && c.repeticoes >= 1 && c.repeticoes % 2 === 1 ? 'producao' : 'reconhecimento' });
+  // Palavras tocadas nos exercícios: tradução pelo dicionário do app e "marcar como dúvida" (vira cartão de revisão)
+  const palavraDe = v => {
+    const bruta = V.str(v, 60, { min: 1, campo: 'Palavra' });
+    const achou = traduzirPalavra(bruta), p = achou?.palavra || limparPalavra(bruta);
+    if (!p) throw new ErroHttp(422, 'Palavra: preencha este campo.');
+    return { p, achou };
+  };
+  rota('GET', '/palavras/traduzir', (ctx) => {
+    const bruta = new URL(ctx.req.url, 'http://x').searchParams.get('p') || '';
+    const achou = traduzirPalavra(bruta), p = achou?.palavra || limparPalavra(bruta.slice(0, 60));
+    if (!p) return { palavra: '', traducao: null, exemplo: null, marcada: false };
+    const marcada = !!q('SELECT 1 FROM cartoes WHERE user_id = ? AND frente = ?').get(ctx.u.id, p);
+    return { palavra: p, traducao: achou?.pt || null, exemplo: achou?.exemplo || null, marcada };
+  });
+  rota('POST', '/palavras/duvida', (ctx) => {
+    const uid = ctx.u.id, b = ctx.corpo;
+    const { p, achou } = palavraDe(b.palavra);
+    const exemplo = V.str(b.exemplo, 300, { campo: 'Exemplo' }) || achou?.exemplo || null;
+    // a tradução vem do servidor, nunca do cliente; sem tradução, o cartão manda a pessoa ao tutor
+    const criado = criarCartao(uid, { frente: p, verso: achou?.pt || 'Ainda sem tradução: pergunte ao tutor em Dúvidas.', exemplo, tipo: 'duvida', origem: 'exercicio' }, hojeDe(uid));
+    return { ok: true, jaExistia: !criado };
+  });
   rota('GET', '/cartoes/revisar', (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid);
     const est = estadoAssinatura(uid, h), max = est.limitesDia?.revisao;
@@ -1312,6 +1338,11 @@ function criar(db) {
   });
 
   // Progresso
+  // Álbum Brasil: catálogo de figurinhas com o que a pessoa já colou ("conferido" é controle interno do conteúdo)
+  rota('GET', '/figurinhas', (ctx) => {
+    const coladas = new Map(q("SELECT codigo, em FROM conquistas WHERE user_id = ? AND codigo LIKE 'fig-%'").all(ctx.u.id).map(r => [r.codigo, r.em]));
+    return { figurinhas: FIGURINHAS.map(({ conferido, ...f }) => ({ ...f, conquistada: coladas.has(codigoConquista(f)), em: coladas.get(codigoConquista(f)) || null })) };
+  });
   rota('GET', '/progresso', (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid);
     const n = nivelamentoDe(uid), plano = planoDe(uid), comp = competenciasDe(uid);
