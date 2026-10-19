@@ -41,7 +41,7 @@ function corrigirExercicio(ex, resposta) {
   if (['escolha', 'escuta', 'leitura'].includes(ex.tipo)) {
     r = { correto: normalizar(resposta) === normalizar(ex.opcoes[ex.resposta]), quase: false };
   } else if (ex.tipo === 'ordenar') {
-    r = comparar(resposta, [ex.resposta]);
+    r = comparar(resposta, [ex.resposta, ...(ex.aceitas || [])]);   // algumas frases têm outra ordem natural (ex.: "please" no meio ou no fim)
     if (r.quase) r = { correto: false, quase: false };          // ordem errada não é erro de digitação
   } else if (ex.tipo === 'lacuna' || ex.tipo === 'ditado') {
     r = comparar(resposta, ex.resposta);

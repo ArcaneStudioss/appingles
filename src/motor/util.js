@@ -31,18 +31,46 @@ function distancia(a, b) {
   return ant[n];
 }
 
-// Compara com a lista de respostas aceitas. Tolera 1 letra trocada (2 em frases longas) como "erro de digitação".
-function comparar(resposta, aceitas) {
-  const r = normalizar(resposta);
-  if (!r) return { correto: false, quase: false };
-  let melhor = 99;
-  for (const a of aceitas) {
-    const n = normalizar(a);
-    if (n === r) return { correto: true, quase: false };
-    melhor = Math.min(melhor, distancia(n, r));
+// Números por extenso viram dígitos nos dois lados ("ten" = "10", "twenty five" = "25"), porque o aluno (e o microfone) usam os dois jeitos.
+const UNIDADES = { zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19 };
+const DEZENAS = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
+function numeros(t) {
+  const p = t.replace(/-/g, ' ').split(' '), out = [];
+  for (let i = 0; i < p.length; i++) {
+    const w = p[i];
+    if (w in DEZENAS) { const u = UNIDADES[p[i + 1]]; if (u >= 1 && u <= 9) { out.push(String(DEZENAS[w] + u)); i++; } else out.push(String(DEZENAS[w])); }
+    else if (w in UNIDADES && !(w === 'one' && /^(of|who|that|which)$/.test(p[i + 1] || ''))) out.push(String(UNIDADES[w]));   // "one of" / "the one that" são pronome, não número
+    else out.push(w);
   }
-  const limite = r.length > 24 ? 2 : r.length > 6 ? 1 : 0;
-  if (melhor <= limite) return { correto: true, quase: true };
+  return out.join(' ');
+}
+const normalizarNum = s => numeros(normalizar(s));
+
+// Erro de digitação: UMA palavra com uma letra a mais, a menos, trocada ou duas letras vizinhas invertidas ("recieve").
+// Não vale quando muda só o final gramatical (-s, -es, -ed, -ing, -ly): "My boss work" não é digitação, é o erro que estamos ensinando.
+const troca = (a, b) => a.length === b.length && [...a].some((c, i) => c !== b[i] && a[i + 1] === b[i] && a[i] === b[i + 1] && a.slice(i + 2) === b.slice(i + 2) && a.slice(0, i) === b.slice(0, i));
+const raiz = w => w.replace(/(ing|ed|es|s|d|ly)$/, '').replace(/(ing|ed|es|s|d|ly)$/, '');
+const SUFIXO = /^(s|es|ies|d|ed|ing|ly)$/;
+function digitacao(a, b) {
+  if (a.length === b.length && a.length >= 3 && troca(a, b)) return true;      // letras vizinhas invertidas: "yuo", "recieve"
+  if (Math.min(a.length, b.length) < 4) return false;
+  const [curto, longo] = a.length <= b.length ? [a, b] : [b, a];
+  if (raiz(a) === raiz(b) || (longo.startsWith(curto) && SUFIXO.test(longo.slice(curto.length)))) return false;
+  return distancia(a, b) <= (longo.length >= 8 ? 2 : 1);
+}
+function quaseIgual(a, b) {
+  const x = a.split(' '), y = b.split(' ');
+  if (x.length !== y.length) return false;
+  const dif = x.map((w, i) => [w, y[i]]).filter(([m, n]) => m !== n);
+  return dif.length === 1 && digitacao(dif[0][0], dif[0][1]);
+}
+
+// Compara com a lista de respostas aceitas. Tolera um erro de digitação numa palavra (não um erro de gramática).
+function comparar(resposta, aceitas) {
+  const r = normalizarNum(resposta);
+  if (!r) return { correto: false, quase: false };
+  for (const a of aceitas) if (normalizarNum(a) === r) return { correto: true, quase: false };
+  for (const a of aceitas) if (quaseIgual(normalizarNum(a), r)) return { correto: true, quase: true };
   return { correto: false, quase: false };
 }
 
@@ -60,8 +88,8 @@ function mesmaPalavra(a, b) {
 }
 // quanto da frase esperada foi dita (0 a 1); palavras de função (the, a, to...) valem metade
 function coberturaFala(dito, frase) {
-  const alvo = normalizar(frase).split(' ').filter(Boolean);
-  const falado = normalizar(dito).split(' ').filter(Boolean);
+  const alvo = normalizarNum(frase).split(' ').filter(Boolean);
+  const falado = normalizarNum(dito).split(' ').filter(Boolean);
   if (!alvo.length || !falado.length) return 0;
   const usado = new Array(falado.length).fill(false);
   let ganho = 0, total = 0;

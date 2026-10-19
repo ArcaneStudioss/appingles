@@ -296,3 +296,23 @@ test('fala: o reconhecimento de voz é tratado com flexibilidade (homófonos, ar
   for (const dito of ['Nice to meet you I am Ana', 'nice too meet you im anna', 'nice meet you i am ana', 'Nice to meat you am Ana']) assert.ok(corrigirExercicio(ex, dito).correto, dito);
   for (const dito of ['hello how are you', 'nice to meet you', '']) assert.ok(!corrigirExercicio(ex, dito).correto, dito || '(vazio)');
 });
+
+test('escrita e ditado: erro de digitação passa, erro de gramática não; número por extenso vale igual ao dígito', () => {
+  const { comparar } = require('../src/motor/util');
+  const A = ['My boss works from home on Fridays'];
+  assert.ok(comparar('My boss wroks from home on Fridays', A).correto, 'letras invertidas é digitação');
+  assert.ok(comparar('My boss works from home on Fridays.', A).correto);
+  assert.ok(!comparar('My boss work from home on Fridays', A).correto, 'faltou o -s da terceira pessoa');
+  assert.ok(!comparar('My boss works from home on Friday', A).correto, 'plural errado');
+  assert.ok(!comparar('watcheds', ['watched']).correto);
+  const T = ["I'll call you back in ten minutes", 'I will call you back in ten minutes'];
+  assert.ok(comparar('I will call you back in 10 minutes', T).correto && comparar("I'll call you back in ten minutes", T).correto);
+  assert.ok(comparar('She is twenty five years old', ['She is 25 years old']).correto);
+});
+
+test('ordenar: frase com outra ordem natural é aceita quando o conteúdo prevê (please)', () => {
+  const { corrigirExercicio } = require('../src/motor/correcao');
+  const ex = { tipo: 'ordenar', palavras: ['Could', 'you', 'repeat', 'that', 'please'], resposta: 'Could you repeat that please', aceitas: ['Could you please repeat that'] };
+  assert.ok(corrigirExercicio(ex, 'Could you please repeat that').correto && corrigirExercicio(ex, 'Could you repeat that please').correto);
+  assert.ok(!corrigirExercicio(ex, 'Could repeat you that please').correto);
+});
