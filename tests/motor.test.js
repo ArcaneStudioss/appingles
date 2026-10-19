@@ -289,3 +289,10 @@ test('trilha do zero: cada missão com conversa tem cenário próprio e a dificu
   assert.ok(new Set(zero.map(m => m.conversa)).size >= 8, 'poucos cenários de conversa na trilha do zero');
   assert.ok(zero.slice(-4).every(m => m.exercicios.some(e => e.dif >= 2)), 'as últimas missões do zero ainda são só nível 1');
 });
+
+test('fala: o reconhecimento de voz é tratado com flexibilidade (homófonos, artigos, palavra parecida) mas frase errada não passa', () => {
+  const { corrigirExercicio } = require('../src/motor/correcao');
+  const ex = { tipo: 'fala', frase: "Nice to meet you, I'm Ana.", audio: 'x' };
+  for (const dito of ['Nice to meet you I am Ana', 'nice too meet you im anna', 'nice meet you i am ana', 'Nice to meat you am Ana']) assert.ok(corrigirExercicio(ex, dito).correto, dito);
+  for (const dito of ['hello how are you', 'nice to meet you', '']) assert.ok(!corrigirExercicio(ex, dito).correto, dito || '(vazio)');
+});

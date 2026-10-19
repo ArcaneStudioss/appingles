@@ -161,7 +161,7 @@ export function falar(texto, { velocidade = 1 } = {}) {
   if (arq) {
     pararVoz();
     const a = new Audio(PASTA_VOZ + arq + '?v=__V__');
-    a.playbackRate = Math.max(0.6, Math.min(1.2, velocidade * (Number(localStorageGet('velocidade')) || 1)));
+    a.playbackRate = Math.max(0.5, Math.min(1.6, velocidade * (Number(localStorageGet('velocidade')) || 1)));
     a.preservesPitch = true;
     tocandoVoz = a;
     a.play().catch(() => { tocandoVoz = null; falarNavegador(texto, { velocidade }); });
@@ -179,7 +179,7 @@ function falarNavegador(texto, { velocidade = 1 } = {}) {
   if (voz) u.voice = voz;
   u.lang = voz?.lang || 'en-US';
   u.pitch = 1.05;                      // um tom um pouco mais vivo, de mascote simpático
-  u.rate = Math.max(0.6, Math.min(1.2, velocidade * (Number(localStorageGet('velocidade')) || 1)));
+  u.rate = Math.max(0.5, Math.min(1.6, velocidade * (Number(localStorageGet('velocidade')) || 1)));
   speechSynthesis.speak(u);
   return true;
 }
@@ -202,16 +202,52 @@ export function botaoOuvir(texto, { velocidade = 1, rotulo = 'Ouvir' } = {}) {
 
 // ---------- microfone (reconhecimento de voz do navegador, opcional) ----------
 export const temMicrofone = () => 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
-export function ouvirMicrofone({ aoTexto, aoFim }) {
+// Escuta com paciência: o reconhecimento do navegador costuma parar na primeira pausa (e some no meio da frase),
+// então ouvimos de forma contínua, reabrimos se ele fechar sozinho e só encerramos depois de `silencioMs` sem fala nova.
+// `alvo` (opcional) é a frase esperada: entre as alternativas que o reconhecedor devolve, ficamos com a que mais se parece com ela
+// (o primeiro palpite costuma errar palavras parecidas, como "ship" e "sheep"). `aoTexto(texto, final)`; `aoErro(codigo)`.
+const palavrasDe = t => String(t || '').toLowerCase().replace(/[^a-z0-9' ]+/g, ' ').split(/\s+/).filter(Boolean);
+function melhorAlternativa(res, alvo) {
+  if (!alvo || res.length < 2) return res[0].transcript;
+  const a = new Set(palavrasDe(alvo));
+  let melhor = res[0].transcript, nota = -1;
+  for (let i = 0; i < res.length; i++) { const n = palavrasDe(res[i].transcript).filter(p => a.has(p)).length - i * 0.01; if (n > nota) { nota = n; melhor = res[i].transcript; } }
+  return melhor;
+}
+export function ouvirMicrofone({ aoTexto, aoFim, aoErro, alvo = '', silencioMs = 2600 }) {
   const R = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!R) return null;
-  const r = new R();
-  r.lang = 'en-US'; r.interimResults = true; r.continuous = false;
-  r.onresult = e => { const t = [...e.results].map(x => x[0].transcript).join(' '); aoTexto(t, e.results[e.results.length - 1].isFinal); };
-  r.onerror = e => { if (e.error === 'not-allowed') toast('Sem permissão para o microfone. Você pode digitar.'); };
-  r.onend = () => aoFim?.();
-  r.start();
-  return r;
+  let parou = false, acumulado = '', ultimo = '', timer = null, atual = null, aberturas = 0;
+  const encerrar = () => { parou = true; clearTimeout(timer); try { atual?.stop(); } catch {} };
+  const armar = () => { clearTimeout(timer); timer = setTimeout(encerrar, silencioMs); };
+  function abrir() {
+    aberturas++;
+    const r = new R();
+    atual = r;
+    r.lang = 'en-US'; r.interimResults = true; r.continuous = true; r.maxAlternatives = 4;
+    r.onresult = e => {
+      let finais = '', parcial = '';
+      for (let i = 0; i < e.results.length; i++) { const t = melhorAlternativa(e.results[i], alvo); if (e.results[i].isFinal) finais += ' ' + t; else parcial += ' ' + t; }
+      ultimo = (acumulado + finais + parcial).replace(/\s+/g, ' ').trim();
+      aoTexto(ultimo, !parcial);
+      armar();
+    };
+    r.onerror = e => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { toast('Sem permissão para o microfone. Você pode digitar.'); parou = true; }
+      else if (e.error === 'audio-capture') { toast('Não achei o microfone neste aparelho.'); parou = true; }
+      else if (e.error === 'network') { toast('O reconhecimento de voz precisa de internet.'); parou = true; }
+      aoErro?.(e.error);
+    };
+    r.onend = () => {
+      // fechou sozinho (pausa, limite do navegador): continua de onde estava, a não ser que a pessoa tenha parado ou o silêncio tenha vencido
+      if (!parou && aberturas < 6) { acumulado = ultimo; try { abrir(); return; } catch {} }
+      clearTimeout(timer); aoFim?.();
+    };
+    r.start();
+    armar();
+  }
+  abrir();
+  return { stop: encerrar };
 }
 
 // preferências deste aparelho (não são dados de estudo)

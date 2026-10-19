@@ -1,7 +1,7 @@
 // Componente de exercício. Padrão de jogo: escolhe ou escreve, toca em "Conferir",
 // e uma folha de resposta sobe de baixo (azul quando acerta, coral suave quando é "quase").
 // Teclado: 1 a 9 escolhem alternativas, Enter confere e continua. A correção vem do servidor.
-import { h, icone, falar, toast, ocupado } from '../ui.js?v=__V__';
+import { h, icone, falar, toast, ocupado, ouvirMicrofone } from '../ui.js?v=__V__';
 import { lou, som } from '../diversao.js?v=__V__';
 
 const ehIngles = s => /^[\x20-\x7E’‘]+$/.test(s || '');
@@ -20,9 +20,19 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
   const habilitar = (sim) => { btnConferir.disabled = !sim; };
 
   if (ex.tipo === 'escuta' || ex.tipo === 'ditado') {
+    // velocidade do áudio: a pessoa ajusta para mais devagar ou mais rápido e ouve de novo na hora
+    const VELS = [0.6, 0.75, 0.9, 1, 1.15, 1.3, 1.5];
+    let vi = devagar ? 2 : 3;
+    const nomeVel = () => (VELS[vi] === 1 ? 'normal' : VELS[vi] + '×');
+    const rotuloVel = h('span', { class: 'vel__rotulo', 'aria-live': 'polite' }, nomeVel());
+    const tocar = () => falar(ex.audio, { velocidade: VELS[vi] });
+    const menos = h('button', { type: 'button', class: 'btn btn-sec btn-vel', 'aria-label': 'Falar mais devagar' }, h('span', { 'aria-hidden': 'true', class: 'vel__sinal' }, '−'), h('span', {}, 'devagar'));
+    const mais = h('button', { type: 'button', class: 'btn btn-sec btn-vel', 'aria-label': 'Falar mais rápido' }, h('span', { 'aria-hidden': 'true', class: 'vel__sinal' }, '+'), h('span', {}, 'rápido'));
+    const mudar = d => { vi = Math.max(0, Math.min(VELS.length - 1, vi + d)); rotuloVel.textContent = nomeVel(); menos.disabled = vi === 0; mais.disabled = vi === VELS.length - 1; tocar(); };
+    menos.addEventListener('click', () => mudar(-1)); mais.addEventListener('click', () => mudar(1));
     area.append(h('div', { class: 'escuta-caixa' },
-      h('button', { type: 'button', class: 'btn btn-ouvir-grande', 'aria-label': 'Ouvir o áudio', on: { click: () => falar(ex.audio, { velocidade: vel }) } }, icone('speaker-high')),
-      h('button', { type: 'button', class: 'btn btn-sec btn-ouvir-devagar', 'aria-label': 'Ouvir mais devagar', on: { click: () => falar(ex.audio, { velocidade: 0.7 }) } }, h('span', { class: 'tartaruga', 'aria-hidden': 'true' }, 'devagar')),
+      h('button', { type: 'button', class: 'btn btn-ouvir-grande', 'aria-label': 'Ouvir o áudio', on: { click: tocar } }, icone('speaker-high')),
+      h('div', { class: 'vel', role: 'group', 'aria-label': 'Velocidade do áudio' }, menos, rotuloVel, mais),
       h('p', { class: 'ajuda' }, 'Toque no botão para ouvir. O áudio não toca sozinho.')));
   }
   if (ex.tipo === 'leitura') area.append(h('blockquote', { class: 'texto-leitura', lang: 'en' }, ex.texto));
@@ -62,7 +72,7 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
     } else {
       corpo.push(h('p', { class: 'folha-resposta__titulo' }, QUASE[Math.floor(Math.random() * QUASE.length)]));
       if (ex.tipo !== 'pares') corpo.push(h('div', { class: 'correcao' },
-        resposta && !/^erros:/.test(resposta) ? h('span', { class: 'riscado', lang: 'en' }, resposta) : null,
+        resposta && !/^erros:/.test(resposta) && ex.tipo !== 'fala' ? h('span', { class: 'riscado', lang: 'en' }, resposta) : null,
         h('span', { class: 'nova', lang: 'en' }, r.esperado)));
       else corpo.push(h('p', {}, 'Esses pares voltam na revisão para fixar.'));
       if (r.explica) corpo.push(h('p', { class: 'explica' }, r.explica));
@@ -129,22 +139,26 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
     area.append(campo);
     setTimeout(() => campo.focus({ preventScroll: true }), 60);
   } else if (ex.tipo === 'fala') {
-    // fala em voz alta: reconhecimento de voz do aparelho quando existir; sempre dá para escrever o que disse
+    // fala em voz alta: reconhecimento de voz do aparelho quando existir; sempre dá para escrever o que disse.
+    // O que o aparelho "ouviu" não aparece na tela (ver o texto errado desanima e sotaque não é erro): só dizemos se ouvimos algo.
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     let ouvido = '';
     const eco = h('p', { class: 'fala-eco', 'aria-live': 'polite' }, '');
     const campo = h('input', { type: 'text', class: 'resposta-livre', lang: 'en', autocapitalize: 'off', spellcheck: 'false', maxlength: 200, placeholder: SR ? 'Ou escreva o que você disse' : 'Escreva o que você disse', 'aria-label': 'O que você disse, escrito' });
-    campo.addEventListener('input', () => { ouvido = ''; habilitar(!!campo.value.trim()); });
+    campo.addEventListener('input', () => { ouvido = ''; eco.textContent = ''; habilitar(!!campo.value.trim()); });
     const btnFalar = SR ? h('button', { type: 'button', class: 'btn btn-ouvir-grande btn-falar', 'aria-pressed': 'false', 'aria-label': 'Falar no microfone' }, icone('microphone')) : null;
     const parar = () => { try { rec?.stop(); } catch {} btnFalar?.setAttribute('aria-pressed', 'false'); };
     btnFalar?.addEventListener('click', () => {
       if (btnFalar.getAttribute('aria-pressed') === 'true') { parar(); return; }
       try {
-        rec = new SR(); rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 1;
-        rec.onresult = ev => { ouvido = ev.results[0][0].transcript.trim(); campo.value = ouvido; eco.textContent = 'Você disse: "' + ouvido + '"'; habilitar(!!ouvido); };
-        rec.onerror = () => { toast('Não consegui ouvir. Tente de novo ou escreva abaixo.'); parar(); };
-        rec.onend = parar;
-        rec.start(); btnFalar.setAttribute('aria-pressed', 'true'); eco.textContent = 'Estou ouvindo...';
+        ouvido = ''; campo.value = ''; habilitar(false);
+        eco.textContent = 'Estou ouvindo... pode falar a frase inteira, sem pressa.';
+        btnFalar.setAttribute('aria-pressed', 'true');
+        rec = ouvirMicrofone({
+          alvo: ex.frase,
+          aoTexto: t => { ouvido = t; if (t) { habilitar(true); eco.textContent = 'Estou ouvindo...'; } },
+          aoFim: () => { btnFalar.setAttribute('aria-pressed', 'false'); rec = null; eco.textContent = ouvido ? 'Ouvi você! Toque em Conferir, ou fale de novo se quiser.' : 'Não consegui ouvir. Tente de novo mais perto do microfone, ou escreva abaixo.'; },
+        });
       } catch { toast('O microfone não abriu. Escreva abaixo o que você disse.'); parar(); }
     });
     area.append(

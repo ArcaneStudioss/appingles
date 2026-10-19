@@ -1,7 +1,7 @@
 'use strict';
 // Corrige o nivelamento e devolve um diagnóstico simples, com a incerteza explícita.
 const { ITENS, NIVEIS, ABERTAS } = require('../conteudo/nivelamento');
-const { normalizar, palavras } = require('./util');
+const { normalizar, palavras, coberturaFala } = require('./util');
 const { detectar, POR_TAG } = require('../conteudo/dificuldades');
 
 const NOMES = { gramatica: 'Gramática', vocabulario: 'Vocabulário', leitura: 'Leitura', escuta: 'Compreensão auditiva', escrita: 'Escrita', fala: 'Fala' };
@@ -37,9 +37,7 @@ function avaliarEscrita(texto) {
 
 function avaliarFala(transcricao) {
   if (!transcricao) return null;
-  const alvo = normalizar(ABERTAS.fala.alvo).split(' ');
-  const dito = new Set(normalizar(transcricao).split(' '));
-  const pct = alvo.filter(p => dito.has(p)).length / alvo.length;
+  const pct = coberturaFala(transcricao, ABERTAS.fala.alvo);   // tolera palavras parecidas, homófonos e artigos que o microfone não pegou
   return { reconhecido: Math.round(pct * 100), nivel: pct >= 0.9 ? 'B1' : pct >= 0.7 ? 'A2' : 'A1' };
 }
 

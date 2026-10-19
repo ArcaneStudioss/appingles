@@ -1,7 +1,7 @@
 'use strict';
 // Correção sem IA: exercícios fechados (exata) e produção livre (rubrica de elementos + detectores de erros comuns).
 // A correção de produção sem IA é limitada e o app diz isso ao aluno. Com IA, o tutor complementa (ver ia.js).
-const { comparar, normalizar, palavras } = require('./util');
+const { comparar, compararFala, normalizar, palavras } = require('./util');
 const { detectar, POR_TAG } = require('../conteudo/dificuldades');
 const { MISSOES } = require('../conteudo/missoes');
 
@@ -46,8 +46,7 @@ function corrigirExercicio(ex, resposta) {
   } else if (ex.tipo === 'lacuna' || ex.tipo === 'ditado') {
     r = comparar(resposta, ex.resposta);
   } else if (ex.tipo === 'fala') {
-    r = comparar(resposta, [ex.frase]);
-    if (r.quase) r = { correto: true, quase: true };          // o reconhecimento de voz erra uma letra aqui e ali: um tropeço conta
+    r = compararFala(resposta, ex.frase);                      // flexível: o reconhecimento de voz erra palavras parecidas, some com artigos e troca homófonos
   } else if (ex.tipo === 'pares') {
     const m = /^erros:(\d{1,2})$/.exec(String(resposta || ''));
     r = { correto: !!m && Number(m[1]) === 0, quase: !!m && Number(m[1]) === 1 };

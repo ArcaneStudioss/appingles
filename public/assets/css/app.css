@@ -987,3 +987,8 @@ html,body{overflow-x:clip}
 .aviso-lembrete{align-items:center;flex-wrap:wrap}
 .aviso-lembrete p{flex:1 1 14rem}
 .aviso-lembrete .linha-acoes{margin:0}
+.vel{display:flex;align-items:center;justify-content:center;gap:.6rem;flex-basis:100%}
+.vel__rotulo{min-width:4.2rem;text-align:center;font-weight:800;font-variant-numeric:tabular-nums}
+.btn-vel{min-height:44px;padding:0 .9rem;gap:.35rem;font-size:.9rem}
+.btn-vel .ico{width:1.1rem;height:1.1rem}
+.vel__sinal{font-size:1.2rem;line-height:1;font-weight:900}

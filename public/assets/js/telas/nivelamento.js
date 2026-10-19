@@ -76,12 +76,12 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
 
   function abertaFala() {
     if (!temMicrofone()) return enviar();
-    const saida = h('p', { class: 'transcricao', lang: 'en', 'aria-live': 'polite' }, fala || '');
+    const saida = h('p', { class: 'ajuda', 'aria-live': 'polite' }, fala ? 'Gravado. Pode regravar se quiser.' : '');
     let rec = null;
     const gravar = h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => {
       if (rec) { rec.stop(); return; }
-      gravar.lastChild.textContent = 'Parar';
-      rec = ouvirMicrofone({ aoTexto: t => { fala = t; saida.textContent = t; }, aoFim: () => { rec = null; gravar.lastChild.textContent = 'Gravar de novo'; } });
+      gravar.lastChild.textContent = 'Parar'; fala = ''; saida.textContent = 'Estou ouvindo... leia com calma, a frase inteira.';
+      rec = ouvirMicrofone({ alvo: abertas.fala.alvo, aoTexto: t => { fala = t; }, aoFim: () => { rec = null; gravar.lastChild.textContent = 'Gravar de novo'; saida.textContent = fala ? 'Gravado! Pode regravar se quiser.' : 'Não consegui ouvir. Tente de novo mais perto do microfone, ou pule.'; } });
     } } }, icone('microphone'), h('span', {}, 'Gravar'));
     caixa.replaceChildren(
       h('p', { class: 'chip chip-neutro' }, 'Fala (opcional)'),

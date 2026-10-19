@@ -46,6 +46,39 @@ function comparar(resposta, aceitas) {
   return { correto: false, quase: false };
 }
 
+// ---- fala: o reconhecimento de voz erra palavras parecidas, some com artigos e troca homófonos. Medimos a cobertura da frase,
+// palavra por palavra (com tolerância de letras e homófonos), em vez de exigir o texto igual. Sotaque não é erro.
+const HOMOFONOS = [['to', 'too', 'two'], ['for', 'four', 'fore'], ['there', 'their', 'theyre'], ['no', 'know'], ['write', 'right'], ['by', 'buy', 'bye'], ['one', 'won'], ['hear', 'here'], ['see', 'sea'], ['be', 'bee'], ['are', 'r'], ['you', 'u'], ['our', 'hour'], ['whether', 'weather'], ['wear', 'where', 'ware'], ['its', 'it is'], ['your', 'youre']];
+const GRUPO = new Map(); HOMOFONOS.forEach((g, i) => g.forEach(w => GRUPO.set(w, i)));
+const FUNCAO = new Set(['a', 'an', 'the', 'to', 'of', 'and', 'is', 'am', 'are', 'in', 'on', 'at', 'it', 'i', 'my', 'do', 'does']);
+function mesmaPalavra(a, b) {
+  if (a === b) return true;
+  if (GRUPO.has(a) && GRUPO.get(a) === GRUPO.get(b)) return true;
+  if (a.replace(/s$/, '') === b.replace(/s$/, '') && Math.min(a.length, b.length) >= 3) return true;   // plural/3ª pessoa que o microfone não pegou
+  const lim = Math.max(a.length, b.length) >= 8 ? 2 : Math.max(a.length, b.length) >= 4 ? 1 : 0;
+  return lim > 0 && distancia(a, b) <= lim;
+}
+// quanto da frase esperada foi dita (0 a 1); palavras de função (the, a, to...) valem metade
+function coberturaFala(dito, frase) {
+  const alvo = normalizar(frase).split(' ').filter(Boolean);
+  const falado = normalizar(dito).split(' ').filter(Boolean);
+  if (!alvo.length || !falado.length) return 0;
+  const usado = new Array(falado.length).fill(false);
+  let ganho = 0, total = 0;
+  for (const p of alvo) {
+    const peso = FUNCAO.has(p) ? 0.5 : 1;
+    total += peso;
+    let k = falado.findIndex((f, i) => !usado[i] && f === p);
+    if (k < 0) k = falado.findIndex((f, i) => !usado[i] && mesmaPalavra(f, p));
+    if (k >= 0) { usado[k] = true; ganho += peso; }
+  }
+  return ganho / total;
+}
+function compararFala(dito, frase) {
+  const c = coberturaFala(dito, frase);
+  return { correto: c >= 0.8, quase: c >= 0.8 && c < 1, cobertura: c };
+}
+
 function palavras(texto) { return (String(texto || '').match(/[A-Za-zÀ-ú']+/g) || []).length; }
 
 // Data local do Brasil (YYYY-MM-DD), para "lição de hoje" não virar à meia-noite UTC.
@@ -72,4 +105,4 @@ function embaralhar(lista, semente) {
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-module.exports = { normalizar, comparar, distancia, palavras, hoje, somarDias, diasEntre, embaralhar, clamp };
+module.exports = { normalizar, comparar, coberturaFala, compararFala, distancia, palavras, hoje, somarDias, diasEntre, embaralhar, clamp };
