@@ -2,8 +2,9 @@
 // quatro atalhos grandes (cada um com a cor da sua atividade) e o álbum de missões.
 // Sem vidas e sem "ofensiva" que se perde: os dias do mês só somam.
 import { api } from '../api.js?v=__V__';
-import { h, icone, dataBR, plural, toast, janela } from '../ui.js?v=__V__';
+import { h, icone, dataBR, plural, toast, janela, localStorageGet, localStorageSet } from '../ui.js?v=__V__';
 import { louFala, lou } from '../diversao.js?v=__V__';
+import { configurarLembrete, lembreteDeHoje, jaPassouDaHora } from '../lembrete.js?v=__V__';
 
 const CONQ = { 'primeiro-passo': 'Primeiro passo: teste de nível feito', 'primeira-licao': 'Primeira lição concluída', 'primeira-conversa': 'Primeira conversa', 'primeira-demonstracao': 'Primeira missão demonstrada', retido: 'Missão mantida depois de dias', 'foco-superado': 'Superou uma dificuldade', 'revisoes-50': '50 revisões', material: 'Estudou com material seu', 'licoes-10': '10 lições', 'dias-3': '3 dias de estudo', 'dias-10': '10 dias de estudo', 'dias-30': '30 dias de estudo', 'dias-60': '60 dias de estudo', radio: 'Primeiro episódio da Rádio Tuiuiú', 'estudo-1': 'Primeiro assunto do estudo sob medida', 'estudo-completo': 'Estudo sob medida completo', 'simulado-1': 'Primeiro simulado', 'treino-1': 'Primeiro treino focado', 'treino-7': '7 treinos focados',
   'seq-3': '3 dias seguidos', 'seq-7': '1 semana seguida', 'seq-14': '2 semanas seguidas', 'seq-30': '30 dias seguidos', 'seq-60': '60 dias seguidos', 'seq-100': '100 dias seguidos', 'seq-200': '200 dias seguidos', 'seq-365': '1 ano seguido' };
@@ -74,7 +75,7 @@ function verSequencia(seq, diasNoMes) {
 }
 
 // ---------- tela
-export async function telaHoje(el, { ir }) {
+export async function telaHoje(el, { ir, estado }) {
   const [d, p] = await Promise.all([api('/hoje'), api('/plano').catch(() => null)]);
   if (d.semPlano) return ir('#/plano');
   const pct = Math.min(1, d.meta.feitos / Math.max(1, d.meta.minutos));
@@ -95,6 +96,19 @@ export async function telaHoje(el, { ir }) {
 
   if (a.status === 'teste' && a.diasRestantes <= 5) principal.append(h('div', { class: 'aviso-suave' }, icone('info'), h('p', {}, `Seu teste grátis termina em ${plural(a.diasRestantes, 'dia', 'dias')} (${dataBR(a.ate)}). Nada é cobrado sozinho. `, h('a', { href: '#/conta' }, 'Ver planos'))));
   if (a.acesso === 'livre') principal.append(h('div', { class: 'aviso-suave' }, icone('info'), h('p', {}, 'Você está no acesso livre: seus cartões e seu progresso continuam aqui. ', h('a', { href: '#/conta' }, 'Voltar ao plano completo'))));
+
+  // lembrete diário: convite (uma vez, dá para dispensar) ou, no horário combinado, o chamado para o exercício do dia
+  const lem = estado?.eu?.perfil?.lembrete;
+  if (lem && !lem.ativo && localStorageGet('lembrete-dispensado') !== 'sim' && a.acesso === 'completo') {
+    const caixa = h('div', { class: 'aviso-suave aviso-lembrete' }, icone('bell'), h('p', {}, 'Quer um lembrete para fazer o exercício todo dia? Escolha o horário e o Tuiuiú te chama.'),
+      h('div', { class: 'linha-acoes' },
+        h('button', { type: 'button', class: 'btn btn-sec btn-peq', on: { click: () => configurarLembrete(lem, { aoSalvar: novo => { estado.eu.perfil.lembrete = novo; caixa.remove(); } }) } }, 'Escolher horário'),
+        h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => { localStorageSet('lembrete-dispensado', 'sim'); caixa.remove(); } } }, 'Agora não')));
+    principal.append(caixa);
+  } else if (lem && lembreteDeHoje(lem) && jaPassouDaHora(lem) && !d.sequencia.estudouHoje && !feita && a.acesso === 'completo') {
+    principal.append(h('div', { class: 'aviso-suave aviso-lembrete' }, icone('bell'), h('p', {}, `Hora do exercício de hoje! Seu lembrete era às ${lem.hora}. Uns minutinhos já contam.`),
+      h('a', { class: 'btn btn-peq', href: '#/licao' }, L?.iniciada ? 'Continuar a aula' : 'Começar agora')));
+  }
 
   let balao = null;
   if (L) {

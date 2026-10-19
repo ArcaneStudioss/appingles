@@ -19,6 +19,7 @@ import { telaPodcast } from './telas/podcast.js?v=__V__';
 import { telaSobMedida, telaEstudo, telaAssunto, telaSimulado } from './telas/sobmedida.js?v=__V__';
 import { telaAprender } from './telas/aprender.js?v=__V__';
 import { telaTreino } from './telas/treino.js?v=__V__';
+import { agendarAviso } from './lembrete.js?v=__V__';
 
 const palco = document.getElementById('conteudo');
 const nav = document.querySelector('.nav');
@@ -69,6 +70,7 @@ const ONBOARDING = new Set(['perfil', 'nivelamento', 'plano']);
 
 export async function carregarEu() {
   try { estado.eu = await api('/eu'); } catch { estado.eu = null; }
+  agendarAviso(estado.eu?.perfil?.lembrete);
   return estado.eu;
 }
 export const ir = rota => { if (location.hash === rota) render(); else location.hash = rota; };
@@ -110,6 +112,8 @@ async function render() {
   if (meu === renderizando) { palco.focus({ preventScroll: true }); scrollTo(0, 0); }
 }
 
+addEventListener('inglou:lembrete', e => agendarAviso(e.detail));
+document.addEventListener('visibilitychange', () => { if (!document.hidden) agendarAviso(estado.eu?.perfil?.lembrete); });
 addEventListener('hashchange', render);
 addEventListener('online', () => toast('Conexão de volta.'));
 render();

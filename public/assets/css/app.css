@@ -980,3 +980,10 @@ html,body{overflow-x:clip}
 .fala-eco{min-height:1.4em;text-align:center;margin:0}
 @keyframes gira-pulso{50%{transform:scale(1.06)}}
 @media (prefers-reduced-motion:reduce){.btn-falar[aria-pressed=true]{animation:none}}
+
+/* pular escuta/fala sem castigo, e o aviso do lembrete diário */
+.btn-pular{display:flex;margin:1rem auto 0;gap:.4rem;align-items:center;color:var(--tinta-2)}
+.exercicio.is-pulado .btn-pular{opacity:.6}
+.aviso-lembrete{align-items:center;flex-wrap:wrap}
+.aviso-lembrete p{flex:1 1 14rem}
+.aviso-lembrete .linha-acoes{margin:0}

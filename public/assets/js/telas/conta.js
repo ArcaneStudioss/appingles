@@ -2,9 +2,9 @@
 import { api } from '../api.js?v=__V__';
 import { lou } from '../diversao.js?v=__V__';
 import { jaInstalado, instalarApp, podeInstalarDireto, ehIphone } from '../instalar.js?v=__V__';
+import { configurarLembrete, DIAS } from '../lembrete.js?v=__V__';
 import { h, icone, toast, formulario, confirmar, janela, dataBR, localStorageGet, localStorageSet, ocupado, falar, vozesEn } from '../ui.js?v=__V__';
 
-const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const EXPLICA_DADOS = [
   ['Seu objetivo, prazo, área, interesses e tempo por dia', 'para escolher as missões, os exemplos e o tamanho das lições.'],
   ['Suas respostas (certo/errado, tempo para responder, se usou dica)', 'para estimar o que você já domina e ajustar a dificuldade.'],
@@ -61,30 +61,8 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
     await api('/assinatura/cancelar', { metodo: 'POST' }); toast('Assinatura cancelada. Nenhuma nova cobrança.', { tipo: 'ok' }); render();
   }
 
-  // --- lembrete
-  async function configurarLembrete() {
-    const ativo = h('input', { type: 'checkbox', id: 'l-ativo', checked: !!lem.ativo });
-    const hora = h('input', { type: 'time', id: 'l-hora', value: lem.hora || '19:00' });
-    const dias = new Set(lem.dias || [1, 2, 3, 4, 5]);
-    const chips = h('div', { class: 'escolhas' }, DIAS.map((d, i) => h('label', { class: 'escolha' }, h('input', { type: 'checkbox', checked: dias.has(i), on: { change: ev => { if (ev.target.checked) dias.add(i); else dias.delete(i); } } }), h('span', {}, d))));
-    const salvar = h('button', { type: 'button', class: 'btn' }, 'Salvar');
-    const j = janela({ titulo: 'Lembretes', corpo: h('div', {},
-      h('div', { class: 'consentimento' }, ativo, h('label', { for: 'l-ativo' }, 'Quero um lembrete para estudar')),
-      h('div', { class: 'campo' }, h('label', { for: 'l-hora' }, 'Horário'), hora),
-      h('div', { class: 'campo' }, h('span', { class: 'rotulo' }, 'Dias'), chips),
-      h('p', { class: 'ajuda' }, 'O lembrete vira um evento repetido no calendário do seu celular (arquivo .ics). Funciona em qualquer aparelho, sem notificações invasivas. Perdeu um dia? Nada acontece: é só um convite.')),
-      acoes: [salvar] });
-    salvar.addEventListener('click', async () => {
-      ocupado(salvar, true);
-      try {
-        await api('/perfil/lembrete', { metodo: 'PUT', corpo: { ativo: ativo.checked, hora: hora.value, dias: [...dias] } });
-        j.fechar(true);
-        if (ativo.checked) { toast('Salvo. Abra o arquivo baixado para adicionar ao calendário.', { tipo: 'ok' }); location.href = '/api/v1/lembrete.ics'; }
-        else toast('Lembrete desligado.');
-        render();
-      } catch (err) { toast(err.message, { tipo: 'erro' }); ocupado(salvar, false); }
-    });
-  }
+  // --- lembrete (a janela mora em lembrete.js, porque a tela Hoje também a abre)
+  const abrirLembrete = () => configurarLembrete(lem, { aoSalvar: novo => { if (estado.eu) estado.eu.perfil.lembrete = novo; render(); } });
 
   // --- dados
   function verDados() {
@@ -158,8 +136,8 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
       h('a', { class: 'btn btn-sec btn-peq', href: '#/perfil' }, icone('pencil-simple'), 'Alterar'), h('a', { class: 'btn btn-texto btn-peq', href: '#/plano' }, 'Ver plano')),
     cartao('graduation-cap', 'Teste de nível', eu.nivel ? `Nível estimado: ${eu.nivel}. Refaça quando sentir que evoluiu.` : 'Ainda não feito.',
       h('a', { class: 'btn btn-sec btn-peq', href: '#/nivelamento' }, icone('repeat'), 'Refazer teste')),
-    cartao('bell', 'Lembretes', lem.ativo ? `Ligado: ${lem.hora}, ${(lem.dias || []).map(d => DIAS[d]).join(', ')}` : 'Desligado',
-      h('button', { class: 'btn btn-sec btn-peq', on: { click: configurarLembrete } }, icone('gear'), lem.ativo ? 'Alterar' : 'Configurar'),
+    cartao('bell', 'Lembrete diário', lem.ativo ? `Ligado: ${lem.hora}, ${(lem.dias || []).map(d => DIAS[d]).join(', ')}` : 'Desligado',
+      h('button', { class: 'btn btn-sec btn-peq', on: { click: abrirLembrete } }, icone('gear'), lem.ativo ? 'Alterar' : 'Configurar'),
       lem.ativo ? h('a', { class: 'btn btn-texto btn-peq', href: '/api/v1/lembrete.ics' }, icone('calendar-plus'), 'Baixar de novo') : null),
     cartao('seal-check', 'Assinatura', estadoAss,
       h('button', { class: 'btn btn-sec btn-peq', on: { click: verPlanos } }, 'Ver planos e uso'),

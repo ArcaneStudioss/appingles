@@ -10,7 +10,7 @@ const QUASE = ['Quase!', 'Foi por pouco.', 'Bora ajustar.'];
 
 export function exercicio(ex, { responder, contestar, ja, devagar = false, aoProximo, rotuloProximo = 'Continuar', barraFixa = false }) {
   const t0 = performance.now();
-  let usouDica = false, conferido = false, pegarResposta = () => null;
+  let usouDica = false, conferido = false, rec = null, pegarResposta = () => null;
   const raiz = h('article', { class: 'exercicio', dados: { tipo: ex.tipo } });
   const area = h('div', { class: 'exercicio__area' });
   const vel = devagar ? 0.85 : 1;
@@ -131,7 +131,7 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
   } else if (ex.tipo === 'fala') {
     // fala em voz alta: reconhecimento de voz do aparelho quando existir; sempre dá para escrever o que disse
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let ouvido = '', rec = null;
+    let ouvido = '';
     const eco = h('p', { class: 'fala-eco', 'aria-live': 'polite' }, '');
     const campo = h('input', { type: 'text', class: 'resposta-livre', lang: 'en', autocapitalize: 'off', spellcheck: 'false', maxlength: 200, placeholder: SR ? 'Ou escreva o que você disse' : 'Escreva o que você disse', 'aria-label': 'O que você disse, escrito' });
     campo.addEventListener('input', () => { ouvido = ''; habilitar(!!campo.value.trim()); });
@@ -187,7 +187,24 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
   };
   document.addEventListener('keydown', teclas);
 
-  raiz.append(area, barra);
+  // "não consigo ouvir / falar agora": quem está num lugar sem som ou sem poder falar pula este exercício sem castigo.
+  // Nada é enviado ao servidor: não conta como acerto nem como erro, não vira cartão de revisão e não mexe no diagnóstico.
+  const motivoPular = ex.tipo === 'escuta' || ex.tipo === 'ditado' ? 'Não consigo ouvir agora' : ex.tipo === 'fala' ? 'Não consigo falar agora' : null;
+  let pular = null;
+  if (motivoPular && aoProximo && !ja) {
+    pular = h('button', { type: 'button', class: 'btn btn-texto btn-pular', on: { click: () => {
+      if (conferido) return;
+      conferido = true;
+      try { rec?.stop(); } catch {}
+      area.querySelectorAll('input,textarea,.opcao,.peca,.par,button').forEach(b => { b.disabled = true; });
+      raiz.classList.add('is-pulado');
+      btnConferir.hidden = true;
+      folha.replaceChildren(h('div', { class: 'folha-resposta__texto' }, h('p', { class: 'folha-resposta__titulo' }, 'Tudo bem!'), h('p', {}, 'A gente pula este por agora. Não conta como erro.')));
+      pular.disabled = true;
+      setTimeout(() => aoProximo(), 650);
+    } } }, icone(ex.tipo === 'fala' ? 'microphone' : 'speaker-x'), motivoPular);
+    raiz.append(area, pular, barra);
+  } else raiz.append(area, barra);
   if (ja) {
     area.querySelectorAll('input,textarea,.opcao,.peca,.par').forEach(b => { b.disabled = true; });
     btnConferir.hidden = false;
