@@ -421,7 +421,7 @@ function criar(db) {
       foco: focoNovo ? { nome: POR_TAG[focoNovo.tag]?.nome, origem: focoNovo.origem } : null,
       objetivo: { nome: plano.objetivoNome, prazo: plano.prazo, metaRealista: plano.metaRealista },
       assinatura: est, novasConquistas, pontosHoje, diasNoMes, sequencia: sequenciaDe(uid, h), estudo: estudoResumo(uid, h), treino: treinoResumo(uid, h),
-      radio: radioResumo(uid, h),
+      radio: radioResumo(uid, h), turmas: turmasMod.resumoParaHoje(uid),
     };
   });
 
@@ -1347,7 +1347,7 @@ function criar(db) {
     const tudo = t => q(`SELECT * FROM ${t} WHERE user_id = ?`).all(uid);
     const u = q('SELECT nome, email, criado_em, consentiu_em FROM usuarios WHERE id = ?').get(uid);
     ctx.res.setHeader('Content-Disposition', `attachment; filename="inglou-meus-dados-${hojeDe(uid)}.json"`);
-    return { exportadoEm: agoraISO(), conta: u, perfil: perfilDe(uid), assinatura: assinaturaDe(uid), nivelamentos: tudo('nivelamentos'), planos: tudo('planos'), licoes: tudo('licoes'), tentativas: tudo('tentativas'), cartoes: tudo('cartoes'), revisoes: tudo('revisoes'), conversas: tudo('conversas'), focos: tudo('focos'), amostras: tudo('amostras'), competencias: tudo('competencias'), materiais: tudo('materiais'), conquistas: tudo('conquistas'), uso_ia: tudo('uso_ia'), dias_estudo: tudo('dias_estudo'), podcasts: tudo('podcasts'), estudos: tudo('estudos'), treinos: tudo('treinos') };
+    return { exportadoEm: agoraISO(), turmas: { comoProfessor: q('SELECT id, nome, codigo, criado_em FROM turmas WHERE professor_id = ?').all(uid), comoAluno: q('SELECT turma_id, entrou_em FROM turma_alunos WHERE user_id = ?').all(uid), minhasRespostas: q('SELECT atividade_id, item_id, correto, tempo_ms, em, resposta FROM atividade_respostas WHERE user_id = ?').all(uid) }, conta: u, perfil: perfilDe(uid), assinatura: assinaturaDe(uid), nivelamentos: tudo('nivelamentos'), planos: tudo('planos'), licoes: tudo('licoes'), tentativas: tudo('tentativas'), cartoes: tudo('cartoes'), revisoes: tudo('revisoes'), conversas: tudo('conversas'), focos: tudo('focos'), amostras: tudo('amostras'), competencias: tudo('competencias'), materiais: tudo('materiais'), conquistas: tudo('conquistas'), uso_ia: tudo('uso_ia'), dias_estudo: tudo('dias_estudo'), podcasts: tudo('podcasts'), estudos: tudo('estudos'), treinos: tudo('treinos') };
   });
   const ESCOPOS = {
     respostas: ['tentativas', 'revisoes', 'focos', 'descartes', 'podcasts', 'treinos'],
@@ -1356,7 +1356,7 @@ function criar(db) {
     cartoes: ['cartoes', 'revisoes'],
     materiais: ['materiais'],
     estudos: ['estudos'],
-    tudo: ['tentativas', 'revisoes', 'focos', 'descartes', 'conversas', 'amostras', 'cartoes', 'materiais', 'licoes', 'competencias', 'conquistas', 'dias_estudo', 'nivelamentos', 'planos', 'podcasts', 'estudos', 'treinos'],
+    tudo: ['tentativas', 'revisoes', 'focos', 'descartes', 'conversas', 'amostras', 'cartoes', 'materiais', 'licoes', 'competencias', 'conquistas', 'dias_estudo', 'nivelamentos', 'planos', 'podcasts', 'estudos', 'treinos', 'atividade_respostas'],
   };
   rota('POST', '/dados/apagar', (ctx) => {
     const uid = ctx.u.id;
@@ -1389,6 +1389,9 @@ function criar(db) {
     ctx.res.end(ics);
     return undefined;
   });
+
+  // ---------- turmas (professor e aluno) ----------
+  const turmasMod = require('./turmas').registrar({ db, rota, q, V, lerJson, transacao, agoraISO, hojeDe, registrarTentativa, somarMinutos });
 
   // ---------- despachante ----------
   async function tratar(req, res, url) {

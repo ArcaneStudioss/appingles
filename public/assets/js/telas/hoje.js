@@ -133,6 +133,16 @@ export async function telaHoje(el, { ir, estado }) {
       h('span', { class: 'radio-card__play', 'aria-hidden': 'true' }, icone(t.concluido ? 'check' : 'play'))));
   }
 
+  // Turma: atividades do professor esperando o aluno (só aparece para quem está em alguma turma)
+  if (d.turmas) {
+    const t = d.turmas;
+    principal.append(h('a', { class: 'treino-card c-lilas', href: '#/turmas' },
+      h('span', { class: 'bolha' }, icone('users-three')),
+      h('span', { class: 'treino-card__txt' }, h('strong', {}, t.pendentes ? plural(t.pendentes, 'atividade da turma', 'atividades da turma') : 'Turma em dia'),
+        h('small', {}, t.pendentes && t.proxima ? `${t.proxima.titulo}${t.proxima.prazo ? ' · até ' + dataBR(t.proxima.prazo) : ''}` : 'Nenhuma atividade esperando')),
+      h('span', { class: 'radio-card__play', 'aria-hidden': 'true' }, icone(t.pendentes ? 'play' : 'check'))));
+  }
+
   // Rádio Tuiuiú: o episódio de hoje, feito com os tropeços da pessoa
   if (d.radio && a.acesso === 'completo') {
     const r = d.radio;

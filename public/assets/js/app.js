@@ -19,6 +19,8 @@ import { telaPodcast } from './telas/podcast.js?v=__V__';
 import { telaSobMedida, telaEstudo, telaAssunto, telaSimulado } from './telas/sobmedida.js?v=__V__';
 import { telaAprender } from './telas/aprender.js?v=__V__';
 import { telaTreino } from './telas/treino.js?v=__V__';
+import { telaTurmas, telaMinhaTurma, telaAtividade } from './telas/turmas.js?v=__V__';
+import { telaTurma } from './telas/professor.js?v=__V__';
 import { agendarAviso } from './lembrete.js?v=__V__';
 
 const palco = document.getElementById('conteudo');
@@ -50,6 +52,7 @@ const MAIS = [
   { rota: 'sobmedida', cor: 'turquesa', ic: 'graduation-cap', t: 'Sob medida', s: 'prova, entrevista ou viagem com data' },
   { rota: 'material', cor: 'turquesa', ic: 'file-text', t: 'Meu texto', s: 'estude com um material seu' },
   { rota: 'aprender', cor: 'limao', ic: 'compass', t: 'Meu jeito', s: 'veja como você aprende, pelos seus acertos' },
+  { rota: 'turmas', cor: 'lilas', ic: 'users-three', t: 'Turmas', s: 'atividades do professor ou crie a sua turma' },
   { rota: 'duvidas', cor: 'coral', ic: 'question', t: 'Dúvidas', s: 'pergunte ao tutor' },
   { rota: 'conta', cor: 'azul', ic: 'user-circle', t: 'Eu', s: 'conta, plano e lembretes' },
 ];
@@ -63,6 +66,7 @@ const ROTAS = {
   entrar: telaEntrar, perfil: telaPerfil, nivelamento: telaNivelamento, hoje: telaHoje, plano: telaPlano,
   licao: telaLicao, revisar: telaRevisar, conversar: telaConversar, conversa: telaConversa, progresso: telaProgresso,
   material: telaMaterial, 'material-item': telaMaterialItem, duvidas: telaDuvidas, conta: telaConta, podcast: telaPodcast,
+  turmas: telaTurmas, minhaturma: telaMinhaTurma, atividade: telaAtividade, turma: telaTurma,
   aprender: telaAprender, treino: telaTreino, sobmedida: telaSobMedida, estudo: telaEstudo, assunto: telaAssunto, simulado: telaSimulado,
 };
 const LIVRES = new Set(['entrar']);
@@ -86,14 +90,22 @@ async function render() {
   if (!ROTAS[rota]) rota = 'hoje';
   if (!LIVRES.has(rota)) {
     if (!estado.eu) await carregarEu();
-    if (!estado.eu) { if (meu === renderizando) { location.hash = '#/entrar'; } return; }
+    if (!estado.eu) {
+      // link de convite de turma aberto sem login: guarda o código e retoma depois de entrar
+      const cod = (location.hash.match(/^#\/turmas\?.*codigo=([\w-]+)/) || [])[1];
+      if (cod) localStorageSet('turma-pendente', cod);
+      if (meu === renderizando) { location.hash = '#/entrar'; }
+      return;
+    }
     // onboarding: perfil -> nivelamento -> plano, nessa ordem
     const passo = estado.eu.passo;
-    if (passo === 'perfil' && rota !== 'perfil') { location.hash = '#/perfil'; return; }
-    if (passo === 'nivelamento' && !['perfil', 'nivelamento'].includes(rota)) { location.hash = '#/nivelamento'; return; }
+    const TURMA_LIVRE = ['turmas', 'turma', 'minhaturma', 'atividade'].includes(rota);   // professor e aluno de turma não precisam do plano pessoal para usar a turma
+    if (passo === 'perfil' && rota !== 'perfil' && !TURMA_LIVRE) { location.hash = '#/perfil'; return; }
+    if (passo === 'nivelamento' && !['perfil', 'nivelamento'].includes(rota) && !TURMA_LIVRE) { location.hash = '#/nivelamento'; return; }
+    if (passo === 'app' && localStorageGet('turma-pendente') && rota !== 'turmas') { location.hash = '#/turmas'; return; }
   }
-  nav.hidden = !estado.eu || ONBOARDING.has(rota) || LIVRES.has(rota) || rota === 'licao' || rota === 'simulado' || rota === 'treino';
-  document.body.classList.toggle('foco-total', rota === 'licao' || rota === 'nivelamento' || rota === 'simulado' || rota === 'treino');
+  nav.hidden = !estado.eu || ONBOARDING.has(rota) || LIVRES.has(rota) || rota === 'licao' || rota === 'simulado' || rota === 'treino' || rota === 'atividade';
+  document.body.classList.toggle('foco-total', rota === 'licao' || rota === 'nivelamento' || rota === 'simulado' || rota === 'treino' || rota === 'atividade');
   for (const a of nav.querySelectorAll('a')) {
     const ativo = a.dataset.rota === nome || (nome === 'conversa' && a.dataset.rota === 'conversar');
     a.toggleAttribute('aria-current', ativo); if (ativo) a.setAttribute('aria-current', 'page');

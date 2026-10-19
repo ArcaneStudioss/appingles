@@ -992,3 +992,24 @@ html,body{overflow-x:clip}
 .btn-vel{min-height:44px;padding:0 .9rem;gap:.35rem;font-size:.9rem}
 .btn-vel .ico{width:1.1rem;height:1.1rem}
 .vel__sinal{font-size:1.2rem;line-height:1;font-weight:900}
+
+/* turmas: lista, código de convite, tabela de alunos e banco de perguntas */
+.turma-lista{list-style:none;padding:0;margin:.6rem 0;display:grid;gap:.6rem}
+.turma-item{display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap;padding:.8rem 1rem;border-radius:var(--raio-p);background:var(--c-fundo);color:var(--tinta);text-decoration:none;border:2px solid transparent}
+.turma-item>span:first-child{display:grid;gap:.1rem;min-width:0}
+.turma-item small{color:var(--tinta-2);font-weight:600}
+a.turma-item:hover,a.turma-item:focus-visible{border-color:var(--c-forte)}
+.turma-codigo{font-family:var(--fonte-titulo,inherit);font-size:2.4rem;font-weight:900;letter-spacing:.3em;text-align:center;margin:.4rem 0;padding:.4rem;border-radius:var(--raio-p);background:var(--c-fundo);user-select:all}
+.linha-titulo{display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap}
+.tabela-rolavel{overflow-x:auto}
+.tabela-turma{width:100%;border-collapse:collapse;font-size:.95rem}
+.tabela-turma th,.tabela-turma td{padding:.55rem .6rem;text-align:left;border-bottom:1px solid var(--c-fundo)}
+.tabela-turma thead th{font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--tinta-2)}
+.tabela-alerta{color:var(--coral-forte,#B3402F);font-weight:800}
+.banco-lista{display:grid;gap:.5rem}
+.banco-missao{border-radius:var(--raio-p);background:var(--c-fundo);padding:.5rem .8rem}
+.banco-missao summary{cursor:pointer;padding:.3rem 0}
+.banco-item{display:flex;gap:.6rem;align-items:flex-start;padding:.4rem 0;font-weight:600}
+.banco-item input{margin-top:.25rem}
+.campo-copiar{width:100%}
+

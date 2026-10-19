@@ -117,6 +117,31 @@ const MIGRACOES = [
      data TEXT NOT NULL, criado_em TEXT NOT NULL, dados TEXT NOT NULL, respondidos TEXT NOT NULL DEFAULT '{}',
      concluido_em TEXT, UNIQUE(user_id, data)
    );`,
+  // 6: turmas do professor: código de convite, atividades (perguntas em JSON) e respostas dos alunos (só acerto, tempo e o que foi digitado)
+  `CREATE TABLE turmas (
+     id INTEGER PRIMARY KEY, professor_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+     nome TEXT NOT NULL, codigo TEXT NOT NULL UNIQUE, criado_em TEXT NOT NULL, ativa INTEGER NOT NULL DEFAULT 1
+   );
+   CREATE INDEX turmas_prof ON turmas(professor_id);
+   CREATE TABLE turma_alunos (
+     turma_id INTEGER NOT NULL REFERENCES turmas(id) ON DELETE CASCADE,
+     user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+     entrou_em TEXT NOT NULL, PRIMARY KEY (turma_id, user_id)
+   );
+   CREATE INDEX turma_alunos_user ON turma_alunos(user_id);
+   CREATE TABLE atividades (
+     id INTEGER PRIMARY KEY, turma_id INTEGER NOT NULL REFERENCES turmas(id) ON DELETE CASCADE,
+     titulo TEXT NOT NULL, descricao TEXT, prazo TEXT, criado_em TEXT NOT NULL, itens TEXT NOT NULL DEFAULT '[]', ativa INTEGER NOT NULL DEFAULT 1
+   );
+   CREATE INDEX atividades_turma ON atividades(turma_id);
+   CREATE TABLE atividade_respostas (
+     atividade_id INTEGER NOT NULL REFERENCES atividades(id) ON DELETE CASCADE,
+     user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+     item_id TEXT NOT NULL, correto INTEGER NOT NULL, quase INTEGER NOT NULL DEFAULT 0, tag TEXT,
+     tempo_ms INTEGER NOT NULL DEFAULT 0, dica INTEGER NOT NULL DEFAULT 0, em TEXT NOT NULL, resposta TEXT,
+     PRIMARY KEY (atividade_id, user_id, item_id)
+   );
+   CREATE INDEX atividade_respostas_user ON atividade_respostas(user_id);`,
 ];
 
 function abrir(dir) {

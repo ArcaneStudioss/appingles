@@ -53,7 +53,8 @@ export async function telaPerfil(el, { estado, ir, carregarEu }) {
         h('div', { class: 'opcoes-grandes', role: 'radiogroup' }, objetivos.map(o => { const [ic, cor] = VISUAL[o.id] || ['target', 'azul']; return h('label', { class: `opcao-grande c-${cor}` },
           h('input', { type: 'radio', name: 'objetivo', value: o.id, checked: dados.objetivo === o.id, on: { change: () => { dados.objetivo = o.id; } } }),
           h('span', { class: 'caixa' }, h('span', { class: 'bolha' }, icone(ic)), h('span', {}, h('strong', {}, o.nome), h('small', {}, o.frase)))); })),
-        ...navegacao(() => (dados.objetivo ? null : 'Escolha um objetivo para continuar.')));
+        ...navegacao(() => (dados.objetivo ? null : 'Escolha um objetivo para continuar.')),
+        editando ? null : h('p', { class: 'ajuda' }, 'Você é professor(a) e só quer criar uma turma para seus alunos, ou tem um código de turma? ', h('a', { href: '#/turmas' }, 'Ir para Turmas'), '.'));
     }
     if (passo === 1) {
       const detalhe = h('textarea', { id: 'p-detalhe', maxlength: 300, rows: 3, placeholder: 'Ex.: tenho entrevista para analista de dados numa empresa americana em março.' });
