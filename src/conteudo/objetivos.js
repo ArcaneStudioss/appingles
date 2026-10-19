@@ -20,14 +20,14 @@ const OBJETIVOS = {
   trabalho: {
     nome: 'Inglês no trabalho (reuniões e e-mails)',
     frase: 'Participar de reuniões, dar opinião e escrever e-mails sem travar.',
-    missoes: ['apresentar', 'pedir-repetir', 'reunioes', 'emails', 'trajetoria', 'projeto', 'fim-de-semana', 'planos', 'forcas'],
+    missoes: ['apresentar', 'pedir-repetir', 'telefone', 'reunioes', 'emails', 'small-talk', 'trajetoria', 'projeto', 'fim-de-semana', 'planos', 'forcas'],
     essenciais: ['apresentar', 'pedir-repetir', 'reunioes', 'emails'],
     exemploMeta: 'Dar sua opinião numa reunião e escrever e-mails curtos de pedido e confirmação.',
   },
   clientes: {
     nome: 'Atender clientes estrangeiros',
     frase: 'Receber, entender e ajudar clientes em inglês, inclusive quando algo dá errado.',
-    missoes: ['atender', 'pedir-repetir', 'apresentar', 'reclamacao', 'emails', 'viagem-cidade', 'rotina'],
+    missoes: ['atender', 'pedir-repetir', 'telefone', 'apresentar', 'reclamacao', 'emails', 'small-talk', 'viagem-cidade', 'rotina'],
     essenciais: ['atender', 'pedir-repetir', 'reclamacao'],
     exemploMeta: 'Atender um cliente do começo ao fim e resolver uma reclamação simples.',
   },
@@ -49,7 +49,7 @@ const OBJETIVOS = {
   conversa: {
     nome: 'Conversação do dia a dia',
     frase: 'Conversar sobre você, sua rotina e suas experiências com mais naturalidade.',
-    missoes: ['apresentar', 'rotina', 'fim-de-semana', 'pedir-repetir', 'planos', 'viagem-cidade', 'reunioes'],
+    missoes: ['apresentar', 'small-talk', 'rotina', 'fim-de-semana', 'pedir-repetir', 'planos', 'viagem-cidade', 'reunioes'],
     essenciais: ['apresentar', 'rotina', 'fim-de-semana'],
     exemploMeta: 'Manter uma conversa de 5 minutos sobre você e suas experiências.',
   },

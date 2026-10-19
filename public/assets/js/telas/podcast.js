@@ -10,6 +10,10 @@ import { nomeConquista } from './hoje.js?v=__V__';
 
 const PAUSA_REPITA = 4200;
 const temVozes = () => 'speechSynthesis' in window;
+// A Mia tem voz gravada para as frases do catálogo (mp3 guardado). O que muda por aluno (nome, correção própria) cai na voz do aparelho.
+const PASTA_MIA = '/assets/audio/mia/';
+let mapaMia = null;
+try { fetch(PASTA_MIA + 'mapa.json?v=__V__').then(r => (r.ok ? r.json() : null)).then(j => { mapaMia = j; }).catch(() => {}); } catch {}
 
 function escolherVozes() {
   const todas = temVozes() ? speechSynthesis.getVoices() : [];
@@ -26,7 +30,8 @@ export async function telaPodcast(el) {
   const falas = ep.falas;
 
   // ---------- capa e controles
-  let i = 0, tocando = false, geracao = 0, timer = null;
+  let i = 0, tocando = false, geracao = 0, timer = null, audioMia = null;
+  const pararMia = () => { try { audioMia?.pause(); } catch {} audioMia = null; };
   let devagar = localStorageGet('radio-devagar') === 'sim';
   const ondas = h('div', { class: 'radio-ondas', 'aria-hidden': 'true' }, Array.from({ length: 5 }, () => h('i')));
   const quemFala = h('p', { class: 'radio-capa__quem', 'aria-live': 'polite' }, 'Toque no play para começar');
@@ -37,7 +42,7 @@ export async function telaPodcast(el) {
   const btnVel = h('button', { type: 'button', class: 'radio-vel', 'aria-pressed': String(devagar), on: { click: () => { devagar = !devagar; localStorageSet('radio-devagar', devagar ? 'sim' : 'nao'); btnVel.setAttribute('aria-pressed', String(devagar)); btnVel.lastChild.textContent = devagar ? 'Devagar' : 'Normal'; if (tocando) tocar(i); } } }, icone('clock'), h('span', {}, devagar ? 'Devagar' : 'Normal'));
   capa.replaceChildren(
     h('div', { class: 'radio-capa__palco' },
-      h('div', { class: 'radio-capa__dupla' }, lou('feliz', { tamanho: 78, rotulo: 'Tuiuiú' }), ondas, lou('oi', { tamanho: 78, rotulo: 'Mia', mia: true })),
+      h('div', { class: 'radio-capa__dupla' }, lou('feliz', { tamanho: 84, rotulo: 'Tuiuiú' }), ondas, lou('oi', { tamanho: 176, rotulo: 'Mia', mia: true })),
       h('p', { class: 'rotulo-pequeno' }, `Episódio de hoje · ${ep.minutos} min`),
       h('h2', {}, ep.titulo),
       h('div', { class: 'linha-acoes radio-capa__chips' },
@@ -67,28 +72,42 @@ export async function telaPodcast(el) {
   function tocar(k) {
     if (!temVozes()) { toast('Seu navegador não lê em voz alta. Você pode ler o roteiro aqui embaixo.'); return; }
     const minha = ++geracao;
-    clearTimeout(timer); speechSynthesis.cancel();
+    clearTimeout(timer); pararMia(); if (temVozes()) speechSynthesis.cancel();
     i = Math.max(0, Math.min(falas.length - 1, k)); tocando = true;
     btnPlay.replaceChildren(icone('pause')); btnPlay.setAttribute('aria-label', 'Pausar'); capa.classList.add('tocando'); capa.classList.remove('repita');
     marcar(); rolar();
     const f = falas[i], v = escolherVozes();
+    const fim = () => {
+      if (minha !== geracao || !tocando) return;
+      if (f.repita) { capa.classList.add('repita'); timer = setTimeout(() => { if (minha === geracao) seguir(); }, PAUSA_REPITA * (devagar ? 1.3 : 1)); }
+      else timer = setTimeout(() => { if (minha === geracao) seguir(); }, 250);
+    };
+    const arq = f.quem === 'mia' && f.lingua === 'en' && mapaMia && mapaMia[String(f.texto).trim()];
+    if (arq) {
+      const a = new Audio(PASTA_MIA + arq + '?v=__V__');
+      a.playbackRate = devagar ? 0.8 : 1; a.preservesPitch = true;
+      audioMia = a;
+      a.onended = fim;
+      a.onerror = () => { if (minha === geracao && tocando && audioMia === a) { audioMia = null; falarNavegador(); } };
+      a.play().catch(() => { if (minha === geracao && tocando && audioMia === a) { audioMia = null; falarNavegador(); } });
+      return;
+    }
+    falarNavegador();
+    function falarNavegador() {
     const u = new SpeechSynthesisUtterance(f.texto);
     const voz = f.lingua === 'en' ? v.en : v.pt;
     if (voz) u.voice = voz;
     u.lang = voz?.lang || (f.lingua === 'en' ? 'en-US' : 'pt-BR');
     u.rate = (f.lingua === 'en' ? 0.95 : 1.05) * (devagar ? 0.8 : 1);
     u.pitch = f.quem === 'mia' ? 1.15 : 1;
-    u.onend = () => {
-      if (minha !== geracao || !tocando) return;
-      if (f.repita) { capa.classList.add('repita'); timer = setTimeout(() => { if (minha === geracao) seguir(); }, PAUSA_REPITA * (devagar ? 1.3 : 1)); }
-      else timer = setTimeout(() => { if (minha === geracao) seguir(); }, 250);
-    };
+    u.onend = fim;
     u.onerror = e => { if (minha === geracao && e.error !== 'interrupted' && e.error !== 'canceled') { pausar(); toast('O áudio parou. Toque no play para continuar.'); } };
     speechSynthesis.speak(u);
+    }
   }
   function seguir() { if (i + 1 < falas.length) tocar(i + 1); else terminar(); }
   function pausar() {
-    tocando = false; geracao++; clearTimeout(timer); if (temVozes()) speechSynthesis.cancel();
+    tocando = false; geracao++; clearTimeout(timer); pararMia(); if (temVozes()) speechSynthesis.cancel();
     btnPlay.replaceChildren(icone('play')); btnPlay.setAttribute('aria-label', 'Continuar o episódio'); capa.classList.remove('tocando', 'repita');
   }
   function pular(d) { const alvo = Math.max(0, Math.min(falas.length - 1, i + d)); if (tocando) tocar(alvo); else { i = alvo; marcar(); } }

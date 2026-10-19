@@ -5,58 +5,117 @@ import { localStorageGet, falarPt } from './ui.js?v=__V__';
 const NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs = {}, ...filhos) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); e.append(...filhos); return e; };
 
-// Tuiuiú: uma arara-azul (o orgulho do Brasil). A Mia, a amiga que fala inglês na Rádio Tuiuiú, é uma arara-vermelha.
+// Tuiuiú: uma arara-azul-grande de verdade (o orgulho do Brasil): corpo, asa, cauda longa, bico grosso e curvo e o anel amarelo no olho,
+// empoleirada num galho. A Mia, que fala inglês na Rádio Tuiuiú, é a tutora e dona do Tuiuiú: uma adolescente negra de tranças, de corpo inteiro.
 // humor: oi | feliz | pensando | ops | festa. As cores do Tuiuiú vêm de variáveis (--arara-*), então acompanham Dia e Noite;
 // o segundo valor de cada var() é a cor de reserva (página de vendas e ícones, onde não há tema).
 const TINTA_OLHO = '#16224A';
-const PALETAS = {
-  lou: { corpo: 'var(--arara-1,#2447D0)', sombra: 'var(--arara-2,#1A33A0)', luz: 'var(--arara-3,#6C8DFF)', bico: '#3A4254', bicoLuz: '#7A849B', rosto: null, anel: '#FFC83D', bochecha: '#FFC83D' },
-  mia: { corpo: '#E8404E', sombra: '#B02634', luz: '#FF8A92', bico: '#EBD9BC', bicoLuz: '#FFF6E6', rosto: '#FFF8F2', anel: null, bochecha: null },
-};
+const PALETA_TUI = { corpo: 'var(--arara-1,#2447D0)', sombra: 'var(--arara-2,#1A33A0)', luz: 'var(--arara-3,#6C8DFF)', bico: '#3A4254', bicoLuz: '#7A849B', anel: '#FFC83D' };
+
+// Mia de corpo inteiro (viewBox 120 x 290), proporções de adolescente (cabeça com cerca de 1/7 da altura), camisa azul, jeans e tênis, tranças com miçangas.
+// Em tamanho pequeno (até 60) mostra só da cabeça aos ombros. Cores fixas: pele e cabelo não mudam no modo Noite.
+function tutora(humor, { tamanho, rotulo }) {
+  const pequeno = tamanho <= 60;
+  const s = el('svg', { viewBox: pequeno ? '22 -2 76 76' : '0 -10 120 290', width: pequeno ? tamanho : Math.round(tamanho * 120 / 290), height: tamanho, class: `lou lou--${humor} lou--mia`, role: 'img', 'aria-label': rotulo });
+  const corpo = el('g', { class: 'lou__corpo' });
+  const traco = (d, cor, larg, extra = {}) => el('path', { d, stroke: cor, 'stroke-width': larg, 'stroke-linecap': 'round', fill: 'none', ...extra });
+  const PELE = '#6B4430', PELE_SOMBRA = '#55351F', CABELO = '#1B1210', TINTA = '#1A0F0B', BOCA = '#2A130C', AZUL = '#2E73D9', AZUL_ESC = '#1F55A8', JEANS = '#2B3350';
+  const feliz = humor === 'feliz' || humor === 'festa';
+
+  // pernas de jeans (coxa larga, tornozelo fino) e tênis brancos
+  corpo.append(el('path', { d: 'M42 126 L59 126 L58 190 L56 254 L45 254 L43 190 Z', fill: JEANS }), el('path', { d: 'M61 126 L78 126 L77 190 L75 254 L64 254 L62 190 Z', fill: JEANS }),
+    traco('M50 140 L50 186', '#3C4770', 1.2, { opacity: '.6' }), traco('M70 140 L70 186', '#3C4770', 1.2, { opacity: '.6' }),
+    traco('M45 252 H56', '#1B2038', 2), traco('M64 252 H75', '#1B2038', 2),
+    el('path', { d: 'M43 254 H57 L58 262 Q60 266 56 269 H41 Q37 269 38 264 Z', fill: '#FFF8E6', stroke: '#BFA986', 'stroke-width': 1 }),
+    el('path', { d: 'M77 254 H63 L62 262 Q60 266 64 269 H79 Q83 269 82 264 Z', fill: '#FFF8E6', stroke: '#BFA986', 'stroke-width': 1 }),
+    traco('M39 267 H58', '#FFC83D', 2), traco('M81 267 H62', '#FFC83D', 2));
+  // pescoço, mãos e antebraços, camisa azul solta (colarinho, botões, bolso), mangas dobradas
+  corpo.append(el('rect', { x: 54, y: 42, width: 12, height: 22, rx: 5, fill: PELE_SOMBRA }),
+    el('path', { d: 'M28 100 L26 130 L34 132 L40 104 Z', fill: PELE }), el('path', { d: 'M92 100 L94 130 L86 132 L80 104 Z', fill: PELE }),
+    el('ellipse', { cx: 30, cy: 138, rx: 5, ry: 7, fill: PELE }), el('ellipse', { cx: 90, cy: 138, rx: 5, ry: 7, fill: PELE }),
+    el('path', { d: 'M40 64 Q60 56 80 64 L78 104 L82 142 Q60 146 38 142 L42 104 Z', fill: AZUL }),
+    el('path', { d: 'M60 60 L80 64 L78 104 L82 142 L60 145 Z', fill: AZUL_ESC, opacity: '.16' }),
+    traco('M60 74 L60 144', AZUL_ESC, 1.2),
+    el('path', { d: 'M52 58 L60 74 L54 77 L47 62 Z', fill: '#7FB0F5' }), el('path', { d: 'M68 58 L60 74 L66 77 L73 62 Z', fill: '#7FB0F5' }),
+    el('rect', { x: 66, y: 86, width: 9, height: 9, rx: 1, fill: 'none', stroke: AZUL_ESC, 'stroke-width': 1 }),
+    traco('M39 140 Q60 144 81 140', AZUL_ESC, 1.6),
+    el('path', { d: 'M40 64 Q32 66 30 78 L28 100 L40 104 L44 78 Z', fill: AZUL }), el('path', { d: 'M80 64 Q88 66 90 78 L92 100 L80 104 L76 78 Z', fill: AZUL }),
+    traco('M28 100 L40 104', AZUL_ESC, 1.4), traco('M92 100 L80 104', AZUL_ESC, 1.4));
+  for (const y of [84, 98, 112, 126]) corpo.append(el('circle', { cx: 60, cy: y, r: 1.3, fill: '#DCEBFF' }));
+  // tranças em frente aos ombros, com miçangas (começam na cabeça e chegam ao peito)
+  [['M46 18 Q33 60 38 112', 38, 112, '#FF6FA5'], ['M50 22 Q41 64 46 118', 46, 118, '#FFC83D'], ['M74 18 Q87 60 82 112', 82, 112, '#FFC83D'], ['M70 22 Q79 64 74 118', 74, 118, '#FF6FA5']]
+    .forEach(([d, x, y, cor]) => corpo.append(traco(d, CABELO, 4.4), el('circle', { cx: x, cy: y, r: 2.3, fill: cor })));
+
+  // cabeça (desenhada em escala maior e reduzida: o rosto mantém os mesmos traços)
+  const cabeca = el('g', { transform: 'translate(60 28) scale(.58) translate(-60 -50)' });
+  cabeca.append(el('ellipse', { cx: 33, cy: 52, rx: 4, ry: 6, fill: PELE }), el('ellipse', { cx: 87, cy: 52, rx: 4, ry: 6, fill: PELE }),
+    el('ellipse', { cx: 60, cy: 50, rx: 27, ry: 31, fill: PELE }),
+    el('circle', { cx: 33, cy: 58, r: 2.4, fill: '#E5A72A' }), el('circle', { cx: 87, cy: 58, r: 2.4, fill: '#E5A72A' }),
+    el('path', { d: 'M32 46 Q29 14 60 12 Q91 14 88 46 Q82 28 60 26 Q38 28 32 46 Z', fill: CABELO }),
+    traco('M35 30 Q60 15 85 30', '#FFC83D', 4));
+  const olhos = el('g', { class: 'lou__olhos', style: 'transform-origin:60px 47px' });
+  for (const x of [49, 71]) {
+    if (feliz) { olhos.append(traco(`M${x - 6} 48 Q${x} 39 ${x + 6} 48`, TINTA, 3.8)); continue; }
+    const dx = humor === 'pensando' ? 2 : 0, dy = humor === 'pensando' ? -2.5 : humor === 'ops' ? 1.5 : 0, r = humor === 'ops' ? 2.8 : 3.8;
+    olhos.append(el('ellipse', { cx: x, cy: 47, rx: 6, ry: 6.6, fill: '#FFF8F0' }), el('circle', { cx: x + dx, cy: 47.5 + dy, r, fill: TINTA }), el('circle', { cx: x + dx + 1.1, cy: 46 + dy, r: 1.2, fill: '#fff' }));
+  }
+  const alto = humor === 'ops' ? -3 : 0;
+  cabeca.append(olhos, traco(`M43 ${38 + alto} Q49 ${34 + alto} 55 ${38 + alto}`, CABELO, 2.6), traco(`M65 ${38 + alto} Q71 ${34 + alto} 77 ${38 + alto}`, CABELO, 2.6),
+    traco('M60 52 Q57 58 61 59', '#3E2418', 2),
+    el('circle', { cx: 42, cy: 60, r: 4.5, fill: '#E8404E', opacity: '.22' }), el('circle', { cx: 78, cy: 60, r: 4.5, fill: '#E8404E', opacity: '.22' }));
+  if (feliz) cabeca.append(el('path', { d: 'M50 64 Q60 80 70 64 Z', fill: BOCA }), el('ellipse', { cx: 60, cy: 73, rx: 4, ry: 2.5, fill: '#E8404E' }));
+  else if (humor === 'ops') cabeca.append(el('ellipse', { cx: 60, cy: 69, rx: 3.6, ry: 4.6, fill: BOCA }));
+  else if (humor === 'pensando') cabeca.append(traco('M53 68 Q58 66 66 68', BOCA, 3));
+  else cabeca.append(traco('M51 66 Q60 74 69 66', BOCA, 3));
+  if (humor === 'festa') cabeca.append(el('path', { d: 'M44 26 L60 -8 L76 26 Z', fill: 'var(--sol,#FFC83D)' }), traco('M50 16 L70 16', '#FF6FA5', 3.4), traco('M54 5 L66 5', '#FF6FA5', 3.4), el('circle', { cx: 60, cy: -9, r: 5, fill: '#FF6FA5' }));
+  corpo.append(cabeca);
+
+  if (humor === 'pensando') corpo.append(el('circle', { cx: 86, cy: 22, r: 2, fill: 'var(--tinta-2,#46557A)' }), el('circle', { cx: 91, cy: 14, r: 2.8, fill: 'var(--tinta-2,#46557A)' }), el('circle', { cx: 97, cy: 4, r: 3.8, fill: 'var(--tinta-2,#46557A)' }));
+  if (humor === 'ops') corpo.append(el('path', { d: 'M84 14 Q88 21 84 25 Q80 21 84 14 Z', fill: '#7FD3F5' }));
+  s.append(corpo);
+  if (humor === 'festa') for (const [x, y, r] of [[12, 10, 6], [108, 6, 5], [110, 56, 4]]) s.append(el('path', { class: 'lou__estrela', d: `M${x} ${y - r} L${x + r * .3} ${y - r * .3} L${x + r} ${y} L${x + r * .3} ${y + r * .3} L${x} ${y + r} L${x - r * .3} ${y + r * .3} L${x - r} ${y} L${x - r * .3} ${y - r * .3} Z`, fill: 'var(--sol,#FFC83D)' }));
+  return s;
+}
+
 export function lou(humor = 'oi', { tamanho = 96, rotulo = 'Tuiuiú, a arara-azul do Inglou', mia = false } = {}) {
-  const P = mia ? PALETAS.mia : PALETAS.lou;
-  const s = el('svg', { viewBox: '0 0 120 120', width: tamanho, height: tamanho, class: `lou lou--${humor}${mia ? ' lou--mia' : ''}`, role: 'img', 'aria-label': rotulo });
+  if (mia) return tutora(humor, { tamanho, rotulo: rotulo === 'Tuiuiú, a arara-azul do Inglou' ? 'Mia, a tutora do Tuiuiú' : rotulo });
+  const P = PALETA_TUI;
+  const s = el('svg', { viewBox: '0 0 120 120', width: tamanho, height: tamanho, class: `lou lou--${humor}`, role: 'img', 'aria-label': rotulo });
   const corpo = el('g', { class: 'lou__corpo' });
   const traco = (d, cor, larg, extra = {}) => el('path', { d, stroke: cor, 'stroke-width': larg, 'stroke-linecap': 'round', fill: 'none', ...extra });
   const feliz = humor === 'feliz' || humor === 'festa';
 
-  // ombros e asas (a Mia ganha as penas amarela e azul das asas)
-  corpo.append(el('path', { d: 'M12 120 Q12 92 36 84 H84 Q108 92 108 120 Z', fill: P.sombra }),
-    el('path', { d: 'M34 120 Q36 95 60 91 Q84 95 86 120 Z', fill: P.corpo }));
-  if (mia) corpo.append(traco('M17 119 Q17 101 28 92', '#FFC83D', 5), traco('M24 119 Q24 105 33 97', '#2F6BFF', 5), traco('M103 119 Q103 101 92 92', '#FFC83D', 5), traco('M96 119 Q96 105 87 97', '#2F6BFF', 5));
-  else corpo.append(traco('M22 114 Q24 102 31 95', P.luz, 3, { opacity: '.55' }), traco('M98 114 Q96 102 89 95', P.luz, 3, { opacity: '.55' }));
-
-  // penas da cabeça (no dia de festa dão lugar ao chapéu)
-  if (humor !== 'festa') corpo.append(el('ellipse', { cx: 51, cy: 19, rx: 5.5, ry: 10, fill: P.corpo, transform: 'rotate(-18 51 19)' }), el('ellipse', { cx: 67, cy: 18, rx: 5.5, ry: 11, fill: P.corpo, transform: 'rotate(14 67 18)' }));
+  // galho e cauda longa
+  corpo.append(traco('M6 112 Q60 108 114 113', '#7A5538', 6), traco('M18 111 Q38 108 50 109', '#A07C58', 2, { opacity: '.7' }),
+    el('path', { d: 'M46 92 Q32 108 28 118 L40 118 Q46 108 54 96 Z', fill: P.sombra }), el('path', { d: 'M54 94 Q46 110 44 119 L54 118 Q58 108 62 98 Z', fill: P.corpo }));
+  // corpo, barriga clara, asa com penas, patas
+  corpo.append(el('ellipse', { cx: 62, cy: 76, rx: 24, ry: 34, fill: P.corpo, transform: 'rotate(8 62 76)' }),
+    el('ellipse', { cx: 70, cy: 80, rx: 10, ry: 22, fill: P.luz, opacity: '.3', transform: 'rotate(8 70 80)' }),
+    el('path', { d: 'M44 60 Q35 86 44 104 Q57 98 63 78 Q59 60 44 60 Z', fill: P.sombra }),
+    traco('M47 74 Q50 88 52 100', P.luz, 2, { opacity: '.45' }), traco('M52 70 Q56 84 57 96', P.luz, 2, { opacity: '.35' }),
+    traco('M56 106 Q54 112 50 112', '#5B6275', 3), traco('M64 107 Q64 113 68 113', '#5B6275', 3));
   // cabeça
-  corpo.append(el('ellipse', { cx: 60, cy: 52, rx: 37, ry: 35, fill: P.corpo }),
-    el('path', { d: 'M25 58 Q30 88 60 88 Q90 88 95 58 Q88 80 60 80 Q32 80 25 58 Z', fill: P.sombra, opacity: '.45' }),
-    traco('M31 40 Q35 25 50 20', '#fff', 4, { opacity: '.3' }));
-  if (P.rosto) corpo.append(el('ellipse', { cx: 60, cy: 52, rx: 30, ry: 23, fill: P.rosto }), traco('M33 58 Q37 63 42 64', P.corpo, 1.8, { opacity: '.55' }), traco('M87 58 Q83 63 78 64', P.corpo, 1.8, { opacity: '.55' }));
-  if (P.bochecha) corpo.append(el('ellipse', { cx: 44, cy: 67, rx: 8, ry: 6, fill: P.bochecha }), el('ellipse', { cx: 76, cy: 67, rx: 8, ry: 6, fill: P.bochecha }));
-
-  // olhos (anel amarelo da arara-azul)
-  const olhos = el('g', { class: 'lou__olhos' });
-  for (const x of [42, 78]) {
-    if (feliz) { olhos.append(traco(`M${x - 7} 49 Q${x} 37 ${x + 7} 49`, TINTA_OLHO, 4.5)); continue; }
-    const dx = humor === 'pensando' ? 2.5 : 0, dy = humor === 'pensando' ? -3 : humor === 'ops' ? 2.5 : 0, r = humor === 'ops' ? 3.2 : 4.6;
-    if (P.anel) olhos.append(el('circle', { cx: x, cy: 46, r: 12, fill: P.anel }));
-    olhos.append(el('ellipse', { cx: x, cy: 46, rx: 8.6, ry: 9.6, fill: '#fff' }), el('circle', { cx: x + dx, cy: 47 + dy, r, fill: TINTA_OLHO }), el('circle', { cx: x + dx + 1.4, cy: 45 + dy, r: 1.4, fill: '#fff' }));
+  corpo.append(el('circle', { cx: 68, cy: 40, r: 19, fill: P.corpo }), traco('M54 30 Q58 22 66 21', '#fff', 3, { opacity: '.3' }));
+  // olho com anel amarelo
+  const olhos = el('g', { class: 'lou__olhos', style: 'transform-origin:75px 38px' });
+  olhos.append(el('circle', { cx: 74, cy: 38, r: 8.5, fill: P.anel }));
+  if (feliz) olhos.append(traco('M69 40 Q75 32 81 40', TINTA_OLHO, 3.6));
+  else {
+    const dx = humor === 'pensando' ? -1.5 : 0, dy = humor === 'pensando' ? -2.5 : humor === 'ops' ? 1.5 : 0, r = humor === 'ops' ? 3.2 : 4.4;
+    olhos.append(el('circle', { cx: 75 + dx, cy: 38 + dy, r, fill: TINTA_OLHO }), el('circle', { cx: 76.4 + dx, cy: 36.6 + dy, r: 1.3, fill: '#fff' }));
   }
   corpo.append(olhos,
-    el('circle', { cx: 28, cy: 62, r: 4.5, fill: '#FF9FB2', opacity: '.5' }), el('circle', { cx: 92, cy: 62, r: 4.5, fill: '#FF9FB2', opacity: '.5' }));
+    // bico grosso e curvo, com a mancha amarela na base
+    el('path', { d: 'M82 32 Q106 28 106 54 Q104 64 96 58 Q98 48 86 46 Q80 42 82 32 Z', fill: P.bico }),
+    traco('M86 33 Q98 32 103 42', P.bicoLuz, 2.5, { opacity: '.75' }),
+    el('ellipse', { cx: 87, cy: 49, rx: 6, ry: 3.6, fill: P.anel }));
+  if (feliz) corpo.append(traco('M89 55 Q95 59 100 55', P.sombra, 2, { opacity: '.5' }));
 
-  // bico grande e curvo
-  corpo.append(el('path', { d: 'M50 60 Q50 50 60 50 Q70 50 70 60 Q70 70 64 79 Q60 85 56 79 Q50 70 50 60 Z', fill: P.bico }),
-    traco('M54 56 Q56 53 60 53', P.bicoLuz, 2.5, { opacity: '.75' }),
-    el('circle', { cx: 56.5, cy: 58, r: 1.3, fill: '#000', opacity: '.35' }), el('circle', { cx: 63.5, cy: 58, r: 1.3, fill: '#000', opacity: '.35' }));
-  if (feliz) corpo.append(traco('M55 72 Q60 77 65 72', P.sombra, 2.2, { opacity: '.55' }));
-
-  if (humor === 'pensando') corpo.append(el('circle', { cx: 100, cy: 30, r: 2.4, fill: 'var(--tinta-2,#46557A)' }), el('circle', { cx: 106, cy: 21, r: 3.4, fill: 'var(--tinta-2,#46557A)' }), el('circle', { cx: 111, cy: 9, r: 4.6, fill: 'var(--tinta-2,#46557A)' }));
-  if (humor === 'ops') corpo.append(el('path', { d: 'M98 28 Q103 36 98 41 Q93 36 98 28 Z', fill: '#7FD3F5' }));
-  if (humor === 'festa') corpo.append(el('path', { d: 'M48 26 L62 -2 L76 26 Z', fill: 'var(--sol,#FFC83D)' }), traco('M53 18 L71 18', '#FF6FA5', 3), traco('M57 9 L66 9', '#FF6FA5', 3), el('circle', { cx: 62, cy: -3, r: 4.5, fill: '#FF6FA5' }));
+  if (humor === 'pensando') corpo.append(el('circle', { cx: 100, cy: 18, r: 2.4, fill: 'var(--tinta-2,#46557A)' }), el('circle', { cx: 105, cy: 10, r: 3.4, fill: 'var(--tinta-2,#46557A)' }), el('circle', { cx: 110, cy: 1, r: 4.6, fill: 'var(--tinta-2,#46557A)' }));
+  if (humor === 'ops') corpo.append(el('path', { d: 'M54 16 Q59 24 54 29 Q49 24 54 16 Z', fill: '#7FD3F5' }));
+  if (humor === 'festa') corpo.append(el('path', { d: 'M56 24 L66 -2 L78 24 Z', fill: 'var(--sol,#FFC83D)' }), traco('M60 16 L74 16', '#FF6FA5', 3), traco('M63 8 L70 8', '#FF6FA5', 3), el('circle', { cx: 66, cy: -3, r: 4.5, fill: '#FF6FA5' }));
   s.append(corpo);
-  if (humor === 'festa') for (const [x, y, r] of [[10, 22, 6], [110, 18, 5], [114, 62, 4]]) s.append(el('path', { class: 'lou__estrela', d: `M${x} ${y - r} L${x + r * .3} ${y - r * .3} L${x + r} ${y} L${x + r * .3} ${y + r * .3} L${x} ${y + r} L${x - r * .3} ${y + r * .3} L${x - r} ${y} L${x - r * .3} ${y - r * .3} Z`, fill: 'var(--sol,#FFC83D)' }));
+  if (humor === 'festa') for (const [x, y, r] of [[10, 22, 6], [112, 14, 5], [14, 62, 4]]) s.append(el('path', { class: 'lou__estrela', d: `M${x} ${y - r} L${x + r * .3} ${y - r * .3} L${x + r} ${y} L${x + r * .3} ${y + r * .3} L${x} ${y + r} L${x - r * .3} ${y + r * .3} L${x - r} ${y} L${x - r * .3} ${y - r * .3} Z`, fill: 'var(--sol,#FFC83D)' }));
   return s;
 }
 

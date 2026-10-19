@@ -38,6 +38,20 @@ const CENARIOS = {
     roteiro: ['Some people think we should wait. Do you agree?', 'What would be the biggest risk for you?', 'Do you have any other suggestion?', 'Who should we talk to before deciding?', 'Great. Can you send a short summary by email after the meeting?'],
     ajuda: ['I think ...', 'I agree with ... / I see your point, but ...', 'What if we ...?', "I'll follow up by email."],
   },
+  telefone: {
+    titulo: 'Ligando para marcar uma reunião',
+    papel: 'a receptionist called Dana at a company in Chicago, answering the phone; the student is calling to schedule a meeting with the sales manager, Mr. Johnson',
+    abertura: 'Good morning, Brightline Solutions, this is Dana speaking. How can I help you?',
+    roteiro: ['Sure. May I ask who is calling?', 'Could you hold for a moment? I will check if he is available.', 'He is free on Tuesday at 3 p.m. or on Wednesday morning. Which one works for you?', 'Sorry, the line is bad. Could you repeat that, please?', 'Perfect. Is there anything else I can help you with?'],
+    ajuda: ['Hello, this is ...', 'Could I speak to ..., please?', "I'm calling to ...", 'Could you repeat that, please?'],
+  },
+  'small-talk': {
+    titulo: 'Conversa leve na copa',
+    papel: 'a friendly coworker called Alex making small talk with the student in the office kitchen before a meeting',
+    abertura: "Hey! How's it going? Did you do anything fun this weekend?",
+    roteiro: ['Nice! Where did you go?', 'That sounds great. I stayed home and watched a series. Have you seen any good ones lately?', "Nice weather today, isn't it?", 'By the way, are you ready for the meeting?', "I'd better get going. It was nice talking to you!"],
+    ajuda: ["Pretty good, thanks. How about you?", 'I went to ... / I stayed home.', 'That sounds nice!', 'See you in the meeting!'],
+  },
   cliente: {
     titulo: 'Atendendo um cliente',
     papel: 'a polite but slightly impatient customer called Chris who has a problem with an order or service from the student\'s business',
