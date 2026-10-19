@@ -66,11 +66,21 @@ function lerCorpo(req, limite = 64 * 1024) {
   });
 }
 
+// corpo como texto, sem interpretar (webhooks: a assinatura é calculada sobre os bytes exatos)
+function lerCorpoBruto(req, limite = 256 * 1024) {
+  return new Promise((resolve, reject) => {
+    let tamanho = 0; const partes = []; let estourou = false;
+    req.on('data', c => { if (estourou) return; tamanho += c.length; if (tamanho > limite) { estourou = true; reject(new ErroHttp(413, 'Conteúdo grande demais.')); return; } partes.push(c); });
+    req.on('end', () => { if (!estourou) resolve(Buffer.concat(partes).toString('utf8')); });
+    req.on('error', () => reject(new ErroHttp(400, 'Falha na leitura.')));
+  });
+}
+
 function lerCookies(req) {
   const out = {};
   for (const p of String(req.headers.cookie || '').split(';')) {
     const i = p.indexOf('=');
-    if (i > 0) out[p.slice(0, i).trim()] = decodeURIComponent(p.slice(i + 1).trim());
+    if (i > 0) { try { out[p.slice(0, i).trim()] = decodeURIComponent(p.slice(i + 1).trim()); } catch { /* cookie malformado de outro app: ignora em vez de derrubar a requisição */ } }
   }
   return out;
 }
@@ -148,4 +158,4 @@ function servir(req, res, url) {
   });
 }
 
-module.exports = { cabecalhos, json, erro, ErroHttp, lerCorpo, definirSessao, limparSessao, tokenDaSessao, ip, servir, naoAchou, VERSAO, seguro };
+module.exports = { cabecalhos, json, erro, ErroHttp, lerCorpo, lerCorpoBruto, definirSessao, limparSessao, tokenDaSessao, ip, servir, naoAchou, VERSAO, seguro };

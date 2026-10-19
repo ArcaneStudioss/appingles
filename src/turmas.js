@@ -13,9 +13,10 @@ const { corrigirExercicio, respostaCerta } = require('./motor/correcao');
 const { paraCliente } = require('./motor/licao');
 
 const MAX_TURMAS = 20, MAX_ALUNOS = 200, MAX_ATIVIDADES = 100;
+const MAX_ALUNOS_PLANO = require('./assinatura').MAX_ALUNOS_TURMA;
 const HABILIDADE = { gramatica: 'Gramática', vocabulario: 'Vocabulário', leitura: 'Leitura', escuta: 'Escuta', escrita: 'Escrita', fala: 'Fala', geral: 'Geral' };
 
-function registrar({ db, rota, q, V, lerJson, transacao, agoraISO, hojeDe, registrarTentativa, somarMinutos }) {
+function registrar({ db, rota, q, V, lerJson, transacao, agoraISO, hojeDe, registrarTentativa, somarMinutos, nivelDe }) {
   const limEntrar = auth.limitadorBanco(db, 'turma-entrar', { janelaMs: 15 * 60e3, max: 15 });
   const emItens = (itens, semente) => paraCliente({ blocos: [{ exercicios: itens }] }, semente).blocos[0].exercicios;
   const itensDe = a => lerJson(a.itens, []);
@@ -174,6 +175,11 @@ function registrar({ db, rota, q, V, lerJson, transacao, agoraISO, hojeDe, regis
     if (!t) throw new ErroHttp(404, 'Não achei uma turma com esse código. Confira com o seu professor.');
     if (t.professor_id === uid) throw new ErroHttp(409, 'Esta turma é sua: você é o professor.');
     if (q('SELECT COUNT(*) n FROM turma_alunos WHERE turma_id = ?').get(t.id).n >= MAX_ALUNOS) throw new ErroHttp(409, 'Esta turma está cheia.');
+    // professor com plano Turma: no máximo 20 alunos no total (somando as turmas dele); acima disso, plano sob consulta
+    const ja = !!q('SELECT 1 FROM turma_alunos WHERE turma_id = ? AND user_id = ?').get(t.id, uid);
+    const plano = nivelDe(t.professor_id, hojeDe(t.professor_id));
+    if (!ja && plano.acesso === 'completo' && plano.nivel === 'turma'
+      && q('SELECT COUNT(DISTINCT ta.user_id) n FROM turma_alunos ta JOIN turmas x ON x.id = ta.turma_id WHERE x.professor_id = ? AND x.ativa = 1').get(t.professor_id).n >= MAX_ALUNOS_PLANO) throw new ErroHttp(409, 'Esta turma chegou ao limite de 20 alunos do plano Turma. Fale com o seu professor: para turmas maiores existe o plano sob consulta.');
     q('INSERT OR IGNORE INTO turma_alunos (turma_id, user_id, entrou_em) VALUES (?, ?, ?)').run(t.id, uid, agoraISO());
     return { ok: true, turma: { id: t.id, nome: t.nome, professor: t.professor_nome } };
   });

@@ -25,35 +25,80 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
     h('div', { class: 'linha-acoes' }, botoes));
 
   // --- assinatura
-  const estadoAss = e.status === 'teste' ? `Teste grátis até ${dataBR(e.ate)} (${e.diasRestantes} dias). Sem cartão cadastrado: nada é cobrado sozinho.`
-    : e.status === 'ativa' ? `Plano ${ass.planos[e.plano]?.nome} ativo até ${dataBR(e.ate)}, com renovação.`
+  const estadoAss = e.via ? `Plano ${ass.planos[e.nivel]?.nome} por ${e.via === 'familia' ? 'quem assina a sua família' : 'o seu professor'}.`
+    : e.status === 'teste' ? `Teste grátis do plano Completo até ${dataBR(e.ate)} (${e.diasRestantes} dias). Sem cartão cadastrado: nada é cobrado sozinho.`
+    : e.status === 'ativa' ? `Plano ${ass.planos[e.plano]?.nome}${e.periodo === 'anual' ? ' anual' : ''} ativo até ${dataBR(e.ate)}, com renovação.`
       : e.status === 'cancelada' ? `Cancelado. Você continua com tudo até ${dataBR(e.ate)}. Depois, acesso livre.`
         : 'Acesso livre: flashcards, progresso e seus dados. Lições, conversas e IA pausadas.';
 
   function verPlanos() {
+    let periodo = 'anual';
+    const lista = h('div', { class: 'planos' });
     const usoLinhas = Object.entries(ass.nomesUso).map(([k, nome]) => h('li', {}, `${nome}: ${ass.uso[k] || 0} de ${e.limites[k] ?? 0} neste mês`));
     const planoCard = (id) => {
-      const pl = ass.planos[id];
-      const b = h('button', { type: 'button', class: 'btn btn-bloco' + (id === 'anual' ? '' : ' btn-sec'), on: { click: async () => {
+      const pl = ass.planos[id], pr = pl.precos[periodo];
+      const atual = e.plano === id && e.status !== 'teste' && !e.via;
+      const b = h('button', { type: 'button', class: 'btn btn-bloco' + (id === 'completo' ? '' : ' btn-sec'), disabled: atual || e.status === 'ativa' ? '' : null, on: { click: async () => {
         ocupado(b, true);
-        try { await api('/assinatura/assinar', { metodo: 'POST', corpo: { plano: id } }); toast('Assinatura ativada (modo de teste do sistema).', { tipo: 'ok' }); j.fechar(); render(); }
+        try {
+          const r = await api('/assinatura/assinar', { metodo: 'POST', corpo: { plano: id, periodo } });
+          if (r.url) { location.href = r.url; return; }   // Stripe: o pagamento acontece na página segura da Stripe
+          toast('Assinatura ativada (modo de teste do sistema).', { tipo: 'ok' }); j.fechar(); render();
+        }
         catch (err) { toast(err.message); } finally { ocupado(b, false); }
-      } } }, `Assinar ${pl.nome}`);
-      return h('div', { class: 'plano' + (id === 'anual' ? ' plano--destaque' : '') }, h('h3', {}, pl.nome), h('p', { class: 'preco' }, pl.rotulo), pl.equivalente ? h('p', { class: 'chip' }, `${pl.equivalente} · ${pl.desconto}`) : null, b);
+      } } }, atual ? 'Seu plano' : `Assinar ${pl.nome}`);
+      return h('div', { class: 'plano' + (id === 'completo' ? ' plano--destaque' : '') }, h('h3', {}, pl.nome), h('p', { class: 'preco' }, pr.rotulo),
+        periodo === 'anual' ? h('p', { class: 'chip' }, `${pr.equivalente} · ${pr.desconto}`) : null, h('p', { class: 'ajuda' }, pl.resumo), b);
     };
+    const desenhar = () => lista.replaceChildren(
+      h('div', { class: 'plano' }, h('h3', {}, ass.gratuito.nome), h('p', { class: 'preco' }, 'R$ 0'), h('p', { class: 'ajuda' }, ass.gratuito.resumo),
+        h('p', { class: 'chip' }, e.acesso === 'livre' ? 'Seu plano agora' : 'Quando o plano pago acabar')),
+      ...['basico', 'completo', 'familia', 'turma'].map(planoCard),
+      h('div', { class: 'plano' }, h('h3', {}, 'Sob consulta'), h('p', { class: 'preco' }, 'Mais de 20 alunos?'),
+        h('p', { class: 'ajuda' }, 'Escolas, cursos e empresas: monte um plano do tamanho da sua turma, com valor combinado.'),
+        ass.contato ? h('a', { class: 'btn btn-bloco btn-sec', href: ass.contato, target: '_blank', rel: 'noopener' }, 'Falar com a gente') : h('p', { class: 'ajuda' }, 'Contato em breve.')));
+    const aba = (id, texto) => { const b = h('button', { type: 'button', class: 'btn btn-peq ' + (periodo === id ? '' : 'btn-sec'), on: { click: () => { periodo = id; abas.forEach(x => x.cls()); desenhar(); } } }, texto); b.cls = () => { b.className = 'btn btn-peq ' + (periodo === id ? '' : 'btn-sec'); }; return b; };
+    const abas = [aba('mensal', 'Mensal'), aba('anual', 'Anual (mais barato)')];
+    desenhar();
+    const dia = ass.limitesDia.basico;
     const j = janela({ titulo: 'Planos', larga: true, corpo: h('div', {},
-      h('p', {}, 'Os dois planos incluem o mesmo conteúdo. O anual sai mais barato por mês.'),
-      h('div', { class: 'planos' }, planoCard('mensal'), planoCard('anual')),
-      h('h3', {}, 'Incluso'), h('ul', { class: 'lista-check' }, ass.inclui.completo.map(t => h('li', {}, t))),
-      h('h3', {}, 'Limites de IA por mês (uso justo)'), h('ul', {}, Object.entries(ass.nomesUso).map(([k, n]) => h('li', {}, `${n}: até ${ass.limites.pago[k]}`))),
+      e.status === 'teste' ? h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, `Você está no teste grátis de 30 dias do plano Completo (restam ${e.diasRestantes}). Sem cartão.`)) : null,
+      h('div', { class: 'linha-acoes' }, abas),
+      lista,
+      h('h3', {}, 'Incluso no Completo'), h('ul', { class: 'lista-check' }, ass.inclui.completo.map(t => h('li', {}, t))),
+      h('h3', {}, 'Como é o Básico'), h('p', {}, `Sem IA e com limite por dia: ${dia.revisao} cartões de revisão, ${dia.conversa} conversa por roteiro e ${dia.tutor} perguntas ao tutor. Estudo sob medida e treino da Rádio ficam no Completo.`),
+      h('h3', {}, 'Família e Turma'), h('p', {}, `Família: até ${ass.maxFamilia} pessoas, cada uma com a própria conta e o próprio progresso; a cota de IA é dividida. Turma: você e até ${ass.maxAlunosTurma} alunos com tudo liberado. Ninguém vê o estudo de ninguém.`),
+      h('h3', {}, 'Limites de IA por mês (uso justo, Completo)'), h('ul', {}, Object.entries(ass.nomesUso).map(([k, n]) => h('li', {}, `${n}: até ${ass.limites.pago[k]}`))),
       h('p', { class: 'ajuda' }, 'Passou do limite? Você continua estudando no modo sem IA até o mês virar. Nunca cobramos extra.'),
       h('h3', {}, 'Seu uso neste mês'), h('ul', {}, usoLinhas),
       h('h3', {}, 'Condições'), h('ul', {},
-        h('li', {}, 'Teste de 30 dias sem cartão. Se não assinar, a conta passa para o acesso livre e seus dados ficam guardados.'),
+        h('li', {}, 'Teste de 30 dias do plano Completo, sem cartão. Se não assinar, a conta passa para o acesso livre e seus dados ficam guardados.'),
         h('li', {}, 'Se assinar durante o teste, o período pago só começa quando o teste acaba.'),
         h('li', {}, 'Cancele quando quiser, aqui mesmo. Sem multa. Você usa até o fim do período pago.'),
         h('li', {}, 'Sem cobrança surpresa: o valor é o da tabela e avisamos antes de qualquer mudança de preço.')),
-      ass.pagamento !== 'simulado' ? h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, 'O pagamento on-line ainda não está ligado neste servidor. Nenhuma cobrança será feita.')) : h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, 'Ambiente de teste: a assinatura é simulada, sem pagamento real.'))) });
+      ass.pagamento === 'stripe' ? h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, 'O pagamento é feito na página segura da Stripe. Seus dados de cartão não passam por nós.'))
+        : ass.pagamento !== 'simulado' ? h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, 'O pagamento on-line ainda não está ligado neste servidor. Nenhuma cobrança será feita.')) : h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, 'Ambiente de teste: a assinatura é simulada, sem pagamento real.'))) });
+  }
+
+  // Família: quem paga convida por código; quem recebe o código entra; todos mantêm a própria conta
+  async function verFamilia() {
+    const f = await api('/familia');
+    const corpo = h('div', {});
+    const fechar = () => j.fechar();
+    const recarregar = () => { j.fechar(); verFamilia(); };
+    if (f.papel === 'membro') corpo.append(h('p', {}, `Você usa o plano Família de ${f.dono}. Seu progresso é só seu: ninguém da família vê o seu estudo.`),
+      h('button', { class: 'btn btn-sec', on: { click: async () => { await api('/familia/sair', { metodo: 'POST' }); toast('Você saiu da família.', { tipo: 'ok' }); fechar(); render(); } } }, 'Sair da família'));
+    else if (f.papel === 'dono') {
+      corpo.append(h('p', {}, `Passe este código para quem vai usar com você (${f.vagas} vaga${f.vagas === 1 ? '' : 's'} livre${f.vagas === 1 ? '' : 's'}).`),
+        h('p', { class: 'preco' }, f.codigo || 'Ainda sem código'),
+        h('button', { class: 'btn btn-sec', on: { click: async () => { await api('/familia/codigo', { metodo: 'POST' }); recarregar(); } } }, f.codigo ? 'Trocar código' : 'Gerar código'),
+        h('h3', {}, 'Quem está na família'), f.membros.length ? h('ul', {}, f.membros.map(m => h('li', {}, m.nome, ' ', h('button', { class: 'btn btn-texto btn-peq', on: { click: async () => { if (await confirmar({ titulo: `Remover ${m.nome}?`, texto: 'A pessoa perde o acesso da família, mas a conta e o progresso dela ficam.', ok: 'Remover', cancelar: 'Manter', perigo: true })) { await api(`/familia/membros/${m.id}`, { metodo: 'DELETE' }); recarregar(); } } } }, 'Remover')))) : h('p', { class: 'ajuda' }, 'Ninguém entrou ainda.'));
+    } else {
+      const campo = h('input', { type: 'text', maxlength: 12, placeholder: 'Código da família', autocomplete: 'off' });
+      corpo.append(h('p', {}, 'Recebeu um código de alguém que assina o plano Família? Digite aqui.'), campo,
+        h('button', { class: 'btn', on: { click: async ev => { const b = ev.currentTarget; ocupado(b, true); try { await api('/familia/entrar', { metodo: 'POST', corpo: { codigo: campo.value } }); toast('Pronto! Você entrou na família.', { tipo: 'ok' }); fechar(); render(); } catch (err) { toast(err.message); ocupado(b, false); } } } }, 'Entrar'));
+    }
+    const j = janela({ titulo: 'Família', corpo });
   }
 
   async function cancelar() {
@@ -141,6 +186,8 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
       lem.ativo ? h('a', { class: 'btn btn-texto btn-peq', href: '/api/v1/lembrete.ics' }, icone('calendar-plus'), 'Baixar de novo') : null),
     cartao('seal-check', 'Assinatura', estadoAss,
       h('button', { class: 'btn btn-sec btn-peq', on: { click: verPlanos } }, 'Ver planos e uso'),
+      h('button', { class: 'btn btn-sec btn-peq', on: { click: verFamilia } }, 'Família'),
+      ass.temPortal ? h('button', { class: 'btn btn-sec btn-peq', on: { click: async ev => { const b = ev.currentTarget; ocupado(b, true); try { location.href = (await api('/assinatura/portal', { metodo: 'POST' })).url; } catch (err) { toast(err.message); ocupado(b, false); } } } }, 'Gerenciar pagamento') : null,
       e.status === 'ativa' ? h('button', { class: 'btn btn-texto btn-peq', on: { click: cancelar } }, 'Cancelar assinatura') : null),
     cartao('shield-check', 'Seus dados', 'Veja o que usamos para personalizar, baixe uma cópia ou apague.',
       h('button', { class: 'btn btn-sec btn-peq', on: { click: verDados } }, icone('eye'), 'O que usamos'),

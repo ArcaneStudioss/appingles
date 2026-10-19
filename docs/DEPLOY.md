@@ -14,7 +14,7 @@ Padrão da base (`playbooks/deploy-vps.md`): projeto Docker próprio, Traefik co
 3. Nome da rede do Traefik na VPS (`docker network ls`) e o nome do certresolver usados nos outros projetos.
 4. Modelos de IA e chave da Anthropic (ver docs/PROPOSTA.md, custos). Sem chave, sobe no modo de prática.
 5. Credenciais do R2/B2 para a cópia de backup fora do servidor.
-6. `PAGAMENTO_MODO=desligado` em produção até integrar o Asaas (o botão de assinar avisa que o pagamento ainda não está ligado).
+6. Pagamento: `PAGAMENTO_MODO=desligado` até configurar a Stripe. Para ligar: `PAGAMENTO_MODO=stripe`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` e os 8 `STRIPE_PRICE_<PLANO>_<PERIODO>` (ver .env.example). Webhook na Stripe: `SITE_URL/api/v1/stripe/webhook`, eventos `checkout.session.completed` e `customer.subscription.created/updated/deleted`. Também `CONTATO_URL` (botão "Falar com a gente").
 7. Razão social, CNPJ e e-mail de contato na política de privacidade e nos termos (estão como `[A DEFINIR]`), e revisão jurídica dos dois textos.
 
 ## Subir

@@ -21,7 +21,7 @@ export function etapa(chave, texto) {
 const ABORDAGEM = { regra: 'A regra direta', contraste: 'Comparando com o português', exemplos: 'Pelos exemplos', escuta: 'Ouvindo' };
 
 export async function telaLicao(el, { ir }) {
-  const { licao, respondidos, status } = await api('/licao');
+  const { licao, respondidos, status } = await api('/licao' + (location.hash.includes('nova=1') ? '?nova=1' : ''));
   // monta a sequência de passos
   const passos = [{ tipo: 'intro' }];
   licao.blocos.forEach((b, bi) => {

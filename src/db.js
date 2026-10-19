@@ -142,6 +142,16 @@ const MIGRACOES = [
      PRIMARY KEY (atividade_id, user_id, item_id)
    );
    CREATE INDEX atividade_respostas_user ON atividade_respostas(user_id);`,
+  // 7: plano Família (contas ligadas a quem paga; cada pessoa tem a própria conta) e uso por dia (limite diário do plano Básico)
+  `CREATE TABLE familia_membros (
+     dono_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+     user_id INTEGER NOT NULL UNIQUE REFERENCES usuarios(id) ON DELETE CASCADE,
+     entrou_em TEXT NOT NULL, PRIMARY KEY (dono_id, user_id)
+   );
+   CREATE TABLE uso_dia (
+     user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE, data TEXT NOT NULL, tipo TEXT NOT NULL,
+     qtd INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (user_id, data, tipo)
+   );`,
 ];
 
 function abrir(dir) {

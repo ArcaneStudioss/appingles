@@ -119,6 +119,7 @@ export async function telaHoje(el, { ir, estado }) {
       h('p', { class: 'rotulo-pequeno' }, 'Aula de hoje'),
       h('h2', { id: 'aula-t' }, L.missao ? L.missao.titulo : 'Manter e ampliar'),
       L.missao ? h('p', { class: 'aula__meta' }, icone('target'), h('span', {}, 'No fim da missão você vai conseguir: ', h('strong', {}, `“${L.missao.podeFazer}”`))) : null,
+      feita && d.maisUma ? h('a', { class: 'btn btn-bloco btn-grande', href: '#/licao?nova=1' }, icone('play'), `Mais uma lição (${d.licoesHoje.feitas + 1} de ${d.licoesHoje.max})`) : null,
       feita ? h('a', { class: 'btn btn-sec btn-bloco', href: '#/licao' }, icone('repeat'), 'Rever a aula')
         : h('a', { class: 'btn btn-bloco btn-grande', href: '#/licao' }, icone('play'), L.iniciada ? 'Continuar a aula' : 'Bora começar')));
   }
