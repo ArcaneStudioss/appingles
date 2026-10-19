@@ -42,7 +42,7 @@ export async function telaPodcast(el) {
   const btnVel = h('button', { type: 'button', class: 'radio-vel', 'aria-pressed': String(devagar), on: { click: () => { devagar = !devagar; localStorageSet('radio-devagar', devagar ? 'sim' : 'nao'); btnVel.setAttribute('aria-pressed', String(devagar)); btnVel.lastChild.textContent = devagar ? 'Devagar' : 'Normal'; if (tocando) tocar(i); } } }, icone('clock'), h('span', {}, devagar ? 'Devagar' : 'Normal'));
   capa.replaceChildren(
     h('div', { class: 'radio-capa__palco' },
-      h('div', { class: 'radio-capa__dupla' }, lou('feliz', { tamanho: 84, rotulo: 'Tuiuiú' }), ondas, lou('oi', { tamanho: 176, rotulo: 'Mia', mia: true })),
+      h('div', { class: 'radio-capa__dupla' }, lou('feliz', { tamanho: 76, rotulo: 'Tuiuiú' }), ondas, lou('oi', { tamanho: 148, rotulo: 'Mia', mia: true })),
       h('p', { class: 'rotulo-pequeno' }, `Episódio de hoje · ${ep.minutos} min`),
       h('h2', {}, ep.titulo),
       h('div', { class: 'linha-acoes radio-capa__chips' },
