@@ -3,8 +3,7 @@ import { api } from '../api.js?v=__V__';
 import { h, icone, falar, botaoOuvir, ocupado, toast, confirmar, temMicrofone, ouvirMicrofone } from '../ui.js?v=__V__';
 import { exercicio } from './exercicio.js?v=__V__';
 import { nomeConquista } from './hoje.js?v=__V__';
-import { lou, louFala, som, confete, somLigado } from '../diversao.js?v=__V__';
-import { localStorageSet } from '../ui.js?v=__V__';
+import { lou, louFala, som, confete, botaoSom, celebrar, pontosFlutuantes, contar, vibrar } from '../diversao.js?v=__V__';
 
 // cada tipo de passo tem cor e ícone fixos: a pessoa enxerga a estrutura da aula (entender, praticar, ouvir, sua vez)
 const ETAPAS = {
@@ -33,13 +32,31 @@ export async function telaLicao(el, { ir }) {
   passos.push({ tipo: 'fim' });
   let i = 0;
   const inicio = Date.now();
+  // combo: acertos seguidos. Nunca pune: errar só zera o contador, sem som feio nem perda de pontos
+  let combo = 0, melhorCombo = 0;
+  const chipCombo = h('span', { class: 'combo', hidden: true, 'aria-live': 'polite' }, icone('flame'), h('b', {}, '0'), h('span', { class: 'oculto' }, ' acertos seguidos'));
+  const FRASES_COMBO = { 3: 'Combo x3!', 5: 'Combo x5! Voando!', 8: 'Combo x8! Imbatível!', 10: 'Combo x10! Lenda!' };
+  const NIVEL_COMBO = { 3: 1, 5: 2, 8: 3, 10: 4 };
+  function marcarCombo(certo) {
+    combo = certo ? combo + 1 : 0;
+    melhorCombo = Math.max(melhorCombo, combo);
+    chipCombo.hidden = combo < 2;
+    // o Tuiuiú da barra reage: pula quando acerta, balança quando erra
+    const mascote = topo.querySelector('.trilho__lou');
+    mascote.classList.remove('trilho__lou--pula', 'trilho__lou--ops'); void mascote.offsetWidth; mascote.classList.add(certo ? 'trilho__lou--pula' : 'trilho__lou--ops');
+    if (certo) pontosFlutuantes(mascote, combo >= 3 ? `+10  x${combo}` : '+10');
+    chipCombo.querySelector('b').textContent = String(combo);
+    chipCombo.classList.remove('combo--pula'); void chipCombo.offsetWidth; chipCombo.classList.add('combo--pula');
+    if (FRASES_COMBO[combo]) celebrar(FRASES_COMBO[combo], { nivel: NIVEL_COMBO[combo] });
+  }
   // retoma de onde parou
   if (status !== 'concluida' && Object.keys(respondidos).length) { const prox = passos.findIndex(p => p.tipo === 'ex' && !respondidos[p.ex.id]); if (prox > 1) i = Math.max(1, prox); }
 
   const topo = h('div', { class: 'licao-topo' },
     h('button', { type: 'button', class: 'btn btn-texto btn-peq', 'aria-label': 'Sair da lição', on: { click: async () => { if (i === 0 || await confirmar({ titulo: 'Sair da lição?', texto: 'Seu progresso fica salvo e você continua de onde parou.', ok: 'Sair', cancelar: 'Continuar a lição' })) ir('#/hoje'); } } }, icone('x')),
     h('div', { class: 'trilho', role: 'progressbar', 'aria-label': 'Progresso da aula', 'aria-valuemin': 0, 'aria-valuemax': passos.length - 1 }, h('span', { class: 'trilho__cheio' }), h('span', { class: 'trilho__lou' }, lou('feliz', { tamanho: 38, rotulo: '' }))),
-    h('button', { type: 'button', class: 'btn btn-texto btn-peq', 'aria-pressed': String(somLigado()), 'aria-label': 'Sons', on: { click: e => { const v = !somLigado(); localStorageSet('sons', v ? 'sim' : 'nao'); e.currentTarget.setAttribute('aria-pressed', String(v)); e.currentTarget.replaceChildren(icone(v ? 'speaker-high' : 'speaker-x'), h('span', { class: 'oculto' }, 'Sons')); } } }, icone(somLigado() ? 'speaker-high' : 'speaker-x'), h('span', { class: 'oculto' }, 'Sons')));
+    chipCombo,
+    botaoSom());
   const palco = h('div', { class: 'licao-palco' });
   el.append(topo, palco);
 
@@ -65,7 +82,7 @@ export async function telaLicao(el, { ir }) {
       tela.append(exercicio(p.ex, {
         ja: respondidos[p.ex.id],
         devagar: !!p.b.devagar,
-        responder: async (resposta, meta) => { const r = await api('/licao/responder', { metodo: 'POST', corpo: { itemId: p.ex.id, resposta, ...meta } }); respondidos[p.ex.id] = { ...r, resposta }; return r; },
+        responder: async (resposta, meta) => { const r = await api('/licao/responder', { metodo: 'POST', corpo: { itemId: p.ex.id, resposta, ...meta } }); respondidos[p.ex.id] = { ...r, resposta }; marcarCombo(r.correto); return r; },
         contestar: async () => (await api('/licao/contestar', { metodo: 'POST', corpo: { itemId: p.ex.id } })).mensagem,
         aoProximo: avancar,
         barraFixa: true,
@@ -185,13 +202,15 @@ export async function telaLicao(el, { ir }) {
       h('h2', { class: 'fim-titulo' }, pct >= 80 ? 'Figurinha colada!' : 'Aula feita. Bom treino!'),
       h('p', { class: 'chip c-lilas' }, icone('book-open-text'), 'Mais uma figurinha no seu álbum'),
       h('div', { class: 'placar' },
-        h('div', { class: 'placar__item placar__item--sol' }, h('span', {}, 'Pontos'), h('strong', {}, String(certos * 10 + 20))),
-        h('div', { class: 'placar__item' }, h('span', {}, 'Acertos'), h('strong', {}, `${pct}%`)),
+        h('div', { class: 'placar__item placar__item--sol' }, h('span', {}, 'Pontos'), h('strong', { dados: { conta: certos * 10 + 20 } }, String(certos * 10 + 20))),
+        h('div', { class: 'placar__item' }, h('span', {}, 'Acertos'), h('strong', { dados: { conta: pct, sufixo: '%' } }, `${pct}%`)),
+        melhorCombo >= 3 ? h('div', { class: 'placar__item placar__item--coral' }, h('span', {}, 'Melhor combo'), h('strong', {}, `x${melhorCombo}`)) : null,
         h('div', { class: 'placar__item placar__item--azul' }, h('span', {}, 'Tempo'), h('strong', {}, `${minutos} min`))),
       h('p', {}, certos < total ? 'O que você errou não tira nada: vira revisão e volta de outro jeito.' : 'Tudo certo hoje.'),
       h('p', { class: 'ajuda' }, 'Lição concluída é prática. Aprendizado demonstrado é usar sozinho numa tarefa ou conversa.'),
       h('div', { class: 'barra-acao barra-acao--fixa' }, h('div', { class: 'barra-acao__in' }, btn)));
-    if (status !== 'concluida') { som('fim'); confete(); }
+    for (const n of tela.querySelectorAll('[data-conta]')) contar(n, Number(n.dataset.conta), { sufixo: n.dataset.sufixo || '' });
+    if (status !== 'concluida') { som('fim'); vibrar([30, 40, 30, 40, 60]); confete(); setTimeout(() => confete(document.body, 30), 450); }
   }
 
   desenhar();

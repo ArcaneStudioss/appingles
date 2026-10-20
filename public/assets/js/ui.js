@@ -142,44 +142,65 @@ let vozes = [];
 function carregarVozes() { vozes = (window.speechSynthesis?.getVoices() || []).filter(v => /^en(-|_|$)/i.test(v.lang)); }
 if ('speechSynthesis' in window) { carregarVozes(); speechSynthesis.addEventListener?.('voiceschanged', carregarVozes); }
 export const temVoz = () => 'speechSynthesis' in window && (vozes.length > 0 || speechSynthesis.getVoices().length > 0);
-// Escolhe a voz mais humana que o aparelho tem: neurais/"naturais" primeiro, depois as de qualidade (Siri, Google, Samantha),
-// e por último as robóticas (eSpeak, compactas). Inglês americano ou britânico, de preferência.
-const BOA = /natural|neural|online|premium|enhanced|siri|aria|jenny|ava|emma|libby|sonia|samantha|serena|karen|google (us|uk)/i;
+// Escolhe a voz mais humana que o aparelho tem. As vozes do Google (Chrome/Android) são as mais robóticas e as mais comuns:
+// ficam por último. Antes delas: neurais/"naturais" (Microsoft Edge), Apple (Siri, Samantha, Daniel...) e outras do sistema.
+const BOA = /natural|neural|online|premium|enhanced|siri|aria|jenny|ava|emma|libby|sonia|samantha|serena|karen|daniel|moira|tessa|allison|zira|guy/i;
 const ROBO = /espeak|compact|festival|pico/i;
-export const vozesEn = () => { carregarVozes(); return vozes.slice().sort((a, b) => a.name.localeCompare(b.name)); };
-export function melhorVoz(lista) {
-  const nota = v => (BOA.test(v.name) ? 10 : 0) + (ROBO.test(v.name) ? -20 : 0) + (/en-US/i.test(v.lang) ? 3 : /en-GB/i.test(v.lang) ? 2 : 0) + (v.localService === false ? 1 : 0);
-  return lista.slice().sort((a, b) => nota(b) - nota(a))[0];
+const GOOGLE = /google/i;
+export const ehGoogle = v => GOOGLE.test(v.name) || GOOGLE.test(v.voiceURI || '');
+export const vozesEn = () => { carregarVozes(); return vozes.slice().sort((a, b) => notaVoz(b) - notaVoz(a) || a.name.localeCompare(b.name)); };
+function notaVoz(v) {
+  return (BOA.test(v.name) ? 10 : 0) + (ROBO.test(v.name) ? -20 : 0) + (ehGoogle(v) ? -14 : 0)
+    + (/en-US/i.test(v.lang) ? 3 : /en-GB/i.test(v.lang) ? 2 : 0) + (v.localService === false && !ehGoogle(v) ? 1 : 0);
 }
+export function melhorVoz(lista) { return lista.slice().sort((a, b) => notaVoz(b) - notaVoz(a))[0]; }
 // Voz do Tuiuiú: frases do conteúdo já vêm gravadas (mp3 gerado uma vez e guardado). O que não tem gravação cai na voz do aparelho.
 const PASTA_VOZ = '/assets/audio/tuiuiu/';
 let mapaVoz = null, tocandoVoz = null;
+// geração: cada pedido de fala ganha um número. Promessas de pedidos antigos (ex.: o play() interrompido por um clique novo) são ignoradas
+let geracaoVoz = 0;
 try { fetch(PASTA_VOZ + 'mapa.json?v=__V__').then(r => (r.ok ? r.json() : null)).then(j => { mapaVoz = j; }).catch(() => {}); } catch {}
-export function pararVoz() { rodadaPt++; try { tocandoVoz?.pause(); } catch {} tocandoVoz = null; if ('speechSynthesis' in window) speechSynthesis.cancel(); }
-export function falar(texto, { velocidade = 1 } = {}) {
+export function pararVoz() { rodadaPt++; geracaoVoz++; try { tocandoVoz?.pause(); } catch {} tocandoVoz = null; if ('speechSynthesis' in window) speechSynthesis.cancel(); }
+// vozFem: a fala é de uma personagem mulher. As gravações do Tuiuiú são todas de menino, então ela usa a voz feminina do aparelho.
+export function falar(texto, { velocidade = 1, vozFem = false, aoFim } = {}) {
+  if (vozFem) return falarNavegador(texto, { velocidade, aoFim, feminina: true });
   const arq = !localStorageGet('voz') && mapaVoz && mapaVoz[String(texto).trim()];
   if (arq) {
     pararVoz();
+    const minha = geracaoVoz;
     const a = new Audio(PASTA_VOZ + arq + '?v=__V__');
     a.playbackRate = Math.max(0.5, Math.min(1.6, velocidade * (Number(localStorageGet('velocidade')) || 1)));
     a.preservesPitch = true;
     tocandoVoz = a;
-    a.play().catch(() => { tocandoVoz = null; falarNavegador(texto, { velocidade }); });
+    a.addEventListener('ended', () => { if (tocandoVoz === a) tocandoVoz = null; if (minha === geracaoVoz) aoFim?.(); });
+    a.play().catch(() => {
+      // só cai para a voz do aparelho se este ainda for o pedido atual (um clique novo já cuidou do som)
+      if (minha !== geracaoVoz) return;
+      tocandoVoz = null;
+      falarNavegador(texto, { velocidade, aoFim });
+    });
     return true;
   }
-  return falarNavegador(texto, { velocidade });
+  return falarNavegador(texto, { velocidade, aoFim });
 }
-function falarNavegador(texto, { velocidade = 1 } = {}) {
+// nomes de vozes femininas em inglês que costumam vir no aparelho (Windows, Mac, iOS, Edge)
+const FEMININA = /samantha|zira|jenny|aria|ava|allison|susan|karen|moira|victoria|serena|catherine|fiona|tessa|kate|libby|sonia|emma|female|feminina/i;
+function falarNavegador(texto, { velocidade = 1, aoFim, feminina = false } = {}) {
   try { tocandoVoz?.pause(); } catch {} tocandoVoz = null;
   if (!('speechSynthesis' in window)) { toast('Seu navegador não tem leitura de voz. Use "Ver o texto".'); return false; }
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(texto);
+  // lê a lista na hora: no celular ela pode chegar atrasada, e sem voz escolhida o navegador usa a dele (quase sempre a do Google)
+  const ingl = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang));
   const pref = localStorageGet('voz') || '';
-  const voz = vozes.find(v => v.name === pref) || melhorVoz(vozes);
+  const voz = ingl.find(v => v.name === pref)
+    || (feminina && ingl.filter(v => FEMININA.test(v.name)).sort((a, b) => notaVoz(b) - notaVoz(a))[0])
+    || melhorVoz(ingl);
   if (voz) u.voice = voz;
   u.lang = voz?.lang || 'en-US';
   u.pitch = 1.05;                      // um tom um pouco mais vivo, de mascote simpático
   u.rate = Math.max(0.5, Math.min(1.6, velocidade * (Number(localStorageGet('velocidade')) || 1)));
+  if (aoFim) u.onend = u.onerror = () => aoFim();
   speechSynthesis.speak(u);
   return true;
 }
@@ -189,7 +210,8 @@ function falarNavegador(texto, { velocidade = 1 } = {}) {
 // sem voz em português ou sem som, avisamos em vez de ficar mudo.
 export function vozPt() {
   const todas = window.speechSynthesis?.getVoices() || [];
-  return todas.find(v => /^pt[-_]BR/i.test(v.lang) && /natural|google|luciana|francisca|felipe/i.test(v.name)) || todas.find(v => /^pt[-_]BR/i.test(v.lang)) || todas.find(v => /^pt/i.test(v.lang)) || null;
+  const notaPt = v => (/natural|neural|online|francisca|antonio|thalita|luciana|felipe|joana/i.test(v.name) ? 10 : 0) + (ehGoogle(v) ? -14 : 0) + (/^pt[-_]BR/i.test(v.lang) ? 4 : 0);
+  return todas.filter(v => /^pt/i.test(v.lang)).sort((a, b) => notaPt(b) - notaPt(a))[0] || null;
 }
 let dicaSemSomDada = false, rodadaPt = 0;
 export function falarPt(texto, aoFim) {

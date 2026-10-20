@@ -159,7 +159,7 @@ summary{list-style:none;cursor:pointer}summary::-webkit-details-marker{display:n
 
 /* ---------- peças comuns ---------- */
 .folha{background:var(--cartao);border:2px solid var(--borda);border-radius:var(--raio);padding:1.2rem;box-shadow:0 4px 0 var(--borda)}
-.com-margem{border-left:6px solid var(--c)}
+.com-margem{border-left:2px solid color-mix(in srgb,var(--c) 50%,transparent)}
 .pautado{background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(1.7em - 1px),var(--borda) calc(1.7em - 1px),var(--borda) 1.7em);background-position:0 .2em;line-height:1.7em}
 .marca{background:linear-gradient(transparent 55%,color-mix(in srgb,var(--sol) 70%,transparent) 55%);padding:0 .1em;border-radius:2px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
 .bilhete{font-family:var(--f-titulo);font-weight:600;font-size:1.15rem;line-height:1.2;color:var(--c-forte);margin:0}
@@ -232,6 +232,7 @@ body.foco-total .topo-app{display:none}
 .nav a[aria-current]{color:var(--c-forte)}
 .nav a[aria-current] .nav__ico{background:var(--c);color:var(--c-sobre);transform:translateY(-3px) scale(1.06);box-shadow:0 3px 0 var(--c-sombra)}
 .nav .so-pc{display:none}
+.nav .nav__grupo{display:none;margin:0}
 /* botão "Mais" (só no celular): mesma cara das abas, mas é botão */
 .nav .nav__mais{display:flex;flex-direction:column;align-items:center;gap:.1rem;padding:.3rem .1rem;color:var(--tinta-2);font:inherit;font-size:.76rem;font-weight:800;min-height:58px;justify-content:center;border:0;background:none;border-radius:18px;cursor:pointer}
 .nav .nav__mais .nav__ico{display:grid;place-items:center;width:42px;height:32px;border-radius:12px;transition:transform .3s var(--mola),background .2s,color .2s}
@@ -445,14 +446,39 @@ body.foco-total .topo-app{display:none}
 .barra-progresso{height:12px;border-radius:99px;background:var(--borda);overflow:hidden;flex:1}
 .barra-progresso>span{display:block;height:100%;background:var(--azul);border-radius:99px;transform-origin:0 50%;transform:scaleX(0);transition:transform .35s var(--ease)}
 .enunciado{font-family:var(--f-titulo);font-weight:600;font-size:clamp(1.35rem,5.4vw,1.6rem);line-height:1.25;margin:.1rem 0 .2rem}
-.texto-leitura{margin:0;padding:1rem 1.1rem;background:var(--cartao);border:2px solid var(--borda);border-left:6px solid var(--turquesa);border-radius:var(--raio-p);font-size:1.08rem;line-height:1.6}
+.texto-leitura{margin:0;padding:1rem 1.1rem;background:var(--cartao);border:2px solid color-mix(in srgb,var(--turquesa) 45%,var(--borda));border-radius:var(--raio-p);font-size:1.08rem;line-height:1.6}
 .escuta-caixa{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:.8rem;padding:.4rem 0}
 .btn-ouvir-grande{--b:var(--turquesa);--b-sombra:var(--turquesa-sombra);--b-sobre:var(--turquesa-sobre);width:104px;height:104px;min-height:0;border-radius:50%;padding:0;box-shadow:0 7px 0 var(--b-sombra)}
 .btn-ouvir-grande .ico{width:2.8rem;height:2.8rem}
 .btn-ouvir-grande:active{transform:translateY(7px)}
-.nivelamento .btn-ouvir-grande{width:auto;height:auto;min-height:64px;border-radius:99px;padding:0 1.6rem;font-size:1.1rem}
-.nivelamento .btn-ouvir-grande .ico{width:1.6rem;height:1.6rem}
-@media (prefers-reduced-motion:no-preference){.exercicio[data-tipo="escuta"] .btn-ouvir-grande,.exercicio[data-tipo="ditado"] .btn-ouvir-grande{animation:onda 2.2s ease-out infinite}}
+/* caixa de escuta: botão grande que pulsa parado, solta anéis e mostra ondinhas enquanto o áudio toca */
+.escuta{display:grid;justify-items:center;gap:.55rem;padding:.4rem 0 .2rem;text-align:center}
+.escuta__botoes{display:flex;align-items:center;justify-content:center;gap:1.1rem}
+.escuta .btn-ouvir-grande{position:relative;overflow:visible}
+.escuta__aneis{position:absolute;inset:0;pointer-events:none}
+.escuta__aneis i{position:absolute;inset:0;border-radius:50%;border:3px solid var(--turquesa);opacity:0}
+.escuta__onda{display:none;align-items:center;justify-content:center;gap:5px;height:44px}
+.escuta__onda i{display:block;width:6px;height:100%;border-radius:99px;background:currentColor;transform:scaleY(.35)}
+.escuta__onda i:nth-child(2),.escuta__onda i:nth-child(4){transform:scaleY(.6)}
+.escuta__onda i:nth-child(3){transform:scaleY(.9)}
+.escuta.is-tocando .btn-ouvir-grande>.ico{display:none}
+.escuta.is-tocando .escuta__onda{display:flex}
+.escuta__rotulo{font-weight:800;font-size:.95rem;color:var(--turquesa-forte)}
+.escuta.is-tocando .escuta__rotulo{color:var(--tinta-2)}
+@media (prefers-reduced-motion:no-preference){
+  .escuta:not(.is-tocando) .btn-ouvir-grande{animation:onda 2.2s ease-out infinite}
+  .escuta.is-tocando .escuta__aneis i{animation:anel 1.5s ease-out infinite}
+  .escuta.is-tocando .escuta__aneis i:nth-child(2){animation-delay:.55s}
+  .escuta.is-tocando .escuta__onda i{animation:onda-som .9s ease-in-out infinite}
+  .escuta.is-tocando .escuta__onda i:nth-child(2){animation-delay:.12s}
+  .escuta.is-tocando .escuta__onda i:nth-child(3){animation-delay:.24s}
+  .escuta.is-tocando .escuta__onda i:nth-child(4){animation-delay:.36s}
+  .escuta.is-tocando .escuta__onda i:nth-child(5){animation-delay:.48s}
+  .escuta.is-tocando .btn-ouvir-grande{animation:toca .9s ease-in-out infinite}
+}
+@keyframes anel{0%{transform:scale(1);opacity:.65}100%{transform:scale(1.75);opacity:0}}
+@keyframes onda-som{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@keyframes toca{50%{transform:scale(1.05)}}
 @keyframes onda{0%{box-shadow:0 7px 0 var(--turquesa-sombra),0 0 0 0 color-mix(in srgb,var(--turquesa) 45%,transparent)}70%,100%{box-shadow:0 7px 0 var(--turquesa-sombra),0 0 0 22px transparent}}
 .btn-ouvir-devagar{width:64px;height:64px;min-height:0;padding:0;border-radius:50%}
 .tartaruga{font-size:.72rem;font-weight:800}
@@ -522,7 +548,7 @@ body.foco-total .topo-app{display:none}
 @media (prefers-reduced-motion:no-preference){.is-certo .opcao.escolhida{animation:festa-op .5s var(--mola)}.is-errado .opcao.escolhida{animation:treme .4s}}
 @keyframes festa-op{40%{transform:scale(1.04)}}
 .frase-lacuna{font-size:1.3rem;line-height:2.3;margin:0;font-weight:700}
-input.lacuna{display:inline-block;width:auto;min-width:6ch;max-width:14ch;min-height:44px;padding:.2em .5em;margin:0 .25em;border:0;border-bottom:4px solid var(--azul);border-radius:10px 10px 4px 4px;background:var(--azul-fundo);text-align:center;font-weight:800;color:var(--azul-forte)}
+input.lacuna{display:inline-block;width:auto;min-width:6ch;max-width:14ch;min-height:44px;padding:.2em .5em;margin:0 .25em;border:0;border-bottom:2px solid var(--azul);border-radius:10px 10px 4px 4px;background:var(--azul-fundo);text-align:center;font-weight:800;color:var(--azul-forte)}
 input.lacuna:focus-visible{box-shadow:0 0 0 4px color-mix(in srgb,var(--azul) 25%,transparent)}
 .dica{justify-self:start}
 .montagem{min-height:72px;display:flex;flex-wrap:wrap;gap:.45rem;align-content:flex-start;padding:.7rem;border-radius:var(--raio-p);border:2.5px dashed var(--borda-forte);background:var(--cartao-2)}
@@ -556,6 +582,52 @@ textarea.resposta-livre{min-height:100px;font-size:1.1rem}
 .retorno-producao{display:grid;gap:.7rem}
 .retorno-producao:empty{display:none}
 
+/* pergunta do teste de nível: cartão com o enunciado, alternativas que entram em cascata, troca de pergunta deslizando */
+.nivelamento__palco{display:grid;min-width:0}
+.nivelamento__topo{margin:0 0 .3rem}
+.pergunta{display:grid;gap:1rem;min-width:0}
+.pergunta__chips{justify-content:flex-start}
+.pergunta__numero{margin:0;font-weight:800;font-size:.9rem;color:var(--tinta-2);text-align:center}
+.pergunta__corpo{display:grid;gap:1.1rem;justify-items:center;text-align:center}
+.pergunta__corpo .enunciado{margin:0}
+.pergunta__corpo .texto-leitura{justify-self:stretch;text-align:left}
+.escuta--simples{padding:0}
+.escuta--simples .escuta__botoes{gap:0}
+.pergunta__corpo .texto-leitura{box-shadow:none}
+.pergunta__rodape{justify-content:space-between;margin-top:.2rem}
+.incentivo{display:flex;align-items:center;gap:.6rem;justify-self:start;margin:0;padding:.35rem 1rem .35rem .45rem;border-radius:99px;background:var(--sol-fundo);color:var(--sol-forte);font-weight:800}
+.is-respondida .opcao:not(.escolhida){opacity:.5;transition:opacity .2s}
+.is-respondida .opcoes{pointer-events:none}
+.pergunta .opcao.escolhida .opcao__tecla{background:var(--azul);color:var(--azul-sobre)}
+@media (hover:hover){.opcao:hover:not(:disabled):not(.escolhida){transform:translateY(-2px);box-shadow:0 6px 0 var(--borda)}}
+@media (prefers-reduced-motion:no-preference){
+  .pergunta--frente{animation:perg-vem-dir .42s var(--ease) both}
+  .pergunta--tras{animation:perg-vem-esq .42s var(--ease) both}
+  .pergunta--saindo{animation:perg-sai .17s ease-in forwards}
+  .opcoes .opcao{animation:opcao-in .5s var(--mola) both;animation-delay:calc(var(--k,0) * 70ms + 140ms)}
+  .pergunta .opcao.escolhida{animation:escolhe .38s var(--mola)}
+  .incentivo{animation:incentivo-in .55s var(--mola) .2s both}
+  .nivel-grande{animation:aparece .8s var(--mola) .1s both}
+  /* a tela de passo entra em partes (menos a barra fixa, que um transform prenderia no bloco) */
+  body.foco-total .passo>:not(.barra-acao):not(.exercicio){animation:entra .45s var(--ease) both}
+  body.foco-total .passo>:nth-child(2){animation-delay:60ms}body.foco-total .passo>:nth-child(3){animation-delay:120ms}body.foco-total .passo>:nth-child(n+4){animation-delay:180ms}
+  .exercicio>.enunciado,.exercicio>.oponente,.exercicio__area{animation:entra .45s var(--ease) both}
+  .exercicio__area{animation-delay:70ms}
+  .barra-acao--certo .folha-resposta__lou .lou__corpo{animation:lou-pula .7s var(--ease) 1}
+  .barra-acao--quase .folha-resposta__lou .lou{animation:treme .45s .1s}
+  .trilho__lou .lou{animation:lou-pula .6s var(--ease) .35s 1}
+}
+@keyframes perg-vem-dir{from{opacity:0;transform:translateX(34px)}}
+@keyframes perg-vem-esq{from{opacity:0;transform:translateX(-34px)}}
+@keyframes perg-sai{to{opacity:0;transform:translateX(-28px)}}
+@keyframes opcao-in{from{opacity:0;transform:translateY(16px) scale(.97)}}
+@keyframes escolhe{40%{transform:scale(1.045)}}
+@keyframes incentivo-in{from{opacity:0;transform:scale(.8) translateY(-6px)}}
+/* estrelinhas de acerto */
+.brilhos{position:fixed;z-index:260;width:0;height:0;pointer-events:none}
+.brilhos i{position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;animation:brilho var(--d,.6s) cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes brilho{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--x),var(--y)) scale(.2);opacity:0}}
+
 /* barra de ação fixa + folha de resposta (verde quando acerta, coral suave no "quase") */
 .barra-acao{margin-top:1rem}
 .barra-acao__in{display:grid;gap:.8rem}
@@ -583,7 +655,8 @@ textarea.resposta-livre{min-height:100px;font-size:1.1rem}
 .placar__item strong{font-family:var(--f-titulo);font-weight:600;font-size:1.65rem;color:var(--c-forte)}
 .placar__item--sol{--c:var(--sol);--c-fundo:var(--sol-fundo);--c-forte:var(--sol-forte)}
 .placar__item--azul{--c:var(--turquesa);--c-fundo:var(--turquesa-fundo);--c-forte:var(--turquesa-forte)}
-.placar__item:not(.placar__item--sol):not(.placar__item--azul){--c:var(--menta);--c-fundo:var(--menta-fundo);--c-forte:var(--menta-forte)}
+.placar__item--coral{--c:var(--coral);--c-fundo:var(--coral-fundo);--c-forte:var(--coral-forte)}
+.placar__item:not(.placar__item--sol):not(.placar__item--azul):not(.placar__item--coral){--c:var(--menta);--c-fundo:var(--menta-fundo);--c-forte:var(--menta-forte)}
 @media (prefers-reduced-motion:no-preference){.placar__item{animation:aparece .55s var(--mola) both}.placar__item:nth-child(2){animation-delay:.12s}.placar__item:nth-child(3){animation-delay:.24s}}
 .confete{position:fixed;inset:0;pointer-events:none;z-index:250;overflow:hidden}
 .confete i{position:absolute;top:60%;width:10px;height:14px;border-radius:3px;animation:confete var(--d) cubic-bezier(.2,.7,.4,1) forwards}
@@ -760,6 +833,14 @@ body.foco-total .ui-toasts{bottom:calc(150px + env(safe-area-inset-bottom))}
   .nav a[aria-current]{background:var(--c-fundo);color:var(--c-forte)}
   .nav a[aria-current] .nav__ico{transform:none}
   .nav .so-pc{display:flex!important}
+  .nav .nav__grupo.so-pc{display:block!important;margin:.9rem 0 .15rem;padding:0 .6rem;font-size:.72rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--tinta-2);opacity:.8}
+  .nav .nav__grupo:first-child{margin-top:0}
+  .nav{min-height:0;overflow-y:auto;scrollbar-width:thin}
+  @media (max-height:860px){.nav{gap:.1rem}.nav a{min-height:40px;padding-block:.1rem;font-size:.98rem}.nav a .nav__ico{width:32px;height:32px}.nav .nav__grupo.so-pc{margin-top:.5rem}.topo-app{gap:.7rem;padding-top:1.2rem}}
+  /* no PC o trilho já leva a tudo: os atalhos da Hoje só aparecem quando trazem aviso (sugestão ou pendência) */
+  .atalho:not(.atalho--vivo){display:none}
+  .atalhos:not(:has(.atalho--vivo)){display:none}
+  .atalhos{grid-template-columns:1fr}
   .nav .so-cel{display:none!important}
   body.foco-total .topo-app{display:none}
   .palco{max-width:1180px;padding:2.2rem 2.6rem 3rem}
@@ -769,7 +850,7 @@ body.foco-total .ui-toasts{bottom:calc(150px + env(safe-area-inset-bottom))}
   .hoje__col--lado{position:sticky;top:2rem}
   .hoje .album__paginas{grid-auto-flow:row;grid-auto-columns:auto;overflow:visible;scroll-snap-type:none;padding:0;margin:0;max-height:none}
   .hoje .pagina--adiante:nth-child(n+4){display:none}
-  .atalhos{grid-template-columns:1fr 1fr}
+  .atalhos{grid-template-columns:1fr}
   .aula{padding:1.8rem 1.7rem 1.6rem}
   .aula__pacote{width:120px;height:150px;right:10px;top:40px}
   .ui-toasts{bottom:24px}
@@ -925,8 +1006,8 @@ button.status__item{font:inherit;cursor:pointer;color:var(--tinta)}
 .detalhes{list-style:none;padding:0;margin:0;display:grid;gap:.7rem}
 .detalhe{display:grid;gap:.4rem}
 .detalhe .enunciado{font-size:1.15rem;margin:0}
-.detalhe--certo{border-left:6px solid var(--menta)}
-.detalhe--errado{border-left:6px solid var(--coral)}
+.detalhe--certo{border-left:2px solid var(--menta)}
+.detalhe--errado{border-left:2px solid var(--coral)}
 .simulado{display:grid;gap:1rem}
 @media (min-width:560px){.assunto{padding:.9rem 1.1rem}}
 
@@ -1013,3 +1094,53 @@ a.turma-item:hover,a.turma-item:focus-visible{border-color:var(--c-forte)}
 .banco-item input{margin-top:.25rem}
 .campo-copiar{width:100%}
 
+/* ---- diversão: combo, caça ao erro e oponente do debate ---- */
+.combo{display:inline-flex;align-items:center;gap:.25rem;padding:.25rem .65rem;border-radius:999px;background:var(--coral-fundo);color:var(--coral-forte);font-family:var(--f-titulo);font-weight:600;font-size:1.05rem;line-height:1;flex:none}
+.combo[hidden]{display:none}
+.combo .ico{width:1.1em;height:1.1em}
+@media (prefers-reduced-motion:no-preference){.combo--pula{animation:combo-pula .45s var(--mola)}}
+@keyframes combo-pula{0%{transform:scale(.7)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+
+.frase-det{display:flex;flex-wrap:wrap;gap:.35rem .3rem;font-size:1.3rem;line-height:1.4;margin:0;font-weight:700}
+.palavra-det{min-height:44px;padding:.3rem .6rem;border-radius:10px;border:2px dashed var(--borda);background:var(--cartao);color:var(--tinta);font:inherit;font-weight:700;cursor:pointer;transition:transform .15s var(--mola),border-color .15s,background .15s}
+.palavra-det:hover:not([disabled]){border-color:var(--azul);transform:translateY(-2px)}
+.palavra-det:focus-visible{outline:3px solid var(--azul);outline-offset:2px}
+.palavra-det.escolhida{border-style:solid;border-color:var(--azul);background:var(--azul-fundo);color:var(--azul-forte)}
+.is-certo .palavra-det.escolhida{border-color:var(--menta);background:var(--menta-fundo);color:var(--menta-forte)}
+.is-errado .palavra-det.escolhida{border-color:var(--coral);background:var(--coral-fundo);color:var(--coral-forte);text-decoration:line-through}
+.palavra-det.certa{border-style:solid;border-color:var(--menta);background:var(--menta-fundo);color:var(--menta-forte)}
+@media (prefers-reduced-motion:no-preference){.is-errado .palavra-det.escolhida{animation:treme .4s}.is-certo .palavra-det.escolhida{animation:festa-op .5s var(--mola)}}
+
+.oponente{display:grid;grid-template-columns:1fr auto;gap:.2rem .6rem;align-items:center;margin:0 0 .9rem;padding:.8rem 1rem;border-radius:18px 18px 18px 4px;background:var(--lilas-fundo);border:2px solid var(--lilas);color:var(--lilas-forte)}
+.oponente__nome{grid-column:1/-1;font-family:var(--f-titulo);font-weight:600;font-size:.95rem;letter-spacing:.02em}
+.oponente__fala{margin:0;font-size:1.15rem;font-weight:700;line-height:1.35;color:var(--tinta)}
+
+/* tela Hoje enxuta: Tuiuiú + saudação + sequência numa linha, um cartão de aula limpo, atalhos grandes só com ícone e nome */
+.saudacao{justify-content:flex-start}
+.saudacao h1{flex:1;min-width:0;font-size:clamp(1.5rem,6.5vw,2rem)}
+.saudacao .status__item{flex:none}
+.aula--simples{padding:1.4rem 1.2rem 1.3rem;gap:.8rem}
+.aula--simples h2,.aula--simples .rotulo-pequeno{padding-right:0}
+.aula--simples::before{opacity:.6}
+.atalho{justify-items:center;text-align:center;gap:.5rem;padding:1.1rem .6rem}
+.atalho .bolha{width:56px;height:56px}
+.atalho .bolha .ico{width:1.8rem;height:1.8rem}
+
+/* comemoração do combo: cartão no meio da tela com o Tuiuiú festejando */
+.celebra{position:fixed;inset:0;z-index:240;display:grid;place-items:center;pointer-events:none;background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--sol) 22%,transparent),transparent 62%)}
+.celebra__cartao{max-width:min(92vw,420px);display:grid;justify-items:center;gap:.4rem;padding:1.2rem 2rem 1.4rem;border-radius:32px;background:var(--cartao);border:3px solid var(--sol);box-shadow:0 8px 0 var(--sol-sombra),0 18px 50px rgba(0,0,0,.25);text-align:center}
+.celebra__cartao strong{font-family:var(--f-titulo);font-weight:600;font-size:clamp(1.5rem,7vw,2.2rem);color:var(--sol-forte);line-height:1.1}
+.celebra.is-out{opacity:0;transition:opacity .3s}
+@media (prefers-reduced-motion:no-preference){
+  .celebra__cartao{animation:celebra-entra .55s var(--mola) both}
+  .celebra.is-out .celebra__cartao{transform:scale(.9) translateY(-14px);transition:transform .3s}
+  .celebra .lou__corpo{animation:lou-pula .6s var(--ease) 2}
+  .trilho__lou--pula .lou{animation:lou-pula .55s var(--ease)}
+  .trilho__lou--ops .lou{animation:treme .45s}
+  .pontos-flutua{animation:pontos-sobe .95s cubic-bezier(.2,.7,.3,1) forwards}
+  .combo--pula{animation:combo-pula .5s var(--mola),combo-brilho .9s ease-out}
+}
+@keyframes celebra-entra{from{opacity:0;transform:scale(.4) rotate(-6deg)}}
+@keyframes combo-brilho{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--coral) 55%,transparent)}100%{box-shadow:0 0 0 14px transparent}}
+.pontos-flutua{position:fixed;z-index:260;transform:translate(-50%,-100%);pointer-events:none;font-family:var(--f-titulo);font-weight:600;font-size:1.5rem;color:var(--sol-forte);text-shadow:0 2px 0 var(--cartao),0 0 12px color-mix(in srgb,var(--sol) 60%,transparent);white-space:nowrap}
+@keyframes pontos-sobe{0%{opacity:0;transform:translate(-50%,-60%) scale(.6)}20%{opacity:1;transform:translate(-50%,-110%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-260%) scale(1)}}

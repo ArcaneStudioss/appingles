@@ -5,7 +5,7 @@ import { lou, louFala } from '../diversao.js?v=__V__';
 
 
 // cada objetivo tem ícone e cor: dá para escolher olhando, sem ler tudo
-const VISUAL = { zero: ['smiley', 'limao'], entrevista: ['briefcase', 'azul'], trabalho: ['users-three', 'lilas'], clientes: ['storefront', 'menta'], viagem: ['airplane', 'turquesa'], cotidiano: ['house', 'rosa'], estudar: ['graduation-cap', 'sol'], conversa: ['chats', 'coral'] };
+const VISUAL = { zero: ['smiley', 'limao'], entrevista: ['briefcase', 'azul'], trabalho: ['users-three', 'lilas'], clientes: ['storefront', 'menta'], viagem: ['airplane', 'turquesa'], cotidiano: ['house', 'rosa'], estudar: ['graduation-cap', 'sol'], conversa: ['chats', 'coral'], debate: ['flame', 'rosa'] };
 const MINUTOS = { 10: ['lightning', 'sol'], 15: ['clock', 'azul'], 20: ['target', 'coral'] };
 
 const somarMeses = m => { const d = new Date(); d.setMonth(d.getMonth() + m); return d.toISOString().slice(0, 10); };

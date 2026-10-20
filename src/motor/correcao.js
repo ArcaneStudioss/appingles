@@ -17,6 +17,7 @@ function explicacaoPadrao(ex) {
     case 'ordenar': return `A frase na ordem certa: "${ex.resposta}${ex.sufixo || ''}".`;
     case 'traduzir': { const outras = ex.aceitas.slice(1, 3); return outras.length ? `Também vale: ${outras.map(o => `"${o}"`).join(' ou ')}.` : null; }
     case 'fala': return `Para treinar: "${ex.frase}"${pt(ex.frase)}. Ouça o Tuiuiú e fale de novo.`;
+    case 'detetive': return `A palavra errada era "${ex.tokens[ex.erro].replace(/[.,!?;:]+$/, '')}". O certo: ${ex.correcao}.`;
     case 'leitura': return ex.texto && ex.opcoes ? `A resposta está no texto: "${ex.opcoes[ex.resposta]}".` : null;
     default: return null;
   }
@@ -31,6 +32,7 @@ function respostaCerta(ex) {
     case 'corrigir': return ex.aceitas[0];
     case 'fala': return ex.frase;
     case 'pares': return 'todos os pares';
+    case 'detetive': return `${ex.tokens[ex.erro].replace(/[.,!?;:]+$/, '')} → ${ex.correcao}`;
     default: return '';
   }
 }
@@ -47,6 +49,8 @@ function corrigirExercicio(ex, resposta) {
     r = comparar(resposta, ex.resposta);
   } else if (ex.tipo === 'fala') {
     r = compararFala(resposta, ex.frase);                      // flexível: o reconhecimento de voz erra palavras parecidas, some com artigos e troca homófonos
+  } else if (ex.tipo === 'detetive') {
+    r = { correto: /^\d{1,2}$/.test(String(resposta)) && Number(resposta) === ex.erro, quase: false };
   } else if (ex.tipo === 'pares') {
     const m = /^erros:(\d{1,2})$/.exec(String(resposta || ''));
     r = { correto: !!m && Number(m[1]) === 0, quase: !!m && Number(m[1]) === 1 };

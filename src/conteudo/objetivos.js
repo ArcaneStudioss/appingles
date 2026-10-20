@@ -53,6 +53,14 @@ const OBJETIVOS = {
     exemploMeta: 'Falar dos seus estudos e planos e escrever um e-mail formal curto.',
     aviso: 'Para provas oficiais (TOEFL, IELTS, Cambridge), este plano trabalha a base de comunicação, mas não substitui um preparatório específico do formato da prova.',
   },
+  debate: {
+    nome: 'Debater e argumentar',
+    frase: 'Dar opinião, discordar com educação, montar argumentos e rebater, com as palavras certas para cada situação.',
+    missoes: ['debate-opiniao', 'debate-discordar', 'debate-argumento', 'debate-palavras', 'debate-mediar', 'debate-final'],
+    essenciais: ['debate-opiniao', 'debate-discordar', 'debate-argumento'],
+    exemploMeta: 'Defender uma posição por 1 minuto, reconhecer o que é justo no outro lado e rebater sem perder a calma.',
+    aviso: 'Este plano é para quem já se vira no inglês (B1 ou mais). Se ainda trava em frases simples, comece por "Conversação do dia a dia" e volte aqui depois.',
+  },
   conversa: {
     nome: 'Conversação do dia a dia',
     frase: 'Conversar sobre você, sua rotina e suas experiências com mais naturalidade.',

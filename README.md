@@ -9,7 +9,7 @@ Requisitos: Node 22.13 ou mais novo (usa o SQLite nativo `node:sqlite`). Uma ún
 ```bash
 npm ci
 npm run dev          # http://localhost:8080 (pagamento simulado, para testar a assinatura)
-npm test             # 36 testes: segurança, motor de personalização e o ciclo completo
+npm test             # 46 testes: segurança, motor de personalização e o ciclo completo
 ```
 
 Sem `ANTHROPIC_API_KEY` o app funciona inteiro no **modo de prática**: conversa por roteiro do cenário, correção por regras (14 erros típicos de brasileiros), tutor que responde pelos pontos do catálogo. Com a chave, entram a conversa livre, a correção detalhada, os exercícios escritos com a situação do aluno e o processamento de materiais. Para testar os caminhos com IA sem gastar: `IA_FAKE=1` (só fora de produção).
@@ -18,6 +18,12 @@ Variáveis: ver `.env.example`.
 
 ## Interface: "o álbum do Tuiuiú" (18/10/2026)
 O app é um álbum de figurinhas: cada missão é uma página, cada aula feita cola uma figurinha, a tarefa final vira a figurinha brilhante. Cada atividade tem sempre a mesma cor e ícone (aula azul, revisar sol, conversar menta, álbum lilás, meu texto turquesa, dúvidas coral). Interruptor Dia/Noite sempre à vista; o Tuiuiú lê em voz alta (português) o que está no balão dele; revisão com carinhas; a lição mostra a etapa (Entender, Praticar, Ouvir, Sua vez) e o Tuiuiú anda no trilho de progresso. O app usa só `assets/css/app.css` (a página pública continua com `base.css` + `landing.css`).
+
+## Atividades de jogo e trilha de debate (19/10/2026)
+- **Caça ao erro** (`detetive`): a frase vira palavras tocáveis e o aluno acha a errada. Uma por missão antiga (`src/conteudo/detetives.js`); só os tokens vão ao navegador, o índice do erro fica no servidor.
+- **Combo**: acertos seguidos acendem uma chama no topo da lição (sons e frases em 3, 5, 8 e 10; errar só zera, sem punição) e o placar final mostra o melhor combo.
+- **Oponente do debate**: numa escolha, `oponente: { nome, fala }` faz a outra pessoa falar primeiro; o aluno escolhe a melhor resposta. Argumentos viram quebra-cabeça com `ordenar` em blocos de frase.
+- **Objetivo "Debater e argumentar"** (`src/conteudo/trilha-debate.js`, B1 a C1): opinião com motivo e exemplo, discordar com educação, argumento completo, palavras precisas (outweigh, drawback, trade-off, falsos amigos), mediar e resumir, defender e rebater com cautela. Cada missão tem cenário de conversa próprio e duas dificuldades novas no catálogo (`debate-expressoes`, `conectores-contraste`) com detectores para "according to me", "in the other hand", "discuss about", "although..., but" e "despite of".
 
 ## Navegação no celular (18/10/2026)
 A doca de baixo tem 4 abas (Hoje, Revisar, Conversar, Álbum) e o botão **Mais**, que abre uma janela com Rádio Tuiuiú, Meu treino, Sob medida, Meu texto, Meu jeito, Dúvidas e Eu (antes esses recursos só apareciam no PC). Na tela Hoje a aula do dia vem logo abaixo da saudação. Quem escolheu "Começar do zero" no perfil vê o caminho sem teste como botão principal do nivelamento.

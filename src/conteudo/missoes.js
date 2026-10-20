@@ -4,7 +4,8 @@
 // (entender, praticar, usar) e uma tarefa de produção que, feita sem ajuda, vira "aprendizado demonstrado".
 // Os textos em inglês foram escritos para nível A2-B1; o motor ajusta dicas, tradução e velocidade do áudio pelo nível.
 //
-// Tipos de exercício: escolha | lacuna | ordenar | escuta | ditado | traduzir | leitura
+// Tipos de exercício: escolha | lacuna | ordenar | escuta | ditado | traduzir | leitura | detetive (caça ao erro)
+// `oponente: { nome, fala }` numa escolha faz a pessoa do debate falar primeiro; o aluno escolhe a melhor resposta.
 // habilidade: gramatica | vocabulario | leitura | escuta | escrita | fala
 
 const M = [];
@@ -39,7 +40,7 @@ M.push({
     { id: 'apresentar-2', tipo: 'lacuna', habilidade: 'vocabulario', dif: 1, frase: 'I work ___ a sales representative.', resposta: ['as'], explica: 'Work as + profissão.' },
     { id: 'apresentar-3', tipo: 'lacuna', habilidade: 'gramatica', tag: 'terceira-pessoa', dif: 2, frase: 'My company ___ (sell) software to hospitals.', resposta: ['sells'], explica: '"My company" = it, então o verbo leva -s.' },
     { id: 'apresentar-4', tipo: 'ordenar', habilidade: 'gramatica', dif: 2, palavras: ["I'm", 'responsible', 'for', 'the', 'marketing', 'team'], resposta: "I'm responsible for the marketing team", explica: 'Responsible for + o que você cuida.' },
-    { id: 'apresentar-5', tipo: 'escuta', habilidade: 'escuta', dif: 1, audio: "Hi, I'm Julia. I work as a project manager at a construction company in Florianópolis.", pergunta: 'O que a Julia faz?', opcoes: ['Gerente de projetos numa construtora', 'Engenheira numa empresa de software', 'Gerente de uma loja em Florianópolis'], resposta: 0 },
+    { id: 'apresentar-5', tipo: 'escuta', habilidade: 'escuta', dif: 1, vozFem: true, audio: "Hi, I'm Julia. I work as a project manager at a construction company in Florianópolis.", pergunta: 'O que a Julia faz?', opcoes: ['Gerente de projetos numa construtora', 'Engenheira numa empresa de software', 'Gerente de uma loja em Florianópolis'], resposta: 0 },
     { id: 'apresentar-6', tipo: 'ditado', habilidade: 'escuta', dif: 2, audio: "I'm based in Curitiba.", resposta: ["I'm based in Curitiba", 'I am based in Curitiba'], explica: '"Based in" = onde você mora ou trabalha.' },
     { id: 'apresentar-7', tipo: 'traduzir', habilidade: 'escrita', tag: 'artigo-profissao', dif: 2, pt: 'Eu sou enfermeira e trabalho num hospital.', aceitas: ["I'm a nurse and I work at a hospital", 'I am a nurse and I work at a hospital', "I'm a nurse and I work in a hospital", 'I am a nurse and I work in a hospital'] },
     { id: 'apresentar-8', tipo: 'leitura', habilidade: 'leitura', dif: 2, texto: "Hello everyone, I'm Rafael. I'm a data analyst, and I've been at the company for two years. Before that, I worked in a bank. Outside work, I love cycling.", pergunta: 'Onde o Rafael trabalhava antes?', opcoes: ['Num banco', 'Numa loja de bicicletas', 'Na mesma empresa, em outra área'], resposta: 0 },
@@ -870,6 +871,10 @@ M.push({
 require('./missoes-extra').MISSOES_EXTRA.forEach(m => M.push(m));
 require('./missoes-cotidiano').MISSOES_COTIDIANO.forEach(m => M.push(m));
 require('./trilha-zero').TRILHA_ZERO.forEach(m => M.push(m));
+require('./trilha-debate').TRILHA_DEBATE.forEach(m => M.push(m));
+// "Caça ao erro": um exercício de detetive por missão antiga (as missões de debate trazem os seus)
+const { detetivesDe } = require('./detetives');
+for (const m of M) m.exercicios.push(...detetivesDe(m.id));
 const { EXPLICACOES_ZERO } = require('./explicacoes-zero');
 for (const m of M) for (const e of m.exercicios) if (!e.explica && EXPLICACOES_ZERO[e.id]) e.explica = EXPLICACOES_ZERO[e.id];
 

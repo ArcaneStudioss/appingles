@@ -244,6 +244,8 @@ function paraCliente(licao, semente) {
     if (e.sufixo) base.sufixo = e.sufixo;
     if (e.multi) base.multi = true;
     if (e.personalizado) base.personalizado = true;
+    if (e.tokens) base.tokens = e.tokens;   // caça ao erro: só as palavras; o índice do erro fica no servidor
+    if (e.oponente) base.oponente = e.oponente;
     if (e.pares) base.pares = e.pares;   // nos pares a tradução já foi mostrada na explicação: não é gabarito escondido
     return base;
   };

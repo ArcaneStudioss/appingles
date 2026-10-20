@@ -1,12 +1,49 @@
 // Componente de exercício. Padrão de jogo: escolhe ou escreve, toca em "Conferir",
 // e uma folha de resposta sobe de baixo (azul quando acerta, coral suave quando é "quase").
 // Teclado: 1 a 9 escolhem alternativas, Enter confere e continua. A correção vem do servidor.
-import { h, icone, falar, toast, ocupado, ouvirMicrofone } from '../ui.js?v=__V__';
-import { lou, som } from '../diversao.js?v=__V__';
+import { h, icone, falar, pararVoz, toast, ocupado, ouvirMicrofone } from '../ui.js?v=__V__';
+import { lou, som, brilho, vibrar } from '../diversao.js?v=__V__';
 
 const ehIngles = s => /^[\x20-\x7E’‘]+$/.test(s || '');
 const ELOGIOS = ['Mandou bem!', 'Isso aí!', 'Perfeito!', 'Boa!', 'Certinho!'];
 const QUASE = ['Quase!', 'Foi por pouco.', 'Bora ajustar.'];
+
+// Caixa de escuta: botão grande que pulsa, ondinhas enquanto o áudio toca e (na aula) a velocidade ajustável
+// com "devagar" e "rápido". Nunca toca sozinho. Serve para as perguntas de escuta da aula e do teste de nível.
+// simples: só o botão grande (sem velocidade, sem legenda). Usado no teste de nível, onde a tela já tem pouca coisa.
+const VELS = [0.6, 0.75, 0.9, 1, 1.15, 1.3, 1.5];
+export function caixaEscuta(texto, { velocidade = 1, vozFem = false, simples = false, ajustavel = false, devagar = false, dica = 'Toque no botão para ouvir. O áudio não toca sozinho.' } = {}) {
+  let vez = 0, vi = devagar ? 2 : 3;
+  const rotulo = simples || ajustavel ? null : h('span', { class: 'escuta__rotulo', 'aria-live': 'polite' }, 'Toque para ouvir');
+  const caixa = h('div', { class: 'escuta-caixa escuta' + (simples ? ' escuta--simples' : '') });
+  const fim = minha => { if (minha !== vez) return; caixa.classList.remove('is-tocando'); if (rotulo) rotulo.textContent = 'Toque para ouvir de novo'; };
+  const tocar = v => {
+    const minha = ++vez;
+    pararVoz(); som('ouvir');
+    caixa.classList.add('is-tocando'); if (rotulo) rotulo.textContent = 'Tocando...';
+    if (!falar(texto, { velocidade: v, vozFem, aoFim: () => fim(minha) })) fim(minha);
+    setTimeout(() => fim(minha), 30000);   // rede de segurança: se o navegador não avisar o fim, a tela não fica "tocando" para sempre
+  };
+  const atual = () => (ajustavel ? VELS[vi] : velocidade);
+  const principal = h('button', { type: 'button', class: 'btn btn-ouvir-grande', 'aria-label': 'Ouvir o áudio', on: { click: () => tocar(atual()) } },
+    h('span', { class: 'escuta__aneis', 'aria-hidden': 'true' }, h('i'), h('i')),
+    icone('speaker-high'),
+    h('span', { class: 'escuta__onda', 'aria-hidden': 'true' }, h('i'), h('i'), h('i'), h('i'), h('i')));
+  let extra = null;
+  if (ajustavel) {
+    const nomeVel = () => (VELS[vi] === 1 ? 'normal' : VELS[vi] + '×');
+    const rotuloVel = h('span', { class: 'vel__rotulo', 'aria-live': 'polite' }, nomeVel());
+    const menos = h('button', { type: 'button', class: 'btn btn-sec btn-vel', 'aria-label': 'Falar mais devagar' }, h('span', { 'aria-hidden': 'true', class: 'vel__sinal' }, '−'), h('span', {}, 'devagar'));
+    const mais = h('button', { type: 'button', class: 'btn btn-sec btn-vel', 'aria-label': 'Falar mais rápido' }, h('span', { 'aria-hidden': 'true', class: 'vel__sinal' }, '+'), h('span', {}, 'rápido'));
+    const mudar = d => { vi = Math.max(0, Math.min(VELS.length - 1, vi + d)); rotuloVel.textContent = nomeVel(); menos.disabled = vi === 0; mais.disabled = vi === VELS.length - 1; tocar(VELS[vi]); };
+    menos.addEventListener('click', () => mudar(-1)); mais.addEventListener('click', () => mudar(1));
+    extra = h('div', { class: 'vel', role: 'group', 'aria-label': 'Velocidade do áudio' }, menos, rotuloVel, mais);
+  } else if (!simples) {
+    extra = h('button', { type: 'button', class: 'btn btn-sec btn-ouvir-devagar', 'aria-label': 'Ouvir mais devagar', on: { click: () => tocar(0.7) } }, h('span', { class: 'tartaruga', 'aria-hidden': 'true' }, 'devagar'));
+  }
+  caixa.append(h('div', { class: 'escuta__botoes' }, principal, ajustavel ? null : extra), ajustavel ? extra : null, rotulo, !simples && dica ? h('p', { class: 'ajuda' }, dica) : null);
+  return caixa;
+}
 
 export function exercicio(ex, { responder, contestar, ja, devagar = false, aoProximo, rotuloProximo = 'Continuar', barraFixa = false }) {
   const t0 = performance.now();
@@ -20,39 +57,28 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
   const habilitar = (sim) => { btnConferir.disabled = !sim; };
 
   if (ex.tipo === 'escuta' || ex.tipo === 'ditado') {
-    // velocidade do áudio: a pessoa ajusta para mais devagar ou mais rápido e ouve de novo na hora
-    const VELS = [0.6, 0.75, 0.9, 1, 1.15, 1.3, 1.5];
-    let vi = devagar ? 2 : 3;
-    const nomeVel = () => (VELS[vi] === 1 ? 'normal' : VELS[vi] + '×');
-    const rotuloVel = h('span', { class: 'vel__rotulo', 'aria-live': 'polite' }, nomeVel());
-    const tocar = () => falar(ex.audio, { velocidade: VELS[vi] });
-    const menos = h('button', { type: 'button', class: 'btn btn-sec btn-vel', 'aria-label': 'Falar mais devagar' }, h('span', { 'aria-hidden': 'true', class: 'vel__sinal' }, '−'), h('span', {}, 'devagar'));
-    const mais = h('button', { type: 'button', class: 'btn btn-sec btn-vel', 'aria-label': 'Falar mais rápido' }, h('span', { 'aria-hidden': 'true', class: 'vel__sinal' }, '+'), h('span', {}, 'rápido'));
-    const mudar = d => { vi = Math.max(0, Math.min(VELS.length - 1, vi + d)); rotuloVel.textContent = nomeVel(); menos.disabled = vi === 0; mais.disabled = vi === VELS.length - 1; tocar(); };
-    menos.addEventListener('click', () => mudar(-1)); mais.addEventListener('click', () => mudar(1));
-    area.append(h('div', { class: 'escuta-caixa' },
-      h('button', { type: 'button', class: 'btn btn-ouvir-grande', 'aria-label': 'Ouvir o áudio', on: { click: tocar } }, icone('speaker-high')),
-      h('div', { class: 'vel', role: 'group', 'aria-label': 'Velocidade do áudio' }, menos, rotuloVel, mais),
-      h('p', { class: 'ajuda' }, 'Toque no botão para ouvir. O áudio não toca sozinho.')));
+    area.append(caixaEscuta(ex.audio, { vozFem: ex.vozFem, dica: null, ajustavel: true, devagar }));
   }
   if (ex.tipo === 'leitura') area.append(h('blockquote', { class: 'texto-leitura', lang: 'en' }, ex.texto));
-  const titulo = ex.enunciado || ex.pergunta || ({ lacuna: 'Complete a frase', ordenar: 'Monte a frase', ditado: 'Escreva o que você ouviu', traduzir: 'Escreva em inglês', fala: 'Fale em voz alta', pares: 'Toque nos pares que combinam', corrigir: 'Corrija a frase' })[ex.tipo];
+  const titulo = ex.enunciado || ex.pergunta || ({ lacuna: 'Complete a frase', ordenar: 'Monte a frase', ditado: 'Escreva o que você ouviu', traduzir: 'Escreva em inglês', fala: 'Fale em voz alta', pares: 'Toque nos pares que combinam', corrigir: 'Corrija a frase', detetive: 'Caça ao erro: toque na palavra errada' })[ex.tipo];
   raiz.append(h('h2', { class: 'enunciado', lang: ehIngles(titulo) ? 'en' : null }, titulo));
   if (ex.tipo === 'escuta' && ex.pergunta && ex.enunciado) raiz.append(h('p', {}, ex.pergunta));
+  // debate: a outra pessoa fala primeiro e o aluno escolhe a melhor resposta
+  if (ex.oponente) raiz.insertBefore(h('div', { class: 'oponente' }, h('span', { class: 'oponente__nome' }, ex.oponente.nome), h('p', { class: 'oponente__fala', lang: 'en' }, ex.oponente.fala), h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir ' + ex.oponente.nome, on: { click: () => falar(ex.oponente.fala) } }, icone('speaker-high'))), raiz.firstChild);
 
   async function conferir() {
     if (conferido || btnConferir.disabled) return;
     const resposta = pegarResposta();
     if (resposta == null || resposta === '') return;
     ocupado(btnConferir, true);
-    area.querySelectorAll('input,textarea,.opcao,.peca,.par').forEach(b => { b.disabled = true; });
+    area.querySelectorAll('input,textarea,.opcao,.peca,.par,.palavra-det').forEach(b => { b.disabled = true; });
     try {
       const r = await responder(resposta, { tempoMs: Math.round(performance.now() - t0), dica: usouDica });
       conferido = true;
       mostrar(r, resposta);
     } catch (e) {
       toast(e.message, { tipo: 'erro' });
-      area.querySelectorAll('input,textarea,.opcao,.peca,.par').forEach(b => { b.disabled = false; });
+      area.querySelectorAll('input,textarea,.opcao,.peca,.par,.palavra-det').forEach(b => { b.disabled = false; });
     } finally { ocupado(btnConferir, false); }
   }
   btnConferir.addEventListener('click', conferir);
@@ -61,9 +87,13 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
     conferido = true;
     raiz.classList.add(r.correto ? 'is-certo' : 'is-errado');
     barra.classList.add(r.correto ? 'barra-acao--certo' : 'barra-acao--quase');
-    if (!silencioso) som(r.correto ? 'acerto' : 'erro');
+    if (!silencioso) {
+      som(r.correto ? 'acerto' : 'erro'); vibrar(r.correto ? 14 : [28, 40, 28]);
+      if (r.correto) brilho(area.querySelector('.opcao.escolhida,.palavra-det.escolhida,.lacuna,.montagem') || btnConferir);
+    }
     // marca a alternativa certa quando a escolhida estava errada
     if (!r.correto) area.querySelectorAll('.opcao').forEach(o => { if (o.lastElementChild?.textContent === r.esperado) o.classList.add('certa'); });
+    if (ex.tipo === 'detetive') area.querySelectorAll('.palavra-det').forEach((b, i) => { if (!r.correto && String(i) !== String(resposta) && b.textContent.replace(/[.,!?;:]+$/, '') === (r.esperado || '').split(' → ')[0]) b.classList.add('certa'); });
     const corpo = [];
     if (r.correto) {
       corpo.push(h('p', { class: 'folha-resposta__titulo' }, ELOGIOS[Math.floor(Math.random() * ELOGIOS.length)]));
@@ -99,10 +129,10 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
   if (['escolha', 'escuta', 'leitura'].includes(ex.tipo)) {
     let escolhida = null;
     const grupo = h('div', { class: 'opcoes', role: 'radiogroup', 'aria-label': 'Alternativas' });
-    ex.opcoes.forEach((o, i) => grupo.append(h('button', { type: 'button', class: 'opcao', role: 'radio', 'aria-checked': 'false', lang: ehIngles(o) ? 'en' : null, on: { click: e => {
+    ex.opcoes.forEach((o, i) => grupo.append(h('button', { type: 'button', class: 'opcao', style: `--k:${i}`, role: 'radio', 'aria-checked': 'false', lang: ehIngles(o) ? 'en' : null, on: { click: e => {
       grupo.querySelectorAll('.opcao').forEach(b => { b.classList.remove('escolhida'); b.setAttribute('aria-checked', 'false'); });
       e.currentTarget.classList.add('escolhida'); e.currentTarget.setAttribute('aria-checked', 'true');
-      escolhida = o; habilitar(true); som('toque');
+      escolhida = o; habilitar(true); som('toque'); vibrar(8);
     } } }, h('span', { class: 'opcao__tecla', 'aria-hidden': 'true' }, String(i + 1)), h('span', {}, o))));
     pegarResposta = () => escolhida;
     area.append(grupo);
@@ -169,6 +199,16 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
       eco, campo,
       h('p', { class: 'ajuda' }, SR ? 'Toque no microfone e fale a frase. Se preferir, escreva o que disse.' : 'Seu aparelho não tem reconhecimento de voz. Fale em voz alta e escreva o que disse.'));
     pegarResposta = () => (ouvido || campo.value).trim();
+  } else if (ex.tipo === 'detetive') {
+    // caça ao erro: a frase vira palavras tocáveis; a resposta enviada é a posição da palavra
+    let alvo = null;
+    const frase = h('p', { class: 'frase-det', lang: 'en', role: 'group', 'aria-label': 'Frase com uma palavra errada' });
+    ex.tokens.forEach((t, i) => frase.append(h('button', { type: 'button', class: 'palavra-det', on: { click: e => {
+      frase.querySelectorAll('.palavra-det').forEach(b => b.classList.remove('escolhida'));
+      e.currentTarget.classList.add('escolhida'); alvo = String(i); habilitar(true); som('toque');
+    } } }, t), ' '));
+    pegarResposta = () => alvo;
+    area.append(frase, h('p', { class: 'ajuda' }, 'Só uma palavra está errada. Toque nela e confira.'));
   } else if (ex.tipo === 'pares') {
     // combina inglês x português; o resultado vai ao servidor como "erros:N"
     let erros = 0, sel = null, feitos = 0;
@@ -220,7 +260,7 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
     raiz.append(area, pular, barra);
   } else raiz.append(area, barra);
   if (ja) {
-    area.querySelectorAll('input,textarea,.opcao,.peca,.par').forEach(b => { b.disabled = true; });
+    area.querySelectorAll('input,textarea,.opcao,.peca,.par,.palavra-det').forEach(b => { b.disabled = true; });
     btnConferir.hidden = false;
     btnConferir.removeEventListener('click', conferir);
     mostrar(ja, ja.resposta, true);

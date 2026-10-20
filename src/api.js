@@ -473,7 +473,7 @@ function criar(db) {
     const ex = acharExercicio(lic.dados, itemId);
     if (!ex) throw new ErroHttp(404, 'Exercício não encontrado.');
     const r = corrigirExercicio(ex, resposta);
-    const formato = ['escolha', 'escuta', 'leitura'].includes(ex.tipo) ? 'reconhecimento' : 'producao';
+    const formato = ['escolha', 'escuta', 'leitura', 'detetive'].includes(ex.tipo) ? 'reconhecimento' : 'producao';
     transacao(db, () => {
       const atual = lerJson(q('SELECT respondidos FROM licoes WHERE id = ? AND user_id = ?').get(lic.id, uid).respondidos, {});
       if (atual[itemId]) return;   // clique duplo

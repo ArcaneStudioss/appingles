@@ -1,6 +1,6 @@
 // Tuiuiú (o mascote: uma arara-azul), sons sintetizados e confete. Tudo respeita "menos movimento"
 // e a preferência de som deste aparelho. Nada aqui pune o aluno: o erro tem um som suave, não um alarme.
-import { localStorageGet, falarPt, pararVoz } from './ui.js?v=__V__';
+import { h, icone, localStorageGet, localStorageSet, falarPt, pararVoz, reduzirMovimento } from './ui.js?v=__V__';
 
 const NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs = {}, ...filhos) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); e.append(...filhos); return e; };
@@ -167,27 +167,92 @@ export function louFala(humor, ...conteudo) {
 }
 
 // ---------- sons (Web Audio, sem arquivos) ----------
-let ctx = null;
+// Tudo sintetizado: notas com ataque suave, "swooshes" de ruído filtrado e um compressor no fim da cadeia (nunca estoura).
+let ctx = null, mestre = null, ruidoBuf = null;
 export const somLigado = () => localStorageGet('sons') !== 'nao';
-function nota(freq, inicio, dur, { tipo = 'sine', volume = 0.12 } = {}) {
-  const o = ctx.createOscillator(), g = ctx.createGain();
-  o.type = tipo; o.frequency.value = freq;
-  g.gain.setValueAtTime(0, ctx.currentTime + inicio);
-  g.gain.linearRampToValueAtTime(volume, ctx.currentTime + inicio + 0.015);
-  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + inicio + dur);
-  o.connect(g).connect(ctx.destination);
-  o.start(ctx.currentTime + inicio); o.stop(ctx.currentTime + inicio + dur + 0.05);
+function iniciarAudio() {
+  ctx ||= new (window.AudioContext || window.webkitAudioContext)();
+  if (ctx.state === 'suspended') ctx.resume();
+  if (!mestre) {
+    mestre = ctx.createGain(); mestre.gain.value = 0.9;
+    const comp = ctx.createDynamicsCompressor();
+    mestre.connect(comp).connect(ctx.destination);
+  }
+  return ctx;
 }
+function nota(freq, inicio, dur, { tipo = 'sine', volume = 0.12, ate = null, harm = 0 } = {}) {
+  const t0 = ctx.currentTime + inicio;
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = tipo; o.frequency.setValueAtTime(freq, t0);
+  if (ate) o.frequency.exponentialRampToValueAtTime(ate, t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(volume, t0 + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g).connect(mestre);
+  o.start(t0); o.stop(t0 + dur + 0.05);
+  if (harm) nota(freq * 2, inicio, dur * 0.7, { tipo: 'sine', volume: volume * harm, ate: ate && ate * 2 });
+}
+function ruido(inicio, dur, { de = 400, ate = 3000, volume = 0.08, q = 1.2 } = {}) {
+  if (!ruidoBuf) {
+    ruidoBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const d = ruidoBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const t0 = ctx.currentTime + inicio;
+  const src = ctx.createBufferSource(); src.buffer = ruidoBuf; src.loop = true;
+  const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = q;
+  f.frequency.setValueAtTime(de, t0); f.frequency.exponentialRampToValueAtTime(ate, t0 + dur);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(volume, t0 + dur * 0.35);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  src.connect(f).connect(g).connect(mestre);
+  src.start(t0); src.stop(t0 + dur + 0.05);
+}
+const SONS = {
+  clique: () => nota(1100, 0, 0.035, { tipo: 'triangle', volume: 0.035 }),
+  toque: () => { nota(520, 0, 0.09, { ate: 780, volume: 0.09 }); },
+  tirar: () => { nota(700, 0, 0.08, { ate: 440, volume: 0.07 }); },
+  acerto: () => { [[784, 0], [988, 0.075], [1319, 0.15]].forEach(([f, t]) => nota(f, t, 0.3, { tipo: 'triangle', volume: 0.1, harm: 0.35 })); ruido(0.12, 0.25, { de: 4000, ate: 9000, volume: 0.015, q: 4 }); },
+  erro: () => { nota(300, 0, 0.26, { ate: 190, volume: 0.1, tipo: 'sine' }); nota(150, 0.02, 0.3, { ate: 110, volume: 0.05 }); },
+  fim: () => { [523, 659, 784, 1047, 1319].forEach((f, i) => nota(f, i * 0.1, 0.42, { tipo: 'triangle', volume: 0.1, harm: 0.3 })); nota(1568, 0.55, 0.9, { volume: 0.06, harm: 0.4 }); ruido(0.45, 0.8, { de: 3000, ate: 10000, volume: 0.02, q: 3 }); },
+  combo: () => [659, 784, 988, 1319, 1568].forEach((f, i) => nota(f, i * 0.055, 0.18, { tipo: 'triangle', volume: 0.085, harm: 0.25 })),
+  avancar: () => { ruido(0, 0.2, { de: 500, ate: 3200, volume: 0.05 }); nota(440, 0, 0.12, { ate: 660, volume: 0.03 }); },
+  voltar: () => { ruido(0, 0.2, { de: 3000, ate: 450, volume: 0.045 }); },
+  comecar: () => { [392, 523, 659].forEach((f, i) => nota(f, i * 0.08, 0.22, { tipo: 'triangle', volume: 0.09, harm: 0.3 })); ruido(0, 0.3, { de: 300, ate: 4000, volume: 0.04 }); },
+  meio: () => [880, 1175, 1568].forEach((f, i) => nota(f, i * 0.07, 0.35, { volume: 0.07, harm: 0.5 })),
+  ouvir: () => { nota(660, 0, 0.1, { ate: 990, volume: 0.07 }); nota(990, 0.08, 0.14, { volume: 0.05 }); },
+};
 export function som(tipo) {
-  if (!somLigado()) return;
-  try {
-    ctx ||= new (window.AudioContext || window.webkitAudioContext)();
-    if (ctx.state === 'suspended') ctx.resume();
-    if (tipo === 'acerto') { nota(784, 0, 0.12, { tipo: 'triangle' }); nota(1175, 0.09, 0.22, { tipo: 'triangle' }); }
-    else if (tipo === 'erro') { nota(330, 0, 0.18, { volume: 0.08 }); nota(262, 0.12, 0.26, { volume: 0.07 }); }
-    else if (tipo === 'fim') [523, 659, 784, 1047].forEach((f, i) => nota(f, i * 0.11, 0.3, { tipo: 'triangle', volume: 0.1 }));
-    else if (tipo === 'toque') nota(660, 0, 0.05, { volume: 0.05 });
-  } catch { /* navegador sem áudio: segue em silêncio */ }
+  if (!somLigado() || !SONS[tipo]) return;
+  try { iniciarAudio(); SONS[tipo](); }
+  catch { /* navegador sem áudio: segue em silêncio */ }
+}
+// botão de ligar/desligar os sons (fica no topo da lição e do teste)
+export function botaoSom() {
+  const rot = () => [icone(somLigado() ? 'speaker-high' : 'speaker-x'), h('span', { class: 'oculto' }, 'Sons')];
+  const b = h('button', { type: 'button', class: 'btn btn-texto btn-peq', 'aria-pressed': String(somLigado()), 'aria-label': 'Sons' }, rot());
+  b.addEventListener('click', () => { const v = !somLigado(); localStorageSet('sons', v ? 'sim' : 'nao'); b.setAttribute('aria-pressed', String(v)); b.replaceChildren(rot()); if (v) som('toque'); });
+  return b;
+}
+// vibração leve no celular (acerto e erro). Não faz nada onde não existe, e some junto com o som desligado.
+export function vibrar(padrao = 12) { if (somLigado()) try { navigator.vibrate?.(padrao); } catch {} }
+
+// estrelinhas que saem de um elemento (acerto): bem curtas, só transform e opacidade
+export function brilho(alvo, { cor = 'var(--sol)', quantidade = 9 } = {}) {
+  if (reduzirMovimento() || !alvo?.isConnected) return;
+  const r = alvo.getBoundingClientRect();
+  const camada = document.createElement('div'); camada.className = 'brilhos'; camada.setAttribute('aria-hidden', 'true');
+  camada.style.setProperty('left', `${r.left + r.width / 2}px`); camada.style.setProperty('top', `${r.top + r.height / 2}px`);
+  for (let i = 0; i < quantidade; i++) {
+    const p = document.createElement('i');
+    const ang = (Math.PI * 2 * i) / quantidade + Math.random() * 0.5, dist = 40 + Math.random() * 46;
+    p.style.setProperty('--x', `${Math.cos(ang) * dist}px`); p.style.setProperty('--y', `${Math.sin(ang) * dist}px`);
+    p.style.setProperty('--d', `${0.45 + Math.random() * 0.3}s`);
+    p.style.setProperty('background', i % 3 === 0 ? 'var(--turquesa)' : i % 3 === 1 ? cor : '#FF9FB2');
+    camada.append(p);
+  }
+  document.body.append(camada);
+  setTimeout(() => camada.remove(), 1000);
 }
 
 // ---------- confete ----------
@@ -207,4 +272,37 @@ export function confete(alvo = document.body, quantidade = 46) {
   }
   alvo.append(camada);
   setTimeout(() => camada.remove(), 2000);
+}
+
+// ---------- comemoração (combo, fim de bloco): o Tuiuiú pula no meio da tela com uma frase grande e some sozinho ----------
+export function celebrar(frase, { humor = 'festa', nivel = 1 } = {}) {
+  document.querySelector('.celebra')?.remove();
+  const camada = document.createElement('div'); camada.className = 'celebra'; camada.setAttribute('role', 'status');
+  const cartao = document.createElement('div'); cartao.className = 'celebra__cartao';
+  const texto = document.createElement('strong'); texto.textContent = frase;
+  cartao.append(lou(humor, { tamanho: 128, rotulo: '' }), texto);
+  camada.append(cartao);
+  document.body.append(camada);
+  som('combo'); vibrar([20, 30, 40]);
+  if (nivel >= 2) confete(document.body, 30 + nivel * 10);
+  setTimeout(() => camada.classList.add('is-out'), reduzirMovimento() ? 1100 : 1250);
+  setTimeout(() => camada.remove(), reduzirMovimento() ? 1250 : 1550);
+}
+
+// "+10" que sobe de um elemento e some (acerto)
+export function pontosFlutuantes(alvo, texto = '+10') {
+  if (reduzirMovimento() || !alvo?.isConnected) return;
+  const r = alvo.getBoundingClientRect();
+  const p = document.createElement('span'); p.className = 'pontos-flutua'; p.textContent = texto; p.setAttribute('aria-hidden', 'true');
+  p.style.setProperty('left', `${r.left + r.width / 2}px`); p.style.setProperty('top', `${r.top}px`);
+  document.body.append(p);
+  setTimeout(() => p.remove(), 1000);
+}
+
+// número que conta de 0 até o valor (placar do fim da lição)
+export function contar(el, ate, { ms = 900, sufixo = '' } = {}) {
+  if (reduzirMovimento() || !(ate > 0)) { el.textContent = ate + sufixo; return; }
+  const t0 = performance.now();
+  const passo = t => { const k = Math.min(1, (t - t0) / ms), v = Math.round(ate * (1 - Math.pow(1 - k, 3))); el.textContent = v + sufixo; if (k < 1 && el.isConnected) requestAnimationFrame(passo); };
+  el.textContent = '0' + sufixo; requestAnimationFrame(passo);
 }

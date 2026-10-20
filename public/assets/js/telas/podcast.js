@@ -3,7 +3,7 @@
 // com a fala atual em destaque (dá para ler junto). Nas falas "repita", o player espera a pessoa repetir.
 // No fim, um treino rápido com o mesmo assunto (o gabarito é conferido no servidor).
 import { api } from '../api.js?v=__V__';
-import { h, icone, toast, localStorageGet, localStorageSet } from '../ui.js?v=__V__';
+import { h, icone, toast, localStorageGet, localStorageSet, ehGoogle } from '../ui.js?v=__V__';
 import { lou, som, confete } from '../diversao.js?v=__V__';
 import { exercicio } from './exercicio.js?v=__V__';
 import { nomeConquista } from './hoje.js?v=__V__';
@@ -17,8 +17,10 @@ try { fetch(PASTA_MIA + 'mapa.json?v=__V__').then(r => (r.ok ? r.json() : null))
 
 function escolherVozes() {
   const todas = temVozes() ? speechSynthesis.getVoices() : [];
-  const pt = todas.find(v => /^pt[-_]BR/i.test(v.lang) && /natural|google|antonio|daniel|luciana/i.test(v.name)) || todas.find(v => /^pt[-_]BR/i.test(v.lang)) || todas.find(v => /^pt/i.test(v.lang));
-  const en = todas.find(v => /^en[-_]US/i.test(v.lang) && /jenny|aria|samantha|female|google us english/i.test(v.name)) || todas.find(v => /^en[-_]US/i.test(v.lang)) || todas.find(v => /^en/i.test(v.lang));
+  const nota = (v, boa) => (boa.test(v.name) ? 10 : 0) + (ehGoogle(v) ? -14 : 0);
+  const melhor = (lista, boa) => lista.slice().sort((a, b) => nota(b, boa) - nota(a, boa))[0];
+  const pt = melhor(todas.filter(v => /^pt[-_]BR/i.test(v.lang)), /natural|neural|online|francisca|antonio|thalita|luciana|felipe/i) || melhor(todas.filter(v => /^pt/i.test(v.lang)), /natural|neural|online/i);
+  const en = melhor(todas.filter(v => /^en[-_]US/i.test(v.lang)), /natural|neural|online|jenny|aria|samantha|ava|zira/i) || melhor(todas.filter(v => /^en/i.test(v.lang)), /natural|neural|online/i);
   return { pt, en };
 }
 
