@@ -1072,7 +1072,7 @@ a.turma-item:hover,a.turma-item:focus-visible{border-color:var(--c-forte)}
 @media(max-width:440px){.retorno-exercicio{gap:.4rem;padding:.8rem}.retorno-exercicio .folha-resposta__lou{display:none}.palavra-nova{padding:1.1rem .8rem}.retorno-exercicio__acoes{gap:.5rem}.resposta-pares li{grid-template-columns:1fr auto}.resposta-pares li span{grid-column:1}.resposta-pares li .btn-icone{grid-column:2;grid-row:span 2}}
 
 /* Leitura assistida: toque na palavra e o significado aparece acima dela. */
-.palavra-traduzivel{display:inline;appearance:none;font:inherit;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;background:none;border:0;border-bottom:2px dotted color-mix(in srgb,currentColor 42%,transparent);border-radius:3px;padding:0 .03em;cursor:pointer;text-align:inherit;box-decoration-break:clone}
+.palavra-traduzivel{display:inline;appearance:none;font:inherit;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;background:none;border:0;border-bottom:2px dotted color-mix(in srgb,currentColor 42%,transparent);border-radius:3px;padding:0 .03em;cursor:pointer;text-align:inherit;box-decoration-break:clone;max-width:100%;white-space:normal;overflow-wrap:anywhere;vertical-align:baseline}
 .palavra-traduzivel:hover,.palavra-traduzivel[aria-expanded="true"]{background:var(--sol-fundo);color:var(--sol-forte);border-bottom-color:var(--sol-sombra)}
 .traducao-balao{position:fixed;z-index:500;display:grid;gap:.3rem;width:max-content;max-width:min(290px,calc(100vw - 24px));padding:.85rem 1rem;border:2px solid var(--sol);border-radius:16px;box-shadow:var(--sombra-alta);background:var(--tinta);color:var(--cartao);font:700 1rem/1.4 var(--f-texto);overflow-wrap:anywhere;text-align:left;pointer-events:none}
 .traducao-balao strong{font-size:1.12rem}
@@ -1118,4 +1118,35 @@ body[data-publico="adulto"] .capitulo-card__imagem{font-size:1.8rem}
 .previa-aula .exercicio{margin-top:1rem}
 .banco-missao>.linha-acoes{margin:.6rem 0}
 @media(max-width:440px){.editor-acoes .btn{font-size:.9rem;padding-inline:.6rem}.biblioteca-filtros>select{flex-basis:100%}}
+
+/* Do Brasil pro mundo: nomes locais, intenção e contexto antes da tradução. */
+.brasil-convite{display:flex;align-items:center;gap:.85rem;padding:1rem;border:2px solid var(--turquesa);border-radius:var(--raio);background:var(--turquesa-fundo);color:var(--tinta);text-decoration:none;margin:.5rem 0 1rem}
+.brasil-convite>.bolha,.brasil-convite>.ico{flex:none}
+.brasil-convite>span:not(.bolha){flex:1;min-width:0}
+.brasil-convite strong,.brasil-convite small{display:block}
+.brasil-convite strong{color:var(--turquesa-forte);font-size:1.15rem}
+.brasil-convite small{color:var(--tinta-2);line-height:1.4}
+.cultura-aviso{padding:.8rem 1rem;background:var(--cartao-2);border-radius:var(--raio-p);font-size:.92rem;color:var(--tinta-2)}
+.cultura-grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:1rem;align-items:start}
+.cultura-ficha{margin:0;min-width:0;scroll-margin-top:1rem;overflow-wrap:anywhere}
+.cultura-ficha h2{font-size:1.3rem;margin:.7rem 0 .45rem}
+.cultura-ficha>p{margin:.35rem 0}
+.cultura-registro{font-size:.82rem;color:var(--turquesa-forte);font-weight:800}
+.cultura-ficha>details{margin-top:.8rem}
+.cultura-ficha summary{cursor:pointer;font-weight:800;padding:.4rem 0;color:var(--azul-forte)}
+.cultura-equivalentes{display:grid;gap:.8rem;margin-block:.8rem}
+.cultura-equivalente{padding:.8rem;border:1px solid var(--borda);border-radius:var(--raio-p);background:var(--cartao-2);min-width:0}
+.cultura-equivalente h3{font-size:1.12rem;margin:0;flex:1;min-width:0}
+.cultura-equivalente .btn-icone{flex:none}
+.cultura-equivalente p{margin:.4rem 0}
+.cultura-equivalente blockquote{margin:.65rem 0 .25rem;padding-left:.65rem;border-left:3px solid var(--turquesa);line-height:1.9}
+.cultura-sentido{font-weight:800}
+.cultura-contexto{padding:.8rem;background:var(--sol-fundo);border-radius:var(--raio-p);font-size:.95rem;margin-bottom:.8rem}
+.cultura-contexto p{margin:.4rem 0 0}
+.cultura-fontes{font-size:.85rem;margin-top:.7rem}
+.cultura-fontes ul{padding-left:1.2rem}
+.cultura-fontes a{overflow-wrap:anywhere}
+.cultura-pratica{margin-top:1.3rem}
+.cultura-pratica li{padding:.4rem 0}
+.cultura-consulta summary{cursor:pointer;font-weight:800}
 

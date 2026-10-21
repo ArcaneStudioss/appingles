@@ -13,6 +13,7 @@ const { corrigirExercicio, respostaCerta } = require('./motor/correcao');
 const { paraCliente } = require('./motor/licao');
 const { UNIDADES, BANCO_BIBLIOTECA } = require('./conteudo/biblioteca');
 const { FAIXAS } = require('./motor/publico');
+const { POR_EXPRESSAO } = require('./conteudo/brasil-mundo');
 const BANCO = { ...TODOS_EXERCICIOS, ...BANCO_BIBLIOTECA };
 
 const MAX_TURMAS = 20, MAX_ALUNOS = 200, MAX_ATIVIDADES = 100;
@@ -47,7 +48,7 @@ function registrar({ db, rota, q, V, lerJson, transacao, agoraISO, hojeDe, regis
   rota('GET', '/professor/banco', ctx => {
     exigirProfessor(ctx.u.id);
     return { missoes: [...MISSOES.filter(m => !m.faixa), ...UNIDADES].map(m => ({
-      id: m.id, titulo: m.titulo, nivel: m.nivel, faixa: m.faixa || (m.id.startsWith('zero-') ? 'todas' : 'adulto'), tema: m.tema || m.titulo,
+      id: m.id, titulo: m.titulo, nivel: m.nivel, faixa: m.faixa || (m.id.startsWith('zero-') ? 'todas' : 'adulto'), tema: m.tema || m.titulo, colecao: m.colecao || null, termos: (m.cultura || []).flatMap(id => POR_EXPRESSAO[id].aliases),
       material: { explicacao: m.explicacao?.texto || m.explicacao || '', texto: m.texto || '', traducao: m.traducao || '', vocab: m.vocab },
       exercicios: m.exercicios.filter(e => e.tipo !== 'pares').map(e => ({ id: e.id, tipo: e.tipo, habilidade: e.habilidade, resumo: resumoDe(e), tag: e.tag || null })),
     })).filter(m => m.exercicios.length) };

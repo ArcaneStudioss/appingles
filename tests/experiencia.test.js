@@ -23,7 +23,7 @@ before(async () => {
   servidor = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, '..', 'server.js')], { env: { ...process.env, PORT, DATA_DIR: DIR, BACKUP_DESLIGADO: '1', NODE_ENV: 'test', IA_FAKE: '1' }, stdio: 'ignore' });
   for (let i = 0; i < 60; i++) { try { await fetch(`http://localhost:${PORT}/saude`); break; } catch { await new Promise(r => setTimeout(r, 100)); } }
   for (const [quem, idade, papel] of [['crianca', 9, 'aluno'], ['adolescente', 16, 'aluno'], ['adulto', 35, 'aluno'], ['prof', 40, 'professor'], ['fora', 32, 'aluno']]) {
-    const r = await fetch(BASE + '/auth/cadastro', { method: 'POST', headers: { 'X-Inglou': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: 'Pessoa ' + quem, idade, papel, responsavel: idade < 18, email: quem + '@experiencia.test', senha: 'frase segura girassol 2026', consentimento: true }) });
+    const r = await fetch(BASE + '/auth/cadastro', { method: 'POST', headers: { 'X-Inglou': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: 'Pessoa ' + quem, idade, papel, regiao: quem === 'adolescente' ? 'nordeste' : null, responsavel: idade < 18, email: quem + '@experiencia.test', senha: 'frase segura girassol 2026', consentimento: true }) });
     assert.equal(r.status, 200, await r.text());
     usuarios[quem] = { cookie: r.headers.get('set-cookie').split(';')[0] };
   }
@@ -49,6 +49,21 @@ test('nivelamento usa situações da idade e permite o mesmo nível alto nos tr�
     assert.equal(r.porHabilidade.fala.detalhe.reconhecido, 100);
     if (faixa !== 'adulto') assert.doesNotMatch(JSON.stringify(itens), /startup|revenue|job interview/i);
   }
+});
+
+test('região opcional é salva no cadastro, validada, editável, exportada e isolada por conta', async () => {
+  const teen = await R('adolescente', 'GET', '/eu');
+  assert.equal(teen.perfil.regiao, 'nordeste'); assert.equal(teen.publico.regiao.nome, 'Nordeste');
+  assert.equal((await R('fora', 'GET', '/eu')).perfil.regiao, null);
+  for (const regiao of ['suleste', 'São Paulo', ['sul'], { nome: 'sul' }]) assert.equal((await R('fora', 'PUT', '/perfil/regiao', { regiao })).status, 422);
+  assert.equal((await R('fora', 'PUT', '/perfil/regiao', {})).status, 422);
+  assert.equal((await R('fora', 'PUT', '/perfil/regiao', { regiao: 'sul' })).publico.regiao.id, 'sul');
+  assert.equal((await R('fora', 'GET', '/dados/exportar')).perfil.regiao, 'sul');
+  await R('fora', 'PUT', '/perfil/publico', { idade: 32, papel: 'aluno' });
+  assert.equal((await R('fora', 'GET', '/eu')).perfil.regiao, 'sul', 'edição antiga sem campo não apaga a região');
+  assert.equal((await R('adolescente', 'GET', '/brasil-mundo')).publico.regiao.id, 'nordeste', 'outra conta mantém sua escolha');
+  assert.equal((await R('fora', 'PUT', '/perfil/regiao', { regiao: 'fora' })).publico.regiao.nome, 'Fora do Brasil');
+  assert.equal((await R('fora', 'PUT', '/perfil/regiao', { regiao: null })).publico.regiao, null);
 });
 
 test('iniciante adulto recebe base acessível; criança tem temas próprios sem questões profissionais', async () => {
@@ -91,7 +106,7 @@ test('erro explica; repetição corrige sem alterar o primeiro resultado nem con
 test('biblioteca seleciona público no servidor; leitura e vocabulário têm explicação e respeitam assinatura', async () => {
   for (const quem of ['crianca', 'adolescente', 'adulto']) {
     const d = await R(quem, 'GET', '/biblioteca');
-    assert.equal(d.unidades.length, 3); assert.ok(d.unidades.every(u => u.faixa === quem));
+    assert.equal(d.unidades.length, 5); assert.ok(d.unidades.every(u => u.faixa === quem));
   }
   assert.equal((await R('crianca', 'GET', '/biblioteca/adulto-viagem')).status, 404);
   const cenarios = (await R('crianca', 'GET', '/conversas/cenarios')).cenarios;
@@ -109,6 +124,61 @@ test('biblioteca seleciona público no servidor; leitura e vocabulário têm exp
   db.prepare('UPDATE assinaturas SET dados = ? WHERE user_id = ?').run(JSON.stringify({ status: 'teste', teste_ate: '2020-01-01' }), usuarios.adulto.id);
   assert.equal((await R('adulto', 'GET', '/biblioteca/adulto-rotina')).status, 402);
   db.prepare('UPDATE assinaturas SET dados = ? WHERE user_id = ?').run(original, usuarios.adulto.id);
+});
+
+test('equivalências brasileiras distinguem contexto, nomes regionais e gírias; público é filtrado no servidor', async () => {
+  assert.equal((await R(null, 'GET', '/brasil-mundo')).status, 401);
+  const crianca = await R('crianca', 'GET', '/brasil-mundo');
+  const teen = await R('adolescente', 'GET', '/brasil-mundo');
+  assert.ok(crianca.expressoes.some(e => e.id === 'bergamota'));
+  assert.ok(!crianca.expressoes.some(e => e.categoria === 'internet'));
+  assert.equal(teen.expressoes.length, 24);
+  assert.ok(teen.expressoes.some(e => e.id === 'papo-reto' && e.registro.includes('Informal')));
+  assert.equal(Object.keys(teen.regioes).length, 5);
+  const fruta = teen.expressoes.find(e => e.id === 'bergamota');
+  assert.ok(fruta.aliases.includes('mexerica'));
+  assert.ok(fruta.equivalentes.some(v => v.en === 'mandarin'));
+  assert.ok(!fruta.equivalentes.some(v => v.en === 'bergamot'));
+  assert.match(fruta.cuidado, /outro cítrico/);
+  const churrasco = teen.expressoes.find(e => e.id === 'churrasco');
+  assert.ok(churrasco.equivalentes.some(v => v.en === 'cookout' && v.uso.includes('Estados Unidos')));
+  assert.match(teen.expressoes.find(e => e.id === 'rapadura').equivalentes[0].uso, /não é apresentada como um ditado/);
+  const dicionario = await R(null, 'GET', '/dicionario');
+  assert.match(dicionario.expressoes['no cap'], /sem mentira/);
+  assert.equal(dicionario.expressoes['be right back'], 'já volto');
+  assert.ok(!Object.hasOwn(dicionario.expressoes, 'you in'), 'convite precisa do contexto de pergunta');
+});
+
+test('aulas de gírias praticam sentido e registro; correção e consulta não duplicam progresso', async () => {
+  const lista = await R('adolescente', 'GET', '/biblioteca');
+  assert.equal(lista.unidades.filter(u => u.colecao === 'brasil-mundo').length, 2);
+  assert.ok(lista.unidades.find(u => u.id === 'adolescente-brasil-girias').termos.includes('papo reto'));
+  assert.equal((await R('crianca', 'GET', '/biblioteca/adolescente-brasil-girias')).status, 404);
+  const aula = await R('adolescente', 'GET', '/biblioteca/adolescente-brasil-girias');
+  assert.equal(aula.itens.length, 5);
+  assert.doesNotMatch(JSON.stringify(aula.itens), /"(?:resposta|aceitas)":/);
+  assert.ok(aula.unidade.cultura.some(e => e.id === 'papo-reto'));
+  const ex = aula.itens.find(e => e.tipo === 'leitura');
+  const erro = await R('adolescente', 'POST', '/biblioteca/adolescente-brasil-girias/responder', { itemId: ex.id, resposta: 'um boné' });
+  assert.equal(erro.correto, false); assert.match(erro.explica, /expressão inteira/);
+  const repetida = await R('adolescente', 'POST', '/biblioteca/adolescente-brasil-girias/responder', { itemId: ex.id, resposta: erro.esperado, treinar: true });
+  assert.equal(repetida.correto, true); assert.equal(repetida.pratica, true);
+  const recarregada = await R('adolescente', 'GET', '/biblioteca/adolescente-brasil-girias');
+  assert.equal(recarregada.respondidos[ex.id].correto, false);
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM tentativas WHERE user_id = ? AND item_id = ?').get(usuarios.adolescente.id, ex.id).n, 1);
+});
+
+test('professor encontra nomes regionais no banco e usa capítulos culturais em prévia sem publicar', async () => {
+  const banco = await R('prof', 'GET', '/professor/banco');
+  const brasileira = banco.missoes.find(m => m.id === 'adulto-brasil-sabores');
+  assert.equal(brasileira.colecao, 'brasil-mundo');
+  assert.ok(brasileira.termos.includes('bergamota') && brasileira.termos.includes('mexerica'));
+  const antes = db.prepare('SELECT COUNT(*) n FROM atividades').get().n;
+  const previa = await R('prof', 'POST', '/professor/previa', { banco: brasileira.exercicios.map(e => e.id), proprias: [], material: brasileira.material });
+  assert.equal(previa.status, 200);
+  assert.equal(previa.itens.length, 5);
+  assert.match(previa.material.explicacao, /bergamot geralmente indica outro cítrico/);
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM atividades').get().n, antes);
 });
 
 test('professor monta capítulo com material, leitura e vocabulário; prévia não publica nem registra notas', async () => {
@@ -143,7 +213,7 @@ test('professor acompanha apenas atividade da turma e reutiliza material sem cop
   assert.ok((await R('crianca', 'POST', `/atividades/${a}/responder`, { itemId: 'i1', resposta: r.esperado, treinar: true })).correto);
   const painel = await R('prof', 'GET', `/turmas/${t}/atividades/${a}`);
   assert.equal(painel.alunos[0].feitas, 1); assert.equal(painel.alunos[0].certas, 0);
-  assert.ok(!JSON.stringify(painel).includes(erro)); assert.doesNotMatch(JSON.stringify(painel), /"idade"\s*:/);
+  assert.ok(!JSON.stringify(painel).includes(erro)); assert.doesNotMatch(JSON.stringify(painel), /"(?:idade|regiao)"\s*:/);
   const destino = await R('prof', 'POST', '/turmas', { nome: 'Segunda turma', faixa: 'crianca' });
   const copia = await R('prof', 'POST', `/turmas/${t}/atividades/${a}/duplicar`, { turmaId: destino.turma.id });
   assert.equal(copia.status, 200);

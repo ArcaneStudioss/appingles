@@ -70,8 +70,28 @@ const PALAVRAS = {
   nurse: 'enfermeiro ou enfermeira', doctor: 'médico ou médica', developer: 'desenvolvedor ou desenvolvedora',
 };
 
-let balao = null, palavraAberta = null;
+let balao = null, palavraAberta = null, posicaoAberta = null;
+const EXPRESSOES = {};
+const chaveDe = texto => texto.toLowerCase().replaceAll('’', "'").replace(/\s+/g, ' ').trim();
+const expressaoDe = texto => EXPRESSOES[chaveDe(texto)] || EXPRESSOES[chaveDe(texto).replace(/[.,!?;:]+$/, '')];
+let partes = /([A-Za-zÀ-ÿ]+(?:['’][A-Za-zÀ-ÿ]+)*)/g;
+export function registrarExpressoes(novas) {
+  let mudou = false;
+  for (const [en, pt] of Object.entries(novas)) {
+    const chave = chaveDe(en);
+    if (EXPRESSOES[chave] !== pt) { EXPRESSOES[chave] = pt; mudou = true; }
+  }
+  if (!mudou) return;
+  const frases = Object.keys(EXPRESSOES).filter(t => /[\s-]/.test(t)).sort((a, b) => b.length - a.length)
+    .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replaceAll("'", "['’]").replace(/\s+/g, '\\s+'));
+  partes = new RegExp('(' + (frases.length ? '(?<![A-Za-zÀ-ÿ])(?:' + frases.join('|') + ')(?![A-Za-zÀ-ÿ])[.,!?;:]?|' : '') + "[A-Za-zÀ-ÿ]+(?:['’][A-Za-zÀ-ÿ]+)*)", 'gi');
+  // Um dicionário pode chegar depois da tela. Recompõe o texto para reconhecer a expressão inteira.
+  fechar();
+  for (const b of document.querySelectorAll('.palavra-traduzivel')) { const pai = b.parentNode; b.replaceWith(document.createTextNode(b.textContent)); pai.normalize(); }
+  preparar(document.body);
+}
 export function fraseConhecida(texto) {
+  if (expressaoDe(texto)) return true;
   const palavras = texto.toLowerCase().replaceAll('’', "'").match(/[a-z]+(?:'[a-z]+)*/g) || [];
   return palavras.length > 0 && palavras.every(p => Object.hasOwn(PALAVRAS, p));
 }
@@ -80,6 +100,7 @@ function fechar() {
   balao.remove(); balao = null;
   palavraAberta?.setAttribute('aria-expanded', 'false');
   palavraAberta?.removeAttribute('aria-describedby'); palavraAberta = null;
+  posicaoAberta = null;
 }
 
 function abrir(botao, palavra, frasePt) {
@@ -89,10 +110,10 @@ function abrir(botao, palavra, frasePt) {
   botao.setAttribute('aria-expanded', 'true');
   botao.setAttribute('aria-describedby', 'traducao-da-palavra');
   botao.dispatchEvent(new CustomEvent('inglou:traducao', { bubbles: true }));
-  const chave = palavra.toLowerCase().replaceAll('’', "'");
+  const chave = chaveDe(palavra);
   const contexto = botao.closest('[data-traducao]');
   const palavraUnica = contexto?.textContent.trim().replace(/[.!?]/g, '').toLowerCase() === chave;
-  const traducao = palavraUnica && frasePt ? frasePt : PALAVRAS[chave] || (chave.endsWith('s') && PALAVRAS[chave.slice(0, -1)] ? PALAVRAS[chave.slice(0, -1)] + ' (forma de ' + chave.slice(0, -1) + ')' : null);
+  const traducao = palavraUnica && frasePt ? frasePt : expressaoDe(palavra) || PALAVRAS[chave] || (chave.endsWith('s') && PALAVRAS[chave.slice(0, -1)] ? PALAVRAS[chave.slice(0, -1)] + ' (forma de ' + chave.slice(0, -1) + ')' : null);
   balao = document.createElement('span');
   balao.id = 'traducao-da-palavra'; balao.className = 'traducao-balao'; balao.setAttribute('role', 'tooltip');
   const titulo = document.createElement('strong'); titulo.lang = 'en'; titulo.textContent = palavra;
@@ -101,6 +122,7 @@ function abrir(botao, palavra, frasePt) {
   if (frasePt && !palavraUnica) { const frase = document.createElement('small'); frase.textContent = 'No contexto: ' + (frasePt.length > 180 ? frasePt.slice(0, 177) + '...' : frasePt); balao.append(frase); }
   (botao.closest('dialog[open]') || document.body).append(balao);
   const r = botao.getBoundingClientRect(), b = balao.getBoundingClientRect();
+  posicaoAberta = { top: r.top, left: r.left };
   const esquerda = Math.max(12, Math.min(innerWidth - b.width - 12, r.left + r.width / 2 - b.width / 2));
   const acima = r.top - b.height - 12 >= 8;
   balao.style.left = esquerda + 'px';
@@ -120,8 +142,8 @@ function preparar(alvo) {
       if (!/[A-Za-z]/.test(no.textContent)) continue;
       const frasePt = no.parentElement.closest('[data-traducao]')?.dataset.traducao;
       const frag = document.createDocumentFragment();
-      for (const trecho of no.textContent.split(/([A-Za-zÀ-ÿ]+(?:['’][A-Za-zÀ-ÿ]+)*)/)) {
-        if (!/^[A-Za-zÀ-ÿ]+(?:['’][A-Za-zÀ-ÿ]+)*$/.test(trecho)) { frag.append(document.createTextNode(trecho)); continue; }
+      for (const trecho of no.textContent.split(partes)) {
+        if (!/[A-Za-zÀ-ÿ]/.test(trecho)) { frag.append(document.createTextNode(trecho)); continue; }
         const botao = document.createElement('button');
         botao.type = 'button'; botao.className = 'palavra-traduzivel'; botao.textContent = trecho;
         botao.setAttribute('aria-label', 'Ver tradução de ' + trecho); botao.setAttribute('aria-expanded', 'false');
@@ -134,7 +156,7 @@ function preparar(alvo) {
 }
 
 export function iniciarTraducoes() {
-  fetch('/api/v1/dicionario').then(r => r.ok ? r.json() : null).then(d => { if (d?.palavras) Object.assign(PALAVRAS, d.palavras); }).catch(() => {});
+  fetch('/api/v1/dicionario').then(r => r.ok ? r.json() : null).then(d => { if (d?.palavras) Object.assign(PALAVRAS, d.palavras); if (d?.expressoes) registrarExpressoes(d.expressoes); }).catch(() => {});
   preparar(document.body);
   let agendado = false;
   new MutationObserver(mudancas => {
@@ -145,6 +167,11 @@ export function iniciarTraducoes() {
   }).observe(document.body, { childList: true, subtree: true });
   document.addEventListener('click', e => { if (!e.target.closest('.palavra-traduzivel,.traducao-balao')) fechar(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && balao) { const b = palavraAberta; fechar(); b?.focus({ preventScroll: true }); e.preventDefault(); e.stopPropagation(); } });
-  document.addEventListener('scroll', fechar, { capture: true, passive: true });
+  document.addEventListener('scroll', () => {
+    if (!balao || !palavraAberta || !posicaoAberta) return;
+    const r = palavraAberta.getBoundingClientRect();
+    // O foco pode ter rolado a tela antes de abrir o balão; ignore o evento pendente dessa mesma posição.
+    if (Math.abs(r.top - posicaoAberta.top) > 1 || Math.abs(r.left - posicaoAberta.left) > 1) fechar();
+  }, { capture: true, passive: true });
   addEventListener('resize', fechar);
 }

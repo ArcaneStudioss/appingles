@@ -132,7 +132,7 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
 
   el.append(
     h('header', { class: 'cabeca' }, lou('feliz', { tamanho: 64, rotulo: '' }), h('div', {}, h('h1', {}, eu.usuario.nome), h('p', { class: 'ajuda' }, eu.usuario.email))),
-    cartao('user-circle', 'Meu espaço de aprendizagem', `${eu.publico?.nome || 'Seu perfil'} · ${p.idade ? p.idade + ' anos · ' : ''}${p.papel === 'professor' ? 'Professor(a)' : 'Aluno(a)'}`, h('a', { class: 'btn btn-sec btn-peq', href: '#/publico' }, 'Alterar idade ou perfil')),
+    cartao('user-circle', 'Meu espaço de aprendizagem', `${eu.publico?.nome || 'Seu perfil'} · ${p.idade ? p.idade + ' anos · ' : ''}${p.papel === 'professor' ? 'Professor(a)' : 'Aluno(a)'}${eu.publico?.regiao ? ' · ' + eu.publico.regiao.nome : ''}`, h('a', { class: 'btn btn-sec btn-peq', href: '#/publico' }, 'Alterar idade, perfil ou região')),
     cartao('target', 'Objetivo e rotina', `${p.objetivo_nome || '-'}${p.prazo ? ' até ' + dataBR(p.prazo) : ', sem prazo'} · ${p.minutos_dia} min/dia, ${p.dias_semana} dias/semana`,
       h('a', { class: 'btn btn-sec btn-peq', href: '#/perfil' }, icone('pencil-simple'), 'Alterar'), h('a', { class: 'btn btn-texto btn-peq', href: '#/plano' }, 'Ver plano')),
     cartao('graduation-cap', 'Teste de nível', eu.nivel ? `Nível estimado: ${eu.nivel}. Refaça quando sentir que evoluiu.` : 'Ainda não feito.',

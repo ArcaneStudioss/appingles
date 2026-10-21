@@ -3,17 +3,20 @@ import { h, icone } from '../ui.js?v=__V__';
 import { materialAula } from '../material-aula.js?v=__V__';
 import { exercicio } from './exercicio.js?v=__V__';
 import { NOMES_PUBLICO } from './publico.js?v=__V__';
+const normalizar = texto => texto.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/\p{Diacritic}/gu, '').trim();
 
 export async function telaBiblioteca(el, { estado }) {
   const { unidades, publico } = await api('/biblioteca');
   const professor = estado.eu?.perfil?.papel === 'professor';
-  const busca = h('input', { type: 'search', placeholder: 'Buscar por tema: música, viagens, natureza...', 'aria-label': 'Buscar tema na biblioteca' });
+  const busca = h('input', { type: 'search', placeholder: 'Tema ou palavra: música, bergamota, gírias...', 'aria-label': 'Buscar tema na biblioteca' });
   const nivel = h('select', { 'aria-label': 'Filtrar por nível' }, h('option', { value: '' }, 'Todos os níveis'), ['A1', 'A2', 'B1'].map(n => h('option', { value: n }, n)));
+  const colecao = h('select', { 'aria-label': 'Coleção da biblioteca' }, h('option', { value: '' }, 'Todas as coleções'), h('option', { value: 'brasil-mundo' }, 'Do Brasil pro mundo'));
+  colecao.value = new URLSearchParams(location.hash.split('?')[1] || '').get('colecao') === 'brasil-mundo' ? 'brasil-mundo' : '';
   const faixa = professor ? h('select', { 'aria-label': 'Público da biblioteca' }, h('option', { value: '' }, 'Todos os públicos'), Object.entries(NOMES_PUBLICO).map(([id, nome]) => h('option', { value: id }, nome))) : null;
   const lista = h('div', { class: 'biblioteca-grade' });
   const desenhar = () => {
-    const termo = busca.value.toLocaleLowerCase('pt-BR');
-    const filtradas = unidades.filter(u => (!nivel.value || u.nivel === nivel.value) && (!faixa?.value || u.faixa === faixa.value) && `${u.titulo} ${u.tema}`.toLocaleLowerCase('pt-BR').includes(termo));
+    const termo = normalizar(busca.value);
+    const filtradas = unidades.filter(u => (!nivel.value || u.nivel === nivel.value) && (!colecao.value || u.colecao === colecao.value) && (!faixa?.value || u.faixa === faixa.value) && normalizar(`${u.titulo} ${u.tema} ${(u.termos || []).join(' ')}`).includes(termo));
     lista.replaceChildren(filtradas.length ? filtradas.map(u => h('article', { class: 'capitulo-card' },
       h('span', { class: 'capitulo-card__imagem', 'aria-hidden': 'true' }, u.imagem),
       h('div', { class: 'linha-acoes' }, h('span', { class: 'chip' }, u.nivel), h('span', { class: 'chip' }, professor ? NOMES_PUBLICO[u.faixa] : u.tema)),
@@ -21,9 +24,10 @@ export async function telaBiblioteca(el, { estado }) {
       u.nivel === estado.eu?.nivel ? h('p', { class: 'ajuda' }, 'Combina com seu nível atual') : null,
       h('a', { class: 'btn btn-bloco' + (u.concluida ? ' btn-sec' : ''), href: `#/biblioteca/${u.id}` }, u.concluida ? 'Rever aula' : u.feitas ? 'Continuar aula' : 'Estudar este capítulo'))) : h('p', { class: 'folha' }, 'Nenhum capítulo com esses filtros. Escolha outro nível ou tema.'));
   };
-  busca.addEventListener('input', desenhar); nivel.addEventListener('change', desenhar); faixa?.addEventListener('change', desenhar);
+  busca.addEventListener('input', desenhar); nivel.addEventListener('change', desenhar); colecao.addEventListener('change', desenhar); faixa?.addEventListener('change', desenhar);
   el.append(h('header', { class: 'cabeca c-azul' }, h('span', { class: 'bolha' }, icone('book-open-text')), h('div', {}, h('h1', {}, publico.id === 'crianca' && !professor ? 'Histórias e palavras' : 'Biblioteca de inglês'), h('p', { class: 'ajuda' }, professor ? 'Explore capítulos por público, nível e conteúdo. Use as questões para montar suas aulas.' : `${publico.nome}: temas para sua fase da vida, com dificuldade indicada em cada capítulo.`))),
-    h('div', { class: 'biblioteca-filtros' }, busca, nivel, faixa), lista,
+    h('a', { class: 'brasil-convite c-turquesa', href: '#/brasil' }, h('span', { class: 'bolha' }, icone('chats')), h('span', {}, h('strong', {}, 'Do Brasil pro mundo'), h('small', {}, publico.id === 'crianca' && !professor ? 'Nomes da sua região e histórias para contar em inglês' : 'Gírias, ditados e jeitos regionais com equivalentes em inglês')), icone('caret-right')),
+    h('div', { class: 'biblioteca-filtros' }, busca, nivel, colecao, faixa), lista,
     professor ? h('a', { class: 'btn btn-sec', href: '#/professor' }, 'Montar uma aula para minha turma') : null);
   desenhar();
 }

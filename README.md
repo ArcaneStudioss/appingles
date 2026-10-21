@@ -5,15 +5,17 @@ Plataforma de inglês por assinatura para crianças, adolescentes e adultos, com
 ## Experiência por idade e papel
 
 - Cadastro com idade e escolha entre aluno e professor. Contas existentes informam esses dados uma vez na entrada; alterações ficam em Conta. Faixas: crianças até 12 anos, adolescentes de 13 a 17, adultos a partir de 18. O cadastro de menores registra a confirmação de autorização do responsável.
+- Região do Brasil opcional no cadastro e na conta: Norte, Nordeste, Centro-Oeste, Sudeste e Sul, além de não informar ou morar fora do Brasil. A escolha é salva por conta, destaca o vocabulário regional e orienta o contexto do tutor, sem restringir outros exemplos nem usar geolocalização.
 - Navegação principal curta no celular e no computador: Hoje, Biblioteca, Progresso, Turmas e Mais. Professores têm Painel, Biblioteca, Conta e Mais. Os demais recursos ficam agrupados por finalidade em Mais, e turmas e aulas têm caminhos de volta visíveis. Cores, cartões, mascote e temas dia/noite mantêm a identidade do app.
 - Contextos diferentes na trilha, biblioteca, nivelamento e conversas. A idade não limita o nível alcançado. O tutor com IA recebe a orientação de público, além do nível e do objetivo.
 - Iniciantes começam com três expressões por vez e até cinco atividades em cerca de cinco minutos. Reconhecer vem antes de completar e escrever. Dicas, respostas explicadas, áudio e repetição funcionam sem IA.
 - Toque nas palavras sublinhadas em inglês para abrir a tradução acima delas. O dicionário funciona localmente, complementado pelo vocabulário do catálogo; palavras ainda não cobertas não recebem traduções inventadas. O significado contextual da frase aparece quando disponível. Os botões de seleção de resposta mantêm sua função original.
-- Biblioteca (`#/biblioteca`): nove capítulos, três por público, de A1 a B1, com 45 questões novas de vocabulário, leitura e aplicação. Há texto, tradução de apoio, áudio, explicação e cartões de revisão. Professores podem acrescentar seus conteúdos, inclusive de outros níveis.
+- Biblioteca (`#/biblioteca`): 15 capítulos, cinco por público, de A1 a B1, com 75 questões de vocabulário, leitura e aplicação. Há texto, tradução de apoio, áudio, explicação e cartões de revisão. Professores podem acrescentar seus conteúdos, inclusive de outros níveis.
+- Do Brasil pro mundo (`#/brasil`): 24 fichas com nomes regionais, gírias de internet e ditados; equivalentes, exemplos, contexto, registro, áudio e fontes. Busca por aliases (bergamota, mexerica, tangerina) e destaque das cinco regiões. Adolescentes começam pelos chats; crianças, pelos jeitos do Brasil. Seis capítulos da biblioteca praticam esses conteúdos em 30 questões. O tradutor entende expressões inteiras, como no cap. Critérios e fontes em [docs/brasil-pro-mundo.md](docs/brasil-pro-mundo.md).
 - Área do professor (`#/professor`): criar turma com público e nível, filtrar questões por assunto, tipo e nível, usar capítulos como modelo, escrever interpretação de texto e vocabulário, acrescentar material de estudo, conferir a prévia e publicar a aula. É possível reutilizar uma aula em outra turma sem copiar respostas.
 - Área do aluno (`#/turmas`): entrar por código, estudar o material do professor, responder uma questão por vez, consultar o conteúdo e rever respostas e explicações. A primeira tentativa fica registrada; novas tentativas de prática não duplicam notas nem progresso.
 
-Migração 7 apenas acrescenta colunas e a tabela `biblioteca_progressos`; preserva contas, assinaturas, turmas e histórico. O progresso novo entra na exportação e exclusão de dados. Os preços e o processamento de pagamentos permanecem sob o módulo de assinatura existente.
+As migrações 7 e 8 apenas acrescentam colunas e a tabela `biblioteca_progressos`; preservam contas, assinaturas, turmas e histórico. O progresso novo e a região declarada entram na exportação e exclusão de dados. Os preços e o processamento de pagamentos permanecem sob o módulo de assinatura existente.
 
 Proposta original, personalização e custos de IA: **[docs/PROPOSTA.md](docs/PROPOSTA.md)**.
 
@@ -24,7 +26,7 @@ Requisitos: Node 22.13 ou mais novo (usa o SQLite nativo `node:sqlite`). Uma ún
 ```bash
 npm ci
 npm run dev          # http://localhost:8080 (pagamento simulado, para testar a assinatura)
-npm test             # 62 testes: segurança, personalização, turmas e aprendizagem guiada
+npm test             # 66 testes: segurança, turmas, aprendizagem guiada e equivalências culturais
 ```
 
 Sem `ANTHROPIC_API_KEY` o app funciona inteiro no **modo de prática**: conversa por roteiro do cenário, correção por regras (14 erros típicos de brasileiros), tutor que responde pelos pontos do catálogo. Com a chave, entram a conversa livre, a correção detalhada, os exercícios escritos com a situação do aluno e o processamento de materiais. Para testar os caminhos com IA sem gastar: `IA_FAKE=1` (só fora de produção).

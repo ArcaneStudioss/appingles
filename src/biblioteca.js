@@ -5,6 +5,8 @@ const { publicoDe } = require('./motor/publico');
 const { paraCliente } = require('./motor/licao');
 const { corrigirExercicio } = require('./motor/correcao');
 const { ErroHttp } = require('./http');
+const cultura = require('./conteudo/brasil-mundo');
+const termosDe = u => (u.cultura || []).flatMap(id => cultura.POR_EXPRESSAO[id].aliases);
 
 function registrar({ rota, q, V, lerJson, perfilDe, exigirAcessoCompleto, hojeDe, agoraISO, registrarTentativa, criarCartao, somarMinutos, transacao, db }) {
   const acessar = (id, uid) => {
@@ -13,20 +15,26 @@ function registrar({ rota, q, V, lerJson, perfilDe, exigirAcessoCompleto, hojeDe
     exigirAcessoCompleto(uid, hojeDe(uid));
     return u;
   };
-  rota('GET', '/dicionario', () => ({ palavras: Object.fromEntries([...MISSOES, ...UNIDADES].flatMap(u => u.vocab).filter(v => /^[A-Za-z]+$/.test(v.en)).map(v => [v.en.toLowerCase(), v.pt])) }), { publica: true });
+  rota('GET', '/dicionario', () => ({ palavras: Object.fromEntries([...MISSOES, ...UNIDADES].flatMap(u => u.vocab).filter(v => /^[A-Za-z]+$/.test(v.en)).map(v => [v.en.toLowerCase(), v.pt])), expressoes: cultura.dicionarioCultural() }), { publica: true });
+  rota('GET', '/brasil-mundo', ctx => {
+    const p = perfilDe(ctx.u.id), publico = publicoDe(p), professor = p.papel === 'professor';
+    return { publico, regioes: cultura.REGIOES, categorias: cultura.CATEGORIAS, revisadoEm: cultura.revisadoEm,
+      expressoes: cultura.EXPRESSOES.filter(e => professor || e.faixas.includes(publico.id)),
+      capitulos: UNIDADES.filter(u => u.colecao === 'brasil-mundo' && (professor || u.faixa === publico.id)).map(u => ({ id: u.id, titulo: u.titulo, faixa: u.faixa, nivel: u.nivel, cultura: u.cultura })) };
+  });
   rota('GET', '/biblioteca', ctx => {
     const uid = ctx.u.id, p = perfilDe(uid), publico = publicoDe(p);
     const progresso = new Map(q('SELECT * FROM biblioteca_progressos WHERE user_id = ?').all(uid).map(r => [r.unidade_id, r]));
     return { publico, unidades: UNIDADES.filter(u => p.papel === 'professor' || u.faixa === publico.id).map(u => {
       const r = progresso.get(u.id), feitas = Object.keys(lerJson(r?.respondidos, {})).length;
-      return { id: u.id, titulo: u.titulo, tema: u.tema, faixa: u.faixa, nivel: u.nivel, imagem: u.imagem, palavras: u.vocab.length, total: u.exercicios.length, feitas, concluida: !!r?.concluido_em };
+      return { id: u.id, titulo: u.titulo, tema: u.tema, faixa: u.faixa, nivel: u.nivel, imagem: u.imagem, colecao: u.colecao || null, termos: termosDe(u), palavras: u.vocab.length, total: u.exercicios.length, feitas, concluida: !!r?.concluido_em };
     }) };
   });
   rota('GET', '/biblioteca/:id', ctx => {
     const uid = ctx.u.id, u = acessar(ctx.params.id, uid);
     const r = q('SELECT * FROM biblioteca_progressos WHERE user_id = ? AND unidade_id = ?').get(uid, u.id);
     const itens = paraCliente({ blocos: [{ exercicios: u.exercicios }] }, `biblioteca:${uid}:${u.id}`).blocos[0].exercicios;
-    return { unidade: { id: u.id, titulo: u.titulo, tema: u.tema, faixa: u.faixa, nivel: u.nivel, imagem: u.imagem, explicacao: u.explicacao, texto: u.texto, traducao: u.traducao, vocab: u.vocab }, itens, respondidos: lerJson(r?.respondidos, {}), concluida: !!r?.concluido_em };
+    return { unidade: { id: u.id, titulo: u.titulo, tema: u.tema, faixa: u.faixa, nivel: u.nivel, imagem: u.imagem, colecao: u.colecao || null, cultura: (u.cultura || []).map(id => ({ id, titulo: cultura.POR_EXPRESSAO[id].titulo })), explicacao: u.explicacao, texto: u.texto, traducao: u.traducao, vocab: u.vocab }, itens, respondidos: lerJson(r?.respondidos, {}), concluida: !!r?.concluido_em };
   });
   rota('POST', '/biblioteca/:id/responder', ctx => {
     const uid = ctx.u.id, h = hojeDe(uid), u = acessar(ctx.params.id, uid), b = ctx.corpo;

@@ -25,6 +25,7 @@ import { agendarAviso } from './lembrete.js?v=__V__';
 import { iniciarTraducoes } from './traducao.js?v=__V__';
 import { telaPublico } from './telas/publico.js?v=__V__';
 import { telaBiblioteca, telaUnidade } from './telas/biblioteca.js?v=__V__';
+import { telaBrasil } from './telas/brasil.js?v=__V__';
 
 const palco = document.getElementById('conteudo');
 const nav = document.querySelector('.nav');
@@ -74,6 +75,7 @@ btnMais?.addEventListener('click', () => {
 });
 
 const ROTAS = {
+  brasil: telaBrasil,
   biblioteca: telaBiblioteca, unidade: telaUnidade,
   publico: telaPublico, professor: telaTurmas,
   entrar: telaEntrar, perfil: telaPerfil, nivelamento: telaNivelamento, hoje: telaHoje, plano: telaPlano,
@@ -127,7 +129,7 @@ async function render() {
     const passo = estado.eu.passo;
     if (!estado.eu.publico?.informado && rota !== 'publico') { location.hash = '#/publico'; return; }
     if (rota === 'hoje' && estado.eu.perfil?.papel === 'professor') { location.hash = '#/professor'; return; }
-    const TURMA_LIVRE = ['publico', 'professor', 'conta', 'biblioteca', 'unidade', 'turmas', 'turma', 'minhaturma', 'atividade'].includes(rota);
+    const TURMA_LIVRE = ['publico', 'professor', 'conta', 'biblioteca', 'brasil', 'unidade', 'turmas', 'turma', 'minhaturma', 'atividade'].includes(rota);
     if (passo === 'perfil' && rota !== 'perfil' && !TURMA_LIVRE) { location.hash = '#/perfil'; return; }
     if (passo === 'nivelamento' && !['perfil', 'nivelamento'].includes(rota) && !TURMA_LIVRE) { location.hash = '#/nivelamento'; return; }
     if (passo === 'app' && localStorageGet('turma-pendente') && rota !== 'turmas') { location.hash = '#/turmas'; return; }
@@ -136,7 +138,7 @@ async function render() {
   nav.hidden = !estado.eu || ONBOARDING.has(rota) || LIVRES.has(rota) || editandoAula || ['licao', 'unidade', 'simulado', 'treino', 'atividade'].includes(rota);
   document.body.classList.toggle('foco-total', editandoAula || ['licao', 'unidade', 'nivelamento', 'simulado', 'treino', 'atividade'].includes(rota));
   for (const a of nav.querySelectorAll('a')) {
-    const pai = ['unidade', 'biblioteca'].includes(rota) ? 'biblioteca' : ['turma', 'professor'].includes(rota) ? 'professor' : ['minhaturma', 'atividade'].includes(rota) ? 'turmas' : nome;
+    const pai = ['unidade', 'biblioteca', 'brasil'].includes(rota) ? 'biblioteca' : ['turma', 'professor'].includes(rota) ? 'professor' : ['minhaturma', 'atividade'].includes(rota) ? 'turmas' : nome;
     const ativo = !a.hidden && a.dataset.rota === pai;
     a.toggleAttribute('aria-current', ativo); if (ativo) a.setAttribute('aria-current', 'page');
   }

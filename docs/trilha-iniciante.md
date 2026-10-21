@@ -29,7 +29,7 @@ O nivelamento preserva a dificuldade das estruturas e adapta os textos e situaç
 
 ## Biblioteca e turmas
 
-A biblioteca inicial tem nove capítulos, de A1 a B1, com vocabulário, leitura, tradução de apoio e 45 questões. O professor pode usar esses capítulos como modelo ou escrever outros conteúdos e níveis.
+A biblioteca tem 15 capítulos, de A1 a B1, com vocabulário, leitura, tradução de apoio e 75 questões. Seis capítulos trabalham a proposta Do Brasil pro mundo: nomes regionais, conversas na internet e ditados com equivalência de contexto. O professor pode usar esses capítulos como modelo ou escrever outros conteúdos e níveis. As 24 fichas culturais, seus critérios e fontes são descritos em [brasil-pro-mundo.md](brasil-pro-mundo.md).
 
 Uma aula da turma pode incluir explicação, palavras, texto em inglês, tradução e questões. O professor filtra o banco por tema, público, nível e tipo; confere a prévia e publica para a turma. O aluno consulta o material durante a prática e revê as explicações no fim. Uma aula pode ser copiada para outra turma sem copiar as respostas dos alunos.
 

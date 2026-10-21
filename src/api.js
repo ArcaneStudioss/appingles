@@ -25,6 +25,7 @@ const estudoMotor = require('./motor/estudo');
 const APR = require('./motor/aprendizagem');
 const { respostaCerta: respostaDe } = require('./motor/correcao');
 const { publicoDe } = require('./motor/publico');
+const { REGIOES } = require('./conteudo/brasil-mundo');
 
 // ---------- validação ----------
 const V = {
@@ -234,6 +235,7 @@ function criar(db) {
     const nome = V.str(b.nome, 80, { min: 2, campo: 'Nome' });
     const idade = b.idade == null ? null : V.int(b.idade, 1, 120, 'Idade');
     const papel = b.papel == null ? 'aluno' : V.um(b.papel, ['aluno', 'professor'], 'Perfil de uso');
+    const regiao = b.regiao == null || b.regiao === '' ? null : V.um(b.regiao, [...Object.keys(REGIOES), 'fora'], 'Região do Brasil');
     if (idade !== null && idade < 18 && b.responsavel !== true) throw new ErroHttp(422, 'Para menores de 18 anos, confirme a autorização do responsável.');
     const email = V.email(b.email);
     if (typeof b.senha !== 'string') throw new ErroHttp(422, 'Senha inválida.');
@@ -247,7 +249,7 @@ function criar(db) {
       uid = transacao(db, () => {
         const r = q('INSERT INTO usuarios (email, nome, senha_hash, criado_em, consentiu_em) VALUES (?, ?, ?, ?, ?)').run(email, nome, hash, agoraISO(), agoraISO());
         const id = Number(r.lastInsertRowid);
-        q('INSERT INTO perfis (user_id, idade, papel, responsavel_em, atualizado_em) VALUES (?, ?, ?, ?, ?)').run(id, idade, papel, idade !== null && idade < 18 ? agoraISO() : null, agoraISO());
+        q('INSERT INTO perfis (user_id, idade, papel, regiao, responsavel_em, atualizado_em) VALUES (?, ?, ?, ?, ?, ?)').run(id, idade, papel, regiao, idade !== null && idade < 18 ? agoraISO() : null, agoraISO());
         salvarAssinatura(id, assin.novaAssinatura(h));
         return id;
       });
@@ -315,12 +317,20 @@ function criar(db) {
     const antes = perfilDe(uid);
     const idade = V.int(b.idade, 1, 120, 'Idade');
     const papel = V.um(b.papel || 'aluno', ['aluno', 'professor'], 'Perfil de uso');
+    const regiao = !Object.hasOwn(b, 'regiao') ? antes.regiao : b.regiao == null || b.regiao === '' ? null : V.um(b.regiao, [...Object.keys(REGIOES), 'fora'], 'Região do Brasil');
     if (idade < 18 && b.responsavel !== true && !perfilDe(uid).responsavel_em) throw new ErroHttp(422, 'Confirme a autorização do responsável.');
-    q('UPDATE perfis SET idade = ?, papel = ?, responsavel_em = COALESCE(responsavel_em, ?), atualizado_em = ? WHERE user_id = ?').run(idade, papel, idade < 18 ? agoraISO() : null, agoraISO(), uid);
+    q('UPDATE perfis SET idade = ?, papel = ?, regiao = ?, responsavel_em = COALESCE(responsavel_em, ?), atualizado_em = ? WHERE user_id = ?').run(idade, papel, regiao ?? null, idade < 18 ? agoraISO() : null, agoraISO(), uid);
     // Apenas aulas sem respostas são refeitas; o histórico e as assinaturas são preservados.
     q("DELETE FROM licoes WHERE user_id = ? AND status = 'aberta' AND respondidos = '{}'").run(uid);
     if (antes.objetivo && nivelamentoDe(uid) && publicoDe(antes).id !== publicoDe({ idade }).id) gerarPlano(uid, hojeDe(uid));
-    return { ok: true, publico: publicoDe({ idade }) };
+    return { ok: true, publico: publicoDe({ idade, regiao }) };
+  });
+
+  rota('PUT', '/perfil/regiao', ctx => {
+    if (!Object.hasOwn(ctx.corpo, 'regiao')) throw new ErroHttp(422, 'Informe uma região ou escolha não informar.');
+    const regiao = ctx.corpo.regiao == null || ctx.corpo.regiao === '' ? null : V.um(ctx.corpo.regiao, [...Object.keys(REGIOES), 'fora'], 'Região do Brasil');
+    q('UPDATE perfis SET regiao = ?, atualizado_em = ? WHERE user_id = ?').run(regiao, agoraISO(), ctx.u.id);
+    return { ok: true, publico: publicoDe(perfilDe(ctx.u.id)) };
   });
 
   rota('PUT', '/perfil', (ctx) => {

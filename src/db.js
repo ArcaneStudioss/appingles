@@ -157,6 +157,8 @@ const MIGRACOES = [
      unidade_id TEXT NOT NULL, respondidos TEXT NOT NULL DEFAULT '{}', concluido_em TEXT,
      PRIMARY KEY(user_id, unidade_id)
    );`,
+  // 8: região declarada opcional; não usa geolocalização e preserva perfis existentes.
+  `ALTER TABLE perfis ADD COLUMN regiao TEXT CHECK (regiao IS NULL OR regiao IN ('norte','nordeste','centro-oeste','sudeste','sul','fora'));`,
 ];
 
 function abrir(dir) {
