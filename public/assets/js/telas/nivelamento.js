@@ -33,7 +33,7 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
   const mostrar = (...nos) => { teclaAtual = null; pararVoz(); topo.hidden = true; palco.replaceChildren(...nos); };
 
   // quem escolheu "Começar do zero" no perfil não precisa de teste: o caminho sem teste vira o botão principal
-  const doZero = estado?.eu?.perfil?.objetivo === 'zero' && !anterior;
+  const doZero = (estado?.eu?.perfil?.objetivo === 'zero' || estado?.eu?.publico?.id === 'crianca') && !anterior;
 
   function intro() {
     const botaoTeste = h('button', { type: 'button', class: doZero ? 'btn btn-texto btn-bloco' : 'btn btn-bloco', on: { click: () => { i = 0; som('comecar'); pergunta(); } } }, doZero ? 'Já sei um pouco: fazer o teste' : 'Começar', doZero ? null : icone('arrow-right'));
@@ -42,8 +42,8 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
       louFala('pensando', h('p', {}, anterior ? 'Refazendo o teste? Ótimo para ver a evolução.' : doZero ? 'Você disse que está começando. Então nada de teste: vamos direto ao primeiro passo!' : 'Antes de montar o plano, quero tirar um retrato de agora. Sem pressão!')),
       h('h1', {}, doZero ? 'Vamos começar?' : 'Teste de nível'),
       doZero ? h('ul', { class: 'lista-check' },
-        h('li', {}, 'Começamos pelos sons e cumprimentos, bem devagar, com muito áudio.'),
-        h('li', {}, 'Lições de uns 10 minutos, com explicação em português.'),
+        h('li', {}, 'Começamos com olá, tchau e obrigado. Só três expressões!'),
+        h('li', {}, 'Aulas de uns 5 minutos, com jogos, áudio e tradução.'),
         h('li', {}, 'Se ficar fácil demais, o app percebe e ajusta o ritmo.'))
       : h('ul', { class: 'lista-check' },
         h('li', {}, `${itens.length} perguntas rápidas de gramática, vocabulário, leitura e escuta (uns 8 minutos).`),
@@ -52,8 +52,8 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
         h('li', {}, 'O resultado é uma estimativa para montar o plano, não um certificado.')),
       doZero ? null : h('div', { class: 'folha teste-audio' },
         h('p', {}, 'As perguntas de escuta usam a voz do Tuiuiú. Teste o som:'),
-        caixaEscuta('Hello! Can you hear me well?', { velocidade: 0.95, simples: true }),
-        temVoz() ? null : h('p', { class: 'ajuda' }, 'Se não ouvir nada, confira o volume. Em alguns aparelhos a voz em inglês precisa ser instalada nas configurações.')),
+        h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => { if (!falar('Hello! Can you hear me well?', { velocidade: 0.95 })) return; } } }, icone('speaker-high'), 'Testar áudio'),
+        temVoz() ? null : h('p', { class: 'ajuda' }, 'Se o áudio não tocar, confira o volume e tente ouvir novamente.')),
       ...(doZero ? [botaoZero, botaoTeste] : [botaoTeste, anterior ? null : botaoZero]));
   }
 
@@ -137,7 +137,7 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
     try {
       const r = await api('/nivelamento', { metodo: 'POST', corpo: { nunca: true } });
       await carregarEu();
-      resultado(r.resultado, r.plano);
+      if (doZero) ir('#/licao'); else resultado(r.resultado, r.plano);
     } catch (e) { toast(e.message, { tipo: 'erro' }); intro(); }
   }
 

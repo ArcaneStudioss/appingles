@@ -226,6 +226,7 @@ body.foco-total .topo-app{display:none}
 
 /* navegação: doca no celular, cada aba com a cor da sua atividade */
 .nav{position:fixed;left:.6rem;right:.6rem;bottom:calc(.6rem + env(safe-area-inset-bottom));z-index:60;display:grid;grid-template-columns:repeat(5,1fr);gap:.2rem;padding:.35rem;background:var(--cartao);border:2px solid var(--borda);border-radius:24px;box-shadow:var(--sombra-alta)}
+body[data-papel="professor"] .nav{grid-template-columns:repeat(4,1fr)}
 .nav a{display:flex;flex-direction:column;align-items:center;gap:.1rem;padding:.3rem .1rem;color:var(--tinta-2);text-decoration:none;font-size:.76rem;font-weight:800;min-height:58px;justify-content:center;border-radius:18px;position:relative}
 .nav a .nav__ico{display:grid;place-items:center;width:42px;height:32px;border-radius:12px;transition:transform .3s var(--mola),background .2s,color .2s}
 .nav a .ico{width:1.55rem;height:1.55rem}
@@ -243,6 +244,12 @@ body.foco-total .topo-app{display:none}
 /* janela "Mais": cartões grandes, um por recurso */
 .janela__corpo:has(.mais-lista){max-height:76dvh}
 .mais-lista{display:grid;gap:.5rem;margin:0;padding:0;list-style:none}
+.mais-grupos{display:grid;gap:1.25rem}
+.mais-grupo h3{margin:0 0 .5rem;font-size:.92rem;color:var(--tinta-2);font-family:var(--f-texto);font-weight:800}
+.caminho-volta{display:flex;align-items:center;flex-wrap:wrap;gap:.45rem;font-size:.88rem;color:var(--tinta-2);margin-bottom:1rem}
+.caminho-volta a{display:inline-flex;align-items:center;gap:.3rem;min-height:36px;font-weight:800;text-decoration:none}
+.caminho-volta a:hover{text-decoration:underline}
+.caminho-volta .ico{width:1rem;height:1rem}
 .mais-item{display:flex;align-items:center;gap:.8rem;padding:.55rem .75rem;min-height:60px;border-radius:var(--raio);background:var(--c-fundo);border:2px solid color-mix(in srgb,var(--c) 30%,transparent);text-decoration:none;color:var(--tinta)}
 .mais-item .bolha{flex:none}
 .mais-item strong{display:block;font-family:var(--f-titulo);font-weight:600;color:var(--c-forte);line-height:1.15}
@@ -826,22 +833,12 @@ body.foco-total .ui-toasts{bottom:calc(150px + env(safe-area-inset-bottom))}
   .topo-app__fim{order:3;margin-top:auto;justify-content:space-between;padding:.6rem .5rem 0;border-top:2px dashed var(--borda)}
   .topo-app__fim::before{content:attr(data-rotulo);font-weight:800;color:var(--tinta-2);font-size:.9rem}
   .logo{padding-left:.5rem;font-size:1.9rem}
-  .nav{position:static;display:grid;grid-template-columns:1fr;gap:.3rem;background:none;border:0;box-shadow:none;padding:0;border-radius:0}
-  .nav a{flex-direction:row;justify-content:flex-start;gap:.75rem;padding:.45rem .55rem;font-size:1.02rem;min-height:56px;border-radius:16px;color:var(--tinta)}
-  .nav a .nav__ico{width:42px;height:42px;background:var(--c-fundo);color:var(--c-forte)}
-  @media (hover:hover){.nav a:hover{background:var(--cartao-2)}}
-  .nav a[aria-current]{background:var(--c-fundo);color:var(--c-forte)}
-  .nav a[aria-current] .nav__ico{transform:none}
-  .nav .so-pc{display:flex!important}
-  .nav .nav__grupo.so-pc{display:block!important;margin:.9rem 0 .15rem;padding:0 .6rem;font-size:.72rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--tinta-2);opacity:.8}
-  .nav .nav__grupo:first-child{margin-top:0}
-  .nav{min-height:0;overflow-y:auto;scrollbar-width:thin}
-  @media (max-height:860px){.nav{gap:.1rem}.nav a{min-height:40px;padding-block:.1rem;font-size:.98rem}.nav a .nav__ico{width:32px;height:32px}.nav .nav__grupo.so-pc{margin-top:.5rem}.topo-app{gap:.7rem;padding-top:1.2rem}}
-  /* no PC o trilho já leva a tudo: os atalhos da Hoje só aparecem quando trazem aviso (sugestão ou pendência) */
-  .atalho:not(.atalho--vivo){display:none}
-  .atalhos:not(:has(.atalho--vivo)){display:none}
-  .atalhos{grid-template-columns:1fr}
-  .nav .so-cel{display:none!important}
+  .nav,body[data-papel="professor"] .nav{position:static;display:grid;grid-template-columns:1fr;gap:.3rem;background:none;border:0;box-shadow:none;padding:0;border-radius:0}
+  .nav a,.nav .nav__mais{flex-direction:row;justify-content:flex-start;gap:.75rem;padding:.45rem .55rem;font-size:1.02rem;min-height:56px;border-radius:16px;color:var(--tinta)}
+  .nav a .nav__ico,.nav .nav__mais .nav__ico{width:42px;height:42px;background:var(--c-fundo);color:var(--c-forte)}
+  @media (hover:hover){.nav a:hover,.nav .nav__mais:hover{background:var(--cartao-2)}}
+  .nav a[aria-current],.nav .nav__mais[aria-current]{background:var(--c-fundo);color:var(--c-forte)}
+  .nav a[aria-current] .nav__ico,.nav .nav__mais[aria-current] .nav__ico{transform:none}
   body.foco-total .topo-app{display:none}
   .palco{max-width:1180px;padding:2.2rem 2.6rem 3rem}
   body.foco-total .palco{max-width:760px}
@@ -1093,6 +1090,143 @@ a.turma-item:hover,a.turma-item:focus-visible{border-color:var(--c-forte)}
 .banco-item{display:flex;gap:.6rem;align-items:flex-start;padding:.4rem 0;font-weight:600}
 .banco-item input{margin-top:.25rem}
 .campo-copiar{width:100%}
+
+/* Aprendizado guiado: uma palavra por tela, pedidos curtos e retorno que cabe no celular. */
+.licao-apoio{display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap}
+.licao-contador{margin:0;font-size:.88rem;font-weight:800;color:var(--tinta-2)}
+.licao-apoio .btn{white-space:normal}
+.como-aprender{display:grid;gap:.8rem;list-style:none;padding:0;margin:0}
+.como-aprender li{display:flex;align-items:center;gap:.8rem;padding:.8rem 1rem;border-radius:var(--raio-p);background:var(--cartao);border:2px solid var(--borda)}
+.como-aprender .ico{color:var(--azul);width:1.6rem;height:1.6rem}
+.palavra-nova{display:grid;justify-items:center;text-align:center;gap:.8rem;padding:1.5rem 1rem;background:var(--cartao);border:2px solid var(--borda);border-radius:28px;box-shadow:0 6px 0 var(--borda)}
+.palavra-nova h1{font-size:clamp(2.4rem,9vw,3.5rem);color:var(--azul-forte)}
+.palavra-nova p{margin:0}
+.palavra-nova__imagem{display:grid;place-items:center;min-width:100px;min-height:100px;font-size:4rem;background:var(--sol-fundo);border-radius:30px}
+.palavra-nova__significado{font-size:1.35rem;font-weight:800}
+.palavra-nova .linha-acoes{justify-content:center}
+.palavra-nova .btn{white-space:normal}
+.palavra-nova__exemplo{width:100%;display:grid;gap:.4rem;margin-top:.5rem;padding:1rem;border-radius:var(--raio-p);background:var(--azul-fundo)}
+.exercicio__cena{font-size:3.6rem;line-height:1.2;justify-self:start;min-width:90px;text-align:center;background:var(--sol-fundo);border-radius:24px;padding:.5rem}
+.instrucao{margin:0;color:var(--tinta-2);font-size:.96rem}
+.exercicio .btn-ouvir-grande{flex-direction:column;gap:.15rem;font-size:1rem}
+.banco-palavras{display:flex;justify-content:center;flex-wrap:wrap;gap:.6rem}
+.pares-cabecalho{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;color:var(--tinta-2);font-size:.85rem;font-weight:800;text-align:center}
+.retorno-par{margin:0;padding:.7rem .9rem;background:var(--sol-fundo);border-radius:var(--raio-p);font-weight:800}
+.retorno-par:empty{display:none}
+.ajudas-exercicio{display:grid;gap:.7rem;margin-top:.25rem}
+.ajuda-exercicio{background:var(--sol-fundo);border:2px solid color-mix(in srgb,var(--sol) 65%,var(--borda));border-radius:var(--raio-p);padding:.85rem 1rem;text-align:left;min-width:0}
+.ajuda-exercicio summary{cursor:pointer;font-weight:800;color:var(--sol-forte);min-height:28px;line-height:1.4}
+.ajuda-exercicio[open] summary{margin-bottom:.7rem}
+.ajuda-exercicio p{margin:.5rem 0 0}
+.apoio-palavra{display:flex;align-items:center;justify-content:space-between;gap:.7rem}
+.ajuda-resposta{justify-self:start;white-space:normal;text-align:left}
+.retorno-exercicio{padding:1rem;border-radius:var(--raio);border:2px solid var(--coral);background:var(--coral-fundo);scroll-margin-top:6rem;overflow-wrap:anywhere}
+.retorno-exercicio--certo{border-color:var(--menta);background:var(--menta-fundo)}
+.retorno-exercicio .folha-resposta__texto{flex:1;gap:.8rem}
+.retorno-exercicio--aprender .folha-resposta__titulo{color:var(--coral-forte)}
+.resposta-anterior{font-size:.9rem;color:var(--tinta-2)}
+.resposta-modelo{background:var(--cartao);border-radius:var(--raio-p);padding:.8rem 1rem;display:grid;gap:.3rem}
+.resposta-modelo__texto{font-size:1.3rem;font-weight:900;color:var(--menta-forte)}
+.resposta-modelo__pt{font-size:.98rem;color:var(--tinta-2)}
+.explicacao-resposta h4{font-size:1.1rem;margin-bottom:.4rem}
+.retorno-exercicio__acoes .btn{white-space:normal;text-align:left;min-height:44px}
+.resposta-pares{list-style:none;padding:0;margin:0;display:grid;gap:.4rem}
+.resposta-pares li{display:grid;grid-template-columns:1fr 1fr auto;align-items:center;gap:.5rem;border-bottom:1px solid var(--borda);padding:.4rem 0}
+.relembre-aula{width:100%;text-align:left;background:var(--cartao);border:2px solid var(--borda);border-radius:var(--raio);padding:1rem}
+.resumo-resposta{display:grid;gap:.4rem;padding:.8rem 0;border-top:1px solid var(--borda);overflow-wrap:anywhere}
+.passo--fim>.ajuda-exercicio{width:100%}
+.outras-atividades{background:var(--cartao);border:2px solid var(--borda);border-radius:var(--raio);padding:1rem;min-width:0}
+.outras-atividades>summary{cursor:pointer;font-weight:800;color:var(--azul-forte);line-height:1.4}
+.outras-atividades[open]>summary{margin-bottom:1rem}
+.outras-atividades__conteudo{display:grid;gap:1rem}
+.hoje--guiada{max-width:760px;margin-inline:auto;width:100%}
+.hoje--guiada .hoje__col--lado{position:static}
+@media(min-width:960px){.hoje--guiada{grid-template-columns:1fr}.hoje--guiada .album__paginas{grid-auto-flow:column;grid-auto-columns:minmax(260px,80%);overflow-x:auto}}
+@media(max-width:440px){.retorno-exercicio{gap:.4rem;padding:.8rem}.retorno-exercicio .folha-resposta__lou{display:none}.palavra-nova{padding:1.1rem .8rem}.retorno-exercicio__acoes{gap:.5rem}.resposta-pares li{grid-template-columns:1fr auto}.resposta-pares li span{grid-column:1}.resposta-pares li .btn-icone{grid-column:2;grid-row:span 2}}
+
+/* Leitura assistida: toque na palavra e o significado aparece acima dela. */
+.palavra-traduzivel{display:inline;appearance:none;font:inherit;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;background:none;border:0;border-bottom:2px dotted color-mix(in srgb,currentColor 42%,transparent);border-radius:3px;padding:0 .03em;cursor:pointer;text-align:inherit;box-decoration-break:clone;max-width:100%;white-space:normal;overflow-wrap:anywhere;vertical-align:baseline}
+.palavra-traduzivel:hover,.palavra-traduzivel[aria-expanded="true"]{background:var(--sol-fundo);color:var(--sol-forte);border-bottom-color:var(--sol-sombra)}
+.traducao-balao{position:fixed;z-index:500;display:grid;gap:.3rem;width:max-content;max-width:min(290px,calc(100vw - 24px));padding:.85rem 1rem;border:2px solid var(--sol);border-radius:16px;box-shadow:var(--sombra-alta);background:var(--tinta);color:var(--cartao);font:700 1rem/1.4 var(--f-texto);overflow-wrap:anywhere;text-align:left;pointer-events:none}
+.traducao-balao strong{font-size:1.12rem}
+.traducao-balao small{display:block;margin-top:.25rem;padding-top:.4rem;border-top:1px solid currentColor;font-size:.85rem;font-weight:600}
+.traducao-balao::after{content:"";position:absolute;left:var(--seta);width:12px;height:12px;background:var(--tinta);border-right:2px solid var(--sol);border-bottom:2px solid var(--sol);transform:translateX(-50%) rotate(45deg)}
+.traducao-balao[data-lado="acima"]::after{bottom:-8px}
+.traducao-balao[data-lado="abaixo"]::after{top:-8px;transform:translateX(-50%) rotate(225deg)}
+
+/* Cada fase tem o próprio tom visual; o nível do conteúdo é independente da idade. */
+body[data-publico="adulto"]{--f-titulo:"Nunito",system-ui,sans-serif;--ceu:none;--raio:16px;--raio-p:11px;--mola:cubic-bezier(.22,1,.36,1);font-weight:500}
+body[data-publico="adolescente"]{--f-titulo:"Nunito",system-ui,sans-serif;--ceu:none;--raio:18px;--raio-p:13px}
+body[data-publico="adulto"] .palavra-nova__imagem,body[data-publico="adulto"] .exercicio__cena,body[data-publico="adulto"] .folha-resposta__lou,body[data-publico="adulto"] .confete{display:none}
+body[data-publico="adulto"] .aula__pacote{display:none}
+body[data-publico="adulto"] .lou-fala>.lou{max-width:52px;max-height:52px}
+body[data-publico="adulto"] .passo--fim>.lou{max-width:72px;max-height:72px}
+body[data-publico="adulto"] .figurinha--hoje,body[data-publico="adulto"] .exercicio .btn-ouvir-grande{animation:none}
+.campos-publico{display:grid;gap:.8rem}
+.publico-previa{padding:.7rem .8rem;border-radius:var(--raio-p);background:var(--azul-fundo);color:var(--azul-forte);font-size:.9rem;margin:.4rem 0 0}
+.areas-uso{display:flex;flex-wrap:wrap;gap:.6rem}
+.areas-uso .btn{flex:1;white-space:normal}
+.biblioteca-filtros{display:flex;flex-wrap:wrap;gap:.7rem;margin:.75rem 0 1rem;align-items:end}
+.biblioteca-filtros>input{flex:2 1 240px;min-width:0}
+.biblioteca-filtros>select,.biblioteca-filtros>label{flex:1 1 145px;min-width:0}
+.biblioteca-filtros label{display:grid;gap:.4rem;font-weight:800}
+.biblioteca-grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));gap:1rem}
+.capitulo-card{display:grid;align-content:start;gap:.8rem;padding:1.2rem;border:2px solid var(--borda);border-radius:var(--raio);background:var(--cartao);box-shadow:0 5px 0 var(--borda)}
+.capitulo-card p{margin:0;color:var(--tinta-2)}
+.capitulo-card h2{margin:0;font-size:1.3rem}
+.capitulo-card .btn{margin-top:.4rem;white-space:normal}
+.capitulo-card__imagem{font-size:2.8rem;line-height:1.3;justify-self:start}
+body[data-publico="adulto"] .capitulo-card__imagem{font-size:1.8rem}
+.material-aula{display:grid;gap:1rem;min-width:0}
+.material-aula:empty{display:none}
+.material-aula .texto-leitura{line-height:1.9;margin:.8rem 0;font-size:1.1rem}
+.vocabulario-aula{list-style:none;padding:0;margin:0;display:grid;gap:.7rem}
+.vocabulario-aula li{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.7rem .9rem;border-radius:var(--raio-p);background:var(--azul-fundo)}
+.vocabulario-aula strong{font-size:1.15rem;color:var(--azul-forte)}
+.vocabulario-aula p{margin:.3rem 0 0;color:var(--tinta-2)}
+.editor-acoes{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+.editor-acoes .btn{white-space:normal;min-height:52px}
+.previa-aula{display:grid;gap:1rem}
+.previa-aula>.folha>summary,.respostas-da-aula>summary{font-weight:800;cursor:pointer;padding:.4rem 0}
+.previa-aula .exercicio{margin-top:1rem}
+.banco-missao>.linha-acoes{margin:.6rem 0}
+@media(max-width:440px){.editor-acoes .btn{font-size:.9rem;padding-inline:.6rem}.biblioteca-filtros>select{flex-basis:100%}}
+
+/* Do Brasil pro mundo: nomes locais, intenção e contexto antes da tradução. */
+.brasil-convite{display:flex;align-items:center;gap:.85rem;padding:1rem;border:2px solid var(--turquesa);border-radius:var(--raio);background:var(--turquesa-fundo);color:var(--tinta);text-decoration:none;margin:.5rem 0 1rem}
+.brasil-convite>.bolha,.brasil-convite>.ico{flex:none}
+.brasil-convite>span:not(.bolha){flex:1;min-width:0}
+.brasil-convite strong,.brasil-convite small{display:block}
+.brasil-convite strong{color:var(--turquesa-forte);font-size:1.15rem}
+.brasil-convite small{color:var(--tinta-2);line-height:1.4}
+.cultura-aviso{padding:.8rem 1rem;background:var(--cartao-2);border-radius:var(--raio-p);font-size:.92rem;color:var(--tinta-2)}
+.cultura-grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:1rem;align-items:start}
+.cultura-ficha{margin:0;min-width:0;scroll-margin-top:1rem;overflow-wrap:anywhere}
+.cultura-ficha h2{font-size:1.3rem;margin:.7rem 0 .45rem}
+.cultura-ficha>p{margin:.35rem 0}
+.cultura-registro{font-size:.82rem;color:var(--turquesa-forte);font-weight:800}
+.cultura-ficha>details{margin-top:.8rem}
+.cultura-ficha summary{cursor:pointer;font-weight:800;padding:.4rem 0;color:var(--azul-forte)}
+.cultura-equivalentes{display:grid;gap:.8rem;margin-block:.8rem}
+.cultura-equivalente{padding:.8rem;border:1px solid var(--borda);border-radius:var(--raio-p);background:var(--cartao-2);min-width:0}
+.cultura-equivalente h3{font-size:1.12rem;margin:0;flex:1;min-width:0}
+.cultura-equivalente .btn-icone{flex:none}
+.cultura-equivalente p{margin:.4rem 0}
+.cultura-equivalente blockquote{margin:.65rem 0 .25rem;padding-left:.65rem;border-left:3px solid var(--turquesa);line-height:1.9}
+.cultura-sentido{font-weight:800}
+.cultura-contexto{padding:.8rem;background:var(--sol-fundo);border-radius:var(--raio-p);font-size:.95rem;margin-bottom:.8rem}
+.cultura-contexto p{margin:.4rem 0 0}
+.cultura-fontes{font-size:.85rem;margin-top:.7rem}
+.cultura-fontes ul{padding-left:1.2rem}
+.cultura-fontes a{overflow-wrap:anywhere}
+.cultura-pratica{margin-top:1.3rem}
+.cultura-pratica li{padding:.4rem 0}
+.cultura-consulta summary{cursor:pointer;font-weight:800}
+.audio-status{position:fixed;left:50%;bottom:calc(98px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:210;display:flex;align-items:center;justify-content:space-between;gap:.75rem;width:min(92vw,440px);padding:.5rem .8rem;background:var(--cartao);color:var(--tinta);border:2px solid var(--azul);border-radius:var(--raio-p);box-shadow:var(--sombra-alta);font-size:.92rem;font-weight:800}
+.audio-status .btn{min-height:38px;box-shadow:none;padding:.4rem .6rem}
+body.foco-total .audio-status{bottom:calc(150px + env(safe-area-inset-bottom))}
+@media(min-width:960px){.audio-status{bottom:24px}body.foco-total .audio-status{bottom:140px}}
+
 
 /* ---- diversão: combo, caça ao erro e oponente do debate ---- */
 .combo{display:inline-flex;align-items:center;gap:.25rem;padding:.25rem .65rem;border-radius:999px;background:var(--coral-fundo);color:var(--coral-forte);font-family:var(--f-titulo);font-weight:600;font-size:1.05rem;line-height:1;flex:none}

@@ -1,3 +1,4 @@
+import { tocarVoz, pararVoz as pararAudio } from './voz.js?v=__V__';
 // Interface: construtor de elementos SEGURO (só textContent, nunca HTML com dado do usuário),
 // ícones, janela (modal), confirmação e aviso no lugar de alert/confirm/prompt, áudio e microfone.
 
@@ -137,127 +138,36 @@ export function ocupado(btn, sim) {
   else { btn.disabled = false; btn.removeAttribute('aria-busy'); btn.querySelector('.carregando')?.remove(); }
 }
 
-// ---------- áudio (voz do próprio navegador) ----------
-let vozes = [];
-function carregarVozes() { vozes = (window.speechSynthesis?.getVoices() || []).filter(v => /^en(-|_|$)/i.test(v.lang)); }
-if ('speechSynthesis' in window) { carregarVozes(); speechSynthesis.addEventListener?.('voiceschanged', carregarVozes); }
-export const temVoz = () => 'speechSynthesis' in window && (vozes.length > 0 || speechSynthesis.getVoices().length > 0);
-// Escolhe a voz mais humana que o aparelho tem. As vozes do Google (Chrome/Android) são as mais robóticas e as mais comuns:
-// ficam por último. Antes delas: neurais/"naturais" (Microsoft Edge), Apple (Siri, Samantha, Daniel...) e outras do sistema.
-const BOA = /natural|neural|online|premium|enhanced|siri|aria|jenny|ava|emma|libby|sonia|samantha|serena|karen|daniel|moira|tessa|allison|zira|guy/i;
-const ROBO = /espeak|compact|festival|pico/i;
-const GOOGLE = /google/i;
-export const ehGoogle = v => GOOGLE.test(v.name) || GOOGLE.test(v.voiceURI || '');
-export const vozesEn = () => { carregarVozes(); return vozes.slice().sort((a, b) => notaVoz(b) - notaVoz(a) || a.name.localeCompare(b.name)); };
-function notaVoz(v) {
-  return (BOA.test(v.name) ? 10 : 0) + (ROBO.test(v.name) ? -20 : 0) + (ehGoogle(v) ? -14 : 0)
-    + (/en-US/i.test(v.lang) ? 3 : /en-GB/i.test(v.lang) ? 2 : 0) + (v.localService === false && !ehGoogle(v) ? 1 : 0);
+// ---------- áudio: somente as vozes oficiais da Mia e do Tuiuiú ----------
+export { pararVoz, temVoz } from './voz.js?v=__V__';
+export function falar(texto, { velocidade = 1, personagem, vozFem = false, aoFim } = {}) {
+  const voz = personagem || (vozFem ? 'mia' : null) || (localStorageGet('personagem-en') === 'tuiuiu' ? 'tuiuiu' : 'mia');
+  return tocarVoz(texto, { personagem: voz, idioma: 'en', velocidade: velocidade * (Number(localStorageGet('velocidade')) || 1), aoFim, aoCancelar: aoFim, aoErro: mensagem => { toast(mensagem, { tipo: 'erro' }); aoFim?.(); } });
 }
-export function melhorVoz(lista) { return lista.slice().sort((a, b) => notaVoz(b) - notaVoz(a))[0]; }
-// Voz do Tuiuiú: frases do conteúdo já vêm gravadas (mp3 gerado uma vez e guardado). O que não tem gravação cai na voz do aparelho.
-const PASTA_VOZ = '/assets/audio/tuiuiu/';
-let mapaVoz = null, tocandoVoz = null;
-// geração: cada pedido de fala ganha um número. Promessas de pedidos antigos (ex.: o play() interrompido por um clique novo) são ignoradas
-let geracaoVoz = 0;
-try { fetch(PASTA_VOZ + 'mapa.json?v=__V__').then(r => (r.ok ? r.json() : null)).then(j => { mapaVoz = j; }).catch(() => {}); } catch {}
-export function pararVoz() { rodadaPt++; geracaoVoz++; try { tocandoVoz?.pause(); } catch {} tocandoVoz = null; if ('speechSynthesis' in window) speechSynthesis.cancel(); }
-// vozFem: a fala é de uma personagem mulher. As gravações do Tuiuiú são todas de menino, então ela usa a voz feminina do aparelho.
-export function falar(texto, { velocidade = 1, vozFem = false, aoFim } = {}) {
-  if (vozFem) return falarNavegador(texto, { velocidade, aoFim, feminina: true });
-  const arq = !localStorageGet('voz') && mapaVoz && mapaVoz[String(texto).trim()];
-  if (arq) {
-    pararVoz();
-    const minha = geracaoVoz;
-    const a = new Audio(PASTA_VOZ + arq + '?v=__V__');
-    a.playbackRate = Math.max(0.5, Math.min(1.6, velocidade * (Number(localStorageGet('velocidade')) || 1)));
-    a.preservesPitch = true;
-    tocandoVoz = a;
-    a.addEventListener('ended', () => { if (tocandoVoz === a) tocandoVoz = null; if (minha === geracaoVoz) aoFim?.(); });
-    a.play().catch(() => {
-      // só cai para a voz do aparelho se este ainda for o pedido atual (um clique novo já cuidou do som)
-      if (minha !== geracaoVoz) return;
-      tocandoVoz = null;
-      falarNavegador(texto, { velocidade, aoFim });
-    });
-    return true;
-  }
-  return falarNavegador(texto, { velocidade, aoFim });
-}
-// nomes de vozes femininas em inglês que costumam vir no aparelho (Windows, Mac, iOS, Edge)
-const FEMININA = /samantha|zira|jenny|aria|ava|allison|susan|karen|moira|victoria|serena|catherine|fiona|tessa|kate|libby|sonia|emma|female|feminina/i;
-function falarNavegador(texto, { velocidade = 1, aoFim, feminina = false } = {}) {
-  try { tocandoVoz?.pause(); } catch {} tocandoVoz = null;
-  if (!('speechSynthesis' in window)) { toast('Seu navegador não tem leitura de voz. Use "Ver o texto".'); return false; }
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(texto);
-  // lê a lista na hora: no celular ela pode chegar atrasada, e sem voz escolhida o navegador usa a dele (quase sempre a do Google)
-  const ingl = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang));
-  const pref = localStorageGet('voz') || '';
-  const voz = ingl.find(v => v.name === pref)
-    || (feminina && ingl.filter(v => FEMININA.test(v.name)).sort((a, b) => notaVoz(b) - notaVoz(a))[0])
-    || melhorVoz(ingl);
-  if (voz) u.voice = voz;
-  u.lang = voz?.lang || 'en-US';
-  u.pitch = 1.05;                      // um tom um pouco mais vivo, de mascote simpático
-  u.rate = Math.max(0.5, Math.min(1.6, velocidade * (Number(localStorageGet('velocidade')) || 1)));
-  if (aoFim) u.onend = u.onerror = () => aoFim();
-  speechSynthesis.speak(u);
-  return true;
-}
-// "Ler pra mim": o Tuiuiú lê em voz alta, em português, o que está no balão (ajuda quem lê pouco ou está começando).
-// Cada trecho usa a gravação do Tuiuiú quando existe (mapa.json, chave "pt:" + texto); o que não tem gravação cai na voz em português do aparelho.
-// Cuidados para o iPhone/Safari: cancelar e falar logo em seguida às vezes não sai som, então damos um respiro;
-// sem voz em português ou sem som, avisamos em vez de ficar mudo.
-export function vozPt() {
-  const todas = window.speechSynthesis?.getVoices() || [];
-  const notaPt = v => (/natural|neural|online|francisca|antonio|thalita|luciana|felipe|joana/i.test(v.name) ? 10 : 0) + (ehGoogle(v) ? -14 : 0) + (/^pt[-_]BR/i.test(v.lang) ? 4 : 0);
-  return todas.filter(v => /^pt/i.test(v.lang)).sort((a, b) => notaPt(b) - notaPt(a))[0] || null;
-}
-let dicaSemSomDada = false, rodadaPt = 0;
-export function falarPt(texto, aoFim) {
-  const trechos = (Array.isArray(texto) ? texto : [texto]).map(t => String(t).trim()).filter(Boolean);
-  if (!trechos.length) return false;
-  const gravado = t => mapaVoz && mapaVoz['pt:' + t];
-  if (!trechos.every(gravado) && !('speechSynthesis' in window)) { toast('Seu navegador não tem leitura de voz.'); return false; }
-  pararVoz();
-  const minha = ++rodadaPt;
-  const fim = () => { if (minha === rodadaPt) aoFim?.(); };
-  const proximo = k => {
-    if (minha !== rodadaPt) return;
-    if (k >= trechos.length) { fim(); return; }
-    const t = trechos[k], arq = gravado(t);
-    if (arq) {
-      const a = new Audio(PASTA_VOZ + arq + '?v=__V__');
-      tocandoVoz = a;
-      a.onended = () => proximo(k + 1);
-      a.onerror = () => falarNavegadorPt(t, () => proximo(k + 1));
-      a.play().catch(() => falarNavegadorPt(t, () => proximo(k + 1)));
-    } else falarNavegadorPt(t, () => proximo(k + 1));
-  };
-  const falarNavegadorPt = (t, depois) => {
-    if (!('speechSynthesis' in window)) { depois(); return; }
-    const voz = vozPt();
-    if (!voz && speechSynthesis.getVoices().length) toast('Seu aparelho não tem uma voz em português instalada. Dá para instalar em Ajustes, Acessibilidade, Conteúdo falado, Vozes.');
-    const dizer = () => {
-      if (minha !== rodadaPt) return;
-      const u = new SpeechSynthesisUtterance(t);
-      if (voz) u.voice = voz;
-      u.lang = voz?.lang || 'pt-BR'; u.rate = 1;
-      let comecou = false;
-      u.onstart = () => { comecou = true; };
-      u.onend = depois;
-      u.onerror = e => { if (e.error !== 'interrupted' && e.error !== 'canceled') { toast('Não consegui ler em voz alta agora. Confira o volume e o modo silencioso do celular.'); fim(); } };
-      speechSynthesis.speak(u);
-      setTimeout(() => { if (minha === rodadaPt && !comecou && !speechSynthesis.speaking) { speechSynthesis.cancel(); fim(); if (!dicaSemSomDada) { dicaSemSomDada = true; toast('Sem som? Confira o volume e se o celular não está no modo silencioso.'); } } }, 2500);
-    };
-    if (speechSynthesis.speaking || speechSynthesis.pending) { speechSynthesis.cancel(); setTimeout(dizer, 120); } else dizer();
-  };
-  proximo(0);
-  return true;
+export function falarPt(texto, aoFim, { personagem } = {}) {
+  const voz = personagem || (localStorageGet('personagem-pt') === 'mia' ? 'mia' : 'tuiuiu');
+  return tocarVoz(texto, { personagem: voz, idioma: 'pt', velocidade: Number(localStorageGet('velocidade')) || 1,
+    aoFim, aoCancelar: aoFim, aoErro: mensagem => { toast(mensagem, { tipo: 'erro' }); aoFim?.(); } });
 }
 export function botaoOuvir(texto, { velocidade = 1, rotulo = 'Ouvir' } = {}) {
   return h('button', { type: 'button', class: 'btn btn-sec btn-ouvir', on: { click: () => falar(texto, { velocidade }) } }, icone('speaker-high'), rotulo);
 }
+let avisoAudio;
+addEventListener('inglou:voz', e => {
+  const { fase, personagem } = e.detail;
+  if (!avisoAudio) { avisoAudio = h('div', { class: 'audio-status', hidden: true }, h('span', { role: 'status', 'aria-live': 'polite' }), h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: pararAudio } }, 'Parar')); document.body.append(avisoAudio); }
+  if (fase !== 'parado') {
+    const destino = document.querySelector('dialog[open]') || document.body;
+    if (avisoAudio.parentElement !== destino) { destino.append(avisoAudio); if (destino.tagName === 'DIALOG') destino.addEventListener('close', pararAudio, { once: true }); }
+  }
+  avisoAudio.hidden = fase === 'parado';
+  if (fase !== 'parado') {
+    const nome = personagem === 'mia' ? 'Mia' : 'Tuiuiú';
+    avisoAudio.dataset.fase = fase;
+    avisoAudio.querySelector('span').textContent = fase === 'preparando' ? 'Preparando a voz de ' + nome + '…' : nome + ' está falando';
+    avisoAudio.querySelector('button').textContent = fase === 'preparando' ? 'Cancelar' : 'Parar';
+  }
+});
 
 // ---------- microfone (reconhecimento de voz do navegador, opcional) ----------
 export const temMicrofone = () => 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;

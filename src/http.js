@@ -8,7 +8,7 @@ const PUBLICA = path.join(__dirname, '..', 'public');
 const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.txt': 'text/plain; charset=utf-8', '.xml': 'application/xml; charset=utf-8', '.webmanifest': 'application/manifest+json', '.mp3': 'audio/mpeg' };
 
 // LISTA BRANCA de caminhos públicos. Nada fora disto é servido (nem server.js, nem banco, nem .git).
-const PUBLICO = /^\/(?:index\.html|404\.html|favicon\.svg|og-image\.png|robots\.txt|sitemap\.xml|manifest\.webmanifest|app\/index\.html|obrigado\/index\.html|politica-de-privacidade\/index\.html|termos\/index\.html|assets\/(?:css|js|js\/telas|fontes|icones|img|audio\/tuiuiu|audio\/mia)\/[\w.-]+)$/;
+const PUBLICO = /^\/(?:index\.html|404\.html|favicon\.svg|og-image\.png|robots\.txt|sitemap\.xml|manifest\.webmanifest|app\/index\.html|obrigado\/index\.html|politica-de-privacidade\/index\.html|termos\/index\.html|assets\/(?:css|js|js\/telas|fontes|icones|img)\/[\w.-]+)$/;
 
 // Versão dos arquivos estáticos (para ?v=): hash do conteúdo de assets/, calculado na subida.
 function calcularVersao() {

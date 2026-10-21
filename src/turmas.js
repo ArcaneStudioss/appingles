@@ -11,6 +11,10 @@ const { MISSOES, TODOS_EXERCICIOS } = require('./conteudo/missoes');
 const { POR_TAG } = require('./conteudo/dificuldades');
 const { corrigirExercicio, respostaCerta } = require('./motor/correcao');
 const { paraCliente } = require('./motor/licao');
+const { UNIDADES, BANCO_BIBLIOTECA } = require('./conteudo/biblioteca');
+const { FAIXAS } = require('./motor/publico');
+const { POR_EXPRESSAO } = require('./conteudo/brasil-mundo');
+const BANCO = { ...TODOS_EXERCICIOS, ...BANCO_BIBLIOTECA };
 
 const MAX_TURMAS = 20, MAX_ALUNOS = 200, MAX_ATIVIDADES = 100;
 const HABILIDADE = { gramatica: 'Gramática', vocabulario: 'Vocabulário', leitura: 'Leitura', escuta: 'Escuta', escrita: 'Escrita', fala: 'Fala', geral: 'Geral' };
@@ -33,17 +37,29 @@ function registrar({ db, rota, q, V, lerJson, transacao, agoraISO, hojeDe, regis
   const alunosDa = tid => q('SELECT u.id, u.nome, ta.entrou_em FROM turma_alunos ta JOIN usuarios u ON u.id = ta.user_id WHERE ta.turma_id = ? ORDER BY u.nome').all(tid);
   const atividadesDa = tid => q('SELECT * FROM atividades WHERE turma_id = ? AND ativa = 1 ORDER BY criado_em DESC, id DESC').all(tid);
   const linkDe = codigo => `/app/#/turmas?codigo=${codigo}`;
-  const turmaParaProfessor = t => ({ id: t.id, nome: t.nome, codigo: t.codigo, link: linkDe(t.codigo), criada_em: t.criado_em });
-  const atividadeNova = (a, extra = {}) => ({ id: a.id, titulo: a.titulo, descricao: a.descricao, prazo: a.prazo, total: itensDe(a).length, ...extra });
+  const turmaParaProfessor = t => ({ id: t.id, nome: t.nome, codigo: t.codigo, faixa: t.faixa, nivel: t.nivel, link: linkDe(t.codigo), criada_em: t.criado_em });
+  const atividadeNova = (a, extra = {}) => ({ id: a.id, titulo: a.titulo, descricao: a.descricao, prazo: a.prazo, tema: a.tema, faixa: a.faixa, nivel: a.nivel, material: lerJson(a.material, {}), total: itensDe(a).length, ...extra });
+  const exigirProfessor = uid => {
+    if (q('SELECT papel FROM perfis WHERE user_id = ?').get(uid)?.papel !== 'professor' && !q('SELECT 1 FROM turmas WHERE professor_id = ?').get(uid)) throw new ErroHttp(403, 'Abra a área do professor no seu perfil para montar aulas.');
+  };
 
   // ---------- professor ----------
   // banco de perguntas do app, para o professor escolher (ele vê o gabarito: é a turma dele)
-  rota('GET', '/professor/banco', () => ({
-    missoes: MISSOES.map(m => ({
-      id: m.id, titulo: m.titulo, nivel: m.nivel,
-      exercicios: m.exercicios.filter(e => e.tipo !== 'pares').map(e => ({ id: e.id, tipo: e.tipo, resumo: resumoDe(e), tag: e.tag || null })),
-    })).filter(m => m.exercicios.length),
-  }));
+  rota('GET', '/professor/banco', ctx => {
+    exigirProfessor(ctx.u.id);
+    return { missoes: [...MISSOES.filter(m => !m.faixa), ...UNIDADES].map(m => ({
+      id: m.id, titulo: m.titulo, nivel: m.nivel, faixa: m.faixa || (m.id.startsWith('zero-') ? 'todas' : 'adulto'), tema: m.tema || m.titulo, colecao: m.colecao || null, termos: (m.cultura || []).flatMap(id => POR_EXPRESSAO[id].aliases),
+      material: { explicacao: m.explicacao?.texto || m.explicacao || '', texto: m.texto || '', traducao: m.traducao || '', vocab: m.vocab },
+      exercicios: m.exercicios.filter(e => e.tipo !== 'pares').map(e => ({ id: e.id, tipo: e.tipo, habilidade: e.habilidade, resumo: resumoDe(e), tag: e.tag || null })),
+    })).filter(m => m.exercicios.length) };
+  });
+  rota('POST', '/professor/previa', ctx => {
+    exigirProfessor(ctx.u.id);
+    try {
+      const itens = T.montarItens(ctx.corpo, BANCO), material = T.validarMaterial(ctx.corpo.material);
+      return { itens: emItens(itens, 'previa'), material, correcoes: Object.fromEntries(itens.map(e => [e.id, corrigirExercicio(e, V.str(ctx.corpo.respostas?.[e.id], 500, { campo: 'Resposta de prévia' }))])) };
+    } catch (e) { if (e instanceof T.ErroItem) throw new ErroHttp(422, e.message); throw e; }
+  });
   const resumoDe = e => String(e.enunciado || e.pergunta || e.frase || e.pt || e.errado || e.audio || '').slice(0, 110);
 
   rota('GET', '/turmas', (ctx) => {
@@ -61,10 +77,13 @@ function registrar({ db, rota, q, V, lerJson, transacao, agoraISO, hojeDe, regis
   rota('POST', '/turmas', (ctx) => {
     const uid = ctx.u.id;
     const nome = V.str(ctx.corpo.nome, 80, { min: 2, campo: 'Nome da turma' });
+    const faixa = V.um(ctx.corpo.faixa || 'todas', ['todas', ...Object.keys(FAIXAS)], 'Público da turma');
+    const nivel = V.um(ctx.corpo.nivel || 'A1', ['A1', 'A2', 'B1', 'B2', 'C1'], 'Nível da turma');
     if (q('SELECT COUNT(*) n FROM turmas WHERE professor_id = ? AND ativa = 1').get(uid).n >= MAX_TURMAS) throw new ErroHttp(409, `Você já tem ${MAX_TURMAS} turmas.`);
     const id = transacao(db, () => {
       const codigo = T.novoCodigo(c => !!q('SELECT 1 FROM turmas WHERE codigo = ?').get(c));
-      return Number(q('INSERT INTO turmas (professor_id, nome, codigo, criado_em) VALUES (?, ?, ?, ?)').run(uid, nome, codigo, agoraISO()).lastInsertRowid);
+      q("UPDATE perfis SET papel = 'professor' WHERE user_id = ?").run(uid);
+      return Number(q('INSERT INTO turmas (professor_id, nome, codigo, faixa, nivel, criado_em) VALUES (?, ?, ?, ?, ?, ?)').run(uid, nome, codigo, faixa, nivel, agoraISO()).lastInsertRowid);
     });
     return { ok: true, turma: turmaParaProfessor(q('SELECT * FROM turmas WHERE id = ?').get(id)) };
   });
@@ -119,11 +138,14 @@ function registrar({ db, rota, q, V, lerJson, transacao, agoraISO, hojeDe, regis
     const titulo = V.str(b.titulo, 100, { min: 2, campo: 'Título' });
     const descricao = V.str(b.descricao, 600, { campo: 'Descrição' }) || null;
     const prazo = V.data(b.prazo, 'Prazo');
+    const tema = V.str(b.tema, 100, { campo: 'Conteúdo da aula' });
+    const faixa = V.um(b.faixa || t.faixa, ['todas', ...Object.keys(FAIXAS)], 'Público da aula');
+    const nivel = V.um(b.nivel || t.nivel, ['A1', 'A2', 'B1', 'B2', 'C1'], 'Nível da aula');
     if (q('SELECT COUNT(*) n FROM atividades WHERE turma_id = ? AND ativa = 1').get(t.id).n >= MAX_ATIVIDADES) throw new ErroHttp(409, 'Esta turma já tem atividades demais. Apague as antigas.');
-    let itens;
-    try { itens = T.montarItens({ banco: Array.isArray(b.banco) ? b.banco.slice(0, 60) : [], proprias: Array.isArray(b.proprias) ? b.proprias.slice(0, 30) : [] }, TODOS_EXERCICIOS); }
+    let itens, material;
+    try { itens = T.montarItens({ banco: Array.isArray(b.banco) ? b.banco.slice(0, 60) : [], proprias: Array.isArray(b.proprias) ? b.proprias.slice(0, 30) : [] }, BANCO); material = T.validarMaterial(b.material); }
     catch (e) { if (e instanceof T.ErroItem) throw new ErroHttp(422, e.message); throw e; }
-    const r = q('INSERT INTO atividades (turma_id, titulo, descricao, prazo, criado_em, itens) VALUES (?, ?, ?, ?, ?, ?)').run(t.id, titulo, descricao, prazo, agoraISO(), JSON.stringify(itens));
+    const r = q('INSERT INTO atividades (turma_id, titulo, descricao, prazo, tema, nivel, faixa, material, criado_em, itens) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(t.id, titulo, descricao, prazo, tema, nivel, faixa, JSON.stringify(material), agoraISO(), JSON.stringify(itens));
     return { ok: true, id: Number(r.lastInsertRowid) };
   });
 
@@ -136,7 +158,7 @@ function registrar({ db, rota, q, V, lerJson, transacao, agoraISO, hojeDe, regis
     const porItem = new Map(m.itens.map(i => [i.id, i]));
     return {
       turma: { id: t.id, nome: t.nome }, atividade: atividadeNova(a, { criada_em: a.criado_em }),
-      itens: itens.map(it => ({ id: it.id, tipo: it.tipo, resumo: resumoDe(it), esperado: respostaCerta(it), tag: it.tag || null, origem: it.origem, ...porItem.get(it.id) })),
+      itens: itens.map(it => ({ id: it.id, tipo: it.tipo, resumo: resumoDe(it), esperado: respostaCerta(it), explica: corrigirExercicio(it, '').explica, tag: it.tag || null, origem: it.origem, ...porItem.get(it.id) })),
       alunos: m.alunos, resumo: m.resumo,
     };
   });
@@ -146,6 +168,14 @@ function registrar({ db, rota, q, V, lerJson, transacao, agoraISO, hojeDe, regis
     const r = q('DELETE FROM atividades WHERE id = ? AND turma_id = ?').run(V.id(ctx.params.aid), t.id);
     if (!r.changes) throw new ErroHttp(404, 'Atividade não encontrada.');
     return { ok: true };
+  });
+  rota('POST', '/turmas/:id/atividades/:aid/duplicar', ctx => {
+    const origem = turmaDoProfessor(V.id(ctx.params.id), ctx.u.id), destino = turmaDoProfessor(V.id(ctx.corpo.turmaId), ctx.u.id);
+    const a = q('SELECT * FROM atividades WHERE id = ? AND turma_id = ? AND ativa = 1').get(V.id(ctx.params.aid), origem.id);
+    if (!a) throw new ErroHttp(404, 'Aula não encontrada.');
+    if (q('SELECT COUNT(*) n FROM atividades WHERE turma_id = ?').get(destino.id).n >= MAX_ATIVIDADES) throw new ErroHttp(409, 'A turma de destino já tem atividades demais.');
+    const r = q('INSERT INTO atividades (turma_id, titulo, descricao, prazo, tema, nivel, faixa, material, criado_em, itens) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, ?)').run(destino.id, a.titulo + ' (cópia)', a.descricao, a.tema, a.nivel, a.faixa, a.material, agoraISO(), a.itens);
+    return { ok: true, id: Number(r.lastInsertRowid), turmaId: destino.id };
   });
 
   // ---------- aluno ----------
@@ -201,7 +231,7 @@ function registrar({ db, rota, q, V, lerJson, transacao, agoraISO, hojeDe, regis
   }
   const respondidoDe = (it, r) => {
     const c = corrigirExercicio(it, r.resposta || '');
-    return { correto: !!r.correto, quase: !!r.quase, esperado: c.esperado, explica: c.explica, achados: c.achados, resposta: r.resposta, textoAudio: ['escuta', 'ditado'].includes(it.tipo) ? it.audio : null };
+    return { ...c, correto: !!r.correto, quase: !!r.quase, ajuda: r.resposta === '' && !!r.dica, resposta: r.resposta, textoAudio: ['escuta', 'ditado'].includes(it.tipo) ? it.audio : null };
   };
 
   rota('GET', '/atividades/:aid', (ctx) => {
@@ -210,29 +240,30 @@ function registrar({ db, rota, q, V, lerJson, transacao, agoraISO, hojeDe, regis
     const itens = itensDe(a);
     const rows = q('SELECT * FROM atividade_respostas WHERE atividade_id = ? AND user_id = ?').all(a.id, uid);
     const respondidos = Object.fromEntries(rows.map(r => [r.item_id, respondidoDe(itens.find(i => i.id === r.item_id) || {}, r)]));
-    return { atividade: { id: a.id, titulo: a.titulo, descricao: a.descricao, prazo: a.prazo, turma: a.turma_nome, turmaId: a.turma_id }, itens: emItens(itens, `ativ:${uid}:${a.id}`), respondidos };
+    return { atividade: { ...atividadeNova(a), turma: a.turma_nome, turmaId: a.turma_id }, itens: emItens(itens, `ativ:${uid}:${a.id}`), respondidos };
   });
 
   rota('POST', '/atividades/:aid/responder', (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid), b = ctx.corpo;
     const a = atividadeDoAluno(V.id(ctx.params.aid), uid);
     const itemId = V.str(b.itemId, 20, { min: 1, campo: 'Item' });
-    const resposta = V.str(b.resposta, 500, { campo: 'Resposta' });
+    const resposta = b.revelar === true ? '' : V.str(b.resposta, 500, { campo: 'Resposta' });
     const it = itensDe(a).find(i => i.id === itemId);
     if (!it) throw new ErroHttp(404, 'Pergunta não encontrada.');
     const ja = q('SELECT * FROM atividade_respostas WHERE atividade_id = ? AND user_id = ? AND item_id = ?').get(a.id, uid, itemId);
-    if (ja) return { ...respondidoDe(it, ja), repetida: true };
+    if (ja) { if (b.treinar === true) return { ...corrigirExercicio(it, resposta), pratica: true }; return { ...respondidoDe(it, ja), repetida: true }; }
     const r = corrigirExercicio(it, resposta);
+    if (b.revelar === true) r.ajuda = true;
     transacao(db, () => {
       const ins = q('INSERT OR IGNORE INTO atividade_respostas (atividade_id, user_id, item_id, correto, quase, tag, tempo_ms, dica, em, resposta) VALUES (?,?,?,?,?,?,?,?,?,?)')
-        .run(a.id, uid, itemId, r.correto ? 1 : 0, r.quase ? 1 : 0, it.tag || null, Math.max(0, Math.min(600000, Number(b.tempoMs) | 0)), b.dica === true ? 1 : 0, agoraISO(), resposta);
+        .run(a.id, uid, itemId, r.correto ? 1 : 0, r.quase ? 1 : 0, it.tag || null, Math.max(0, Math.min(600000, Number(b.tempoMs) | 0)), b.dica === true || b.revelar === true ? 1 : 0, agoraISO(), resposta);
       if (!ins.changes) return;   // clique duplo
       // também alimenta o plano pessoal do aluno (o professor não vê essas tentativas)
       registrarTentativa(uid, { item_id: `turma:${a.id}:${itemId}`, missao: it.missao || null, habilidade: it.habilidade, tag: it.tag, formato: ['escolha', 'escuta', 'leitura'].includes(it.tipo) ? 'reconhecimento' : 'producao',
         modalidade: ['escuta', 'ditado', 'fala'].includes(it.tipo) ? 'audio' : 'texto', correto: r.correto, tempo_ms: b.tempoMs, dica: b.dica === true, origem: 'turma', contexto: 'turma', resposta });
       if (q('SELECT COUNT(*) n FROM atividade_respostas WHERE user_id = ? AND em >= ?').get(uid, h).n % 5 === 0) somarMinutos(uid, h, 1);
     });
-    return { correto: r.correto, quase: r.quase, esperado: r.esperado, explica: r.explica, achados: r.achados, textoAudio: ['escuta', 'ditado'].includes(it.tipo) ? it.audio : null };
+    return { ...r, textoAudio: ['escuta', 'ditado'].includes(it.tipo) ? it.audio : null };
   });
 
   // cartão da tela Hoje: atividades pendentes nas turmas do aluno

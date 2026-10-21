@@ -3,7 +3,7 @@ import { api } from '../api.js?v=__V__';
 import { lou } from '../diversao.js?v=__V__';
 import { jaInstalado, instalarApp, podeInstalarDireto, ehIphone } from '../instalar.js?v=__V__';
 import { configurarLembrete, DIAS } from '../lembrete.js?v=__V__';
-import { h, icone, toast, formulario, confirmar, janela, dataBR, localStorageGet, localStorageSet, ocupado, falar, vozesEn, ehGoogle } from '../ui.js?v=__V__';
+import { h, icone, toast, formulario, confirmar, janela, dataBR, localStorageGet, localStorageSet, ocupado, falar, falarPt } from '../ui.js?v=__V__';
 
 const EXPLICA_DADOS = [
   ['Seu objetivo, prazo, área, interesses e tempo por dia', 'para escolher as missões, os exemplos e o tamanho das lições.'],
@@ -102,16 +102,21 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
     const tema = h('div', { class: 'temas', role: 'radiogroup', 'aria-label': 'Tema' }, [['claro', 'Dia', 'dia'], ['escuro', 'Noite', 'noite'], ['sistema', 'Igual ao aparelho', 'auto']].map(([v, r, c]) =>
       h('label', { class: `tema-op tema-op--${c}` }, h('input', { type: 'radio', name: 'pr-tema', value: v, checked: atual === v }), h('span', {}, h('i', { 'aria-hidden': 'true' }), r))));
     const vel = h('select', { id: 'pr-vel' }, [['0.85', 'Mais devagar'], ['1', 'Normal'], ['1.1', 'Um pouco mais rápido']].map(([v, r]) => h('option', { value: v, selected: (localStorageGet('velocidade') || '1') === v }, r)));
-    const lista = vozesEn();
-    const voz = h('select', { id: 'pr-voz' }, h('option', { value: '' }, 'Tuiuiú (a voz do app)'), lista.map(v => h('option', { value: v.name, selected: localStorageGet('voz') === v.name }, `${v.name} (${v.lang})${ehGoogle(v) ? ' · robótica' : ''}`)));
+    const escolher = (id, idioma, padrao) => h('select', { id }, [['mia', 'Mia'], ['tuiuiu', 'Tuiuiú']].map(([v, nome]) => h('option', { value: v, selected: (localStorageGet('personagem-' + idioma) || padrao) === v }, nome)));
+    const vozEn = escolher('pr-voz-en', 'en', 'mia'), vozPt = escolher('pr-voz-pt', 'pt', 'tuiuiu');
+    const salvarVozes = () => { localStorageSet('velocidade', vel.value); localStorageSet('personagem-en', vozEn.value); localStorageSet('personagem-pt', vozPt.value); };
     const ok = h('button', { type: 'button', class: 'btn' }, 'Salvar');
     const j = janela({ titulo: 'Preferências deste aparelho', corpo: h('div', {},
       h('div', { class: 'campo' }, h('span', { class: 'rotulo' }, 'Tema'), tema),
-      h('div', { class: 'campo' }, h('label', { for: 'pr-vel' }, 'Velocidade do áudio'), vel, h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => { localStorageSet('velocidade', vel.value); localStorageSet('voz', voz.value); falar('This is how the audio sounds.'); } } }, icone('speaker-high'), 'Testar')),
-      lista.length ? h('div', { class: 'campo' }, h('label', { for: 'pr-voz' }, 'Voz em inglês'), voz, h('p', { class: 'ajuda' }, 'A voz do Tuiuiú é a do app, igual em todo aparelho. Se escolher outra, usamos uma voz do seu aparelho (as "natural", "online" ou da Apple soam mais humanas; as do Google são as mais robóticas).')) : null), acoes: [ok] });
+      h('div', { class: 'campo' }, h('label', { for: 'pr-vel' }, 'Velocidade do áudio'), vel),
+      h('div', { class: 'campo' }, h('label', { for: 'pr-voz-en' }, 'Quem lê em inglês?'), vozEn,
+        h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => { salvarVozes(); falar('Hello! Let us learn together.'); } } }, icone('speaker-high'), 'Ouvir em inglês')),
+      h('div', { class: 'campo' }, h('label', { for: 'pr-voz-pt' }, 'Quem lê em português?'), vozPt,
+        h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => { salvarVozes(); falarPt('Oi! Vamos aprender juntos, no seu ritmo.'); } } }, icone('speaker-high'), 'Ouvir em português')),
+      h('p', { class: 'ajuda' }, 'As leituras usam as vozes da Mia e do Tuiuiú. Na rádio, cada personagem mantém a própria voz.')), acoes: [ok] });
     ok.addEventListener('click', () => {
       const t = tema.querySelector('input:checked')?.value || 'sistema';
-      localStorageSet('tema', t); localStorageSet('velocidade', vel.value); localStorageSet('voz', voz.value);
+      localStorageSet('tema', t); salvarVozes();
       dispatchEvent(new CustomEvent('inglou:tema'));
       j.fechar(true); toast('Preferências salvas.', { tipo: 'ok' });
     });
@@ -132,6 +137,7 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
 
   el.append(
     h('header', { class: 'cabeca' }, lou('feliz', { tamanho: 64, rotulo: '' }), h('div', {}, h('h1', {}, eu.usuario.nome), h('p', { class: 'ajuda' }, eu.usuario.email))),
+    cartao('user-circle', 'Meu espaço de aprendizagem', `${eu.publico?.nome || 'Seu perfil'} · ${p.idade ? p.idade + ' anos · ' : ''}${p.papel === 'professor' ? 'Professor(a)' : 'Aluno(a)'}${eu.publico?.regiao ? ' · ' + eu.publico.regiao.nome : ''}`, h('a', { class: 'btn btn-sec btn-peq', href: '#/publico' }, 'Alterar idade, perfil ou região')),
     cartao('target', 'Objetivo e rotina', `${p.objetivo_nome || '-'}${p.prazo ? ' até ' + dataBR(p.prazo) : ', sem prazo'} · ${p.minutos_dia} min/dia, ${p.dias_semana} dias/semana`,
       h('a', { class: 'btn btn-sec btn-peq', href: '#/perfil' }, icone('pencil-simple'), 'Alterar'), h('a', { class: 'btn btn-texto btn-peq', href: '#/plano' }, 'Ver plano')),
     cartao('graduation-cap', 'Teste de nível', eu.nivel ? `Nível estimado: ${eu.nivel}. Refaça quando sentir que evoluiu.` : 'Ainda não feito.',

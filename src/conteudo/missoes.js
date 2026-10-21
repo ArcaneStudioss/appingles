@@ -875,6 +875,7 @@ require('./trilha-debate').TRILHA_DEBATE.forEach(m => M.push(m));
 // "Caça ao erro": um exercício de detetive por missão antiga (as missões de debate trazem os seus)
 const { detetivesDe } = require('./detetives');
 for (const m of M) m.exercicios.push(...detetivesDe(m.id));
+require('./biblioteca').MISSOES_BIBLIOTECA.forEach(m => M.push(m));
 const { EXPLICACOES_ZERO } = require('./explicacoes-zero');
 for (const m of M) for (const e of m.exercicios) if (!e.explica && EXPLICACOES_ZERO[e.id]) e.explica = EXPLICACOES_ZERO[e.id];
 

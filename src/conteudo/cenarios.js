@@ -215,4 +215,12 @@ const CENARIOS = {
   },
 };
 
+const { UNIDADES } = require('./biblioteca');
+for (const u of UNIDADES) CENARIOS['livro-' + u.id] = {
+  titulo: u.titulo, faixa: u.faixa,
+  papel: `a friendly English conversation partner discussing the learning topic with a ${u.faixa === 'crianca' ? 'child, using simple concrete questions about play and discoveries' : u.faixa === 'adolescente' ? 'teenager, using respectful language about school, friends and interests' : 'adult, using practical everyday language'}`,
+  abertura: 'Hi! Let’s practice a new word: ' + u.vocab[0].en + '. Can you use it in a short sentence?',
+  roteiro: ['Which word from this topic do you like?', 'Can you use another new word in a sentence?', 'What did you understand from the story?', 'What would you like to learn next?'],
+  ajuda: ['I learned the word ...', 'It means ...', 'I think ...', 'I would like to learn ...'],
+};
 module.exports = { CENARIOS };

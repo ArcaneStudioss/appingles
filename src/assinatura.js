@@ -18,7 +18,7 @@ const LIMITES = {
 const NOMES_USO = { conversa: 'mensagens de conversa com IA', avaliacao: 'correções detalhadas com IA', tutor: 'perguntas ao tutor', material: 'materiais seus processados com IA', licao: 'lições com exercícios feitos para a sua situação', podcast: 'episódios da Rádio Tuiuiú escritos pela IA', estudo: 'assuntos do estudo sob medida escritos pela IA', treino: 'treinos com frases novas escritas pela IA' };
 
 const INCLUI = {
-  completo: ['Plano personalizado pelo seu objetivo e prazo', 'Lição diária de 10 a 20 minutos', 'Flashcards com repetição espaçada e áudio', 'Conversas que viram a aula do dia seguinte', 'Correção de escrita', 'Estudo com seus próprios materiais', 'Painel de progresso com o que você já demonstrou'],
+  completo: ['Plano personalizado pelo seu objetivo, idade e nível', 'Lições guiadas de 5 minutos e aulas de 10 a 20 minutos', 'Biblioteca de vocabulário e leitura por público e nível', 'Flashcards com repetição espaçada e áudio', 'Conversas que viram a aula do dia seguinte', 'Correção de escrita', 'Estudo com seus próprios materiais', 'Painel de progresso com o que você já demonstrou'],
   livre: ['Revisão dos seus flashcards', 'Painel de progresso e histórico', 'Exportar e apagar seus dados', 'Voltar ao plano completo quando quiser, de onde parou'],
 };
 
