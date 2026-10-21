@@ -1,7 +1,7 @@
 // Componente de exercício. Padrão de jogo: escolhe ou escreve, toca em "Conferir",
 // e uma folha de resposta sobe de baixo (azul quando acerta, coral suave quando é "quase").
 // Teclado: 1 a 9 escolhem alternativas, Enter confere e continua. A correção vem do servidor.
-import { h, icone, falar, falarPt, pararVoz, toast, ocupado, ouvirMicrofone } from '../ui.js?v=__V__';
+import { h, icone, falar, falarPt, pararVoz, toast, ocupado, ouvirMicrofone, palavrasToque } from '../ui.js?v=__V__';
 import { lou, som, brilho, vibrar } from '../diversao.js?v=__V__';
 import { fraseConhecida } from '../traducao.js?v=__V__';
 
@@ -67,7 +67,7 @@ export function exercicio(ex, config) {
   if (ex.tipo === 'escuta' || ex.tipo === 'ditado') {
     area.append(caixaEscuta(ex.audio, { vozFem: ex.vozFem, dica: null, ajustavel: true, devagar }));
   }
-  if (ex.tipo === 'leitura') area.append(h('blockquote', { class: 'texto-leitura', lang: 'en' }, ex.texto));
+  if (ex.tipo === 'leitura') area.append(h('blockquote', { class: 'texto-leitura', lang: 'en' }, palavrasToque(ex.texto)));
   const titulo = ex.enunciado || ex.pergunta || ({ lacuna: 'Complete a frase', ordenar: 'Monte a frase', ditado: 'Escreva o que você ouviu', traduzir: 'Escreva em inglês', fala: 'Fale em voz alta', pares: 'Toque nos pares que combinam', corrigir: 'Corrija a frase', detetive: 'Caça ao erro: toque na palavra errada' })[ex.tipo];
   const trechosTitulo = String(titulo || '').split(/([“"][^”"]+[”"])/g).map(t => /^[“"]/.test(t) && fraseConhecida(t.slice(1, -1)) ? h('span', { lang: 'en' }, t) : t);
   raiz.append(ex.imagem ? h('div', { class: 'exercicio__cena', 'aria-hidden': 'true' }, ex.imagem) : null,

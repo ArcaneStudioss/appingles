@@ -219,6 +219,37 @@ export function ouvirMicrofone({ aoTexto, aoFim, aoErro, alvo = '', silencioMs =
   return { stop: encerrar };
 }
 
+// ---------- toque numa palavra: alguns sentidos (dicionário com IA, ver POST /palavra) ----------
+// Devolve o texto com cada palavra em inglês como botão. Sem JS o texto continua inteiro e legível.
+export function palavrasToque(texto) {
+  const frag = document.createDocumentFragment();
+  String(texto).split(/([A-Za-z][A-Za-z'’-]*)/).forEach(pedaco => {
+    if (/^[A-Za-z]/.test(pedaco)) frag.append(h('button', { type: 'button', class: 'palavra-toque', on: { click: () => abrirPalavra(pedaco, texto) } }, pedaco));
+    else if (pedaco) frag.append(pedaco);
+  });
+  return frag;
+}
+const cacheSentidos = new Map();
+export function abrirPalavra(palavra, frase) {
+  const limpa = palavra.replace(/[’]/g, "'").replace(/^[-']+|[-']+$/g, '');
+  const corpo = h('div', { class: 'palavra-sentidos', 'aria-live': 'polite' }, h('p', { class: 'ajuda' }, 'Buscando os sentidos...'));
+  const { dlg } = janela({ titulo: limpa, corpo, acoes: [h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => falar(limpa, { velocidade: 0.9 }) } }, icone('speaker-high'), 'Ouvir')] });
+  dlg.setAttribute('lang', 'pt-BR');
+  const mostrar = r => {
+    if (!r.sentidos?.length) { corpo.replaceChildren(h('p', {}, r.aviso || 'Não encontrei sentidos para esta palavra.')); return; }
+    corpo.replaceChildren(
+      r.forma_base && r.forma_base.toLowerCase() !== limpa.toLowerCase() ? h('p', { class: 'ajuda' }, 'Forma base: ', h('strong', { lang: 'en' }, r.forma_base)) : null,
+      h('ol', { class: 'sentidos' }, r.sentidos.map(s => h('li', { class: s.no_contexto ? 'sentido sentido--aqui' : 'sentido' },
+        h('p', {}, h('small', { class: 'sentido__classe' }, s.classe), ' ', h('strong', {}, s.pt), s.no_contexto ? h('span', { class: 'chip chip-neutro' }, 'nesta frase') : null),
+        h('p', { class: 'sentido__ex' }, h('span', { lang: 'en' }, s.ex_en), ' ', h('small', {}, s.ex_pt))))));
+  };
+  const chave = limpa.toLowerCase() + '|' + String(frase).slice(0, 300).toLowerCase();
+  if (cacheSentidos.has(chave)) return mostrar(cacheSentidos.get(chave));
+  import('./api.js?v=__V__').then(({ api }) => api('/palavra', { metodo: 'POST', corpo: { palavra: limpa, frase: String(frase).slice(0, 300) } }))
+    .then(r => { if (r.sentidos?.length) cacheSentidos.set(chave, r); mostrar(r); })
+    .catch(e => corpo.replaceChildren(h('p', {}, e.message)));
+}
+
 // preferências deste aparelho (não são dados de estudo)
 export function localStorageGet(k) { try { return localStorage.getItem('inglou:' + k); } catch { return null; } }
 export function localStorageSet(k, v) { try { localStorage.setItem('inglou:' + k, v); } catch {} }

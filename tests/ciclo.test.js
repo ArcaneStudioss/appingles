@@ -202,3 +202,10 @@ test('"começar do zero": pula o teste, vai para o A1 e a primeira lição é a 
   const n = licao.blocos.reduce((s, b) => s + (b.exercicios ? b.exercicios.length : 0), 0);
   assert.ok(n > 0 && n <= 10, 'questões: ' + n);
 });
+
+test('toque numa palavra devolve alguns sentidos e rejeita o que não é palavra', async () => {
+  const r = await R('POST', '/palavra', { palavra: 'Office', frase: 'I go to the office on Tuesdays.' });
+  assert.ok(r.sentidos.length >= 1 && r.sentidos.filter(s => s.no_contexto).length === 1);
+  assert.ok(!('uso' in r));
+  await assert.rejects(R('POST', '/palavra', { palavra: '<img src=x>', frase: '' }));
+});

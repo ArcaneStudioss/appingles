@@ -26,7 +26,7 @@ Requisitos: Node 22.13 ou mais novo (usa o SQLite nativo `node:sqlite`). Uma ún
 ```bash
 npm ci
 npm run dev          # http://localhost:8080 (pagamento simulado, para testar a assinatura)
-npm test             # 77 testes: segurança, turmas, aprendizagem guiada e equivalências culturais
+npm test             # 78 testes: segurança, turmas, aprendizagem guiada e equivalências culturais
 ```
 
 Sem `ANTHROPIC_API_KEY` o app funciona inteiro no **modo de prática**: conversa por roteiro do cenário, correção por regras (14 erros típicos de brasileiros), tutor que responde pelos pontos do catálogo. Com a chave, entram a conversa livre, a correção detalhada, os exercícios escritos com a situação do aluno e o processamento de materiais. Para testar os caminhos com IA sem gastar: `IA_FAKE=1` (só fora de produção).

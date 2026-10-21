@@ -1278,3 +1278,13 @@ body.foco-total .audio-status{bottom:calc(150px + env(safe-area-inset-bottom))}
 @keyframes combo-brilho{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--coral) 55%,transparent)}100%{box-shadow:0 0 0 14px transparent}}
 .pontos-flutua{position:fixed;z-index:260;transform:translate(-50%,-100%);pointer-events:none;font-family:var(--f-titulo);font-weight:600;font-size:1.5rem;color:var(--sol-forte);text-shadow:0 2px 0 var(--cartao),0 0 12px color-mix(in srgb,var(--sol) 60%,transparent);white-space:nowrap}
 @keyframes pontos-sobe{0%{opacity:0;transform:translate(-50%,-60%) scale(.6)}20%{opacity:1;transform:translate(-50%,-110%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-260%) scale(1)}}
+
+/* toque numa palavra: sublinhado pontilhado discreto, alvo de toque confortável */
+.palavra-toque{all:unset;cursor:pointer;border-bottom:2px dotted color-mix(in srgb,currentColor 45%,transparent);border-radius:3px;padding:.12em .02em;-webkit-tap-highlight-color:transparent}
+.palavra-toque:hover,.palavra-toque:focus-visible{background:color-mix(in srgb,var(--turquesa) 22%,transparent)}
+.palavra-toque:focus-visible{outline:2px solid var(--turquesa);outline-offset:2px}
+.sentidos{list-style:decimal;margin:.4rem 0 0;padding-left:1.3rem;display:grid;gap:.9rem}
+.sentido__classe{opacity:.75;font-style:italic}
+.sentido__ex{margin:.2rem 0 0;line-height:1.45}
+.sentido--aqui{border-left:4px solid var(--turquesa);padding-left:.6rem;margin-left:-.6rem}
+.sentido .chip{margin-left:.5rem}

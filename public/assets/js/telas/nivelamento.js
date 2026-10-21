@@ -1,6 +1,6 @@
 // Teste de nivelamento: uma pergunta por tela, "não sei" sem culpa, escrita e fala opcionais, resultado com incerteza.
 import { api } from '../api.js?v=__V__';
-import { h, ocupado, icone, pararVoz, temVoz, temMicrofone, ouvirMicrofone, toast, confirmar, reduzirMovimento } from '../ui.js?v=__V__';
+import { h, ocupado, icone, pararVoz, temVoz, temMicrofone, ouvirMicrofone, toast, confirmar, reduzirMovimento, palavrasToque } from '../ui.js?v=__V__';
 import { lou, louFala, som, confete, botaoSom, vibrar } from '../diversao.js?v=__V__';
 import { caixaEscuta } from './exercicio.js?v=__V__';
 
@@ -81,7 +81,7 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
       setTimeout(() => { if (caixa.isConnected) { som('avancar'); sair(); } }, reduzirMovimento() ? 0 : 360);
     };
     const corpo = [];
-    if (it.tipo === 'leitura') corpo.push(h('blockquote', { class: 'texto-leitura', lang: 'en' }, it.texto), h('p', { class: 'enunciado' }, it.pergunta));
+    if (it.tipo === 'leitura') corpo.push(h('blockquote', { class: 'texto-leitura', lang: 'en' }, palavrasToque(it.texto)), h('p', { class: 'enunciado' }, it.pergunta));
     else if (it.tipo === 'escuta') corpo.push(caixaEscuta(it.audio, { velocidade: it.velocidade, simples: true }), h('p', { class: 'enunciado' }, it.pergunta));
     else corpo.push(h('p', { class: 'enunciado', lang: it.enunciado && /[a-z]/i.test(it.enunciado) && !/[ãçé]/.test(it.enunciado) ? 'en' : 'pt-BR' }, it.enunciado));
     const botoes = it.opcoes.map((o, k) => h('button', { type: 'button', class: 'opcao', role: 'radio', 'aria-checked': 'false', style: `--k:${k}`, lang: it.tipo === 'escolha' && /^[A-Za-z]/.test(o) && !/[ãçéáíóú]/.test(o) ? 'en' : null, on: { click: e => responder(o, false, e.currentTarget) } }, h('span', { class: 'opcao__tecla', 'aria-hidden': 'true' }, String(k + 1)), h('span', {}, o)));
@@ -115,6 +115,7 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
     if (!temMicrofone()) return enviar();
     const saida = h('p', { class: 'ajuda', 'aria-live': 'polite' }, fala ? 'Gravado. Pode regravar se quiser.' : '');
     let rec = null;
+    const soltar = () => { try { rec?.abort(); } catch {} rec = null; };
     const gravar = h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => {
       if (rec) { rec.stop(); return; }
       gravar.lastChild.textContent = 'Parar'; fala = ''; saida.textContent = 'Estou ouvindo... leia com calma, a frase inteira.';
@@ -123,12 +124,12 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
     mostrar(
       h('p', { class: 'chip chip-neutro' }, 'Fala (opcional)'),
       h('h2', {}, 'Leia em voz alta'),
-      h('blockquote', { class: 'texto-leitura', lang: 'en' }, abertas.fala.alvo + '.'),
+      h('blockquote', { class: 'texto-leitura', lang: 'en' }, palavrasToque(abertas.fala.alvo + '.')),
       gravar, saida,
       h('p', { class: 'ajuda' }, 'O reconhecimento de voz é feito pelo seu navegador (no Chrome, pelo serviço do Google). Não guardamos o áudio, só o texto reconhecido. Sotaque não é erro: medimos se dá para entender.'),
       h('div', { class: 'linha-acoes' },
-        h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => { fala = ''; enviar(); } } }, 'Pular'),
-        h('button', { type: 'button', class: 'btn', on: { click: enviar } }, 'Ver meu resultado')));
+        h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => { soltar(); fala = ''; enviar(); } } }, 'Pular'),
+        h('button', { type: 'button', class: 'btn', on: { click: () => { soltar(); enviar(); } } }, 'Ver meu resultado')));
   }
 
   async function nuncaEstudei(jaEscolheu = false) {

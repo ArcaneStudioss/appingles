@@ -805,6 +805,24 @@ function criar(db) {
     return { modo: 'catalogo', aviso, resposta: `Sem o tutor de IA ativo, consigo explicar estes pontos comuns: ${DIFICULDADES.map(d => d.nome.toLowerCase()).join('; ')}. Tente perguntar usando uma dessas palavras.` };
   });
 
+  // ---------- Toque numa palavra: alguns sentidos (cache por palavra+frase, limite de ritmo por pessoa) ----------
+  const cachePalavra = new Map();
+  rota('POST', '/palavra', async (ctx) => {
+    const w = V.str(ctx.corpo.palavra, 40, { min: 1, campo: 'Palavra' }).toLowerCase();
+    if (!/^[a-z][a-z'’-]*$/.test(w)) throw new ErroHttp(422, 'Toque em uma palavra em inglês.');
+    const frase = typeof ctx.corpo.frase === 'string' ? ctx.corpo.frase.slice(0, 300) : '';
+    const chave = w + '|' + frase.toLowerCase();
+    if (cachePalavra.has(chave)) return cachePalavra.get(chave);
+    if (!ia.ativo()) return { aviso: 'O dicionário usa a IA, que não está ligada neste servidor.', sentidos: [] };
+    if (!limIa.tentar('u' + ctx.u.id)) return { aviso: avisoIa('ritmo'), sentidos: [] };
+    try {
+      const { uso, ...r } = await ia.palavra({ palavra: w, frase });
+      if (cachePalavra.size > 2000) cachePalavra.delete(cachePalavra.keys().next().value);
+      cachePalavra.set(chave, r);
+      return r;
+    } catch (e) { console.error('[ia] palavra falhou:', e.message); return { aviso: 'Não consegui consultar agora. Tente de novo em instantes.', sentidos: [] }; }
+  });
+
   // ---------- Perfil de aprendizagem e treino focado nas dificuldades ----------
   const ESTILOS = ['ler', 'escrever', 'ouvir', 'falar'];
   const estilosDe = uid => { const l = lerJson(q('SELECT estilos FROM perfis WHERE user_id = ?').get(uid)?.estilos, []); return Array.isArray(l) ? l.filter(e => ESTILOS.includes(e)) : []; };

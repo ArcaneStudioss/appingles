@@ -15,6 +15,8 @@ const MODELOS = {
   avaliacao: process.env.IA_MODELO_AVALIACAO || PADRAO,
   tutor: process.env.IA_MODELO_TUTOR || PADRAO,
   material: process.env.IA_MODELO_MATERIAL || PADRAO,
+  // consulta de palavra é curta e frequente: modelo leve por padrão
+  palavra: process.env.IA_MODELO_PALAVRA || 'claude-haiku-5-5',
 };
 
 let cliente = null;
@@ -118,6 +120,22 @@ async function tutor({ pergunta, perfil, nivel, historico }) {
   if (mensagens[0].role === 'assistant') mensagens.shift();
   const { texto, uso } = await chamar({ tarefa: 'tutor', system, mensagens, maxTokens: 1500, esforco: 'low' });
   return { resposta: texto, modo: 'ia', uso };
+}
+
+// toque numa palavra: poucos sentidos em português, o do contexto primeiro
+async function palavra({ palavra, frase }) {
+  const system = `${BASE}\n\nThe student tapped one English word. Give at most 4 common meanings, in Brazilian Portuguese. Put the meaning that fits the sentence first and mark it with no_contexto=true (only that one). Each meaning has a short example in English with its Portuguese translation. For function words (the, of, to) give the main uses. If the word is inflected, give the base form in "forma_base" (otherwise repeat the word). "ipa" is a rough pronunciation hint in simple notation or an empty string.`;
+  const schema = {
+    type: 'object',
+    properties: {
+      forma_base: { type: 'string' }, ipa: { type: 'string' },
+      sentidos: { type: 'array', items: { type: 'object', properties: { classe: { type: 'string', description: 'e.g. verbo, substantivo, adjetivo' }, pt: { type: 'string' }, ex_en: { type: 'string' }, ex_pt: { type: 'string' }, no_contexto: { type: 'boolean' } }, required: ['classe', 'pt', 'ex_en', 'ex_pt', 'no_contexto'], additionalProperties: false } },
+    },
+    required: ['forma_base', 'ipa', 'sentidos'], additionalProperties: false,
+  };
+  const mensagens = [{ role: 'user', content: `Word: <aluno>${String(palavra).slice(0, 40)}</aluno>\nSentence where it appeared: <aluno>${String(frase || '').slice(0, 300)}</aluno>` }];
+  const { dados, uso } = await chamar({ tarefa: 'palavra', system, mensagens, schema, maxTokens: 900, esforco: 'low' });
+  return { ...dados, sentidos: (dados.sentidos || []).slice(0, 4), uso };
 }
 
 async function processarMaterial({ titulo, texto, perfil, nivel }) {
@@ -249,8 +267,9 @@ function simular(tarefa, mensagens, schema) {
     { quem: 'lou', texto: '(simulado) Hoje vamos falar dos seus tropeços.', repita: false }, { quem: 'mia', texto: "I'm 25 years old.", repita: false },
     { quem: 'lou', texto: '(simulado) Idade em inglês usa o verbo to be.', repita: false }, { quem: 'mia', texto: "I'm 25.", repita: true },
     { quem: 'lou', texto: '(simulado) Até amanhã!', repita: false }] }, uso };
+  if (p.sentidos) return { dados: { forma_base: aluno.slice(0, 20), ipa: '', sentidos: [{ classe: 'substantivo', pt: '(simulado) sentido 1', ex_en: 'An example.', ex_pt: 'Um exemplo.', no_contexto: true }, { classe: 'verbo', pt: '(simulado) sentido 2', ex_en: 'To example.', ex_pt: 'Exemplificar.', no_contexto: false }] }, uso };
   if (p.vocab) return { dados: { tipo: 'vaga', resumo: '(simulado) A hospital needs a nurse.', resumo_pt: '(simulado) Um hospital precisa de enfermeiro.', vocab: [{ en: 'triage', pt: 'triagem', ex: 'Experience in triage is required.' }], exercicios: [{ frase: 'Experience in ___ is required.', resposta: 'triage', dica: 'triagem' }], compreensao: [{ pergunta: 'O que a vaga pede?', opcoes: ['Experiência em triagem', 'Carteira de motorista', 'Inglês fluente'], correta: 0 }], dialogo: [{ quem: 'Recruiter', fala: 'Tell me about triage.' }], simulacao: ['Tell me about your triage experience.'] }, uso };
   return { dados: {}, uso };
 }
 
-module.exports = { ativo, conversar, avaliarProducao, tutor, processarMaterial, gerarExercicios, podcast, planejarEstudo, estudarAssunto, treinarTag, MODELOS };
+module.exports = { ativo, conversar, avaliarProducao, tutor, processarMaterial, gerarExercicios, podcast, planejarEstudo, estudarAssunto, treinarTag, palavra, MODELOS };
