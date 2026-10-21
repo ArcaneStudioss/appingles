@@ -1,7 +1,8 @@
 # Deploy automático do Inglou (projeto "inglou-deploy" na VPS 2051121).
 # A cada 20 s confere o último commit do main no GitHub. Quando muda, reinicia "inglou" (A), espera ficar saudável
 # e só então reinicia "inglou-b" (B), como manda o docs/DEPLOY.md. Se A não ficar saudável, B fica na versão anterior.
-# Na primeira subida só grava o "marco inicial" (não reinicia nada). O token do GitHub vem do volume do projeto
+# Na primeira subida também sincroniza as duas cópias. Só confirma o commit após ambas saudáveis; falhas são repetidas.
+# O token do GitHub vem do volume do projeto
 # "auto-deploy" (somente leitura); nenhum segredo neste arquivo. Logs: docker logs inglou-deploy-watcher-1
 services:
   watcher:
@@ -20,21 +21,28 @@ services:
         saudavel() { for i in $$(seq 1 48); do s=$$(docker inspect -f '{{.State.Health.Status}}' $$1 2>/dev/null || true); [ "$$s" = healthy ] && return 0; sleep 5; done; return 1; }
         atualizar() {
           echo "$$(date -u +%FT%TZ) inglou: reiniciando A"
-          docker restart inglou-app-1 >/dev/null || { echo "falha ao reiniciar A"; return; }
+          docker restart inglou-app-1 >/dev/null || { echo "falha ao reiniciar A"; return 1; }
           sleep 5
-          saudavel inglou-app-1 || { echo "$$(date -u +%FT%TZ) A nao ficou saudavel; B mantida na versao anterior"; return; }
+          saudavel inglou-app-1 || { echo "$$(date -u +%FT%TZ) A nao ficou saudavel; B mantida na versao anterior"; return 1; }
           echo "$$(date -u +%FT%TZ) inglou: A saudavel, reiniciando B"
-          docker restart inglou-b-app-1 >/dev/null || { echo "falha ao reiniciar B"; return; }
+          docker restart inglou-b-app-1 >/dev/null || { echo "falha ao reiniciar B"; return 1; }
           sleep 5
-          saudavel inglou-b-app-1 && echo "$$(date -u +%FT%TZ) inglou: A e B atualizadas" || echo "$$(date -u +%FT%TZ) B nao ficou saudavel"
+          saudavel inglou-b-app-1 || { echo "$$(date -u +%FT%TZ) B nao ficou saudavel"; return 1; }
+          echo "$$(date -u +%FT%TZ) inglou: A e B atualizadas"
+          return 0
         }
         while true; do
           GH_TOKEN=$$(grep -E '^GH_TOKEN=' /segredo/gh.env 2>/dev/null | head -1 | cut -d= -f2-)
           sha=$$(curl -fsS -H "Authorization: Bearer $$GH_TOKEN" "https://api.github.com/repos/$$REPO/commits?sha=main&per_page=1" 2>/dev/null | jq -r '.[0].sha // empty' 2>/dev/null || true)
           if [ -z "$$sha" ]; then echo "$$(date -u +%FT%TZ) sem resposta do GitHub (token ou rede)"; sleep 60; continue; fi
           velho=$$(cat /state/inglou 2>/dev/null || true)
-          if [ -z "$$velho" ]; then echo "$$sha" > /state/inglou; echo "$$(date -u +%FT%TZ) marco inicial $$sha"
-          elif [ "$$sha" != "$$velho" ]; then echo "$$sha" > /state/inglou; echo "$$(date -u +%FT%TZ) novo commit $$velho -> $$sha"; atualizar
+          if [ "$$sha" != "$$velho" ]; then
+            echo "$$(date -u +%FT%TZ) sincronizando commit $$sha"
+            if atualizar; then
+              echo "$$sha" > /state/inglou
+            else
+              echo "$$(date -u +%FT%TZ) atualizacao incompleta; nova tentativa no proximo ciclo"
+            fi
           fi
           sleep 20
         done
