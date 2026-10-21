@@ -32,15 +32,18 @@ const texto = (v, max, campo, { min = 1 } = {}) => {
 function validarPerguntaPropria(p) {
   if (!p || typeof p !== 'object') throw new ErroItem('Pergunta inválida.');
   const tipo = p.tipo;
-  const base = { habilidade: tipo === 'traduzir' ? 'escrita' : 'gramatica', dif: 2, origem: 'professor' };
+  const base = { habilidade: tipo === 'traduzir' ? 'escrita' : tipo === 'leitura' ? 'leitura' : tipo === 'vocabulario' ? 'vocabulario' : 'gramatica', dif: 2, origem: 'professor' };
   if (p.explica) base.explica = texto(p.explica, 300, 'Explicação', { min: 0 }) || undefined;
-  if (tipo === 'escolha') {
+  if (p.dica) base.dica = texto(p.dica, 300, 'Dica');
+  if (p.traducao) base.traducao = texto(p.traducao, 6000, 'Tradução');
+  if (['escolha', 'vocabulario', 'leitura'].includes(tipo)) {
     const opcoes = Array.isArray(p.opcoes) ? p.opcoes.map(o => texto(o, 120, 'Alternativa')) : [];
     if (opcoes.length < 2 || opcoes.length > 5) throw new ErroItem('Use de 2 a 5 alternativas.');
     if (new Set(opcoes.map(o => o.toLowerCase())).size !== opcoes.length) throw new ErroItem('Há alternativas repetidas.');
     const resposta = Number(p.resposta);
     if (!Number.isInteger(resposta) || resposta < 0 || resposta >= opcoes.length) throw new ErroItem('Marque qual alternativa é a certa.');
-    return { ...base, tipo, enunciado: texto(p.enunciado, 220, 'Enunciado'), opcoes, resposta };
+    if (tipo === 'leitura') return { ...base, tipo, texto: texto(p.texto, 6000, 'Texto de leitura'), pergunta: texto(p.pergunta || p.enunciado, 220, 'Pergunta de interpretação'), opcoes, resposta };
+    return { ...base, tipo: 'escolha', enunciado: texto(p.enunciado, 220, 'Enunciado'), opcoes, resposta };
   }
   if (tipo === 'lacuna') {
     const frase = texto(p.frase, 220, 'Frase');
@@ -54,7 +57,15 @@ function validarPerguntaPropria(p) {
     if (!aceitas.length || aceitas.length > 8) throw new ErroItem('Informe de 1 a 8 respostas aceitas.');
     return { ...base, tipo, pt: texto(p.pt, 220, 'Frase em português'), aceitas };
   }
-  throw new ErroItem('Tipo de pergunta inválido (use escolha, lacuna ou traduzir).');
+  throw new ErroItem('Tipo de pergunta inválido (use escolha, vocabulário, leitura, lacuna ou traduzir).');
+}
+
+function validarMaterial(m = {}) {
+  if (!m || typeof m !== 'object' || Array.isArray(m)) throw new ErroItem('Material da aula inválido.');
+  const campo = (v, max, nome) => v == null || v === '' ? '' : texto(v, max, nome, { min: 0 });
+  if (m.vocab != null && (!Array.isArray(m.vocab) || m.vocab.length > 30)) throw new ErroItem('Use até 30 palavras no vocabulário da aula.');
+  return { explicacao: campo(m.explicacao, 4000, 'Explicação da aula'), texto: campo(m.texto, 6000, 'Texto de apoio'), traducao: campo(m.traducao, 6000, 'Tradução do texto'),
+    vocab: (m.vocab || []).map(v => ({ en: texto(v?.en, 100, 'Palavra em inglês'), pt: texto(v?.pt, 200, 'Significado em português') })) };
 }
 
 // Monta as perguntas da atividade: ids do banco do app + perguntas do professor. Cada item ganha id próprio (i1, i2...).
@@ -121,4 +132,4 @@ function dificuldadesDaTurma(respostas, itensPorId, nomeDe, nomeHabilidade = h =
     .slice(0, 8);
 }
 
-module.exports = { novoCodigo, normalizarCodigo, codigoValido, validarPerguntaPropria, montarItens, metricasDaAtividade, dificuldadesDaTurma, ErroItem, ALFABETO };
+module.exports = { novoCodigo, normalizarCodigo, codigoValido, validarPerguntaPropria, validarMaterial, montarItens, metricasDaAtividade, dificuldadesDaTurma, ErroItem, ALFABETO };

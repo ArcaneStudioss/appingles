@@ -2,25 +2,8 @@
 // Correção sem IA: exercícios fechados (exata) e produção livre (rubrica de elementos + detectores de erros comuns).
 // A correção de produção sem IA é limitada e o app diz isso ao aluno. Com IA, o tutor complementa (ver ia.js).
 const { comparar, compararFala, normalizar, palavras } = require('./util');
-const { detectar, POR_TAG } = require('../conteudo/dificuldades');
-const { MISSOES } = require('../conteudo/missoes');
-
-// frase em inglês -> tradução, tirada dos exemplos das missões (usada para explicar exercícios de escuta e ditado)
-const TRADUCAO = new Map(MISSOES.flatMap(m => m.exemplos.map(e => [normalizar(e.en), e.pt])));
-
-// Explicação padrão quando o exercício não traz a própria: mostra a frase completa, a tradução e as formas aceitas.
-function explicacaoPadrao(ex) {
-  const pt = en => { const t = TRADUCAO.get(normalizar(en)); return t ? ` (${t})` : ''; };
-  switch (ex.tipo) {
-    case 'escuta': case 'ditado': return ex.audio ? `Você ouviu: "${ex.audio}"${pt(ex.audio)}.` : null;
-    case 'lacuna': return ex.frase && ex.frase.includes('___') ? `A frase completa é: "${ex.frase.replace('___', ex.resposta[0])}".` : null;
-    case 'ordenar': return `A frase na ordem certa: "${ex.resposta}${ex.sufixo || ''}".`;
-    case 'traduzir': { const outras = ex.aceitas.slice(1, 3); return outras.length ? `Também vale: ${outras.map(o => `"${o}"`).join(' ou ')}.` : null; }
-    case 'fala': return `Para treinar: "${ex.frase}"${pt(ex.frase)}. Ouça o Tuiuiú e fale de novo.`;
-    case 'leitura': return ex.texto && ex.opcoes ? `A resposta está no texto: "${ex.opcoes[ex.resposta]}".` : null;
-    default: return null;
-  }
-}
+const { detectar } = require('../conteudo/dificuldades');
+const { retornoDidatico } = require('./apoio');
 
 function respostaCerta(ex) {
   switch (ex.tipo) {
@@ -56,12 +39,12 @@ function corrigirExercicio(ex, resposta) {
   } else {
     r = { correto: false, quase: false };
   }
-  const out = { correto: r.correto, quase: r.quase, esperado: respostaCerta(ex), explica: ex.explica || explicacaoPadrao(ex), achados: [] };
+  const esperado = respostaCerta(ex);
+  const out = { correto: r.correto, quase: r.quase, esperado, ...retornoDidatico(ex, esperado), achados: [] };
   // Em respostas digitadas erradas, procurar o erro típico para explicar o "porquê"
   if (!r.correto && ['lacuna', 'traduzir', 'ditado', 'corrigir'].includes(ex.tipo) && typeof resposta === 'string') {
     out.achados = detectar(resposta).filter(a => a.confianca !== 'baixa');
   }
-  if (!r.correto && ex.tag && POR_TAG[ex.tag] && !ex.explica) out.explica = POR_TAG[ex.tag].regra;
   return out;
 }
 

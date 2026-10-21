@@ -1,6 +1,21 @@
 # Inglou
 
-Plataforma de estudo de inglês que funciona como um professor particular digital: o objetivo do aluno (ex.: "entrevista de emprego daqui a 3 meses") monta o curso, e o que trava nas conversas vira a aula do dia seguinte. Proposta completa, jornada, lógica de personalização, planos e custos de IA: **[docs/PROPOSTA.md](docs/PROPOSTA.md)**.
+Plataforma de inglês por assinatura para crianças, adolescentes e adultos, com estudo individual e turmas de professores. A idade orienta os temas e a linguagem; o nível de inglês orienta a dificuldade. O objetivo do aluno monta o curso, e as dificuldades das atividades e conversas ajudam a escolher a próxima aula.
+
+## Experiência por idade e papel
+
+- Cadastro com idade e escolha entre aluno e professor. Contas existentes informam esses dados uma vez na entrada; alterações ficam em Conta. Faixas: crianças até 12 anos, adolescentes de 13 a 17, adultos a partir de 18. O cadastro de menores registra a confirmação de autorização do responsável.
+- Navegação principal curta no celular e no computador: Hoje, Biblioteca, Progresso, Turmas e Mais. Professores têm Painel, Biblioteca, Conta e Mais. Os demais recursos ficam agrupados por finalidade em Mais, e turmas e aulas têm caminhos de volta visíveis. Cores, cartões, mascote e temas dia/noite mantêm a identidade do app.
+- Contextos diferentes na trilha, biblioteca, nivelamento e conversas. A idade não limita o nível alcançado. O tutor com IA recebe a orientação de público, além do nível e do objetivo.
+- Iniciantes começam com três expressões por vez e até cinco atividades em cerca de cinco minutos. Reconhecer vem antes de completar e escrever. Dicas, respostas explicadas, áudio e repetição funcionam sem IA.
+- Toque nas palavras sublinhadas em inglês para abrir a tradução acima delas. O dicionário funciona localmente, complementado pelo vocabulário do catálogo; palavras ainda não cobertas não recebem traduções inventadas. O significado contextual da frase aparece quando disponível. Os botões de seleção de resposta mantêm sua função original.
+- Biblioteca (`#/biblioteca`): nove capítulos, três por público, de A1 a B1, com 45 questões novas de vocabulário, leitura e aplicação. Há texto, tradução de apoio, áudio, explicação e cartões de revisão. Professores podem acrescentar seus conteúdos, inclusive de outros níveis.
+- Área do professor (`#/professor`): criar turma com público e nível, filtrar questões por assunto, tipo e nível, usar capítulos como modelo, escrever interpretação de texto e vocabulário, acrescentar material de estudo, conferir a prévia e publicar a aula. É possível reutilizar uma aula em outra turma sem copiar respostas.
+- Área do aluno (`#/turmas`): entrar por código, estudar o material do professor, responder uma questão por vez, consultar o conteúdo e rever respostas e explicações. A primeira tentativa fica registrada; novas tentativas de prática não duplicam notas nem progresso.
+
+Migração 7 apenas acrescenta colunas e a tabela `biblioteca_progressos`; preserva contas, assinaturas, turmas e histórico. O progresso novo entra na exportação e exclusão de dados. Os preços e o processamento de pagamentos permanecem sob o módulo de assinatura existente.
+
+Proposta original, personalização e custos de IA: **[docs/PROPOSTA.md](docs/PROPOSTA.md)**.
 
 ## Rodar
 
@@ -9,7 +24,7 @@ Requisitos: Node 22.13 ou mais novo (usa o SQLite nativo `node:sqlite`). Uma ún
 ```bash
 npm ci
 npm run dev          # http://localhost:8080 (pagamento simulado, para testar a assinatura)
-npm test             # 36 testes: segurança, motor de personalização e o ciclo completo
+npm test             # 62 testes: segurança, personalização, turmas e aprendizagem guiada
 ```
 
 Sem `ANTHROPIC_API_KEY` o app funciona inteiro no **modo de prática**: conversa por roteiro do cenário, correção por regras (14 erros típicos de brasileiros), tutor que responde pelos pontos do catálogo. Com a chave, entram a conversa livre, a correção detalhada, os exercícios escritos com a situação do aluno e o processamento de materiais. Para testar os caminhos com IA sem gastar: `IA_FAKE=1` (só fora de produção).
@@ -19,8 +34,8 @@ Variáveis: ver `.env.example`.
 ## Interface: "o álbum do Tuiuiú" (18/10/2026)
 O app é um álbum de figurinhas: cada missão é uma página, cada aula feita cola uma figurinha, a tarefa final vira a figurinha brilhante. Cada atividade tem sempre a mesma cor e ícone (aula azul, revisar sol, conversar menta, álbum lilás, meu texto turquesa, dúvidas coral). Interruptor Dia/Noite sempre à vista; o Tuiuiú lê em voz alta (português) o que está no balão dele; revisão com carinhas; a lição mostra a etapa (Entender, Praticar, Ouvir, Sua vez) e o Tuiuiú anda no trilho de progresso. O app usa só `assets/css/app.css` (a página pública continua com `base.css` + `landing.css`).
 
-## Navegação no celular (18/10/2026)
-A doca de baixo tem 4 abas (Hoje, Revisar, Conversar, Álbum) e o botão **Mais**, que abre uma janela com Rádio Tuiuiú, Meu treino, Sob medida, Meu texto, Meu jeito, Dúvidas e Eu (antes esses recursos só apareciam no PC). Na tela Hoje a aula do dia vem logo abaixo da saudação. Quem escolheu "Começar do zero" no perfil vê o caminho sem teste como botão principal do nivelamento.
+## Navegação no celular e no computador (21/10/2026)
+A navegação do aluno tem Hoje, Biblioteca, Progresso (Álbum para crianças), Turmas e **Mais**. No perfil professor, aparecem Painel, Biblioteca, Conta e Mais. A janela Mais agrupa os outros recursos em Praticar inglês, Personalizar estudos e Ensino e conta. A tela Hoje prioriza a aula do dia e as atividades da turma; outras formas de praticar e a trilha ficam em seções expansíveis. Quem escolhe "Começar do zero" segue direto para uma aula curta, sem teste de nível.
 
 ## Sequência e Rádio Tuiuiú (18/10/2026)
 - **Sequência de dias** (`src/motor/sequencia.js`): calculada de `dias_estudo`, sem castigo. Hoje sem estudo não quebra; a cada 7 dias seguidos ganha 1 escudo (até 2) que salva um dia perdido; o recorde fica. Prêmios viram figurinhas especiais aos 3, 7, 14, 30, 60, 100, 200 e 365 dias.
@@ -33,7 +48,7 @@ Personalização por **desempenho, não por rótulo** (a ideia de "estilos de ap
 Para quem tem uma prova, entrevista ou viagem: `#/sobmedida`. O aluno descreve o que cai (e, se quiser, cola o material e põe a data); o app separa em **assuntos** em ordem, calcula quantos por dia até a data, e cada assunto vira uma mini-aula (explicação, exemplos, palavras, dicas, 5 exercícios) criada na primeira abertura. No fim, **mini simulado** sem consulta (as perguntas saem do que o aluno já abriu; o resultado vem por assunto, com aviso de que não prevê a nota real). Os erros viram cartões de revisão e entram na Rádio Tuiuiú. Motor em `src/motor/estudo.js`; com IA, `ia.planejarEstudo` e `ia.estudarAssunto` (cota `estudo`); sem IA usa o catálogo de dificuldades e o texto colado, e avisa o que não cobre em vez de inventar. Tabela `estudos` (migração 4). Entra no export e na exclusão de dados.
 
 ## Turmas do professor (19/10/2026)
-Qualquer conta pode **criar uma turma** (vira professor dela) e **entrar em turmas** por código. `#/turmas` (Mais > Turmas): o professor cria a turma e recebe um código de 6 caracteres (sem 0/O/1/I/L) e um link (`#/turmas?codigo=...`: quem abre sem conta cria uma e volta para a tela de entrada). Painel do professor (`#/turma/ID`): código com copiar/trocar, atividades, alunos (respondidas, acerto, atividades feitas, última) e **dificuldades da turma** (erros por ponto de gramática ou habilidade). Nova atividade (`#/turma/ID/nova`): perguntas do banco do app (qualquer missão, inclusive banco, clínica, supermercado...) mais perguntas próprias (escolha, lacuna, traduzir), com prazo opcional. Resultado por pergunta e por aluno em `#/turma/ID/aN`. O aluno vê um cartão em Hoje com as atividades pendentes e faz a atividade como a lição (a correção é no servidor; o gabarito não vai ao navegador). As respostas também alimentam o plano pessoal do aluno.
+Qualquer conta pode **criar uma turma** (vira professor dela) e **entrar em turmas** por código. O aluno acessa `#/turmas` pela barra principal; o professor acessa `#/professor` pelo Painel ou por Mais > Área do professor. Ao criar a turma, recebe um código de 6 caracteres (sem 0/O/1/I/L) e um link (`#/turmas?codigo=...`: quem abre sem conta cria uma e volta para a tela de entrada). Painel da turma (`#/turma/ID`): código com copiar/trocar, atividades, alunos (respondidas, acerto, atividades feitas, última) e **dificuldades da turma** (erros por ponto de gramática ou habilidade). Nova atividade (`#/turma/ID/nova`): material de estudo, questões filtradas por tema, nível, público e tipo, capítulos prontos como modelo e perguntas próprias (escolha, vocabulário, leitura, lacuna e tradução), com prévia e prazo opcional. Resultado por pergunta e por aluno em `#/turma/ID/aN`; a aula pode ser reutilizada em outra turma. O aluno vê um cartão em Hoje com as atividades pendentes e faz a atividade como a lição (a correção é no servidor; o gabarito aparece após responder ou pedir ajuda). As respostas também alimentam o plano pessoal do aluno.
 - **Privacidade:** o professor vê nome, acertos, tempo e conclusão só nas atividades da turma; nunca o que o aluno digitou, conversas, textos, cartões nem o resto do estudo. O aluno entra ciente disso, pode sair quando quiser (as respostas dele na turma são apagadas) e a exportação de dados inclui a participação em turmas.
 - **Código:** `src/turmas.js` (rotas), `src/motor/turmas.js` (código, validação das perguntas, métricas), telas `telas/turmas.js` (aluno) e `telas/professor.js`. Migração 6 (só acréscimo): `turmas`, `turma_alunos`, `atividades`, `atividade_respostas`. Testes em `tests/turmas.test.js`.
 - **Ainda não tem:** convite por e-mail (o app não envia e-mail), perguntas de escuta/fala escritas pelo professor, e a edição de atividades já publicadas.

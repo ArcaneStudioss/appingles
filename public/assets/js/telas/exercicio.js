@@ -1,23 +1,31 @@
 // Componente de exercício. Padrão de jogo: escolhe ou escreve, toca em "Conferir",
 // e uma folha de resposta sobe de baixo (azul quando acerta, coral suave quando é "quase").
 // Teclado: 1 a 9 escolhem alternativas, Enter confere e continua. A correção vem do servidor.
-import { h, icone, falar, toast, ocupado, ouvirMicrofone } from '../ui.js?v=__V__';
+import { h, icone, falar, falarPt, toast, ocupado, ouvirMicrofone } from '../ui.js?v=__V__';
 import { lou, som } from '../diversao.js?v=__V__';
+import { fraseConhecida } from '../traducao.js?v=__V__';
 
 const ehIngles = s => /^[\x20-\x7E’‘]+$/.test(s || '');
 const ELOGIOS = ['Mandou bem!', 'Isso aí!', 'Perfeito!', 'Boa!', 'Certinho!'];
-const QUASE = ['Quase!', 'Foi por pouco.', 'Bora ajustar.'];
-
-export function exercicio(ex, { responder, contestar, ja, devagar = false, aoProximo, rotuloProximo = 'Continuar', barraFixa = false }) {
+export function exercicio(ex, config) {
+  const infantil = document.body.dataset.publico === 'crianca';
+  const { responder, contestar, ja, devagar = false, aoProximo, rotuloProximo = 'Continuar', barraFixa = false, permitirTreino = false, pratica = false } = config;
   const t0 = performance.now();
-  let usouDica = false, conferido = false, rec = null, pegarResposta = () => null;
+  let usouDica = pratica, conferido = false, enviando = false, rec = null, pegarResposta = () => null;
   const raiz = h('article', { class: 'exercicio', dados: { tipo: ex.tipo } });
+  raiz.addEventListener('inglou:traducao', () => { usouDica = true; });
   const area = h('div', { class: 'exercicio__area' });
   const vel = devagar ? 0.85 : 1;
   const btnConferir = h('button', { type: 'button', class: 'btn btn-bloco', disabled: true }, 'Conferir');
-  const folha = h('div', { class: 'folha-resposta', 'aria-live': 'polite' });
-  const barra = h('div', { class: 'barra-acao' + (barraFixa ? ' barra-acao--fixa' : '') }, h('div', { class: 'barra-acao__in' }, folha, btnConferir));
+  const folha = h('section', { class: 'folha-resposta retorno-exercicio', 'aria-live': 'polite', tabindex: '-1', hidden: true });
+  const barra = h('div', { class: 'barra-acao' + (barraFixa ? ' barra-acao--fixa' : '') }, h('div', { class: 'barra-acao__in' }, btnConferir));
   const habilitar = (sim) => { btnConferir.disabled = !sim; };
+  const dica = h('details', { class: 'ajuda-exercicio', on: { toggle: e => { if (e.currentTarget.open) usouDica = true; } } },
+    h('summary', {}, icone('lightbulb'), 'Preciso de uma dica'),
+    h('p', {}, ex.dica || 'Vá com calma. Releia o pedido e lembre do exemplo da aula.'),
+    (ex.apoio || []).map(v => h('p', { class: 'apoio-palavra' }, h('span', {}, h('strong', { lang: 'en', 'data-traducao': v.pt }, v.en), ' = ', v.pt), h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir ' + v.en, on: { click: () => falar(v.en, { velocidade: 0.8 }) } }, icone('speaker-high')))));
+  const verResposta = permitirTreino ? h('button', { type: 'button', class: 'btn btn-texto ajuda-resposta', on: { click: () => conferir(true) } }, icone('eye'), 'Ver resposta e aprender') : null;
+  const ajuda = h('div', { class: 'ajudas-exercicio' }, dica, verResposta);
 
   if (ex.tipo === 'escuta' || ex.tipo === 'ditado') {
     // velocidade do áudio: a pessoa ajusta para mais devagar ou mais rápido e ouve de novo na hora
@@ -31,68 +39,89 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
     const mudar = d => { vi = Math.max(0, Math.min(VELS.length - 1, vi + d)); rotuloVel.textContent = nomeVel(); menos.disabled = vi === 0; mais.disabled = vi === VELS.length - 1; tocar(); };
     menos.addEventListener('click', () => mudar(-1)); mais.addEventListener('click', () => mudar(1));
     area.append(h('div', { class: 'escuta-caixa' },
-      h('button', { type: 'button', class: 'btn btn-ouvir-grande', 'aria-label': 'Ouvir o áudio', on: { click: tocar } }, icone('speaker-high')),
+      h('button', { type: 'button', class: 'btn btn-ouvir-grande', 'aria-label': 'Ouvir o áudio', on: { click: tocar } }, icone('speaker-high'), h('span', {}, 'Ouvir')),
       h('div', { class: 'vel', role: 'group', 'aria-label': 'Velocidade do áudio' }, menos, rotuloVel, mais),
       h('p', { class: 'ajuda' }, 'Toque no botão para ouvir. O áudio não toca sozinho.')));
   }
   if (ex.tipo === 'leitura') area.append(h('blockquote', { class: 'texto-leitura', lang: 'en' }, ex.texto));
   const titulo = ex.enunciado || ex.pergunta || ({ lacuna: 'Complete a frase', ordenar: 'Monte a frase', ditado: 'Escreva o que você ouviu', traduzir: 'Escreva em inglês', fala: 'Fale em voz alta', pares: 'Toque nos pares que combinam', corrigir: 'Corrija a frase' })[ex.tipo];
-  raiz.append(h('h2', { class: 'enunciado', lang: ehIngles(titulo) ? 'en' : null }, titulo));
+  const trechosTitulo = String(titulo || '').split(/([“"][^”"]+[”"])/g).map(t => /^[“"]/.test(t) && fraseConhecida(t.slice(1, -1)) ? h('span', { lang: 'en' }, t) : t);
+  raiz.append(ex.imagem ? h('div', { class: 'exercicio__cena', 'aria-hidden': 'true' }, ex.imagem) : null,
+    ex.guiado && infantil ? h('p', { class: 'rotulo-pequeno' }, ({ escolha: 'Escolha e descubra', lacuna: 'Encaixe a palavra', ordenar: 'Monte com bloquinhos', escuta: 'Ouvidos atentos', pares: 'Junte as duplas' })[ex.tipo]) : null,
+    h('h2', { class: 'enunciado' }, trechosTitulo), ex.instrucao ? h('p', { class: 'instrucao' }, ex.instrucao) : null);
   if (ex.tipo === 'escuta' && ex.pergunta && ex.enunciado) raiz.append(h('p', {}, ex.pergunta));
 
-  async function conferir() {
-    if (conferido || btnConferir.disabled) return;
-    const resposta = pegarResposta();
-    if (resposta == null || resposta === '') return;
+  async function conferir(revelar = false) {
+    if (conferido || enviando || (!revelar && btnConferir.disabled)) return;
+    const resposta = revelar ? '' : pegarResposta();
+    if (!revelar && (resposta == null || resposta === '')) return;
+    enviando = true;
+    if (verResposta) verResposta.disabled = true;
     ocupado(btnConferir, true);
-    area.querySelectorAll('input,textarea,.opcao,.peca,.par').forEach(b => { b.disabled = true; });
+    area.querySelectorAll('input,textarea,.opcao,.peca,.par,.palavra-banco').forEach(b => { b.disabled = true; });
     try {
-      const r = await responder(resposta, { tempoMs: Math.round(performance.now() - t0), dica: usouDica });
+      const r = await responder(resposta, { tempoMs: Math.round(performance.now() - t0), dica: usouDica || revelar, revelar, treinar: pratica });
       conferido = true;
       mostrar(r, resposta);
     } catch (e) {
       toast(e.message, { tipo: 'erro' });
-      area.querySelectorAll('input,textarea,.opcao,.peca,.par').forEach(b => { b.disabled = false; });
-    } finally { ocupado(btnConferir, false); }
+      area.querySelectorAll('input,textarea,.opcao,.peca,.par:not(.ok),.palavra-banco').forEach(b => { b.disabled = false; });
+      if (ex.tipo === 'pares') btnConferir.hidden = false;
+    } finally { enviando = false; ocupado(btnConferir, false); if (verResposta) verResposta.disabled = conferido; }
   }
-  btnConferir.addEventListener('click', conferir);
+  const aoConferir = () => conferir();
+  btnConferir.addEventListener('click', aoConferir);
 
   function mostrar(r, resposta, silencioso = false) {
     conferido = true;
+    ajuda.hidden = true;
+    if (pular) pular.hidden = true;
+    folha.hidden = false;
+    folha.classList.add(r.correto ? 'retorno-exercicio--certo' : 'retorno-exercicio--aprender');
     raiz.classList.add(r.correto ? 'is-certo' : 'is-errado');
     barra.classList.add(r.correto ? 'barra-acao--certo' : 'barra-acao--quase');
-    if (!silencioso) som(r.correto ? 'acerto' : 'erro');
+    if (!silencioso && !r.ajuda) som(r.correto ? 'acerto' : 'erro');
     // marca a alternativa certa quando a escolhida estava errada
-    if (!r.correto) area.querySelectorAll('.opcao').forEach(o => { if (o.lastElementChild?.textContent === r.esperado) o.classList.add('certa'); });
-    const corpo = [];
-    if (r.correto) {
-      corpo.push(h('p', { class: 'folha-resposta__titulo' }, ELOGIOS[Math.floor(Math.random() * ELOGIOS.length)]));
-      if (r.quase && ex.tipo !== 'pares') corpo.push(h('p', {}, 'Só confira a grafia: ', h('strong', { lang: 'en' }, r.esperado)));
-      if (r.quase && ex.tipo === 'pares') corpo.push(h('p', {}, 'Um tropeço só. Conta como acerto.'));
+    area.querySelectorAll('.opcao').forEach(o => {
+      if (o.lastElementChild?.textContent === r.esperado) o.classList.add('certa');
+      if (o.lastElementChild?.textContent === resposta) { o.classList.add('escolhida'); o.setAttribute('aria-checked', 'true'); }
+    });
+    const corpo = [h('h3', { class: 'folha-resposta__titulo' }, r.ajuda ? (infantil ? 'Vamos aprender juntos!' : 'Veja a resposta e a explicação') : r.correto ? (pratica ? 'Você conseguiu!' : infantil ? ELOGIOS[Math.floor(Math.random() * ELOGIOS.length)] : 'Resposta correta!') : infantil ? 'Vamos aprender com esta!' : 'Vamos entender a resposta')];
+    if (ex.tipo !== 'pares') {
+      if (!r.correto && resposta && ex.tipo !== 'fala') corpo.push(h('p', { class: 'resposta-anterior' }, 'Você respondeu: ', h('span', {}, resposta)));
+      corpo.push(h('div', { class: 'resposta-modelo' }, h('p', { class: 'rotulo-pequeno' }, r.correto ? 'Resposta' : 'Resposta correta'),
+        h('p', { class: 'resposta-modelo__texto', lang: r.audioResposta ? 'en' : null, 'data-traducao': r.traducao || null }, r.fraseCompleta || r.esperado),
+        r.traducao ? h('p', { class: 'resposta-modelo__pt' }, 'Em português: ', r.traducao) : null));
     } else {
-      corpo.push(h('p', { class: 'folha-resposta__titulo' }, QUASE[Math.floor(Math.random() * QUASE.length)]));
-      if (ex.tipo !== 'pares') corpo.push(h('div', { class: 'correcao' },
-        resposta && !/^erros:/.test(resposta) && ex.tipo !== 'fala' ? h('span', { class: 'riscado', lang: 'en' }, resposta) : null,
-        h('span', { class: 'nova', lang: 'en' }, r.esperado)));
-      else corpo.push(h('p', {}, 'Esses pares voltam na revisão para fixar.'));
-      if (r.explica) corpo.push(h('p', { class: 'explica' }, r.explica));
+      corpo.push(h('ul', { class: 'resposta-pares' }, (r.pares || ex.pares).map(p => h('li', {}, h('strong', { lang: 'en', 'data-traducao': p.pt }, p.en), h('span', {}, p.pt), h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir ' + p.en, on: { click: () => falar(p.en, { velocidade: 0.8 }) } }, icone('speaker-high'))))));
+    }
+    if (r.quase && ex.tipo !== 'pares') corpo.push(h('p', {}, 'Você acertou a ideia! Veja também como se escreve acima.'));
+    if (r.explica) corpo.push(h('div', { class: 'explicacao-resposta' }, h('h4', {}, 'Por quê?'), h('p', { class: 'explica' }, r.explica)));
+    if (!r.correto) {
       for (const a of (r.achados || []).filter(a => a.explicacao !== r.explica)) corpo.push(h('p', { class: 'explica' }, icone('lightbulb'), ` ${a.nome}: ${a.explicacao}`));
       if (contestar && ['lacuna', 'traduzir', 'ditado', 'ordenar'].includes(ex.tipo) && resposta) {
         const b = h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: async () => { ocupado(b, true); try { const m = await contestar(); b.replaceWith(h('p', { class: 'ajuda' }, m)); } catch (e) { toast(e.message); ocupado(b, false); } } } }, 'Acho que a minha também está certa');
         corpo.push(b);
       }
     }
-    if (r.textoAudio) {
-      const ver = h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => ver.replaceWith(h('p', { class: 'transcricao', lang: 'en' }, r.textoAudio)) } }, icone('eye'), 'Ver o texto do áudio');
-      corpo.push(ver);
-    }
+    if (r.textoAudio && r.textoAudio !== r.fraseCompleta) corpo.push(h('p', { class: 'transcricao', lang: 'en' }, r.textoAudio));
+    corpo.push(h('div', { class: 'linha-acoes retorno-exercicio__acoes' },
+      r.audioResposta ? h('button', { type: 'button', class: 'btn btn-sec btn-peq', on: { click: () => falar(r.audioResposta, { velocidade: 0.8 }) } }, icone('speaker-high'), 'Ouvir resposta') : null,
+      r.explica ? h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => falarPt(r.explica) } }, icone('speaker-high'), 'Ler explicação') : null,
+      !r.correto && permitirTreino ? h('button', { type: 'button', class: 'btn btn-sec btn-peq', on: { click: () => {
+        document.removeEventListener('keydown', teclas);
+        try { rec?.stop(); } catch {}
+        const novo = exercicio(ex, { ...config, ja: null, pratica: true });
+        raiz.replaceWith(novo);
+        novo.querySelector('h2')?.setAttribute('tabindex', '-1'); novo.querySelector('h2')?.focus();
+      } } }, icone('arrow-counter-clockwise'), 'Tentar de novo') : null));
     folha.replaceChildren(h('div', { class: 'folha-resposta__lou' }, lou(r.correto ? 'feliz' : 'ops', { tamanho: 56, rotulo: '' })), h('div', { class: 'folha-resposta__texto' }, corpo));
     btnConferir.hidden = false;
     btnConferir.textContent = rotuloProximo;
     btnConferir.disabled = false;
     btnConferir.onclick = () => aoProximo?.();
-    btnConferir.removeEventListener('click', conferir);
-    btnConferir.focus({ preventScroll: true });
+    btnConferir.removeEventListener('click', aoConferir);
+    if (!silencioso) requestAnimationFrame(() => { folha.focus({ preventScroll: true }); folha.scrollIntoView({ block: 'start', behavior: 'instant' }); });
   }
 
   // ---- por tipo
@@ -115,15 +144,16 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
       if (i < partes.length - 1) { const c = h('input', { type: 'text', class: 'lacuna', 'aria-label': `Lacuna ${i + 1}`, autocapitalize: 'off', spellcheck: 'false', maxlength: 60, size: 8 }); c.addEventListener('input', () => habilitar(campos.every(x => x.value.trim()))); campos.push(c); linha.append(c); }
     });
     pegarResposta = () => campos.map(c => c.value.trim()).join(' ').trim();
-    area.append(linha, ex.dica ? h('button', { type: 'button', class: 'btn btn-texto btn-peq dica', on: { click: e => { usouDica = true; e.currentTarget.replaceWith(h('span', { class: 'bilhete pequeno' }, 'dica: ' + ex.dica)); } } }, icone('lightbulb'), 'Dica') : null);
-    setTimeout(() => campos[0]?.focus({ preventScroll: true }), 60);
+    area.append(linha);
+    if (ex.bancoPalavras?.length && campos.length === 1) area.append(h('div', { class: 'banco-palavras', role: 'group', 'aria-label': 'Palavras para completar o espaço' }, ex.bancoPalavras.map(p => h('button', { type: 'button', class: 'peca palavra-banco', lang: 'en', on: { click: () => { if (conferido || enviando) return; campos[0].value = p; habilitar(true); som('toque'); } } }, p))), h('p', { class: 'ajuda' }, 'Você pode tocar em uma palavra ou escrever no espaço.'));
+    if (!ex.guiado) setTimeout(() => campos[0]?.focus({ preventScroll: true }), 60);
   } else if (ex.tipo === 'ordenar') {
     const montada = h('div', { class: 'montagem', lang: 'en', 'aria-label': 'Sua frase', 'aria-live': 'polite' });
     const banco = h('div', { class: 'banco', lang: 'en' });
     const atualizar = () => habilitar(banco.children.length === 0);
     ex.palavras.forEach(p => {
       const peca = h('button', { type: 'button', class: 'peca' }, p);
-      peca.addEventListener('click', () => { (peca.parentElement === banco ? montada : banco).append(peca); som('toque'); atualizar(); });
+      peca.addEventListener('click', () => { if (conferido || enviando) return; (peca.parentElement === banco ? montada : banco).append(peca); som('toque'); atualizar(); });
       banco.append(peca);
     });
     pegarResposta = () => [...montada.children].map(b => b.textContent).join(' ') + (ex.sufixo || '');
@@ -172,28 +202,32 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
   } else if (ex.tipo === 'pares') {
     // combina inglês x português; o resultado vai ao servidor como "erros:N"
     let erros = 0, sel = null, feitos = 0;
+    const retornoPar = h('p', { class: 'retorno-par', 'aria-live': 'polite' });
     const embaralha = l => l.map(v => [Math.random(), v]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
     const colEn = h('div', { class: 'pares__col' }), colPt = h('div', { class: 'pares__col' });
     const clicar = (btn) => {
-      if (btn.classList.contains('ok')) return;
+      if (conferido || enviando || btn.classList.contains('ok')) return;
       som('toque');
       if (!sel || sel.dataset.lado === btn.dataset.lado) { sel?.classList.remove('sel'); sel = btn; btn.classList.add('sel'); if (btn.dataset.lado === 'en') falar(btn.textContent); return; }
       const certo = sel.dataset.i === btn.dataset.i;
+      const emIngles = sel.dataset.lado === 'en' ? sel : btn;
+      const par = ex.pares[Number(emIngles.dataset.i)];
+      retornoPar.replaceChildren(certo ? 'Isso! ' : 'Vamos lembrar: ', h('strong', { lang: 'en', 'data-traducao': par.pt }, par.en), ' = ', par.pt, certo ? '.' : '. Tente juntar essas duas.');
       if (certo) { for (const b of [sel, btn]) { b.classList.remove('sel'); b.classList.add('ok'); b.disabled = true; } feitos++; som('acerto'); if (feitos === ex.pares.length) { habilitar(true); conferir(); } }
-      else { erros++; for (const b of [sel, btn]) { b.classList.add('nao'); setTimeout(() => b.classList.remove('nao', 'sel'), 450); } }
+      else { erros++; usouDica = true; for (const b of [sel, btn]) { b.classList.add('nao'); setTimeout(() => b.classList.remove('nao', 'sel'), 450); } }
       sel = null;
     };
     for (const [i, p] of embaralha(ex.pares.map((p, i) => [i, p]))) colEn.append(h('button', { type: 'button', class: 'par', lang: 'en', dados: { i, lado: 'en' }, on: { click: e => clicar(e.currentTarget) } }, p.en));
     for (const [i, p] of embaralha(ex.pares.map((p, i) => [i, p]))) colPt.append(h('button', { type: 'button', class: 'par', dados: { i, lado: 'pt' }, on: { click: e => clicar(e.currentTarget) } }, p.pt));
     pegarResposta = () => 'erros:' + Math.min(99, erros);
-    area.append(h('div', { class: 'pares' }, colEn, colPt));
+    area.append(h('div', { class: 'pares-cabecalho', 'aria-hidden': 'true' }, h('span', {}, 'Inglês'), h('span', {}, 'Português')), h('div', { class: 'pares' }, colEn, colPt), retornoPar);
     btnConferir.hidden = true;
   }
 
   // atalhos de teclado (só para o exercício visível)
   const teclas = e => {
     if (!raiz.isConnected) { document.removeEventListener('keydown', teclas); return; }
-    if (e.target.matches('input,textarea')) return;
+    if (e.target.matches('input,textarea') || e.target.closest('.palavra-traduzivel,.traducao-balao,summary,button:not(.opcao)')) return;
     const n = Number(e.key);
     const ops = area.querySelectorAll('.opcao:not([disabled])');
     if (n >= 1 && n <= ops.length) { ops[n - 1].click(); e.preventDefault(); }
@@ -211,18 +245,18 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
       conferido = true;
       try { rec?.stop(); } catch {}
       area.querySelectorAll('input,textarea,.opcao,.peca,.par,button').forEach(b => { b.disabled = true; });
-      raiz.classList.add('is-pulado');
+      raiz.classList.add('is-pulado'); ajuda.hidden = true; folha.hidden = false;
       btnConferir.hidden = true;
       folha.replaceChildren(h('div', { class: 'folha-resposta__texto' }, h('p', { class: 'folha-resposta__titulo' }, 'Tudo bem!'), h('p', {}, 'A gente pula este por agora. Não conta como erro.')));
       pular.disabled = true;
-      setTimeout(() => aoProximo(), 650);
+      pular.replaceWith(h('button', { type: 'button', class: 'btn', on: { click: aoProximo } }, 'Continuar'));
     } } }, icone(ex.tipo === 'fala' ? 'microphone' : 'speaker-x'), motivoPular);
-    raiz.append(area, pular, barra);
-  } else raiz.append(area, barra);
+    raiz.append(area, ajuda, pular, folha, barra);
+  } else raiz.append(area, ajuda, folha, barra);
   if (ja) {
     area.querySelectorAll('input,textarea,.opcao,.peca,.par').forEach(b => { b.disabled = true; });
     btnConferir.hidden = false;
-    btnConferir.removeEventListener('click', conferir);
+    btnConferir.removeEventListener('click', aoConferir);
     mostrar(ja, ja.resposta, true);
   }
   return raiz;

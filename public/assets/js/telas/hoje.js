@@ -12,6 +12,7 @@ export const nomeConquista = c => CONQ[c] || (c.startsWith('volta') ? 'Que bom t
 
 // ---------- álbum: cada missão é uma página; cada parte, uma figurinha; a tarefa final, a figurinha brilhante
 export function paginaMissao(m, mi, { iAtual = -1, licaoFeita = false } = {}) {
+  const infantil = document.body.dataset.publico === 'crianca';
   const feita = ['demonstrado', 'retido'].includes(m.status);
   const adiante = iAtual >= 0 && mi > iAtual;
   const slots = h('ol', { class: 'figurinhas', 'aria-label': `Figurinhas da missão ${mi + 1}` });
@@ -30,7 +31,7 @@ export function paginaMissao(m, mi, { iAtual = -1, licaoFeita = false } = {}) {
     ? h('a', { class: 'figurinha figurinha--final figurinha--hoje', href: '#/licao', 'aria-label': rotFinal }, icone('medal'), h('span', { 'aria-hidden': 'true' }, 'final'))
     : h('button', { type: 'button', class: 'figurinha figurinha--final' + (feita ? ' figurinha--brilho' : ''), 'aria-label': rotFinal, on: { click: explicar(feita ? 'Figurinha brilhante: você fez a tarefa final sozinho. Ela volta num teste em outra situação para confirmar.' : 'A figurinha brilhante sai quando você faz a tarefa final da missão sem ajuda.') } }, icone(feita && m.status === 'retido' ? 'seal-check' : 'medal'))));
   return h('li', { class: 'pagina' + (m.atual ? ' pagina--atual' : '') + (feita ? ' pagina--feita' : '') + (adiante && !m.atual ? ' pagina--adiante' : '') },
-    h('p', { class: 'pagina__num' }, `Página ${mi + 1}`),
+    h('p', { class: 'pagina__num' }, `${infantil ? 'Página' : 'Etapa'} ${mi + 1}`),
     feita ? h('span', { class: 'chip chip-ok pagina__selo' }, icone('seal-check'), m.status === 'retido' ? 'Mantida' : 'Completa') : m.atual ? h('span', { class: 'chip c-lilas pagina__selo' }, 'Você está aqui') : null,
     h('h3', {}, m.titulo),
     slots,
@@ -47,7 +48,7 @@ export function album(plano, { licaoFeita = false, titulo = 'Seu álbum', classe
   requestAnimationFrame(() => { const atual = paginas.querySelector('.pagina--atual'); if (atual && paginas.scrollWidth > paginas.clientWidth) paginas.scrollLeft = atual.offsetLeft - paginas.offsetLeft - 4; });
   const feitas = plano.missoes.filter(m => ['demonstrado', 'retido'].includes(m.status)).length;
   return h('section', { class: 'album c-lilas ' + classe, 'aria-labelledby': 'album-t' },
-    h('div', { class: 'album__topo' }, h('h2', { id: 'album-t' }, h('span', { class: 'bolha bolha--peq' }, icone('book-open-text')), titulo), h('span', { class: 'chip' }, `${feitas} de ${plano.missoes.length} páginas`)),
+    h('div', { class: 'album__topo' }, h('h2', { id: 'album-t' }, h('span', { class: 'bolha bolha--peq' }, icone('book-open-text')), document.body.dataset.publico === 'crianca' ? titulo : 'Sua trilha de aprendizagem'), h('span', { class: 'chip' }, `${feitas} de ${plano.missoes.length} etapas`)),
     paginas,
     h('p', { class: 'album__dica' }, icone('caret-right'), 'Deslize para os lados para ver as páginas. Toque numa figurinha para saber mais.'));
 }
@@ -83,6 +84,8 @@ export async function telaHoje(el, { ir, estado }) {
   const hora = new Date().getHours();
   const saud = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
   const L = d.licao, feita = L?.status === 'concluida';
+  const iniciante = !!L?.guiada || estado?.eu?.perfil?.objetivo === 'zero';
+  const infantil = estado?.eu?.publico?.id === 'crianca';
 
   const principal = h('div', { class: 'hoje__col' });
   principal.append(
@@ -112,15 +115,16 @@ export async function telaHoje(el, { ir, estado }) {
 
   let balao = null;
   if (L) {
-    balao = louFala(feita ? 'feliz' : 'oi', h('p', {}, feita ? 'Aula de hoje feita! Que tal revisar uns cartões ou conversar um pouco?' : (L.porque?.[0] || 'Sua aula de hoje está pronta.')));
+    balao = louFala(feita ? 'feliz' : 'oi', h('p', {}, iniciante ? (feita ? 'Aula concluída. Você pode rever as palavras ou explorar um capítulo da biblioteca.' : infantil ? 'Eu ajudo você! Ouça as palavras e descubra o significado. Depois vamos brincar de responder.' : 'Comece com as expressões da aula. Há áudio, tradução e explicações para estudar com autonomia.') : feita ? 'Aula de hoje feita! Que tal revisar uns cartões ou conversar um pouco?' : (L.porque?.[0] || 'Sua aula de hoje está pronta.')));
     principal.append(h('section', { class: 'aula' + (feita ? ' aula--feita' : ''), 'aria-labelledby': 'aula-t' },
       feita ? null : h('span', { class: 'aula__pacote', 'aria-hidden': 'true' }, L.missao ? String(L.missao.parte) : '+'),
       h('div', { class: 'aula__topo' }, h('span', { class: 'chip chip-sol' }, icone('clock'), `${L.minutos} min`), feita ? h('span', { class: 'chip' }, icone('check'), 'Feita') : L.missao ? h('span', { class: 'chip' }, `Figurinha ${L.missao.parte} de ${L.missao.total}`) : null),
       h('p', { class: 'rotulo-pequeno' }, 'Aula de hoje'),
       h('h2', { id: 'aula-t' }, L.missao ? L.missao.titulo : 'Manter e ampliar'),
+      iniciante ? h('p', { class: 'aula__meta' }, infantil ? 'Áudio, tradução e jogos curtinhos. Uma palavra de cada vez.' : 'Expressões essenciais, áudio, tradução e prática com explicações.') : null,
       L.missao ? h('p', { class: 'aula__meta' }, icone('target'), h('span', {}, 'No fim da missão você vai conseguir: ', h('strong', {}, `“${L.missao.podeFazer}”`))) : null,
       feita ? h('a', { class: 'btn btn-sec btn-bloco', href: '#/licao' }, icone('repeat'), 'Rever a aula')
-        : h('a', { class: 'btn btn-bloco btn-grande', href: '#/licao' }, icone('play'), L.iniciada ? 'Continuar a aula' : 'Bora começar')));
+        : h('a', { class: 'btn btn-bloco btn-grande', href: '#/licao' }, icone('play'), L.iniciada ? 'Continuar a aula' : 'Começar minha aula')));
   }
 
   // Treino focado: 100% nas dificuldades da pessoa (sem dificuldade registrada ainda, o cartão leva ao "Meu jeito de aprender")
@@ -136,7 +140,7 @@ export async function telaHoje(el, { ir, estado }) {
   // Turma: atividades do professor esperando o aluno (só aparece para quem está em alguma turma)
   if (d.turmas) {
     const t = d.turmas;
-    principal.append(h('a', { class: 'treino-card c-lilas', href: '#/turmas' },
+    principal.append(h('a', { class: 'treino-card turma-atalho c-lilas', href: '#/turmas' },
       h('span', { class: 'bolha' }, icone('users-three')),
       h('span', { class: 'treino-card__txt' }, h('strong', {}, t.pendentes ? plural(t.pendentes, 'atividade da turma', 'atividades da turma') : 'Turma em dia'),
         h('small', {}, t.pendentes && t.proxima ? `${t.proxima.titulo}${t.proxima.prazo ? ' · até ' + dataBR(t.proxima.prazo) : ''}` : 'Nenhuma atividade esperando')),
@@ -167,15 +171,16 @@ export async function telaHoje(el, { ir, estado }) {
   if (pr.acao === 'assinatura') principal.append(h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, pr.texto, ' ', h('a', { href: '#/conta' }, 'Ver planos'))));
   if (d.novasConquistas?.length) principal.append(h('p', { class: 'conquista-recente' }, h('span', { class: 'medalha medalha--peq' }, icone('medal')), 'Nova figurinha: ', nomeConquista(d.novasConquistas[0])));
 
-  // celular primeiro: a aula de hoje vem logo depois da saudação (e dos avisos); o balão e o painel do dia vêm em seguida
+  // A aula e as atividades da turma são os próximos passos. As outras opções aparecem sob demanda.
   const aulaEl = principal.querySelector('.aula'), statusEl = principal.querySelector('.status');
   if (aulaEl) {
-    const depois = [balao, statusEl].filter(Boolean);
-    const ancora = [...principal.querySelectorAll('.aviso-suave')].filter(a => statusEl && statusEl.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_FOLLOWING).pop() || principal.querySelector('.saudacao');
-    ancora.after(aulaEl, ...depois);
+    principal.querySelector('.saudacao').after(aulaEl, ...[balao, principal.querySelector('.turma-atalho')].filter(Boolean));
   }
 
   const lado = h('div', { class: 'hoje__col hoje__col--lado' });
-  if (p?.plano) lado.append(album(p.plano, { licaoFeita: feita }));
-  el.append(h('div', { class: 'hoje' }, principal, lado));
+  const extras = [...principal.querySelectorAll('.treino-card:not(.turma-atalho),.radio-card,.atalhos,.aviso-lembrete')];
+  if (iniciante && statusEl) extras.unshift(statusEl);
+  principal.append(h('details', { class: 'outras-atividades' }, h('summary', {}, icone('dots-three'), iniciante ? 'Outras atividades e meu progresso' : 'Mais maneiras de praticar'), h('div', { class: 'outras-atividades__conteudo' }, extras)));
+  if (p?.plano) lado.append(h('details', { class: 'outras-atividades' }, h('summary', {}, icone('path'), 'Meu caminho de aprendizagem'), album(p.plano, { licaoFeita: feita })));
+  el.append(h('div', { class: 'hoje' + (iniciante ? ' hoje--guiada' : '') }, principal, lado));
 }

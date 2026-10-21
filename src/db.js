@@ -142,6 +142,21 @@ const MIGRACOES = [
      PRIMARY KEY (atividade_id, user_id, item_id)
    );
    CREATE INDEX atividade_respostas_user ON atividade_respostas(user_id);`,
+  // 7: contexto de idade, papel de entrada e aulas que funcionam como capítulos de um livro.
+  `ALTER TABLE perfis ADD COLUMN idade INTEGER;
+   ALTER TABLE perfis ADD COLUMN responsavel_em TEXT;
+   ALTER TABLE perfis ADD COLUMN papel TEXT NOT NULL DEFAULT 'aluno';
+   ALTER TABLE turmas ADD COLUMN faixa TEXT NOT NULL DEFAULT 'todas';
+   ALTER TABLE turmas ADD COLUMN nivel TEXT NOT NULL DEFAULT 'A1';
+   ALTER TABLE atividades ADD COLUMN material TEXT NOT NULL DEFAULT '{}';
+   ALTER TABLE atividades ADD COLUMN tema TEXT;
+   ALTER TABLE atividades ADD COLUMN nivel TEXT NOT NULL DEFAULT 'A1';
+   ALTER TABLE atividades ADD COLUMN faixa TEXT NOT NULL DEFAULT 'todas';
+   CREATE TABLE biblioteca_progressos (
+     user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+     unidade_id TEXT NOT NULL, respondidos TEXT NOT NULL DEFAULT '{}', concluido_em TEXT,
+     PRIMARY KEY(user_id, unidade_id)
+   );`,
 ];
 
 function abrir(dir) {

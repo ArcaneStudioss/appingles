@@ -1,49 +1,44 @@
-# Trilha "Começar do zero" (roteiro para aprovação)
+# Aprender desde o primeiro dia
 
-Para quem nunca estudou inglês ou parou há muito tempo. Nada de escrever exercícios antes de o Gabriel aprovar este roteiro.
+A trilha inicial funciona para crianças, adolescentes e adultos. A idade muda os exemplos e o tom; o inglês básico continua acessível para todos.
 
-## Princípios
+## Caminho inicial
 
-- **Português primeiro, inglês aos poucos.** Explicações em português, simples. O inglês entra em frases curtas, sempre com áudio do Tuiuiú.
-- **Ouvir antes de ler.** Cada palavra nova toca o áudio antes de aparecer escrita.
-- **Lição curta**: até 10 questões, 7 com áudio (regra já valendo). Cada lição termina com algo que a pessoa já consegue dizer.
-- **Errar é normal.** Mensagens de acerto grandes, de erro sem culpa, e a mesma palavra volta em outra lição (revisão espaçada que o app já faz).
-- **Meta de comunicação, não de nota**: cada missão termina com "agora eu consigo...".
+1. Idade e perfil de aluno ou professor no cadastro. Contas existentes completam esses dados uma vez. Quem é menor de idade confirma a autorização do responsável.
+2. Quem escolhe começar do zero entra direto na primeira aula, sem teste e sem perguntas sobre carreira ou prazo.
+3. A primeira aula ensina Hello, Bye e Thank you: uma expressão por tela, com significado e áudio lento opcional.
+4. Até cinco atividades por aula: combinar até três pares, reconhecer significados e ouvir. Completar e montar frases entram depois. Ditado e escrita livre não são exigidos no primeiro contato.
+5. Toda resposta mostra o resultado e uma explicação. Há dicas, tradução ao toque, consulta da resposta e nova tentativa de prática.
 
-## Como entra no app
+## Ajuda e progresso
 
-1. Novo objetivo no cadastro: **"Começar do zero"** (id `zero`), ao lado de entrevista, trabalho, viagem etc.
-2. Opção no teste de entrada: **"Nunca estudei inglês"** pula as 15 perguntas e já começa no nível A1. Quem já sabe um pouco faz o teste normal.
-3. As missões usam a mesma estrutura de hoje (explicação, prática, escuta, tarefa, retomada, reteste). Não muda o motor.
-4. Duração: cerca de 12 semanas com 5 dias de 10 a 15 minutos. Depois o aluno escolhe outro objetivo (viagem, trabalho...) e segue.
+- O balão de tradução aparece acima da palavra ao tocar ou usar o teclado. Fecha ao tocar fora, rolar ou pressionar Escape.
+- O dicionário usa traduções conhecidas; não inventa sentidos para palavras ausentes. Mostra o contexto traduzido quando disponível.
+- A explicação fica no conteúdo da página, sem ser cortada pela barra fixa do celular.
+- Pedir ajuda faz parte da aprendizagem. Repetir uma questão não duplica registros nem transforma a primeira tentativa em acerto.
+- É possível seguir depois de praticar as partes da missão inicial com ajuda. O selo de uso independente continua exigindo uma produção sem ajuda.
+- Quando há muitos erros recentes na missão, a próxima aula usa reconhecimento e mais apoio antes de avançar.
 
-## As 12 missões
+## Públicos
 
-| # | Missão | "Agora eu consigo..." | Conteúdo principal |
-|---|---|---|---|
-| 1 | Primeiros sons | Ouvir e repetir as letras e os sons do inglês | Alfabeto, sons que não existem em português (th, h, i curto/longo), soletrar o próprio nome |
-| 2 | Oi e tchau | Cumprimentar e me despedir | Hello, hi, good morning/afternoon/night, bye, see you, please, thank you, sorry |
-| 3 | Meu nome e de onde sou | Dizer meu nome e minha cidade | My name is, I'm from, nice to meet you, países e nacionalidades mais comuns |
-| 4 | Números e idade | Dizer números, idade e telefone | 0 a 100, how old are you, I'm 30, preço (dollars/reais) |
-| 5 | O verbo "to be" | Descrever a mim e outras pessoas | I am, you are, he/she is, we are, they are; afirmar, negar, perguntar |
-| 6 | Família e pessoas | Falar da minha família | mother, father, brother, friend; my, your, his, her; this is... |
-| 7 | Cores, coisas e casa | Nomear objetos do dia a dia | cores, a/an, this/that, there is/there are, cômodos da casa |
-| 8 | Dias, horas e rotina | Dizer o dia, a hora e o que faço todo dia | dias da semana, what time is it, presente simples (I work, I wake up) |
-| 9 | Comida e pedidos | Pedir comida e bebida | I'd like..., can I have..., menu, quanto custa, how much is it |
-| 10 | Lugares e direções | Perguntar onde fica algo | where is, left/right/straight, in/on/at, bank, bus, station |
-| 11 | Gostos e hábitos | Dizer o que gosto e o que não gosto | I like/don't like, love/hate, do you like...?, hobbies |
-| 12 | Minha primeira conversa | Conversar 1 minuto sobre mim | Reúne tudo; conversa guiada com o Tuiuiú e tarefa final falada/escrita |
+- Crianças, até 12 anos: linguagem concreta, jogos, histórias, animais, escola e descobertas.
+- Adolescentes, de 13 a 17: música, projetos, amizades e tecnologia, sem linguagem infantil.
+- Adultos, a partir de 18: cotidiano, estudo, viagens e trabalho, com instruções objetivas mesmo no A1.
 
-Cada missão terá: 6 a 8 palavras ou frases novas com áudio, 1 explicação curta em português, 8 exercícios (escolha, lacuna, ordenar, ouvir, ditado, traduzir), 1 tarefa de uso real e um reteste dias depois.
+O nivelamento preserva a dificuldade das estruturas e adapta os textos e situações. Uma criança com inglês avançado pode alcançar a mesma estimativa que um adulto. As conversas e o tutor também consideram o público.
 
-## O que preciso de você
+## Biblioteca e turmas
 
-1. **Aprovar, cortar ou reordenar** as 12 missões acima.
-2. **Quanto gratuito**: sugestão é as missões 1 a 4 no plano grátis (a pessoa sente o progresso) e o resto nos pagos.
-3. **Voz**: se a voz do Tuiuiú em português ficar boa, as explicações curtas também podem ser faladas.
+A biblioteca inicial tem nove capítulos, de A1 a B1, com vocabulário, leitura, tradução de apoio e 45 questões. O professor pode usar esses capítulos como modelo ou escrever outros conteúdos e níveis.
 
-## Estimativa de trabalho
+Uma aula da turma pode incluir explicação, palavras, texto em inglês, tradução e questões. O professor filtra o banco por tema, público, nível e tipo; confere a prévia e publica para a turma. O aluno consulta o material durante a prática e revê as explicações no fim. Uma aula pode ser copiada para outra turma sem copiar as respostas dos alunos.
 
-- Escrever as 12 missões com exercícios: é a maior parte (cerca de 100 exercícios e 80 frases com áudio).
-- Gravar as frases novas com a voz do Tuiuiú: em lote, algumas horas de processamento, sem custo.
-- Testes automáticos do conteúdo (ids únicos, gabaritos válidos) já existem e cobrem as missões novas.
+## Código e validação
+
+- Contexto de idade: `src/motor/publico.js`.
+- Sequência inicial: `src/motor/licao-guiada.js`.
+- Dicas e explicações: `src/motor/apoio.js`.
+- Biblioteca: `src/conteudo/biblioteca.js`, `src/biblioteca.js`.
+- Tradução ao toque: `public/assets/js/traducao.js`.
+- Professor e aluno: `src/turmas.js`, `src/motor/turmas.js` e telas `professor.js` e `turmas.js`.
+- Testes: `npm test`, incluindo idade, nivelamento, correção, assinatura, biblioteca, privacidade e reutilização de aulas.

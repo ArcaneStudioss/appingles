@@ -16,27 +16,29 @@ export async function telaPerfil(el, { estado, ir, carregarEu }) {
   const p = estado.eu?.perfil || {};
   const dados = { objetivo: p.objetivo || '', objetivo_detalhe: p.objetivo_detalhe || '', prazo: p.prazo || null, area: p.area || '', interesses: p.interesses || [], minutos_dia: p.minutos_dia || 15, dias_semana: p.dias_semana || 5 };
   const editando = estado.eu?.passo === 'app';
+  const infantil = estado.eu?.publico?.id === 'crianca', menor = estado.eu?.publico?.id !== 'adulto';
   let passo = 0;
   const total = 4;
 
   const caixa = h('div', { class: 'onboarding' });
   el.append(caixa);
 
-  const barra = () => h('div', { class: 'passos', 'aria-label': `Passo ${passo + 1} de ${total}` }, Array.from({ length: total }, (_, i) => h('span', { class: i <= passo ? 'feito' : '' })));
+  const barra = () => { const curto = dados.objetivo === 'zero', n = curto ? 2 : infantil ? 3 : total, atual = curto ? (passo === 0 ? 0 : 1) : infantil && passo > 0 ? passo - 1 : passo; return h('div', { class: 'passos', 'aria-label': `Passo ${atual + 1} de ${n}` }, Array.from({ length: n }, (_, i) => h('span', { class: i <= atual ? 'feito' : '' }))); };
   const navegacao = (podeAvancar, rotuloAvancar = 'Continuar') => {
     const msg = h('p', { class: 'erro-campo', 'aria-live': 'polite' });
-    const voltar = passo > 0 ? h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => { passo--; desenhar(); } } }, icone('caret-left'), 'Voltar') : null;
+    const voltar = passo > 0 ? h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => { passo = dados.objetivo === 'zero' || infantil && passo === 2 ? 0 : passo - 1; desenhar(); } } }, icone('caret-left'), 'Voltar') : null;
     const avancar = h('button', { type: 'button', class: 'btn', on: { click: async () => {
       const erro = podeAvancar();
       if (erro) { msg.textContent = erro; return; }
-      if (passo < total - 1) { passo++; desenhar(); return; }
+      if (passo < total - 1) { passo = passo === 0 && dados.objetivo === 'zero' ? 3 : passo === 0 && infantil ? 2 : passo + 1; desenhar(); return; }
       ocupado(avancar, true);
       try {
         dados.fuso = Intl.DateTimeFormat().resolvedOptions().timeZone;
         await api('/perfil', { metodo: 'PUT', corpo: dados });
+        if (!editando && dados.objetivo === 'zero') await api('/nivelamento', { metodo: 'POST', corpo: { nunca: true } });
         await carregarEu();
         if (editando) { toast('Objetivo atualizado. Seu plano foi ajustado.', { tipo: 'ok' }); ir('#/plano'); }
-        else ir('#/nivelamento');
+        else ir(dados.objetivo === 'zero' ? '#/licao' : '#/nivelamento');
       } catch (e) { msg.textContent = e.message; }
       finally { ocupado(avancar, false); }
     } } }, rotuloAvancar, icone('arrow-right'));
@@ -47,7 +49,7 @@ export async function telaPerfil(el, { estado, ir, carregarEu }) {
     caixa.replaceChildren(barra());
     if (passo === 0) {
       caixa.append(
-        louFala('oi', h('p', {}, editando ? 'Mudou alguma coisa? Sem problema, o plano se ajusta.' : `Oi, ${estado.eu.usuario.nome.split(' ')[0]}! Eu sou o Tuiuiú. Vou montar seu plano em 4 perguntas.`)),
+        louFala('oi', h('p', {}, editando ? 'Mudou alguma coisa? Sem problema, o plano se ajusta.' : `Oi, ${estado.eu.usuario.nome.split(' ')[0]}! Eu sou o Tuiuiú. Escolha o que quer aprender. Eu ajudo você!`)),
         h('h1', {}, 'Para que você precisa do inglês agora?'),
         h('p', { class: 'ajuda' }, 'Escolha o principal. O curso inteiro vai girar em torno dele, e você pode mudar depois.'),
         h('div', { class: 'opcoes-grandes', role: 'radiogroup' }, objetivos.map(o => { const [ic, cor] = VISUAL[o.id] || ['target', 'azul']; return h('label', { class: `opcao-grande c-${cor}` },
@@ -57,7 +59,7 @@ export async function telaPerfil(el, { estado, ir, carregarEu }) {
         editando ? null : h('p', { class: 'ajuda' }, 'Você é professor(a) e só quer criar uma turma para seus alunos, ou tem um código de turma? ', h('a', { href: '#/turmas' }, 'Ir para Turmas'), '.'));
     }
     if (passo === 1) {
-      const detalhe = h('textarea', { id: 'p-detalhe', maxlength: 300, rows: 3, placeholder: 'Ex.: tenho entrevista para analista de dados numa empresa americana em março.' });
+      const detalhe = h('textarea', { id: 'p-detalhe', maxlength: 300, rows: 3, placeholder: menor ? 'Ex.: quero entender minhas músicas favoritas ou fazer um projeto para a escola.' : 'Ex.: tenho entrevista para analista de dados numa empresa americana em março.' });
       detalhe.value = dados.objetivo_detalhe;
       detalhe.addEventListener('input', () => { dados.objetivo_detalhe = detalhe.value; });
       const data = h('input', { type: 'date', id: 'p-data', min: somarDias(7), max: somarMeses(36) });
@@ -77,12 +79,12 @@ export async function telaPerfil(el, { estado, ir, carregarEu }) {
         ...navegacao(() => null));
     }
     if (passo === 2) {
-      const area = h('input', { id: 'p-area', type: 'text', maxlength: 80, placeholder: 'Ex.: enfermagem, vendas, desenvolvimento, direito' });
+      const area = h('input', { id: 'p-area', type: 'text', maxlength: 80, placeholder: menor ? 'Ex.: ciências, história, tecnologia, artes' : 'Ex.: enfermagem, vendas, desenvolvimento, direito' });
       area.value = dados.area;
       area.addEventListener('input', () => { dados.area = area.value; });
       caixa.append(
         h('h1', {}, 'Do que você gosta de falar?'),
-        h('div', { class: 'campo' }, h('label', { for: 'p-area' }, 'Sua área de trabalho ou estudo'), area, h('small', {}, 'Usamos nos exemplos, nas tarefas e nas conversas.')),
+        infantil ? null : h('div', { class: 'campo' }, h('label', { for: 'p-area' }, menor ? 'Algum assunto da escola? (opcional)' : 'Sua área de trabalho ou estudo'), area, h('small', {}, 'Usamos nos exemplos, nas tarefas e nas conversas.')),
         h('div', { class: 'campo' }, h('span', { class: 'rotulo' }, 'Interesses (até 5)'), h('div', { class: 'escolhas' }, interesses.map(i => h('label', { class: 'escolha' },
           h('input', { type: 'checkbox', value: i, checked: dados.interesses.includes(i), on: { change: e => {
             if (e.target.checked) { if (dados.interesses.length >= 5) { e.target.checked = false; toast('Escolha até 5.'); return; } dados.interesses.push(i); }
@@ -102,7 +104,7 @@ export async function telaPerfil(el, { estado, ir, carregarEu }) {
         h('div', { class: 'opcoes-grandes' }, opcoesMin),
         h('div', { class: 'campo' }, h('label', { for: 'p-dias' }, 'Em quantos dias da semana?'), dias, rot),
         h('p', { class: 'ajuda' }, 'Perdeu um dia? Nada de punição: o plano se reorganiza e você continua de onde parou.'),
-        ...navegacao(() => null, editando ? 'Salvar e ajustar plano' : 'Ir para o teste de nível'));
+        ...navegacao(() => null, editando ? 'Salvar e ajustar plano' : dados.objetivo === 'zero' ? 'Começar a aprender' : 'Ir para o teste de nível'));
     }
     caixa.querySelector('h1')?.setAttribute('tabindex', '-1');
     caixa.querySelector('h1')?.focus({ preventScroll: true });

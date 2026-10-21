@@ -3,6 +3,7 @@
 // Modelos configuráveis por tarefa (ver docs/PROPOSTA.md, "Custos de IA"): IA_MODELO_CONVERSA, IA_MODELO_AVALIACAO, IA_MODELO.
 // O texto do aluno é sempre tratado como DADO (tentativa de inglês), nunca como instrução.
 const { DIFICULDADES } = require('./conteudo/dificuldades');
+const { publicoDe } = require('./motor/publico');
 
 let Anthropic = null;
 try { Anthropic = require('@anthropic-ai/sdk'); } catch { Anthropic = null; }
@@ -25,7 +26,7 @@ function obterCliente() {
   return cliente;
 }
 
-const BASE = `You are the AI tutor inside "Inglou", an English-learning app for Brazilian adults who need English for real goals (job interviews, work, customers, travel, studies).
+const BASE = `You are the AI tutor inside "Inglou", an English-learning app for Brazilian children, teenagers and adults. Follow the audience context as well as the English level.
 Principles you always follow:
 - Be warm, encouraging and concrete. Never shame mistakes. Correct only what matters most for being understood (max 3 corrections per turn).
 - Explanations for the student are in Brazilian Portuguese, short and plain (no jargon). Examples are in English.
@@ -76,7 +77,7 @@ async function chamar({ tarefa, system, mensagens, schema, maxTokens = 2000, esf
   try { return { dados: JSON.parse(texto), uso }; } catch { throw new Error('json inválido da IA'); }
 }
 
-const contexto = (perfil, nivel) => `Student profile: estimated level ${nivel || 'A2'} (an estimate, may be wrong). Goal: ${perfil.objetivo_nome || perfil.objetivo}. ${perfil.objetivo_detalhe ? 'In their words: "' + String(perfil.objetivo_detalhe).slice(0, 200) + '". ' : ''}${perfil.area ? 'Work/study area: ' + String(perfil.area).slice(0, 80) + '. ' : ''}Interests: ${(perfil.interesses || []).join(', ') || 'not informed'}.`;
+const contexto = (perfil, nivel) => { const publico = publicoDe(perfil); return `Student profile: audience ${publico.id}. Audience instructions: ${publico.orientacao} Contexts: ${publico.contexto}. Estimated level ${nivel || 'A2'} (an estimate, may be wrong). Goal: ${perfil.objetivo_nome || perfil.objetivo}. ${perfil.objetivo_detalhe ? 'In their words: "' + String(perfil.objetivo_detalhe).slice(0, 200) + '". ' : ''}${perfil.area ? 'Work/study area: ' + String(perfil.area).slice(0, 80) + '. ' : ''}Interests: ${(perfil.interesses || []).join(', ') || 'not informed'}.`; };
 
 async function conversar({ cenario, perfil, nivel, historico, texto }) {
   const system = `${BASE}\n\nRole-play: you are ${cenario.papel}. Scenario: "${cenario.titulo}". Keep your English at the student's level (shorter, simpler sentences for A1-A2). Reply in English in 1-3 sentences and always end with ONE question that moves the conversation forward. Use the student's area and interests when natural. After about 8 student turns, wrap up kindly and set encerrar=true.\n${contexto(perfil, nivel)}`;

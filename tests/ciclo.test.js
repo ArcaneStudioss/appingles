@@ -35,7 +35,10 @@ test('objetivo de entrevista monta a trilha de entrevista e a lição traz exerc
   await R('PUT', '/perfil', { objetivo: 'entrevista', objetivo_detalhe: 'Entrevista para enfermeiro num hospital no Canadá', prazo: null, minutos_dia: 15, dias_semana: 5, area: 'enfermagem', interesses: ['saúde'] });
   const { itens } = await R('GET', '/nivelamento');
   assert.equal(itens.length, 15, 'o teste de entrada tem 15 perguntas');
-  const { plano } = await R('POST', '/nivelamento', { respostas: Object.fromEntries(itens.map(i => [i.id, { resposta: i.opcoes[0], tempoMs: 3000 }])), escrita: '', fala: '' });
+  // Este ciclo exercita o curso profissional A2; o caminho A1 agora começa pela base guiada.
+  const banco = require('../src/conteudo/nivelamento').ITENS;
+  const { plano, resultado } = await R('POST', '/nivelamento', { respostas: Object.fromEntries(itens.map(i => { const original = banco.find(b => b.id === i.id); return [i.id, { resposta: ['A1', 'A2'].includes(original.nivel) ? original.opcoes[original.resposta] : '', naoSei: !['A1', 'A2'].includes(original.nivel), tempoMs: 3000 }]; })), escrita: '', fala: '' });
+  assert.equal(resultado.nivel, 'A2');
   assert.equal(plano.objetivo, 'entrevista');
   assert.ok(plano.missoes.some(m => m.id === 'perguntas-entrevista'));
   const { licao } = await R('GET', '/licao');

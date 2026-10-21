@@ -1,6 +1,7 @@
 import { api } from '../api.js?v=__V__';
 import { h, ocupado, icone } from '../ui.js?v=__V__';
 import { lou, louFala } from '../diversao.js?v=__V__';
+import { camposPublico } from './publico.js?v=__V__';
 
 
 export async function telaEntrar(el, { estado, ir, carregarEu }) {
@@ -10,8 +11,8 @@ export async function telaEntrar(el, { estado, ir, carregarEu }) {
   const caixa = h('div', { class: 'entrar folha' });
   el.append(h('div', { class: 'entrar-envoltorio' },
     lou('oi', { tamanho: 120 }),
-    h('h1', { class: 'entrar-bilhete' }, 'Oi! Eu sou o Tuiuiú.'),
-    h('p', { class: 'ajuda centro' }, 'Vamos montar seu álbum de inglês juntos? Cada aula é uma figurinha nova.'),
+    h('h1', { class: 'entrar-bilhete' }, 'Seu espaço para aprender inglês'),
+    h('p', { class: 'ajuda centro' }, 'Para crianças, adolescentes, adultos e professores. Conteúdo para seu nível e sua fase da vida.'),
     caixa,
     h('p', { class: 'ajuda centro' }, '30 dias grátis, sem cartão. ', h('a', { href: '/' }, 'Conhecer o Inglou'))));
 
@@ -26,20 +27,22 @@ export async function telaEntrar(el, { estado, ir, carregarEu }) {
     const senha = h('input', { id: 'e-senha', name: 'password', type: 'password', autocomplete: { cadastro: 'new-password', entrar: 'current-password' }[modo], maxlength: 200, required: true, minlength: modo === 'cadastro' ? 10 : null });
     const verSenha = h('button', { type: 'button', class: 'btn btn-texto btn-peq', 'aria-pressed': 'false', on: { click: () => { const v = senha.type === 'password'; senha.type = v ? 'text' : 'password'; verSenha.setAttribute('aria-pressed', String(v)); verSenha.lastChild.textContent = v ? 'Esconder' : 'Mostrar'; } } }, icone('eye'), h('span', {}, 'Mostrar'));
     const consent = h('input', { type: 'checkbox', id: 'e-consent' });
+    const publico = modo === 'cadastro' ? camposPublico() : null;
     const btn = h('button', { type: 'submit', class: 'btn btn-bloco' }, modo === 'cadastro' ? 'Criar conta e começar' : 'Entrar');
     const form = h('form', { novalidate: true, on: { submit: async e => {
       e.preventDefault(); msg.textContent = '';
       if (modo === 'cadastro' && !consent.checked) { msg.textContent = 'Marque que você leu a política de privacidade.'; return; }
       ocupado(btn, true);
       try {
-        if (modo === 'cadastro') await api('/auth/cadastro', { metodo: 'POST', corpo: { nome: nome.value, email: email.value, senha: senha.value, consentimento: consent.checked } });
+        if (modo === 'cadastro') await api('/auth/cadastro', { metodo: 'POST', corpo: { nome: nome.value, email: email.value, senha: senha.value, consentimento: consent.checked, ...publico.ler() } });
         else await api('/auth/entrar', { metodo: 'POST', corpo: { email: email.value, senha: senha.value } });
         await carregarEu();
-        ir(estado.eu?.passo === 'app' ? '#/hoje' : estado.eu?.passo === 'nivelamento' ? '#/nivelamento' : '#/perfil');
+        ir(estado.eu?.perfil?.papel === 'professor' ? '#/professor' : estado.eu?.passo === 'app' ? '#/hoje' : estado.eu?.passo === 'nivelamento' ? '#/nivelamento' : '#/perfil');
       } catch (err) { msg.textContent = err.message; }
       finally { ocupado(btn, false); }
     } } },
       modo === 'cadastro' ? h('div', { class: 'campo' }, h('label', { for: 'e-nome' }, 'Como quer ser chamado'), nome) : null,
+      publico?.elemento,
       h('div', { class: 'campo' }, h('label', { for: 'e-email' }, 'E-mail'), email),
       h('div', { class: 'campo' }, h('div', { class: 'linha-rotulo' }, h('label', { for: 'e-senha' }, 'Senha'), verSenha), senha,
         modo === 'cadastro' ? h('small', {}, 'Pelo menos 10 caracteres. Uma frase curta sua funciona bem.') : null),

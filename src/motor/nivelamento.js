@@ -35,30 +35,31 @@ function avaliarEscrita(texto) {
   return { nivel, palavras: n, achados, modo: 'regras' };
 }
 
-function avaliarFala(transcricao) {
+function avaliarFala(transcricao, alvo = ABERTAS.fala.alvo) {
   if (!transcricao) return null;
-  const pct = coberturaFala(transcricao, ABERTAS.fala.alvo);   // tolera palavras parecidas, homófonos e artigos que o microfone não pegou
+  const pct = coberturaFala(transcricao, alvo);   // tolera palavras parecidas, homófonos e artigos que o microfone não pegou
   return { reconhecido: Math.round(pct * 100), nivel: pct >= 0.9 ? 'B1' : pct >= 0.7 ? 'A2' : 'A1' };
 }
 
 function corrigir(entrada) {
+  const banco = entrada.itens || ITENS;
   // entrada.respostas: { [itemId]: { resposta: texto, tempoMs } }
   const respostas = {};
-  for (const item of ITENS) {
+  for (const item of banco) {
     const r = entrada.respostas?.[item.id];
     if (!r) continue;
     respostas[item.id] = { correto: normalizar(r.resposta) === normalizar(item.opcoes[item.resposta]), tempoMs: r.tempoMs | 0, naoSei: !!r.naoSei };
   }
   const porHabilidade = {};
   for (const h of ['gramatica', 'vocabulario', 'leitura', 'escuta']) {
-    const itens = ITENS.filter(i => i.habilidade === h);
+    const itens = banco.filter(i => i.habilidade === h);
     const respondidos = itens.filter(i => respostas[i.id]);
     if (!respondidos.length) continue;
     porHabilidade[h] = { ...nivelDaHabilidade(itens, respostas), nome: NOMES[h] };
   }
   const escrita = avaliarEscrita(entrada.escrita);
   if (escrita) porHabilidade.escrita = { nivel: escrita.nivel, nome: NOMES.escrita, estimativaFraca: true, detalhe: escrita };
-  const fala = avaliarFala(entrada.fala);
+  const fala = avaliarFala(entrada.fala, entrada.alvoFala);
   if (fala) porHabilidade.fala = { nivel: fala.nivel, nome: NOMES.fala, estimativaFraca: true, detalhe: fala };
 
   // Nível geral: mediana das habilidades fechadas (mais confiáveis); aberta só ajusta se houver
@@ -72,7 +73,7 @@ function corrigir(entrada) {
 
   // Pistas de dificuldades (hipóteses iniciais): tags dos itens errados + erros vistos na escrita
   const tagsErradas = {};
-  for (const item of ITENS) if (item.tag && respostas[item.id] && !respostas[item.id].correto) tagsErradas[item.tag] = (tagsErradas[item.tag] || 0) + 1;
+  for (const item of banco) if (item.tag && respostas[item.id] && !respostas[item.id].correto) tagsErradas[item.tag] = (tagsErradas[item.tag] || 0) + 1;
   for (const a of escrita?.achados || []) tagsErradas[a.tag] = (tagsErradas[a.tag] || 0) + 1;
   const pistas = Object.keys(tagsErradas).filter(t => POR_TAG[t]).map(t => ({ tag: t, nome: POR_TAG[t].nome }));
 

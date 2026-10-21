@@ -5,6 +5,8 @@ const { OBJETIVOS } = require('../conteudo/objetivos');
 const { POR_ID } = require('../conteudo/missoes');
 const { NIVEIS } = require('../conteudo/nivelamento');
 const { somarDias, diasEntre } = require('./util');
+const { publicoDe } = require('./publico');
+const { UNIDADES } = require('../conteudo/biblioteca');
 
 function licoesPorMissao(missao, nivelAluno) {
   const diff = NIVEIS.indexOf(nivelAluno) - NIVEIS.indexOf(missao.nivel);
@@ -20,17 +22,21 @@ function montarPlano(perfil, nivel, hojeISO) {
   const semanas = Math.max(1, Math.ceil(prazoDias / 7));
   const sessoesDisponiveis = Math.floor(semanas * dias * 0.85);     // 15% de folga: a vida acontece
 
-  let ids = obj.missoes.filter(id => POR_ID[id]);
+  const baseInicial = nivel === 'A1' && perfil.objetivo !== 'zero' ? ['zero-sons', 'zero-oi-tchau', 'zero-nome-origem'] : [];
+  const publico = publicoDe(perfil);
+  const contextoDaIdade = UNIDADES.filter(u => u.faixa === publico.id).map(u => u.id);
+  const caminho = publico.id === 'adulto' ? obj.missoes : perfil.objetivo === 'zero' ? [...obj.missoes, ...contextoDaIdade] : contextoDaIdade;
+  let ids = [...new Set([...baseInicial, ...caminho])].filter(id => POR_ID[id]);
   const custo = id => licoesPorMissao(POR_ID[id], nivel) + 1;       // +1 = reteste em outra situação
   let total = ids.reduce((s, id) => s + custo(id), 0);
   let cortadas = [];
   if (total > sessoesDisponiveis) {
     // primeiro mantém as essenciais (na ordem da trilha), depois completa com o que couber
-    const essenciais = ids.filter(id => obj.essenciais.includes(id));
-    const resto = ids.filter(id => !obj.essenciais.includes(id));
+    const essenciais = ids.filter(id => baseInicial.includes(id) || obj.essenciais.includes(id));
+    const resto = ids.filter(id => !essenciais.includes(id));
     const escolhidas = []; let usado = 0;
     for (const id of [...essenciais, ...resto]) {
-      if (usado + custo(id) <= sessoesDisponiveis || escolhidas.length < 2) { escolhidas.push(id); usado += custo(id); }
+      if (baseInicial.includes(id) || usado + custo(id) <= sessoesDisponiveis || escolhidas.length < 2) { escolhidas.push(id); usado += custo(id); }
       else cortadas.push(id);
     }
     ids = ids.filter(id => escolhidas.includes(id));
@@ -51,13 +57,15 @@ function montarPlano(perfil, nivel, hojeISO) {
   const semanasUsadas = Math.max(1, Math.ceil(total / porSemana));
   const metas = missoes.filter(m => m.essencial).slice(0, 4).map(m => m.podeFazer);
   const avisos = [];
+  if (baseInicial.length) avisos.push('Começamos com palavras e frases curtas antes de entrar no seu objetivo. A base vem primeiro, com áudio, tradução e ajuda.');
+  if (publico.informado) avisos.push(`Temas e linguagem para ${publico.nome.toLowerCase()}. A idade muda o contexto; o nível de inglês define a dificuldade.`);
   if (cortadas.length) avisos.push(`Com o prazo e o tempo que você tem, priorizamos ${ids.length} missões essenciais. ${cortadas.length} ficaram para depois do prazo, e o plano continua com elas.`);
   if (perfil.prazo && semanas <= 3) avisos.push('O prazo é curto. O plano foca no essencial para você chegar mais seguro; não é para "aprender tudo" até lá.');
   if (obj.aviso) avisos.push(obj.aviso);
   if ((perfil.minutos_dia | 0) <= 10) avisos.push('Com 10 minutos por dia o progresso é real, só que mais gradual. Se em alguns dias sobrar tempo, faça uma revisão extra.');
 
   return {
-    objetivo: perfil.objetivo, objetivoNome: obj.nome, frase: obj.frase,
+    objetivo: perfil.objetivo, objetivoNome: obj.nome, frase: obj.frase, publico: publico.id,
     nivelInicial: nivel, criadoEm: hojeISO, prazo: perfil.prazo || null,
     semanas: perfil.prazo ? semanas : semanasUsadas, semanasPrevistas: semanasUsadas,
     sessoesPorSemana: dias, minutosDia: perfil.minutos_dia | 0 || 15,
