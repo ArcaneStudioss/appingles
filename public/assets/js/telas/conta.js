@@ -19,7 +19,7 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
   const lem = p.lembrete || {};
   const e = ass.estado;
 
-  const CORES = { target: 'azul', 'graduation-cap': 'lilas', bell: 'sol', 'seal-check': 'menta', 'shield-check': 'turquesa', notebook: 'coral', gear: 'azul', 'lock-key': 'lilas' };
+  const CORES = { users: 'azul', target: 'azul', 'graduation-cap': 'lilas', bell: 'sol', 'seal-check': 'menta', 'shield-check': 'turquesa', notebook: 'coral', gear: 'azul', 'lock-key': 'lilas' };
   const cartao = (icon, titulo, estadoTxt, ...botoes) => h('section', { class: `folha cartao-conta c-${CORES[icon] || 'azul'}` },
     h('div', { class: 'cartao-conta__info' }, h('span', { class: 'bolha' }, icone(icon)), h('div', {}, h('h2', {}, titulo), h('p', { class: 'ajuda' }, estadoTxt))),
     h('div', { class: 'linha-acoes' }, botoes));
@@ -32,21 +32,21 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
 
   function verPlanos() {
     const usoLinhas = Object.entries(ass.nomesUso).map(([k, nome]) => h('li', {}, `${nome}: ${ass.uso[k] || 0} de ${e.limites[k] ?? 0} neste mês`));
-    const planoCard = (id) => {
-      const pl = ass.planos[id];
-      const b = h('button', { type: 'button', class: 'btn btn-bloco' + (id === 'anual' ? '' : ' btn-sec'), on: { click: async () => {
-        ocupado(b, true);
-        try { await api('/assinatura/assinar', { metodo: 'POST', corpo: { plano: id } }); toast('Assinatura ativada (modo de teste do sistema).', { tipo: 'ok' }); j.fechar(); render(); }
-        catch (err) { toast(err.message); } finally { ocupado(b, false); }
-      } } }, `Assinar ${pl.nome}`);
-      return h('div', { class: 'plano' + (id === 'anual' ? ' plano--destaque' : '') }, h('h3', {}, pl.nome), h('p', { class: 'preco' }, pl.rotulo), pl.equivalente ? h('p', { class: 'chip' }, `${pl.equivalente} · ${pl.desconto}`) : null, b);
+    const moeda = n => (n / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const planoCard = pl => {
+      const comprar = periodo => {
+        const b=h('button',{type:'button',class:'btn btn-sec btn-bloco',disabled:ass.pagamento!=='simulado',on:{click:async()=>{
+          ocupado(b,true);try{await api('/assinatura/assinar',{metodo:'POST',corpo:{plano:pl.id+'_'+periodo}});j.fechar();toast('Assinatura simulada, sem cobrança.');render();}catch(err){toast(err.message);}finally{ocupado(b,false);}
+        }}},ass.pagamento==='simulado'?'Simular '+periodo:'Contratação em breve');return b;
+      };
+      return h('section',{class:'plano'+(pl.id==='completo'?' plano--destaque':''),'data-plano':pl.id},h('h3',{},pl.nome),h('p',{},pl.descricao),h('p',{class:'preco'},moeda(pl.mensal),pl.mensal?' / mês':''),pl.anual?h('p',{class:'ajuda'},moeda(pl.anual)+' por ano, cobrado anualmente'):h('p',{},'Sem mensalidade'),h('ul',{},pl.recursos.map(r=>h('li',{},r))),pl.mensal?h('div',{},comprar('mensal'),ass.pagamento==='simulado'?comprar('anual'):null):null);
     };
     const j = janela({ titulo: 'Planos', larga: true, corpo: h('div', {},
-      h('p', {}, 'Os dois planos incluem o mesmo conteúdo. O anual sai mais barato por mês.'),
-      h('div', { class: 'planos' }, planoCard('mensal'), planoCard('anual')),
-      h('h3', {}, 'Incluso'), h('ul', { class: 'lista-check' }, ass.inclui.completo.map(t => h('li', {}, t))),
-      h('h3', {}, 'Limites de IA por mês (uso justo)'), h('ul', {}, Object.entries(ass.nomesUso).map(([k, n]) => h('li', {}, `${n}: até ${ass.limites.pago[k]}`))),
-      h('p', { class: 'ajuda' }, 'Passou do limite? Você continua estudando no modo sem IA até o mês virar. Nunca cobramos extra.'),
+      h('p', {}, 'Escolha entre Grátis, Basic, Completo, Família e Turma. Cada plano pago tem opção mensal e anual.'),
+      h('div', { class: 'planos' }, ass.catalogo.map(planoCard)),
+      h('p',{class:'ajuda'},'As cotas de Família e Turma são compartilhadas por todos os participantes. O responsável ocupa uma vaga. Ninguém acessa conversas ou materiais privados de outra pessoa.'),
+      h('p',{class:'ajuda'},'Os limites renovam por mês e não acumulam, inclusive no anual. As gerações compartilham uma cota de processamento; pedidos longos e materiais consomem mais. Áudios já preparados não consomem novas gerações. Ao esgotar a IA, os planos pagos continuam com prática sem IA.'),
+      h('h3',{},'Seu consumo de geração neste mês'),h('p',{},`${ass.consumo.geracoes||0} gerações com IA e ${ass.consumo.voz||0} caracteres de novos áudios.`),
       h('h3', {}, 'Seu uso neste mês'), h('ul', {}, usoLinhas),
       h('h3', {}, 'Condições'), h('ul', {},
         h('li', {}, 'Teste de 30 dias sem cartão. Se não assinar, a conta passa para o acesso livre e seus dados ficam guardados.'),
@@ -59,6 +59,13 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
   async function cancelar() {
     if (!await confirmar({ titulo: 'Cancelar a assinatura?', texto: `Você continua com tudo até ${dataBR(e.ate)}. Depois, a conta vai para o acesso livre e nada mais é cobrado. Seus dados ficam guardados.`, ok: 'Cancelar assinatura', cancelar: 'Manter', perigo: true })) return;
     await api('/assinatura/cancelar', { metodo: 'POST' }); toast('Assinatura cancelada. Nenhuma nova cobrança.', { tipo: 'ok' }); render();
+  }
+
+  async function gerenciarGrupo() {
+    const g=ass.grupo;
+    const entrar=()=>formulario({titulo:'Entrar em um plano compartilhado',texto:'O responsável paga o plano. Suas conversas, respostas e materiais continuam privados. A cota de IA e novos áudios é compartilhada.',campos:[{nome:'codigo',rotulo:'Código do plano',obrigatorio:true,max:24}],aoEnviar:v=>api('/assinatura/entrar',{metodo:'POST',corpo:v})}).then(r=>{if(r)render();});
+    if(!g.compartilhado)return entrar();
+    janela({titulo:'Seu plano compartilhado',corpo:h('div',{},h('p',{},`${g.ocupadas} de ${g.pessoas} vagas ocupadas, incluindo o responsável.`),g.responsavel?h('div',{},g.membros.map(m=>h('p',{},m.nome,' ',h('button',{class:'btn btn-texto btn-peq',on:{click:async()=>{if(await confirmar({titulo:'Remover participante?',texto:'A pessoa perde o acesso compartilhado, mas mantém seus dados.',ok:'Remover'})){await api('/assinatura/remover',{metodo:'POST',corpo:{membro:m.id}});render();}}}},'Remover do plano'))),h('button',{class:'btn',on:{click:async()=>{const r=await api('/assinatura/convite',{metodo:'POST'});await formulario({titulo:'Convite do plano',texto:'Compartilhe apenas com quem deve entrar. Gerar outro código invalida o anterior.',campos:[{nome:'codigo',rotulo:'Código para compartilhar',valor:r.codigo}],ok:'Fechar',aoEnviar:async()=>true});}}},'Gerar ou renovar código')):h('button',{class:'btn btn-sec',on:{click:async()=>{if(await confirmar({titulo:'Sair do plano?',texto:'Você perde o acesso compartilhado. Seus dados pessoais continuam na sua conta.',ok:'Sair do plano'})){await api('/assinatura/sair',{metodo:'POST'});render();}}}},'Sair do plano'))});
   }
 
   // --- lembrete (a janela mora em lembrete.js, porque a tela Hoje também a abre)
@@ -157,7 +164,7 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
       lem.ativo ? h('a', { class: 'btn btn-texto btn-peq', href: '/api/v1/lembrete.ics' }, icone('calendar-plus'), 'Baixar de novo') : null),
     cartao('seal-check', 'Assinatura', estadoAss,
       h('button', { class: 'btn btn-sec btn-peq', on: { click: verPlanos } }, 'Ver planos e uso'),
-      e.status === 'ativa' ? h('button', { class: 'btn btn-texto btn-peq', on: { click: cancelar } }, 'Cancelar assinatura') : null),
+      e.status === 'ativa' && ass.grupo.responsavel ? h('button', { class: 'btn btn-texto btn-peq', on: { click: cancelar } }, 'Cancelar assinatura') : null),
     cartao('shield-check', 'Seus dados', 'Veja o que usamos para personalizar, baixe uma cópia ou apague.',
       h('button', { class: 'btn btn-sec btn-peq', on: { click: verDados } }, icone('eye'), 'O que usamos'),
       h('a', { class: 'btn btn-sec btn-peq', href: '/api/v1/dados/exportar', download: '' }, icone('download-simple'), 'Exportar'),
@@ -171,4 +178,6 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
       h('button', { class: 'btn btn-sec', on: { click: async () => { await api('/auth/sair', { metodo: 'POST' }); estado.eu = null; location.hash = '#/entrar'; } } }, icone('sign-out'), 'Sair'),
       h('button', { class: 'btn btn-perigo', on: { click: excluirConta } }, 'Excluir conta')),
     h('p', { class: 'ajuda' }, h('a', { href: '/politica-de-privacidade/' }, 'Privacidade'), ' · ', h('a', { href: '/termos/' }, 'Termos')));
+  el.append(cartao('users','Plano compartilhado',ass.grupo.compartilhado?`${ass.grupo.ocupadas} de ${ass.grupo.pessoas} vagas`:'Use um convite para entrar em um plano Família ou Turma.',h('button',{class:'btn btn-sec',on:{click:gerenciarGrupo}},ass.grupo.compartilhado?'Gerenciar grupo':'Entrar com código')));
+
 }

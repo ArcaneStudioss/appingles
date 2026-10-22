@@ -366,6 +366,23 @@ END;
      SELECT NEW.user_id,NEW.item_id,substr(NEW.em,1,10),NEW.em,NEW.origem,NEW.id
      WHERE changes()=1 AND NEW.correto=1 AND NEW.dica=0;
    END;`,
+  // 13: associação de assinaturas e cotas atômicas, sem textos pessoais.
+  `CREATE TABLE assinatura_membros (
+    user_id INTEGER PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
+    owner_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    entrou_em TEXT NOT NULL, CHECK(user_id<>owner_id)
+  );
+  CREATE INDEX assinatura_membros_owner ON assinatura_membros(owner_id);
+  CREATE TABLE assinatura_convites (
+    owner_id INTEGER PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
+    codigo TEXT NOT NULL UNIQUE, criado_em TEXT NOT NULL
+  );
+  CREATE TABLE consumo_planos (
+    owner_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    mes TEXT NOT NULL, tipo TEXT NOT NULL, qtd INTEGER NOT NULL DEFAULT 0 CHECK(qtd>=0),
+    PRIMARY KEY(owner_id,mes,tipo)
+  );
+  CREATE TABLE consumo_global (mes TEXT NOT NULL,tipo TEXT NOT NULL,qtd INTEGER NOT NULL DEFAULT 0 CHECK(qtd>=0),PRIMARY KEY(mes,tipo));`,
 ];
 
 function abrir(dir) {

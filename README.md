@@ -126,3 +126,7 @@ Nível C (backend com login e dados pessoais). Verificado em 18/10/2026:
 O servidor pode usar Supabase Auth para cadastro com confirmação por código, login por senha, recuperação por e-mail e migração das contas locais sem trocar seus IDs ou perder estudos e turmas. JWT e refresh token ficam cifrados no servidor; o navegador recebe apenas cookies HttpOnly. A interface apresenta uma etapa por vez, com mostrar senha, reenviar código e redefinição de senha. O provedor é ativado por configuração depois de preparar o projeto e o envio de e-mails; o modo local continua disponível para a transição. Configuração e limites em [docs/autenticacao-supabase.md](docs/autenticacao-supabase.md).
 
 Para criar a credencial do Google Cloud e ativar o provedor Google, siga [o passo a passo de OAuth](docs/google-oauth-passo-a-passo.md).
+
+## Catálogo comercial e cotas (22/10/2026)
+
+Grátis, Basic, Completo, Família (5 pessoas) e Turma (20 pessoas) têm catálogo único na página pública e na conta. Basic oferece prática sem IA paga; os demais planos pagos têm cotas de geração e orçamento. Grupos compartilham cotas, respeitam vagas no servidor e preservam dados individuais. Migração 13 aditiva. Cobrança Stripe ainda não habilitada. Preços, limites, premissas de margem e dados necessários para a integração em [docs/PLANOS-E-STRIPE.md](docs/PLANOS-E-STRIPE.md).
