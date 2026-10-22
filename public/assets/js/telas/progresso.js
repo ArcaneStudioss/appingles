@@ -22,7 +22,7 @@ export async function telaProgresso(el) {
     h('div', { class: 'duas' },
       h('section', { class: 'folha' },
         h('p', { class: 'rotulo-pequeno' }, 'O que você fez'),
-        h('ul', { class: 'numeros' },
+        h('ul', { class: 'numeros' }, h('li',{},h('strong',{},String(c.sessoes||0)),'sessões guiadas'),
           h('li', {}, h('strong', {}, String(c.licoes)), plural(c.licoes, 'lição', 'lições').replace(/^\d+ /, '')),
           h('li', {}, h('strong', {}, String(c.minutos)), 'minutos'),
           h('li', {}, h('strong', {}, String(c.diasNoMes)), 'dias neste mês'),
@@ -57,11 +57,11 @@ export async function telaProgresso(el) {
       d.firmes?.length ? h('p', {}, h('strong', {}, 'Firmes: '), d.firmes.join('; ').toLowerCase(), '.') : null),
 
     p.comparacao ? h('section', { class: 'folha' },
-      h('h2', {}, 'Antes e agora'),
+      h('h2', {}, 'Antes e agora na mesma missão'),
       h('div', { class: 'duas' },
         h('div', {}, h('p', { class: 'rotulo-pequeno' }, `Primeira amostra · ${dataBR(p.comparacao.primeira.em)}`), h('p', { class: 'ajuda' }, p.comparacao.primeira.tarefa), h('p', { lang: 'en', class: 'pautado amostra' }, p.comparacao.primeira.texto)),
         h('div', {}, h('p', { class: 'rotulo-pequeno' }, `Mais recente · ${dataBR(p.comparacao.ultima.em)}`), h('p', { class: 'ajuda' }, p.comparacao.ultima.tarefa), h('p', { lang: 'en', class: 'pautado amostra' }, p.comparacao.ultima.texto))),
-      h('p', { class: 'ajuda' }, 'Compare você mesmo: as tarefas podem ser diferentes, então olhe a clareza e a segurança, não só o tamanho.')) : null,
+      h('p', { class: 'ajuda' }, 'Amostras da mesma missão, com a mesma rubrica. Os contextos podem variar: compare clareza, autonomia e cumprimento da tarefa. É uma evidência limitada, não um certificado de fluência.')) : null,
 
     h('section', { class: 'folha' },
       h('h2', {}, 'Próximas metas'),

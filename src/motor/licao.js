@@ -85,10 +85,18 @@ function limitarQuestoes(blocos) {
   return antes - conta();
 }
 
+// Depois do primeiro reteste, verificar novamente após 7, 14 e 30 dias.
+function retesteVencido(c, hojeISO) {
+  if (!c || !['demonstrado', 'retido'].includes(c.status)) return false;
+  const base = c.status === 'retido' ? c.retido_em : c.demonstrado_em;
+  const intervalo = c.status === 'demonstrado' ? 3 : [7, 14, 30][Math.min(2, Math.max(0, (c.retestes || 1) - 1))];
+  return !!base && diasEntre(base.slice(0, 10), hojeISO) >= intervalo;
+}
+
 function montarLicao(ctx) {
   const { perfil, plano, nivel, tentativas = [], competencias = {}, focos = [], hipoteses = [], hojeISO, cartoesPendentes = 0 } = ctx;
   const proxima = missaoAtual(plano, competencias);
-  if (proxima?.id.startsWith('zero-')) return montarGuiada(ctx, proxima);
+  if (proxima?.id.startsWith('zero-') && !plano.missoes.some(m => retesteVencido(competencias[m.id], hojeISO))) return montarGuiada(ctx, proxima);
   const orcamento = Math.max(10, Math.min(20, perfil.minutos_dia | 0 || 15));
   let gasto = 0;
   const porque = [], blocos = [];
@@ -120,7 +128,7 @@ function montarLicao(ctx) {
 
   // 2) Teste em outra situação: foco já praticado que venceu, ou missão demonstrada há 3+ dias
   const focoReteste = focos.find(f => f.status === 'praticando' && f.retestar_em && f.retestar_em <= hojeISO && POR_TAG[f.tag]);
-  const missaoReteste = plano.missoes.map(m => [m, competencias[m.id]]).find(([, c]) => c && c.status === 'demonstrado' && c.demonstrado_em && diasEntre(c.demonstrado_em.slice(0, 10), hojeISO) >= 3);
+  const missaoReteste = plano.missoes.map(m => [m, competencias[m.id]]).find(([, c]) => retesteVencido(c, hojeISO));
   let temProducao = false;
   if (missaoReteste) {
     const [m] = missaoReteste; const def = POR_ID[m.id];
@@ -292,4 +300,4 @@ function validarExerciciosIa(lista, missaoId, tag, max = 3) {
   return ok;
 }
 
-module.exports = { limitarQuestoes, limiteDaLicao, MAX_QUESTOES, MAX_COM_AUDIO, montarLicao, paraCliente, acharExercicio, exerciciosDaTag, missaoAtual, validarExerciciosIa };
+module.exports = { retesteVencido, limitarQuestoes, limiteDaLicao, MAX_QUESTOES, MAX_COM_AUDIO, montarLicao, paraCliente, acharExercicio, exerciciosDaTag, missaoAtual, validarExerciciosIa };

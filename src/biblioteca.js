@@ -11,21 +11,21 @@ const termosDe = u => (u.cultura || []).flatMap(id => cultura.POR_EXPRESSAO[id].
 function registrar({ rota, q, V, lerJson, perfilDe, exigirAcessoCompleto, hojeDe, agoraISO, registrarTentativa, criarCartao, somarMinutos, transacao, db }) {
   const acessar = (id, uid) => {
     const u = POR_UNIDADE[id], p = perfilDe(uid);
-    if (!u || (p.papel !== 'professor' && u.faixa !== publicoDe(p).id)) throw new ErroHttp(404, 'Aula não encontrada para o seu perfil.');
+    if (!u || (!['professor','ambos'].includes(p.papel) && u.faixa !== publicoDe(p).id)) throw new ErroHttp(404, 'Aula não encontrada para o seu perfil.');
     exigirAcessoCompleto(uid, hojeDe(uid));
     return u;
   };
   rota('GET', '/dicionario', () => ({ palavras: Object.fromEntries([...MISSOES, ...UNIDADES].flatMap(u => u.vocab).filter(v => /^[A-Za-z]+$/.test(v.en)).map(v => [v.en.toLowerCase(), v.pt])), expressoes: cultura.dicionarioCultural() }), { publica: true });
   rota('GET', '/brasil-mundo', ctx => {
-    const p = perfilDe(ctx.u.id), publico = publicoDe(p), professor = p.papel === 'professor';
+    const p = perfilDe(ctx.u.id), publico = publicoDe(p), professor = ['professor', 'ambos'].includes(p.papel);
     return { publico, regioes: cultura.REGIOES, categorias: cultura.CATEGORIAS, contextos: cultura.CONTEXTOS, revisadoEm: cultura.revisadoEm,
-      expressoes: cultura.EXPRESSOES.filter(e => professor || e.faixas.includes(publico.id)),
+      expressoes: cultura.EXPRESSOES.filter(e => professor || e.faixas.includes(publico.id)).map(e => require('./editorial').culturaRevisada(db,e)),
       capitulos: UNIDADES.filter(u => u.colecao === 'brasil-mundo' && (professor || u.faixa === publico.id)).map(u => ({ id: u.id, titulo: u.titulo, faixa: u.faixa, nivel: u.nivel, cultura: u.cultura })) };
   });
   rota('GET', '/biblioteca', ctx => {
     const uid = ctx.u.id, p = perfilDe(uid), publico = publicoDe(p);
     const progresso = new Map(q('SELECT * FROM biblioteca_progressos WHERE user_id = ?').all(uid).map(r => [r.unidade_id, r]));
-    return { publico, unidades: UNIDADES.filter(u => p.papel === 'professor' || u.faixa === publico.id).map(u => {
+    return { publico, unidades: UNIDADES.filter(u => ['professor', 'ambos'].includes(p.papel) || u.faixa === publico.id).map(u => {
       const r = progresso.get(u.id), feitas = Object.keys(lerJson(r?.respondidos, {})).length;
       return { id: u.id, titulo: u.titulo, tema: u.tema, faixa: u.faixa, nivel: u.nivel, imagem: u.imagem, colecao: u.colecao || null, termos: termosDe(u), palavras: u.vocab.length, total: u.exercicios.length, feitas, concluida: !!r?.concluido_em };
     }) };

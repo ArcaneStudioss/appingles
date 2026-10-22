@@ -1,3 +1,4 @@
+import { api } from '../api.js?v=__V__';
 // Componente de exercício. Padrão de jogo: escolhe ou escreve, toca em "Conferir",
 // e uma folha de resposta sobe de baixo (azul quando acerta, coral suave quando é "quase").
 // Teclado: 1 a 9 escolhem alternativas, Enter confere e continua. A correção vem do servidor.
@@ -65,6 +66,7 @@ export function exercicio(ex, config) {
     (ex.apoio || []).map(v => h('p', { class: 'apoio-palavra' }, h('span', {}, h('strong', { lang: 'en', 'data-traducao': v.pt }, v.en), ' = ', v.pt), h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir ' + v.en, on: { click: () => falar(v.en, { velocidade: 0.8 }) } }, icone('speaker-high')))));
   const verResposta = permitirTreino ? h('button', { type: 'button', class: 'btn btn-texto ajuda-resposta', on: { click: () => conferir(true) } }, icone('eye'), 'Ver resposta e aprender') : null;
   const ajuda = h('div', { class: 'ajudas-exercicio' }, dica, verResposta);
+  const relatar=h('button',{type:'button',class:'btn btn-texto btn-peq',on:{click:async()=>{try{await api('/conteudo/relatar',{metodo:'POST',corpo:{tipo:'questao',referencia:config.referenciaRelato||ex.origemId||ex.id,motivo:'Questão sinalizada para conferir enunciado, resposta e explicação.'}});toast('Questão enviada para revisão.');}catch(e){toast(e.message,{tipo:'erro'});}}}},'Reportar problema nesta questão');
 
   if (ex.tipo === 'escuta' || ex.tipo === 'ditado') {
     area.append(caixaEscuta(ex.audio, { vozFem: ex.vozFem, dica: null, ajustavel: true, devagar }));
@@ -150,6 +152,7 @@ export function exercicio(ex, config) {
     const combo = r.correto && !r.ajuda && !pratica && [3, 5, 8, 10].includes(r.sequencia);
     companhia.reagir(r.ajuda ? 'aprender' : r.quase ? 'quase' : r.correto ? pratica ? 'superacao' : combo ? 'combo' : 'acerto' : 'apoio', { silencioso });
     if (combo && !silencioso) som('combo');
+    if(config.relatar!==false)corpo.push(relatar);
     folha.replaceChildren(companhia.elemento, h('div', { class: 'folha-resposta__texto' }, corpo));
     btnConferir.hidden = false;
     btnConferir.textContent = rotuloProximo;

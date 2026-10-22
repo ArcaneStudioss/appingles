@@ -11,6 +11,11 @@ function mundo(t,sortear) {
  let agora=new Date('2026-01-01T12:00:00.000Z');
  const s=criarSocial(db,{agora:()=>agora,sortear});
  for(let uid=1;uid<=4;uid++)db.prepare('INSERT INTO usuarios(id,email,nome,senha_hash,criado_em,consentiu_em) VALUES(?,?,?,?,?,?)').run(uid,uid+'@social.test','Aprendiz '+uid,'fixture',agora.toISOString(),agora.toISOString());
+ // Os testes de transferência usam adultos com duas cópias; conquistas e últimas cópias não são elegíveis.
+ for(let uid=1;uid<=4;uid++) {
+  db.prepare('INSERT INTO perfis(user_id,idade) VALUES(?,28)').run(uid);s.perfil(uid);
+  for(let i=0;i<2;i++)db.prepare("INSERT INTO colecao_figurinhas(user_id,modelo,raridade,origem_chave,criada_em) VALUES(?,'pratica-1','comum',?,?)").run(uid,'duplicata-fixture:'+uid+':'+i,agora.toISOString());
+ }
  const ponto=(uid,item,op={})=>db.prepare('INSERT INTO tentativas(user_id,em,item_id,correto,dica,origem) VALUES(?,?,?,?,?,?)').run(uid,op.em||agora.toISOString(),item,op.errado?0:1,op.dica?1:0,op.origem||'biblioteca');
  const avanca=ms=>{agora=new Date(+agora+ms);};
  const amigo=(a,b)=>{const p=s.perfil(b);s.pedir(a,p.codigo);s.responderAmizade(b,a,true);};
@@ -101,7 +106,7 @@ test('migração preserva conquistas antigas, cria cópias e XP histórico uma v
 test('duas réplicas podem aplicar migrações ao mesmo arquivo sem duplicar nem falhar',async t=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'inglou-migracao-concorrente-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
  const run=()=>new Promise((resolve,reject)=>{let erro='';const p=spawn(process.execPath,['--disable-warning=ExperimentalWarning','-e',`const db=require('./src/db').abrir(process.argv[1]);db.close()`,dir],{cwd:path.join(__dirname,'..')});p.stderr.on('data',b=>erro+=b);p.on('error',reject);p.on('exit',code=>code?reject(Error(erro)):resolve());});
- await Promise.all([run(),run()]);const db=abrir(dir);assert.equal(db.prepare('SELECT v FROM _versao').get().v,11);db.close();
+ await Promise.all([run(),run()]);const db=abrir(dir);assert.equal(db.prepare('SELECT v FROM _versao').get().v,12);db.close();
 });
 
 test('excluir a conta durante um duelo libera a reserva da outra pessoa por cascata',t=>{
@@ -116,4 +121,18 @@ test('uma nova conta com ID reutilizado não colide com figurinhas da conta anti
  db.prepare('DELETE FROM usuarios WHERE id=2').run();db.prepare("INSERT INTO usuarios(id,email,nome,senha_hash,criado_em,consentiu_em) VALUES(2,'nova@social.test','Nova','fixture','2026-01-05','2026-01-05')").run();
  assert.notEqual(db.prepare('SELECT identidade FROM social_identidades WHERE user_id=2').get().identidade,antiga);
  s.perfil(2);assert.ok(s.colecao(2).some(c=>c.modelo==='bem-vindo'));assert.equal(db.prepare('SELECT user_id FROM colecao_figurinhas WHERE id=?').get(d.fB).user_id,1);
+});
+test('caixas priorizam modelos faltantes sem mudar raridade; cenário é permanente e não pode ser comprado duas vezes',t=>{
+ const {s,ponto,db}=mundo(t,()=>0);for(let i=0;i<120;i++)ponto(1,'saldo-extra-'+i);
+ s.compra(1,'cenario-praca','cenario-compra-0001');const antes=s.saldo(1);
+ assert.throws(()=>s.compra(1,'cenario-praca','cenario-compra-0002'),/já é seu/);assert.equal(s.saldo(1),antes);
+ assert.equal(s.consumir(1,'cenario-praca','cenario-usar-00001').cenario,'cenario-praca');
+ assert.equal(s.consumir(1,'cenario-praca','cenario-usar-00002').cenario,'padrao');assert.equal(s.painel(1).inventario['cenario-praca'],1);
+ // Isola a seleção do modelo com carteira já adquirida e uma coleção incompleta.
+ db.prepare("DELETE FROM colecao_figurinhas WHERE user_id=1 AND modelo LIKE 'pratica-%'").run();
+ for(let i=0;i<4;i++){
+  const anteriores=new Set(s.colecao(1).filter(c=>c.raridade==='comum').map(c=>c.modelo));
+  s.compra(1,'caixa','caixa-faltante-compra-'+i);const r=s.consumir(1,'caixa','caixa-faltante-abrir-'+i);
+  assert.equal(r.figurinha.raridade,'comum');assert.ok(!anteriores.has(r.figurinha.modelo));
+ }
 });

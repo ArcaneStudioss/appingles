@@ -8,7 +8,7 @@ const normalizar = texto => texto.toLocaleLowerCase('pt-BR').normalize('NFD').re
 
 export async function telaBiblioteca(el, { estado }) {
   const { unidades, publico } = await api('/biblioteca');
-  const professor = estado.eu?.perfil?.papel === 'professor';
+  const professor = ['professor','ambos'].includes(estado.eu?.perfil?.papel);
   const busca = h('input', { type: 'search', placeholder: 'Tema ou palavra: música, bergamota, gírias...', 'aria-label': 'Buscar tema na biblioteca' });
   const nivel = h('select', { 'aria-label': 'Filtrar por nível' }, h('option', { value: '' }, 'Todos os níveis'), ['A1', 'A2', 'B1'].map(n => h('option', { value: n }, n)));
   const colecao = h('select', { 'aria-label': 'Coleção da biblioteca' }, h('option', { value: '' }, 'Todas as coleções'), h('option', { value: 'brasil-mundo' }, 'Do Brasil pro mundo'));

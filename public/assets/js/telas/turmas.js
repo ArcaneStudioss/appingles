@@ -114,6 +114,7 @@ export async function telaAtividade(el, { param, ir }) {
       tela.append(h('p', { class: 'etapa c-azul' }, h('span', { class: 'bolha' }, icone('graduation-cap')), `Pergunta ${i} de ${itens.length}`),
         a.material && (a.material.texto || a.material.explicacao || a.material.vocab?.length) ? h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => janela({ titulo: 'Material da aula', larga: true, corpo: materialAula(a.material) }) } }, icone('book-open-text'), 'Consultar o material') : null,
         exercicio(ex, {
+          referenciaRelato: `turma:${a.id}:${ex.id}`,
           ja: respondidos[ex.id],
           permitirTreino: true,
           responder: async (resposta, meta) => { const r = await api(`/atividades/${a.id}/responder`, { metodo: 'POST', corpo: { itemId: ex.id, resposta, ...meta } }); if (!r.pratica) respondidos[ex.id] = { ...r, resposta }; return r; },

@@ -1387,3 +1387,17 @@ body[data-publico=adolescente] .companheiros{--salto-dupla:8px}
 @media(prefers-reduced-motion:no-preference){.loja-revelacao .colecao-carta{animation:colecao-aparece .55s var(--mola) both}}
 @keyframes colecao-aparece{from{opacity:0;transform:scale(.85) rotate(-4deg)}to{opacity:1;transform:scale(1) rotate(0)}}
 @media(max-width:380px){.colecao-grade{grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}.colecao-carta{padding:.6rem}.social-apostas{gap:.6rem}.social-links .btn,.social-abas .btn{padding-inline:.7rem}}
+
+/* Sessões curtas e personalizações mantêm o azul e a legibilidade. */
+.sessao-convite { border: 2px solid var(--azul, #2f5bea); }
+.sessao-convite .linha-acoes { display:flex; flex-wrap:wrap; gap:12px; }
+.sessao-palco { max-width:720px; margin:auto; padding-bottom:32px; }
+.sessao-palco > .btn { margin-block:12px; }
+body[data-cenario="cenario-praca"] .casca { background-image:linear-gradient(180deg,transparent 75%,#a9d7c322); }
+body[data-cenario="cenario-sol"] .casca { background-image:linear-gradient(180deg,transparent 70%,#ffc95526); }
+input,textarea,select { font-size:max(1rem,16px); }
+.cultura-grade .btn { min-height:44px; }
+
+@media (pointer: coarse) { .btn, .btn-icone, .palavra-traduzivel { min-height:44px; } }
+.ui-toasts--inline { position:static; inset:auto; transform:none; width:auto; max-width:100%; margin-block:8px; padding:0; pointer-events:auto; }
+.ui-toasts--inline .ui-toast { margin:0; }

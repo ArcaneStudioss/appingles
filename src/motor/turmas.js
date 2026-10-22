@@ -70,6 +70,7 @@ function validarMaterial(m = {}) {
 
 // Monta as perguntas da atividade: ids do banco do app + perguntas do professor. Cada item ganha id próprio (i1, i2...).
 function montarItens({ banco = [], proprias = [] }, TODOS_EXERCICIOS) {
+  if(!Array.isArray(banco)||!Array.isArray(proprias)||banco.length>60||proprias.length>30)throw new ErroItem('Envie listas válidas de questões, com até 30 perguntas na aula.');
   const itens = [];
   const vistos = new Set();
   for (const id of banco) {

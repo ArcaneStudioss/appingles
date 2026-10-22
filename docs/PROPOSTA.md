@@ -1,4 +1,6 @@
-# Inglou · proposta do produto (MVP)
+# Inglou · proposta original do produto (MVP)
+
+> Documento histórico. O público e os recursos evoluíram. Consulte [README](../README.md) e [Evolução](EVOLUCAO.md) para o comportamento atual, integrações e limites. As estimativas de custo abaixo não são uma cotação atual.
 
 > "Seu inglês, sua vida, seu plano. Cada aula nasce do que você precisa aprender."
 > Nome e identidade (azul e branco) definidos pelo Gabriel em 18/10/2026. Antes de lançar: checar marca no INPI e o domínio.

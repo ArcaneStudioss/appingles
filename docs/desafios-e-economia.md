@@ -1,68 +1,45 @@
-# Desafios, figurinhas, moedas e XP
+# Desafios, coleção, moedas e XP
 
-Implementação inicial: 22/10/2026. As rotas são `#/desafios`, `#/colecao` e `#/loja`. Os acessos ficam em Mais → Amigos e coleção; a tela Hoje também traz o cartão Desafios com amigos e o saldo de XP/moedas.
+Regras atualizadas em 22/10/2026. Implementação em `src/social.js`, migração 12 em `src/db.js` e interface em `telas/social.js`.
 
-## Figurinhas
+## Participar
 
-As conquistas pessoais e as páginas da trilha já existiam. Elas continuam registradas no álbum mesmo quando alguém perde um duelo. A nova coleção guarda cópias com proprietário e identificador únicos; só essas cópias são transferidas.
+Amizades usam códigos aleatórios e aceite. Não há busca pública por e-mail, idade ou nome. O amigo vê apelido, coleção e placares compartilhados; não vê respostas ou estudo privado. Há bloqueio e limites de convite.
 
-- Ao entrar na área social, a pessoa recebe uma figurinha de boas-vindas.
-- Conquistas existentes viram cópias na coleção durante a migração. A conquista original é preservada.
-- Cada cinco exercícios válidos gera uma figurinha. O marco de 25 pontos gera uma rara; o de 100, uma épica.
-- Metas cooperativas cumpridas dão uma figurinha épica para cada participante.
-- Conquistas de 100, 200 e 365 dias seguidos geram cópias lendárias. Marcos de 30/60 dias e retenção geram épicas; outras conquistas geram raras.
-- É possível ter cópias repetidas. Cada cópia pode estar em apenas um duelo por vez.
+O desafio dura 2, 7 ou 30 dias e começa depois do aceite do convidado e da confirmação do criador. Escolha pontuação por exercícios (até 20 por dia UTC) ou por constância (dias com ao menos um exercício elegível). Somente eventos posteriores ao início e anteriores ao término contam. A poção não altera placares.
 
-Raridades e valor relativo de coleção: comum (1), rara (3), épica (8), lendária (25). Esse valor serve para comparar figurinhas na escolha do duelo; não é saldo de moedas ou preço de revenda.
+- **Amistoso:** disponível para todas as idades. Ninguém reserva, perde ou transfere figurinhas.
+- **Troca opcional:** ambos precisam ter idade adulta informada. Cada um escolhe uma cópia repetida do outro; uma outra cópia do mesmo modelo e raridade deve continuar livre na coleção. Conquistas pessoais não participam. As duas cópias são reservadas após a escolha recíproca. O vencedor recebe a cópia combinada; empate não transfere nada.
 
-## Amigos e duelos
+Convites expiram em 72 horas. Antes do início, podem ser recusados ou cancelados. Depois, a rodada segue até o prazo. Apuração, atualização e transferência acontecem uma única vez na mesma transação. Ao excluir uma conta, as reservas do outro participante são liberadas. Desafios antigos que não atendem às novas proteções são cancelados na próxima consulta, sem retirar figurinhas.
 
-A busca usa o código aleatório mostrado pela própria pessoa. Não existe busca pública por nome, idade ou e-mail. O perfil social mostra um apelido editável, inicialmente o primeiro nome. O destinatário precisa aceitar a amizade. Amigos veem coleção e placares dos desafios compartilhados, sem acesso às respostas, ao e-mail ou ao histórico privado de estudo. Há bloqueio de contatos e limites de convites.
+## Metas cooperativas
 
-1. O criador escolhe um amigo, a duração de 2, 7 ou 30 dias e uma figurinha da coleção dele.
-2. O convidado vê a figurinha dele em disputa e escolhe uma do criador. Esse aceite reserva as duas cópias.
-3. O criador vê ambas e confirma a troca em disputa. Só então o relógio começa.
-4. Quem fizer mais exercícios válidos no período vence. O vencedor ganha a cópia que escolheu do adversário e conserva a própria.
-5. Em empate, cada um mantém a sua. Convites podem ser recusados/cancelados antes do início; depois de iniciado, o duelo segue até o prazo.
+Até dez amigos podem combinar exercícios ou sequência de dias. O criador inicia com quem aceitou. Os dias da sequência são blocos de 24 horas a partir do início, iguais para todos; cada participante cumpre a quantidade diária. O recorde da rodada fica mesmo se a sequência recomeçar. Cumprir a meta concede uma épica a cada participante. Não há figurinha em disputa. Encerrar uma rodada não retira prêmios já entregues.
 
-Convites sem resposta expiram em 72 horas; reservas pendentes são liberadas. O resultado é apurado pelo servidor ao consultar ou agir na área social após o prazo. A operação de apuração e a transferência ocorrem na mesma transação e são idempotentes. A exclusão da conta ou de todos os dados remove seus duelos e libera a figurinha reservada do outro participante.
+## Coleção
 
-## Metas e sequências em grupo
+Cada cópia tem ID, proprietário e raridade. As conquistas originais e os carimbos culturais permanecem no histórico pessoal. Os filtros mostram todas as cópias, repetidas ou reservadas. Raridades: comum, rara, épica e lendária; valores relativos de coleção 1, 3, 8 e 25, sem conversão em dinheiro.
 
-Uma pessoa convida até nove amigos. Os convidados aceitam participar; o criador começa quando houver pelo menos duas pessoas. Quem ainda não aceitou fica fora da rodada, e o grupo não muda durante o período.
+Boas-vindas, marcos de prática, conquistas e metas cooperativas continuam concedendo cópias. A cada cinco exercícios elegíveis há uma figurinha; marcos de 25 e 100 geram rara e épica. A idade não é enviada no perfil social público.
 
-- **Exercícios:** somar um total escolhido pelo grupo dentro de 2, 7 ou 30 dias.
-- **Sequência:** alcançar uma quantidade escolhida de dias consecutivos, com 1 a 20 exercícios por pessoa em cada dia. Um dia é um bloco de 24 horas contado a partir do início, igual para todos. Cada participante precisa cumprir a quantidade diária; um bloco perdido interrompe a sequência atual, preservando o recorde da rodada.
+## Recompensas
 
-Ao cumprir a meta, todos recebem uma épica. O grupo não coloca figurinhas em disputa. Uma pessoa que já aceitou pode encerrar a rodada para todos, sem retirada de figurinhas. O encerramento exige confirmação na interface.
+Primeira tentativa correta e independente de uma questão no dia UTC: 10 XP e uma moeda. Dicas, tradução durante a questão e resposta revelada contam como ajuda. Errar e tentar novamente é prática; repetir não multiplica a recompensa. Nivelamento e cartões com nota própria não pontuam. Uma questão do banco mantém sua identidade quando usada em uma turma, evitando contar novamente o mesmo item.
 
-## Moedas e XP
+Uma sessão guiada concluída concede 25 XP uma vez no dia, mesmo se a pessoa apagar só suas respostas e refizer a prática. A mesma proteção vale para recarregamentos e requisições simultâneas. Lições, capítulos, treinos, atividades e assuntos têm seus próprios bônus de conclusão. XP mede participação, não nível de inglês ou domínio demonstrado.
 
-As correções do servidor registram a recompensa. O navegador não escolhe o saldo, o placar ou a raridade.
+Para impedir renovação artificial de recompensas, o servidor guarda um registro mínimo de item e dia, sem a resposta, mesmo ao apagar somente respostas. Apagar todos os dados ou excluir a conta apaga também esses registros, a carteira e o histórico econômico. A exportação inclui os dados da própria conta.
 
-- Um exercício correto na primeira tentativa, sem dica ou resposta revelada, dá **1 moeda e 10 XP**. A mesma questão conta uma vez por dia UTC; uma nova gravação, repetição ou reenvio não multiplica a recompensa.
-- Lições, capítulos da biblioteca, treinos, aulas de turma e assuntos do estudo sob medida concluídos dão **25 XP adicionais**, uma vez por conclusão válida. Acertos não são exigidos para o bônus de concluir a aula. Lições/treinos sem nenhuma resposta registrada não rendem esse bônus.
-- Nivelamento, notas atribuídas pelo próprio aluno nos cartões e exercícios pulados não geram moedas ou pontos de desafio.
-- O XP indica atividade no app; o nível de XP a cada 100 pontos não substitui o nível de inglês A1–C1.
-- O XP histórico de lições e capítulos já concluídos é importado sem multiplicador. Os placares de desafios consideram apenas registros posteriores ao início da rodada e anteriores ao fim.
+## Loja
 
-Apagar apenas respostas preserva os registros de recompensa, sem guardar o texto respondido neles. Apagar todos os dados zera a economia e os relacionamentos do usuário. Exportar dados inclui sua carteira, XP, coleção e participações.
-
-## Loja inicial
-
-| Item | Preço | Uso |
+| Item | Preço em moedas | Regra |
 | --- | --- | --- |
-| Caixa de figurinhas | 15 moedas | Ao abrir, entrega uma figurinha sorteada no servidor. |
-| Poção de XP | 20 moedas | Após ativar, dobra o XP futuro durante 30 minutos. |
+| Caixa | 15 | Uma cópia; 65% comum, 25% rara, 9% épica, 1% lendária |
+| Poção | 20 | XP em dobro por 30 minutos após ativar; sem acúmulo, sem multiplicar moedas ou pontos |
+| Praça brasileira | 25 | Fundo permanente; não altera o aprendizado |
+| Pôr do sol | 25 | Fundo permanente; não altera o aprendizado |
 
-A compra guarda o item no inventário. Ativar a poção ou abrir uma caixa são ações separadas. A poção não acumula com outra ativa, não altera moedas e não muda os placares por quantidade de exercícios.
+A compra guarda o item. Abrir, ativar ou equipar são ações posteriores. Dentro da raridade sorteada, a caixa prioriza os seis modelos de prática ainda não possuídos; quando todos estão na coleção, pode repetir. Isso não muda as probabilidades de raridade. Preço e chances aparecem antes da compra e abertura.
 
-Chances por caixa, mostradas antes de comprar e abrir: **65% comum, 25% rara, 9% épica e 1% lendária**. Cada caixa entrega uma cópia e pode repetir modelos. O sorteio usa `crypto.randomInt`, sem aceitar raridade ou modelo enviados pelo navegador.
-
-Compras e consumo usam identificadores de pedido; repetir a mesma solicitação retorna o recibo anterior. Saldo, débito, inventário e entrega são verificados na mesma transação SQLite. Gastos concorrentes não permitem saldo negativo. Os preços e chances são definidos em `src/social.js`.
-
-## Persistência e validação
-
-A migração 11 acrescenta as tabelas sociais e os extratos de moeda/XP. Gatilhos de banco conectam correções, conquistas e conclusões à economia, inclusive nas duas réplicas do servidor. Identificadores de eventos e desafios são monotônicos; a identidade de emissão evita colisão de figurinhas se uma conta excluída tiver seu ID numérico reutilizado. As migrações conferem a versão novamente sob bloqueio para suportar subida simultânea.
-
-Testes cobrem correções reais pela API, CSRF, isolamento entre contas, propriedade e reservas, aceite, empate e expiração, limites temporais, sequência cooperativa, idempotência, compras concorrentes, poção, sorteios por faixa, exclusão, migração e reabertura do banco. Os fluxos completos de interface foram conferidos em Chromium e WebKit, em computador e tela de celular.
+Os fundos são comprados uma única vez. Usar novamente o fundo ativo restaura o original. O servidor valida propriedade, saldo, inventário e identificador do pedido. Compra, débito e entrega são atômicos; a repetição do mesmo pedido devolve o recibo anterior. Não há compra de moedas com dinheiro real.

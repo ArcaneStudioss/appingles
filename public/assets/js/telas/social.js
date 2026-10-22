@@ -25,7 +25,7 @@ function botao(texto,fn,classe='btn btn-sec btn-peq') {
  const b=h('button',{type:'button',class:classe},texto);b.addEventListener('click',async()=>{ocupado(b,true);try{await fn();}catch(e){toast(e.message,{tipo:'erro'});}finally{ocupado(b,false);}});return b;
 }
 async function escolherCarta(titulo,colecao,aoEscolher,texto='Escolha a figurinha que você quer ganhar.') {
- const livres=colecao.filter(c=>!c.reservada);if(!livres.length){toast('Não há figurinhas disponíveis para este desafio.');return;}
+ const livres=colecao.filter(c=>!c.reservada&&c.transferivel);if(!livres.length){toast('Não há figurinhas disponíveis para este desafio.');return;}
  let escolhida=null,j;
  const b=botao('Confirmar figurinha',async()=>{if(!escolhida){toast('Selecione uma figurinha.');return;}await aoEscolher(escolhida);j.fechar(true);},'btn');
  const grade=h('div',{class:'colecao-grade selecao-figurinhas'},livres.map(c=>{
@@ -47,9 +47,15 @@ export async function telaSocial(el) {
   if(aba==='amigos') amigos();else if(aba==='duelos') duelos();else grupos();
  }
  async function desafiar(amigo) {
-  const f=await formulario({titulo:'Desafiar '+amigo.apelido,campos:[{nome:'dias',rotulo:'Duração',tipo:'select',opcoes:[2,7,30].map(n=>({valor:n,rotulo:n+' dias'})),valor:7}],texto:'Vocês disputam quem faz mais exercícios corretos válidos. Você escolhe uma figurinha dele; ele escolhe uma sua. Antes de começar, você confirma as duas.',enviar:'Escolher figurinha',aoEnviar:v=>v});
-  if(!f)return;const c=await api('/social/amigos/'+amigo.id+'/colecao');
-  await escolherCarta('Qual figurinha você quer ganhar?',c.colecao,async figurinhaId=>{await POST('/duelos',{amigoId:amigo.id,dias:Number(f.dias),figurinhaId});aba='duelos';await atualizar();});
+  const campos=[{nome:'dias',rotulo:'Duração',tipo:'select',opcoes:[2,7,30].map(n=>({valor:n,rotulo:n+' dias'})),valor:7},
+   {nome:'criterio',rotulo:'Como contar',tipo:'select',opcoes:[{valor:'exercicios',rotulo:'Exercícios (até 20 por dia)'},{valor:'constancia',rotulo:'Dias em que estudamos'}]},
+   {nome:'modalidade',rotulo:'Tipo de desafio',tipo:'select',opcoes:[{valor:'amistoso',rotulo:'Amistoso: ninguém perde figurinhas'},...(d.eu.podeTrocar?[{valor:'troca',rotulo:'Troca opcional de cópias repetidas (adultos)'}]:[])]}];
+  const f=await formulario({titulo:'Desafiar '+amigo.apelido,campos,texto:'Combinações precisam do aceite dos dois. Conquistas e últimas cópias ficam protegidas.',enviar:'Enviar convite',aoEnviar:v=>v});
+  if(!f)return;
+  const convite={amigoId:amigo.id,dias:Number(f.dias),criterio:f.criterio};
+  if(f.modalidade==='amistoso'){await POST('/duelos',convite);aba='duelos';await atualizar();return;}
+  const c=await api('/social/amigos/'+amigo.id+'/colecao');
+  await escolherCarta('Escolha uma cópia repetida',c.colecao,async figurinhaId=>{await POST('/duelos',{...convite,figurinhaId});aba='duelos';await atualizar();});
  }
  function amigos() {
   const codigo=h('input',{type:'text',maxlength:30,placeholder:'ING-…','aria-label':'Código do amigo',autocapitalize:'characters'});
@@ -70,16 +76,19 @@ export async function telaSocial(el) {
   conteudo.append(h('section',{class:'folha'},h('h2',{},'Seus amigos'),d.amigos.length?h('ul',{class:'social-lista'},d.amigos.map(a=>h('li',{},h('strong',{},a.apelido),h('div',{class:'linha-acoes'},botao('Desafiar',()=>desafiar(a)),botao('Bloquear',async()=>{if(!await confirmar({titulo:'Bloquear '+a.apelido+'?',texto:'A amizade e os convites pendentes serão removidos. Duelos já iniciados mantêm as regras até o fim.',ok:'Bloquear'}))return;await api('/social/amigos/'+a.id,{metodo:'DELETE',corpo:{bloquear:true}});await atualizar();}))))):h('p',{class:'ajuda'},'Troque códigos e aceite a amizade para criar o primeiro desafio.')));
  }
  function duelos() {
-  conteudo.append(h('section',{class:'folha'},h('h2',{},'Dois amigos, duas figurinhas'),h('p',{},'Dispute por 2, 7 ou 30 dias. O vencedor fica com a figurinha que escolheu do amigo e mantém a sua. Empate: cada um continua com a própria.'),h('p',{class:'ajuda'},'As figurinhas ficam reservadas só depois que o amigo faz a escolha. O relógio começa na confirmação final. Não dá para desistir depois do início.'),botao('Ver amigos para desafiar',async()=>{aba='amigos';desenhar();}),botao('Atualizar placares',atualizar)));
+  conteudo.append(h('section',{class:'folha'},h('h2',{},'Desafios no seu ritmo'),h('p',{},'Combine 2, 7 ou 30 dias de prática por exercícios ou constância. No amistoso ninguém perde itens. Só adultos podem optar por trocar cópias repetidas.'),h('p',{class:'ajuda'},'Os dois aceitam as condições antes de começar. Contam até 20 exercícios por dia UTC; na constância, cada dia de estudo vale um ponto.'),botao('Ver amigos para desafiar',async()=>{aba='amigos';desenhar();}),botao('Atualizar placares',atualizar)));
   if(!d.duelos.length)conteudo.append(h('p',{class:'folha'},'Seu primeiro duelo começa com um convite a um amigo.'));
   for(const x of d.duelos) {
    const card=h('section',{class:'folha social-desafio','data-duelo':x.id},h('div',{class:'linha-acoes'},h('span',{class:'chip c-lilas'},x.dias+' dias'),h('span',{class:'chip'},ESTADO[x.estado])),h('h2',{},x.criador.apelido+' × '+x.convidado.apelido));
+   card.append(h('p',{class:'ajuda'},(x.modalidade==='amistoso'?'Amistoso, sem perda de itens':'Troca de cópias repetidas')+' · '+(x.criterio==='constancia'?'Dias de estudo':'Até 20 exercícios por dia')));
    if(x.inicio)card.append(h('p',{class:'social-placar'},x.placarCriador+' × '+x.placarConvidado),h('p',{class:'ajuda'},'Término: '+DATA(x.fim)));
    card.append(h('div',{class:'social-apostas'},x.figurinhaDoConvidado?h('div',{},h('p',{class:'rotulo-pequeno'},x.criador.apelido+' escolheu'),figurinha(x.figurinhaDoConvidado)):null,x.figurinhaDoCriador?h('div',{},h('p',{class:'rotulo-pequeno'},x.convidado.apelido+' escolheu'),figurinha(x.figurinhaDoCriador)):null));
-   if(x.estado==='escolha'&&!x.euSouCriador)card.append(botao('Escolher a figurinha dele',async()=>{const c=await api('/social/amigos/'+x.criador.id+'/colecao');await escolherCarta('Escolha o que quer ganhar',c.colecao,async figurinhaId=>{await POST('/duelos/'+x.id+'/escolher',{figurinhaId});await atualizar();},'Ao escolher, você aceita colocar a sua figurinha mostrada neste convite em disputa. As duas ficarão reservadas até a confirmação do amigo.');}));
-   if(x.estado==='confirmacao'&&x.euSouCriador)card.append(botao('Confirmar as duas e começar',async()=>{if(!await confirmar({titulo:'Começar o duelo?',texto:'Você pode ganhar '+nome(x.figurinhaDoConvidado)+' ou perder '+nome(x.figurinhaDoCriador)+'. O duelo dura '+x.dias+' dias e não pode ser cancelado após começar.',ok:'Aceitar e começar'}))return;await POST('/duelos/'+x.id+'/confirmar');await atualizar();},'btn'));
+   if(x.estado==='escolha'&&!x.euSouCriador&&x.modalidade==='amistoso')card.append(botao('Aceitar desafio amistoso',async()=>{await POST('/duelos/'+x.id+'/escolher',{});await atualizar();}));
+   if(x.estado==='escolha'&&!x.euSouCriador&&x.modalidade==='troca')card.append(botao('Escolher a figurinha dele',async()=>{const c=await api('/social/amigos/'+x.criador.id+'/colecao');await escolherCarta('Escolha o que quer ganhar',c.colecao,async figurinhaId=>{await POST('/duelos/'+x.id+'/escolher',{figurinhaId});await atualizar();},'Ao escolher, você aceita colocar a sua figurinha mostrada neste convite em disputa. As duas ficarão reservadas até a confirmação do amigo.');}));
+   if(x.estado==='confirmacao'&&x.euSouCriador&&x.modalidade==='amistoso')card.append(botao('Confirmar e começar',async()=>{await POST('/duelos/'+x.id+'/confirmar');await atualizar();},'btn'));
+   if(x.estado==='confirmacao'&&x.euSouCriador&&x.modalidade==='troca')card.append(botao('Confirmar as duas e começar',async()=>{if(!await confirmar({titulo:'Começar o duelo?',texto:'Você pode ganhar '+nome(x.figurinhaDoConvidado)+' ou perder '+nome(x.figurinhaDoCriador)+'. O duelo dura '+x.dias+' dias e não pode ser cancelado após começar.',ok:'Aceitar e começar'}))return;await POST('/duelos/'+x.id+'/confirmar');await atualizar();},'btn'));
    if(['escolha','confirmacao'].includes(x.estado))card.append(h('p',{class:'ajuda'},'Responda até '+DATA(x.expiraEm)),botao('Recusar ou cancelar convite',async()=>{await POST('/duelos/'+x.id+'/cancelar');await atualizar();}));
-   if(x.estado==='concluido')card.append(h('p',{class:'aviso-suave'},x.vencedor?x.vencedor===d.eu.id?'Você ganhou! A figurinha já está na sua coleção.':'Seu amigo ganhou. Sua conquista pessoal continua registrada.':'Empatou! Cada um ficou com sua figurinha.'));
+   if(x.estado==='concluido')card.append(h('p',{class:'aviso-suave'},x.vencedor?x.vencedor===d.eu.id?x.modalidade==='amistoso'?'Você venceu! Sua participação ficou registrada.':'Você ganhou a cópia repetida combinada.':x.modalidade==='amistoso'?'Seu amigo venceu. Continuem praticando juntos!':'Seu amigo ganhou a cópia combinada; suas conquistas continuam.':'Empatou! Nenhuma figurinha muda de dono.'));
    conteudo.append(card);
   }
   regras();
@@ -114,10 +123,11 @@ export async function telaSocial(el) {
  desenhar();
 }
 export async function telaColecao(el) {
- const d=await api('/social');cabeca(el,d,'colecao','Suas figurinhas','As conquistas pessoais ficam no álbum. Estas cópias pertencem a você e podem circular nos duelos.');
+ const d=await api('/social');cabeca(el,d,'colecao','Suas figurinhas','As conquistas pessoais ficam no álbum. Sua última cópia e suas conquistas ficam protegidas. Adultos podem combinar trocas de repetidas.');
  const filtro=h('select',{'aria-label':'Filtrar figurinhas por raridade'},h('option',{value:''},'Todas as raridades'),Object.entries(RARIDADE).map(([id,n])=>h('option',{value:id},n))),grade=h('div',{class:'colecao-grade'});
- const desenhar=()=>{const cartas=d.colecao.filter(c=>!filtro.value||c.raridade===filtro.value);grade.replaceChildren(cartas.length?cartas.map(figurinha):h('p',{class:'folha'},'Você ainda não tem figurinhas dessa raridade.'));};filtro.addEventListener('change',desenhar);
- el.append(h('p',{class:'ajuda'},'Ganhe uma figurinha a cada 5 exercícios válidos. A cada 25 pontos ela é rara; a cada 100, épica. Metas em grupo dão épicas; marcos de sequência e caixas também podem dar lendárias.'),h('label',{},'Sua coleção',filtro),grade);desenhar();
+ const estado=h('select',{'aria-label':'Filtrar por propriedade'},h('option',{value:''},'Todas as minhas cópias'),h('option',{value:'repetidas'},'Repetidas'),h('option',{value:'reservadas'},'Reservadas'));
+ const desenhar=()=>{const cartas=d.colecao.filter(c=>(!filtro.value||c.raridade===filtro.value)&&(!estado.value||(estado.value==='repetidas'?c.repetidas>1:c.reservada)));grade.replaceChildren(cartas.length?cartas.map(figurinha):h('p',{class:'folha'},'Você ainda não tem figurinhas dessa raridade.'));};filtro.addEventListener('change',desenhar);estado.addEventListener('change',desenhar);
+ el.append(h('p',{class:'ajuda'},'Ganhe uma figurinha a cada 5 exercícios válidos. A cada 25 pontos ela é rara; a cada 100, épica. Metas em grupo dão épicas; marcos de sequência e caixas também podem dar lendárias.'),h('label',{},'Sua coleção',filtro,estado),grade);desenhar();
 }
 export async function telaLoja(el) {
  let d=await api('/social'),mensagem='';
@@ -126,17 +136,17 @@ export async function telaLoja(el) {
   el.replaceChildren();cabeca(el,d,'loja','Loja do Inglou','Troque as moedas que você ganhou estudando. XP mede atividade no app, não seu nível de inglês.');
   if(mensagem)el.append(h('p',{class:'aviso-suave',role:'status'},mensagem));
   const chances=h('p',{class:'ajuda'},Object.values(d.raridades).map(r=>r.nome+': '+r.chance+'%').join(' · '));
-  const estoque=h('section',{class:'folha'},h('h2',{},'Seus itens'),h('div',{class:'loja-produtos'},['caixa','pocao'].map(produto=>{
-   let chave=crypto.randomUUID();const qtd=d.inventario[produto]||0,b=botao(produto==='caixa'?'Abrir uma caixa':'Ativar XP em dobro por 30 min',async()=>{
-    const r=await POST('/loja/usar',{produto,chave});chave=crypto.randomUUID();mensagem=r.figurinha?'Figurinha adicionada à coleção.':'Poção ativada! XP em dobro até '+DATA(r.ate)+'.';await atualizar();
+  const estoque=h('section',{class:'folha'},h('h2',{},'Seus itens'),h('div',{class:'loja-produtos'},d.loja.produtos.map(p=>p.id).filter(id=>['caixa','pocao'].includes(id)||d.inventario[id]>0).map(produto=>{
+   let chave=crypto.randomUUID();const qtd=d.inventario[produto]||0,b=botao(produto==='caixa'?'Abrir uma caixa':produto==='pocao'?'Ativar XP em dobro por 30 min':d.eu.cenario===produto?'Usar fundo original':'Usar este cenário',async()=>{
+    const r=await POST('/loja/usar',{produto,chave});chave=crypto.randomUUID();if(r.cenario)document.body.dataset.cenario=r.cenario;mensagem=r.cenario?'Cenário aplicado.':r.figurinha?'Figurinha adicionada à coleção.':'Poção ativada! XP em dobro até '+DATA(r.ate)+'.';await atualizar();
     if(r.figurinha)janela({titulo:'Sua nova figurinha!',corpo:h('div',{class:'loja-revelacao'},figurinha(r.figurinha),h('p',{},'Já está na sua coleção.'))});
    });b.disabled=!qtd||(produto==='pocao'&&!!d.pocaoAte);
-   return h('div',{},h('h3',{},produto==='caixa'?'📦 Caixas: '+qtd:'🧪 Poções: '+qtd),produto==='caixa'?h('p',{class:'ajuda'},Object.values(d.raridades).map(r=>r.nome+': '+r.chance+'%').join(' · ')):null,b);
+   return h('div',{},h('h3',{},produto==='caixa'?'📦 Caixas: '+qtd:produto==='pocao'?'🧪 Poções: '+qtd:d.loja.produtos.find(p=>p.id===produto).nome),produto==='caixa'?h('p',{class:'ajuda'},Object.values(d.raridades).map(r=>r.nome+': '+r.chance+'%').join(' · ')):null,b);
   })));
   el.append(estoque,h('section',{class:'folha'},h('h2',{},'Escolha o que levar'),h('div',{class:'loja-produtos'},d.loja.produtos.map(p=>{
-   let chave=crypto.randomUUID();const b=botao('Comprar por '+p.preco+' moedas',async()=>{const r=await POST('/loja/comprar',{produto:p.id,chave});chave=crypto.randomUUID();mensagem=r.produto==='caixa'?'Caixa guardada em Seus itens.':'Poção guardada. Ative quando quiser começar os 30 minutos.';await atualizar();},'btn');b.disabled=d.saldo<p.preco;
+   let chave=crypto.randomUUID();const b=botao('Comprar por '+p.preco+' moedas',async()=>{const r=await POST('/loja/comprar',{produto:p.id,chave});chave=crypto.randomUUID();mensagem=r.produto.startsWith('cenario-')?'Cenário guardado em Seus itens.':r.produto==='caixa'?'Caixa guardada em Seus itens.':'Poção guardada. Ative quando quiser começar os 30 minutos.';await atualizar();},'btn');b.disabled=d.saldo<p.preco;
    return h('article',{},h('h3',{},(p.id==='caixa'?'📦 ':'🧪 ')+p.nome),h('p',{},p.descricao),p.id==='caixa'?h('p',{class:'ajuda'},Object.values(d.raridades).map(r=>r.nome+': '+r.chance+'%').join(' · ')):null,b,d.saldo<p.preco?h('p',{class:'ajuda'},'Faltam '+(p.preco-d.saldo)+' moedas.'):null);
-  }))),h('details',{class:'folha'},h('summary',{},'Chances das caixas e raridades'),chances,h('p',{class:'ajuda'},'Cada caixa entrega uma figurinha. Podem vir repetidas. O valor de coleção ajuda a comparar raridades; não é saldo de moedas.')),
+  }))),h('details',{class:'folha'},h('summary',{},'Chances das caixas e raridades'),chances,h('p',{class:'ajuda'},'Cada caixa mantém as probabilidades de raridade. Dentro da raridade sorteada, prioriza modelos que você ainda não possui. Após completar os seis modelos, podem vir repetidas. O valor de coleção ajuda a comparar raridades; não é saldo de moedas.')),
    h('details',{class:'folha'},h('summary',{},'Como ganhar XP e moedas'),h('p',{},'Exercício válido: 10 XP e 1 moeda. Concluir uma lição, um capítulo, treino ou aula da turma: mais 25 XP. A poção dobra o XP futuro por 30 minutos. Ela não acumula com outra e não muda moedas ou placares.'),h('p',{class:'ajuda'},d.regras)),
    h('div',{class:'linha-acoes'},botao('Atualizar saldo e itens',atualizar)),h('details',{class:'folha'},h('summary',{},'Extrato de moedas'),d.extrato.length?h('ul',{class:'social-lista'},d.extrato.map(e=>h('li',{},h('span',{},e.motivo,h('small',{},DATA(e.em))),h('strong',{},(e.quantidade>0?'+':'')+e.quantidade)))):h('p',{},'Suas primeiras moedas aparecem aqui depois dos exercícios.')));
  }
