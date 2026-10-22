@@ -45,7 +45,7 @@ function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limpa
   }
   function validarPerfil(b) {
     const nome = V.str(b.nome, 80, { min: 2, campo: 'Nome' }), idade = V.int(b.idade, 1, 120, 'Idade');
-    const papel = V.um(b.papel || 'aluno', ['aluno', 'professor'], 'Perfil');
+    const papel = V.um(b.papel || 'aluno', ['aluno', 'professor', 'ambos'], 'Perfil');
     const regiao = b.regiao == null || b.regiao === '' ? null : V.um(b.regiao, ['norte', 'nordeste', 'centro-oeste', 'sudeste', 'sul', 'fora'], 'Região');
     if (b.consentimento !== true) throw new ErroHttp(422, 'Leia e aceite a política de privacidade para criar a conta.');
     if (idade < 18 && b.responsavel !== true) throw new ErroHttp(422, 'Confirme a autorização do responsável.');

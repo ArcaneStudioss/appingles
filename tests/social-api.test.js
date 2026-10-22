@@ -27,8 +27,9 @@ test('amizade exige aceite do destinatário; desafio valida duração e escolhas
  assert.equal((await R('b','POST',`/social/amigos/${users.a.id}/responder`,{acao:'aceitar'})).status,200);
  const c=await R('a','GET',`/social/amigos/${users.b.id}/colecao`);assert.equal(c.status,200);
  assert.equal((await R('a','POST','/social/duelos',{amigoId:users.b.id,dias:999,figurinhaId:c.colecao[0].id})).status,422);
- assert.equal((await R('a','POST','/social/duelos',{amigoId:users.b.id,dias:2,figurinhaId:users.a.social.colecao[0].id})).status,409);
- const d=await R('a','POST','/social/duelos',{amigoId:users.b.id,dias:2,figurinhaId:c.colecao[0].id});users.a.duelo=d.id;assert.equal(d.status,200);
+ assert.equal((await R('a','POST','/social/duelos',{amigoId:users.b.id,dias:2,figurinhaId:users.a.social.colecao[0].id})).status,403);
+ assert.equal((await R('a','POST','/social/duelos',{amigoId:users.b.id,dias:2,figurinhaId:c.colecao[0].id})).status,403,'menores usam desafio sem transferência');
+ const d=await R('a','POST','/social/duelos',{amigoId:users.b.id,dias:2});users.a.duelo=d.id;assert.equal(d.status,200);
  assert.equal((await R('c','POST',`/social/duelos/${d.id}/escolher`,{figurinhaId:users.a.social.colecao[0].id})).status,404);
  assert.equal((await R('b','POST',`/social/duelos/${d.id}/escolher`,{figurinhaId:users.a.social.colecao[0].id})).status,200);
  assert.equal((await R('b','POST',`/social/duelos/${d.id}/confirmar`)).status,409);

@@ -15,7 +15,7 @@ export async function telaConversar(el, { ir }) {
   const pre = new URLSearchParams(location.hash.split('?')[1] || '').get('c');
   const iniciar = async (id, btn) => {
     ocupado(btn, true);
-    try { const c = await api('/conversas', { metodo: 'POST', corpo: { cenario: id } }); ir('#/conversa/' + c.id); }
+    try { const c = await api('/conversas', { metodo: 'POST', corpo: { cenario: id, materialId: new URLSearchParams(location.hash.split('?')[1] || '').get('material') || null } }); ir('#/conversa/' + c.id); }
     catch (e) { toast(e.message, { tipo: 'erro' }); ocupado(btn, false); }
   };
   el.append(

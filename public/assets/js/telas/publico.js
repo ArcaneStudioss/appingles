@@ -7,11 +7,11 @@ export const REGIOES_BRASIL = { norte: 'Norte', nordeste: 'Nordeste', 'centro-oe
 
 export function camposPublico({ idade: inicial = '', papel: papelInicial = 'aluno', regiao: regiaoInicial = '', responsavel = false } = {}) {
   const idade = h('input', { id: 'p-idade', type: 'number', inputmode: 'numeric', min: 1, max: 120, step: 1, required: true, value: inicial ?? '' });
-  const papel = h('select', { id: 'p-papel' }, h('option', { value: 'aluno', selected: papelInicial === 'aluno' }, 'Aluno(a): estudar e participar de turmas'), h('option', { value: 'professor', selected: papelInicial === 'professor' }, 'Professor(a): criar aulas e acompanhar turmas'));
+  const papel = h('select', { id: 'p-papel' }, h('option', { value: 'aluno', selected: papelInicial === 'aluno' }, 'Aluno(a): estudar e participar de turmas'), h('option', { value: 'professor', selected: papelInicial === 'professor' }, 'Professor(a): criar aulas e acompanhar turmas'), h('option', { value: 'ambos', selected: papelInicial === 'ambos' }, 'Aluno(a) e professor(a): estudar e ensinar'));
   const regiao = h('select', { id: 'p-regiao' }, h('option', { value: '' }, 'Prefiro não informar'), Object.entries(REGIOES_BRASIL).map(([id, nome]) => h('option', { value: id }, nome))); regiao.value = regiaoInicial || '';
   const contexto = h('p', { class: 'publico-previa', 'aria-live': 'polite' });
   const autorizacao = h('input', { id: 'p-responsavel', type: 'checkbox', checked: responsavel });
-  const menor = h('div', { class: 'consentimento', hidden: true }, autorizacao, h('label', { for: 'p-responsavel' }, 'Esta conta tem autorização do responsável para estudar na plataforma.'));
+  const menor = h('div', { class: 'consentimento', hidden: true }, autorizacao, h('label', { for: 'p-responsavel' }, 'O responsável autorizou o estudo nesta conta. Isso não dá ao professor acesso ao estudo privado.'));
   const atualizar = () => {
     const n = Number(idade.value), valido = idade.value !== '' && Number.isInteger(n) && n >= 1 && n <= 120;
     const f = faixaDaIdade(n);

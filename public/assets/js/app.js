@@ -1,3 +1,6 @@
+import { telaAdmin } from './telas/admin.js?v=__V__';
+import { telaPassaporte } from './telas/passaporte.js?v=__V__';
+import { telaSessao } from './telas/sessao.js?v=__V__';
 // Inglou · casca do app: rotas por hash, estado do aluno e navegação.
 import { api } from './api.js?v=__V__';
 import { h, limpar, toast, icone, janela, localStorageGet, localStorageSet } from './ui.js?v=__V__';
@@ -30,8 +33,7 @@ import { telaSocial, telaColecao, telaLoja } from './telas/social.js?v=__V__';
 
 const palco = document.getElementById('conteudo');
 // Mantém a escala da área de estudo; a rolagem continua livre no celular.
-// O Safari pode ignorar user-scalable=no, por isso bloqueamos também seus gestos de zoom.
-for (const evento of ['gesturestart', 'gesturechange']) document.addEventListener(evento, e => e.preventDefault(), { passive: false });
+// Preserva o gesto de ampliar para acessibilidade. Campos usam fonte de pelo menos 16px.
 const nav = document.querySelector('.nav');
 export const estado = { eu: null };
 
@@ -56,6 +58,8 @@ btnTema.addEventListener('click', () => {
 
 // A mesma navegação curta no celular e no computador. Os outros recursos ficam agrupados por finalidade.
 const MAIS = [
+  { grupo: 'Praticar inglês', rota: 'passaporte', cor: 'turquesa', ic: 'airplane', t: 'Passaporte cultural', s: 'missões Do Brasil pro mundo' },
+  { grupo: 'Ensino e conta', rota: 'admin', cor: 'azul', ic: 'gear', t: 'Revisão e qualidade', s: 'conteúdo e métricas', admin: true },
   { grupo: 'Amigos e coleção', rota: 'desafios', cor: 'lilas', ic: 'users-three', t: 'Desafios com amigos', s: 'duelos, metas e sequências em grupo' },
   { grupo: 'Amigos e coleção', rota: 'colecao', cor: 'sol', ic: 'cards', t: 'Minhas figurinhas', s: 'raridades e figurinhas para os duelos' },
   { grupo: 'Amigos e coleção', rota: 'loja', cor: 'lilas', ic: 'medal', t: 'Loja e moedas', s: 'XP, poções e caixas de figurinhas' },
@@ -73,7 +77,7 @@ const MAIS = [
   { grupo: 'Ensino e conta', rota: 'conta', cor: 'azul', ic: 'user-circle', t: 'Minha conta', s: 'assinatura, idade, preferências e lembretes', aluno: true },
 ];
 const btnMais = document.querySelector('.nav__mais');
-const itensMais = () => MAIS.filter(m => estado.eu?.perfil?.papel === 'professor' ? !m.aluno : !m.professor);
+const itensMais = () => MAIS.filter(m => (!m.admin || estado.eu?.admin)).filter(m => estado.eu?.perfil?.papel === 'ambos' ? true : estado.eu?.perfil?.papel === 'professor' ? !m.aluno : !m.professor);
 btnMais?.addEventListener('click', () => {
   const itens = itensMais();
   janela({ titulo: 'O que você quer fazer?', corpo: h('div', { class: 'mais-grupos' }, [...new Set(itens.map(m => m.grupo))].map(grupo => h('section', { class: 'mais-grupo' },
@@ -81,7 +85,7 @@ btnMais?.addEventListener('click', () => {
       h('a', { class: 'mais-item c-' + m.cor, href: '#/' + m.rota }, h('span', { class: 'bolha' }, icone(m.ic)), h('span', {}, h('strong', {}, m.t), h('small', {}, m.s))))))))) });
 });
 
-const ROTAS = {
+const ROTAS = { admin: telaAdmin, passaporte: telaPassaporte, sessao: telaSessao,
   desafios: telaSocial, colecao: telaColecao, loja: telaLoja,
   brasil: telaBrasil,
   biblioteca: telaBiblioteca, unidade: telaUnidade,
@@ -97,6 +101,7 @@ const ONBOARDING = new Set(['perfil', 'nivelamento', 'plano', 'publico']);
 
 export async function carregarEu() {
   try { estado.eu = await api('/eu'); } catch { estado.eu = null; }
+  document.body.dataset.cenario = estado.eu?.cenario || 'padrao';
   document.body.dataset.publico = estado.eu?.publico?.id || 'adulto';
   document.body.dataset.papel = estado.eu?.perfil?.papel || 'aluno';
   const prof = estado.eu?.perfil?.papel === 'professor';
@@ -137,14 +142,14 @@ async function render() {
     const passo = estado.eu.passo;
     if (!estado.eu.publico?.informado && rota !== 'publico') { location.hash = '#/publico'; return; }
     if (rota === 'hoje' && estado.eu.perfil?.papel === 'professor') { location.hash = '#/professor'; return; }
-    const TURMA_LIVRE = ['publico', 'professor', 'conta', 'biblioteca', 'brasil', 'unidade', 'desafios', 'colecao', 'loja', 'turmas', 'turma', 'minhaturma', 'atividade'].includes(rota);
+    const TURMA_LIVRE = ['publico', 'admin', 'passaporte', 'professor', 'conta', 'biblioteca', 'brasil', 'unidade', 'desafios', 'colecao', 'loja', 'turmas', 'turma', 'minhaturma', 'atividade'].includes(rota);
     if (passo === 'perfil' && rota !== 'perfil' && !TURMA_LIVRE) { location.hash = '#/perfil'; return; }
     if (passo === 'nivelamento' && !['perfil', 'nivelamento'].includes(rota) && !TURMA_LIVRE) { location.hash = '#/nivelamento'; return; }
     if (passo === 'app' && localStorageGet('turma-pendente') && rota !== 'turmas') { location.hash = '#/turmas'; return; }
   }
-  const editandoAula = rota === 'turma' && param2 === 'nova';
-  nav.hidden = !estado.eu || ONBOARDING.has(rota) || LIVRES.has(rota) || editandoAula || ['licao', 'unidade', 'simulado', 'treino', 'atividade'].includes(rota);
-  document.body.classList.toggle('foco-total', editandoAula || ['licao', 'unidade', 'nivelamento', 'simulado', 'treino', 'atividade'].includes(rota));
+  const editandoAula = rota === 'turma' && (param2 === 'nova' || /^e\d+$/.test(param2 || ''));
+  nav.hidden = !estado.eu || ONBOARDING.has(rota) || LIVRES.has(rota) || editandoAula || ['sessao', 'licao', 'unidade', 'simulado', 'treino', 'atividade'].includes(rota);
+  document.body.classList.toggle('foco-total', editandoAula || ['sessao', 'licao', 'unidade', 'nivelamento', 'simulado', 'treino', 'atividade'].includes(rota));
   for (const a of nav.querySelectorAll('a')) {
     const pai = ['unidade', 'biblioteca', 'brasil'].includes(rota) ? 'biblioteca' : ['turma', 'professor'].includes(rota) ? 'professor' : ['minhaturma', 'atividade'].includes(rota) ? 'turmas' : nome;
     const ativo = !a.hidden && a.dataset.rota === pai;

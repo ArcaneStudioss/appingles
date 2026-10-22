@@ -27,3 +27,20 @@ As frases e atividades são originais. As fontes documentam sentidos e usos; as 
 - [Dictionary.com: tea e sua história](https://www.dictionary.com/culture/slang/tea). Referência para não apagar comunidades de origem ao explicar linguagem que circula em redes.
 
 Cada ficha guarda seus próprios links em `fontes`. A interface mostra a data e os links em “Fontes e revisão”. Termos não documentados ou de sentido incerto precisam de nova pesquisa antes de entrar como equivalência revisada. Não se inventa uma origem para preencher uma ficha.
+
+
+## Expressões em inglês: ampliação de 22/10/2026
+
+A categoria “Expressões em inglês” acrescenta cinco fichas: What’s your 20?, What’s the 411?, She’s a ten, Catch-22 e back to square one. O catálogo agora tem 60 fichas. Os 12 capítulos culturais continuam no passaporte; três capítulos adicionais da coleção `ingles-real` oferecem 15 questões e entram no banco docente. A apresentação distingue código de rádio, gíria e expressão idiomática. Todas as fichas têm alternativa neutra, exemplo próprio, contexto, fonte e data de revisão.
+
+O conteúdo de avaliação de aparência é apresentado para reconhecimento apenas a adultos e professores. A aula não pede que alunos deem notas a pessoas. Os outros conteúdos da ampliação atendem adolescentes e adultos; a dificuldade B1 não é inferida da idade.
+
+Fontes consultadas nesta ampliação:
+
+- [Dictionary.com: What’s your 20?](https://www.dictionary.com/culture/slang/whats-your-20): código de rádio 10-20 e pergunta de localização.
+- [Merriam-Webster: 411](https://www.merriam-webster.com/dictionary/411): informações e referência ao serviço telefônico. “Pode soar retrô” é uma orientação editorial de registro, não uma afirmação de que a expressão deixou de existir.
+- [Merriam-Webster: ten](https://www.merriam-webster.com/dictionary/ten): sentido de pessoa considerada muito atraente.
+- [Merriam-Webster: Catch-22](https://www.merriam-webster.com/dictionary/catch-22): impasse em que uma condição impede a solução. A leitura contrasta condições circulares com simplesmente precisar recomeçar.
+- [Cambridge: back to square one](https://dictionary.cambridge.org/dictionary/english/back-to-square-one): recomeçar após uma tentativa frustrada. Consulta pelo resultado indexado; a abertura direta retornou 403.
+
+Os exemplos e as leituras são originais. Nenhuma dessas expressões é apresentada como universal, obrigatória ou como novidade de 2026. A reprodução usa o catálogo existente das vozes oficiais; não foi criada uma voz substituta.

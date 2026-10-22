@@ -6,9 +6,9 @@ import { h, icone, dataBR, plural, toast, janela, localStorageGet, localStorageS
 import { lou, louFala } from '../diversao.js?v=__V__';
 import { configurarLembrete, lembreteDeHoje, jaPassouDaHora } from '../lembrete.js?v=__V__';
 
-const CONQ = { 'primeiro-passo': 'Primeiro passo: teste de nível feito', 'primeira-licao': 'Primeira lição concluída', 'primeira-conversa': 'Primeira conversa', 'primeira-demonstracao': 'Primeira missão demonstrada', retido: 'Missão mantida depois de dias', 'foco-superado': 'Superou uma dificuldade', 'revisoes-50': '50 revisões', material: 'Estudou com material seu', 'licoes-10': '10 lições', 'dias-3': '3 dias de estudo', 'dias-10': '10 dias de estudo', 'dias-30': '30 dias de estudo', 'dias-60': '60 dias de estudo', radio: 'Primeiro episódio da Rádio Tuiuiú', 'estudo-1': 'Primeiro assunto do estudo sob medida', 'estudo-completo': 'Estudo sob medida completo', 'simulado-1': 'Primeiro simulado', 'treino-1': 'Primeiro treino focado', 'treino-7': '7 treinos focados',
+const CONQ = { 'primeira-sessao': 'Minha primeira sessão guiada', 'primeiro-passo': 'Primeiro passo: teste de nível feito', 'primeira-licao': 'Primeira lição concluída', 'primeira-conversa': 'Primeira conversa', 'primeira-demonstracao': 'Primeira missão demonstrada', retido: 'Missão mantida depois de dias', 'foco-superado': 'Superou uma dificuldade', 'revisoes-50': '50 revisões', material: 'Estudou com material seu', 'licoes-10': '10 lições', 'dias-3': '3 dias de estudo', 'dias-10': '10 dias de estudo', 'dias-30': '30 dias de estudo', 'dias-60': '60 dias de estudo', radio: 'Primeiro episódio da Rádio Tuiuiú', 'estudo-1': 'Primeiro assunto do estudo sob medida', 'estudo-completo': 'Estudo sob medida completo', 'simulado-1': 'Primeiro simulado', 'treino-1': 'Primeiro treino focado', 'treino-7': '7 treinos focados',
   'seq-3': '3 dias seguidos', 'seq-7': '1 semana seguida', 'seq-14': '2 semanas seguidas', 'seq-30': '30 dias seguidos', 'seq-60': '60 dias seguidos', 'seq-100': '100 dias seguidos', 'seq-200': '200 dias seguidos', 'seq-365': '1 ano seguido' };
-export const nomeConquista = c => CONQ[c] || (c.startsWith('volta') ? 'Que bom te ver de volta' : c);
+export const nomeConquista = c => CONQ[c] || (c.startsWith('passaporte:') ? 'Passaporte cultural: missão concluída' : null) || (c.startsWith('volta') ? 'Que bom te ver de volta' : c);
 
 // ---------- álbum: cada missão é uma página; cada parte, uma figurinha; a tarefa final, a figurinha brilhante
 export function paginaMissao(m, mi, { iAtual = -1, licaoFeita = false } = {}) {
@@ -77,7 +77,7 @@ function verSequencia(seq, diasNoMes) {
 
 // ---------- tela
 export async function telaHoje(el, { ir, estado }) {
-  const [d, p] = await Promise.all([api('/hoje'), api('/plano').catch(() => null)]);
+  const [d, p, ss] = await Promise.all([api('/hoje'), api('/plano').catch(() => null), api('/sessao').catch(() => ({sessao:null}))]);
   if (d.semPlano) return ir('#/plano');
   const a = d.assinatura;
   const hora = new Date().getHours();
@@ -95,6 +95,17 @@ export async function telaHoje(el, { ir, estado }) {
       h('h1', {}, `${saud}, ${d.nome}!`),
       h('button', { type: 'button', class: 'status__item status__item--seq c-coral' + (d.sequencia.estudouHoje ? ' acesa' : ''), 'aria-label': `Sequência: ${d.sequencia.atual} dias seguidos. Ver detalhes`, on: { click: () => verSequencia(d.sequencia, d.diasNoMes) } },
         icone('flame'), h('strong', {}, String(d.sequencia.atual)))));
+
+  if (a.acesso === 'completo') {
+    const tempos = h('div', { class: 'linha-acoes' });
+    for (const minutos of [5, 10, 20]) tempos.append(h('button', { type: 'button', class: 'btn btn-sec', on: { click: async e => {
+      const b = e.currentTarget; b.disabled = true;
+      try { await api('/sessao', { metodo: 'POST', corpo: { minutos } }); ir('#/sessao'); }
+      catch (err) { toast(err.message, { tipo: 'erro' }); b.disabled = false; }
+    } } }, `${minutos} minutos`));
+    const salva=ss.sessao, iniciada=salva&&Object.keys(salva.respondidos).length>0;
+    principal.append(h('section', { class: 'folha sessao-convite c-azul' }, h('h2', {}, salva?.concluida ? 'Seu treino de hoje está salvo!' : iniciada ? 'Vamos continuar de onde parou?' : 'Quanto tempo você tem hoje?'), h('p', {}, L?.missao?.podeFazer || 'Exemplos, prática e revisão no seu ritmo.'), h('p', {class:'ajuda'}, 'Pode pedir ajuda e sair quando precisar. O progresso fica salvo.'), salva?.concluida || iniciada ? h('a',{class:'btn btn-bloco',href:'#/sessao'},salva.concluida?'Rever minha sessão':'Continuar minha sessão') : tempos));
+  }
 
   if (a.status === 'teste' && a.diasRestantes <= 5) principal.append(h('div', { class: 'aviso-suave' }, icone('info'), h('p', {}, `Seu teste grátis termina em ${plural(a.diasRestantes, 'dia', 'dias')} (${dataBR(a.ate)}). Nada é cobrado sozinho. `, h('a', { href: '#/conta' }, 'Ver planos'))));
   if (a.acesso === 'livre') principal.append(h('div', { class: 'aviso-suave' }, icone('info'), h('p', {}, 'Você está no acesso livre: seus cartões e seu progresso continuam aqui. ', h('a', { href: '#/conta' }, 'Voltar ao plano completo'))));
@@ -176,7 +187,12 @@ export async function telaHoje(el, { ir, estado }) {
 
   // A aula e as atividades da turma são os próximos passos. As outras opções aparecem sob demanda.
   const aulaEl = principal.querySelector('.aula'), statusEl = principal.querySelector('.status');
-  if (aulaEl) {
+  const sessaoEl=principal.querySelector('.sessao-convite');
+  if (sessaoEl) {
+    principal.querySelector('.saudacao').after(sessaoEl);
+    if(aulaEl) sessaoEl.after(h('details',{class:'outras-atividades'},h('summary',{},icone('path'),'Continuar minha missão'),aulaEl,balao));
+    const turmaEl=principal.querySelector('.turma-atalho');if(turmaEl)sessaoEl.after(turmaEl);
+  } else if (aulaEl) {
     principal.querySelector('.saudacao').after(aulaEl, ...[balao, principal.querySelector('.turma-atalho')].filter(Boolean));
   }
 

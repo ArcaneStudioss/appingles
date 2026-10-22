@@ -49,8 +49,10 @@ export const reduzirMovimento = () => matchMedia('(prefers-reduced-motion: reduc
 
 // ---------- aviso rápido ----------
 export function toast(msg, { tipo = 'info', ms = 4200 } = {}) {
-  let box = document.querySelector('.ui-toasts');
-  if (!box) { box = h('div', { class: 'ui-toasts', role: 'status', 'aria-live': 'polite' }); document.body.append(box); }
+  const alvo = document.activeElement?.closest('dialog[open] .janela__corpo,.exercicio,form,.passo') || document.getElementById('conteudo') || document.body;
+  let box = alvo.querySelector(':scope > .ui-toasts--inline');
+  if (!box) { box = h('div', { class: 'ui-toasts ui-toasts--inline', role: 'status', 'aria-live': 'polite' }); alvo.prepend(box); }
+  box.replaceChildren();
   const t = h('div', { class: `ui-toast ui-toast--${tipo}` }, msg);
   box.append(t);
   setTimeout(() => { t.classList.add('is-out'); setTimeout(() => t.remove(), 230); }, ms);

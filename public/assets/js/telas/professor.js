@@ -17,6 +17,7 @@ async function copiar(texto, msg) {
 }
 
 export async function telaTurma(el, { param, param2, ir }) {
+  if (/^e\d+$/.test(param2 || '')) return novaAtividade(el, param, ir, param2.slice(1));
   if (param2 === 'nova') return novaAtividade(el, param, ir);
   if (/^a\d+$/.test(param2 || '')) return detalheAtividade(el, param, param2.slice(1), ir);
   const d = await api(`/turmas/${param}`);
@@ -49,7 +50,7 @@ export async function telaTurma(el, { param, param2, ir }) {
     h('section', { class: 'folha' },
       h('div', { class: 'linha-titulo' }, h('h2', {}, 'Atividades'), h('a', { class: 'btn btn-peq', href: `#/turma/${t.id}/nova` }, icone('plus'), 'Nova atividade')),
       d.atividades.length ? h('ul', { class: 'turma-lista' }, d.atividades.map(a => h('li', {}, h('a', { class: 'turma-item', href: `#/turma/${t.id}/a${a.id}` },
-        h('span', {}, h('strong', {}, a.titulo), h('small', {}, `${plural(a.total, 'pergunta', 'perguntas')} · ${a.prazo ? 'até ' + dataBR(a.prazo) : 'sem prazo'}`)),
+        h('span', {}, h('strong', {}, a.titulo + ' · ' + a.estado + ' · v' + a.versao), h('small', {}, `${plural(a.total, 'pergunta', 'perguntas')} · ${a.prazo ? 'até ' + dataBR(a.prazo) : 'sem prazo'}`)),
         h('span', { class: 'chip' }, `${a.concluiram}/${d.resumo.alunos} concluíram`), a.pctMedio != null ? h('span', { class: 'chip c-sol' }, `${a.pctMedio}% de acerto`) : null)))) :
         h('p', { class: 'ajuda' }, 'Nenhuma atividade ainda. Crie uma com perguntas do banco do app (ex.: banco, clínica, supermercado) e as suas.')),
     h('section', { class: 'folha' },
@@ -73,6 +74,12 @@ export async function telaTurma(el, { param, param2, ir }) {
 async function detalheAtividade(el, turmaId, aid, ir) {
   const d = await api(`/turmas/${turmaId}/atividades/${aid}`);
   const a = d.atividade;
+  const acoesEstado = h('div', { class: 'linha-acoes' });
+  if(a.estado==='rascunho') acoesEstado.append(h('a', {class:'btn',href:`#/turma/${turmaId}/e${aid}`}, 'Editar rascunho'));
+  else acoesEstado.append(h('button',{type:'button',class:'btn btn-sec',on:{click:async()=>{const r=await api(`/turmas/${turmaId}/atividades/${aid}/revisar`,{metodo:'POST'});ir(`#/turma/${turmaId}/e${r.id}`);}}},'Criar nova versão'));
+  if(a.estado==='publicada') acoesEstado.append(h('button',{type:'button',class:'btn btn-sec',on:{click:async()=>{if(!await confirmar({titulo:'Encerrar atividade?',texto:'As respostas ficam preservadas. Novos envios serão encerrados.',ok:'Encerrar'}))return;await api(`/turmas/${turmaId}/atividades/${aid}/encerrar`,{metodo:'POST'});ir(`#/turma/${turmaId}/a${aid}`);}}},'Encerrar atividade'));
+  el.append(h('p',{class:'chip'},a.estado+' · versão '+a.versao),acoesEstado);
+
   async function reutilizar() {
     const { professor } = await api('/turmas');
     const destino = h('select', { 'aria-label': 'Turma de destino' }, professor.map(t => h('option', { value: t.id }, t.nome)));
@@ -106,7 +113,7 @@ async function detalheAtividade(el, turmaId, aid, ir) {
 }
 
 // ---------- criar atividade ----------
-async function novaAtividade(el, turmaId, ir) {
+async function novaAtividade(el, turmaId, ir, editarId = null) {
   const [{ missoes }, { turma }] = await Promise.all([api('/professor/banco'), api(`/turmas/${turmaId}`)]);
   const escolhidas = new Set();          // ids do banco
   const proprias = [];                   // perguntas escritas pelo professor
@@ -205,14 +212,16 @@ async function novaAtividade(el, turmaId, ir) {
     try {
       const aula = payload();
       const r = await api('/professor/previa', { metodo: 'POST', corpo: aula });
-      janela({ titulo: titulo.value || 'Prévia da aula', larga: true, corpo: h('div', { class: 'previa-aula' }, h('p', { class: 'chip' }, 'Prévia: as respostas aqui não contam no progresso'), materialAula(r.material), r.itens.map((ex, i) => h('details', { class: 'folha' }, h('summary', {}, `Questão ${i + 1}: ${TIPO[ex.tipo]}`), exercicio(ex, { responder: async resposta => (await api('/professor/previa', { metodo: 'POST', corpo: { ...aula, respostas: { [ex.id]: resposta } } })).correcoes[ex.id], aoProximo: () => {}, rotuloProximo: 'Resposta conferida' })))) });
+      janela({ titulo: titulo.value || 'Prévia da aula', larga: true, corpo: h('div', { class: 'previa-aula' }, h('p', { class: 'chip' }, 'Prévia: as respostas aqui não contam no progresso'), materialAula(r.material), r.itens.map((ex, i) => h('details', { class: 'folha' }, h('summary', {}, `Questão ${i + 1}: ${TIPO[ex.tipo]}`), exercicio(ex, { relatar: false, responder: async resposta => (await api('/professor/previa', { metodo: 'POST', corpo: { ...aula, respostas: { [ex.id]: resposta } } })).correcoes[ex.id], aoProximo: () => {}, rotuloProximo: 'Resposta conferida' })))) });
     } catch (e) { toast(e.message, { tipo: 'erro' }); } finally { ocupado(previa, false); }
   });
+  const salvar = h('button', { type: 'button', class: 'btn btn-sec', on: { click: async () => { try { const r = await api(`/turmas/${turmaId}/atividades` + (editarId ? '/' + editarId : ''), { metodo: editarId ? 'PUT' : 'POST', corpo: { ...payload(), estado: 'rascunho' } }); toast('Rascunho salvo. Os alunos ainda não o veem.'); ir(`#/turma/${turmaId}/a${r.id}`); } catch(e) { toast(e.message, { tipo: 'erro' }); } } } }, 'Salvar rascunho');
   const publicar = h('button', { type: 'button', class: 'btn' }, 'Publicar aula');
   publicar.addEventListener('click', async () => {
     ocupado(publicar, true);
     try {
-      await api(`/turmas/${turmaId}/atividades`, { metodo: 'POST', corpo: payload() });
+      if (editarId) { await api(`/turmas/${turmaId}/atividades/${editarId}`, { metodo: 'PUT', corpo: payload() }); await api(`/turmas/${turmaId}/atividades/${editarId}/publicar`, { metodo: 'POST' }); }
+      else await api(`/turmas/${turmaId}/atividades`, { metodo: 'POST', corpo: payload() });
       toast('Atividade publicada. Os alunos já a veem em Turmas.', { tipo: 'ok' }); ir(`#/turma/${turmaId}`);
     } catch (e) { toast(e.message, { tipo: 'erro' }); ocupado(publicar, false); }
   });
@@ -231,6 +240,7 @@ async function novaAtividade(el, turmaId, ir) {
       h('div', { class: 'campo' }, h('label', { for: 'at-explicacao' }, 'Explicação em português'), explicacao), h('div', { class: 'campo' }, h('label', { for: 'at-leitura' }, 'Texto de leitura em inglês'), leitura), h('div', { class: 'campo' }, h('label', { for: 'at-traducao' }, 'Tradução de apoio'), traducao), h('div', { class: 'campo' }, h('label', { for: 'at-vocabulario' }, 'Vocabulário: inglês = significado'), vocabulario)),
     h('section', { class: 'folha' }, h('h2', {}, '3. Questões do banco'), h('p', { class: 'ajuda' }, 'Busque por conteúdo, tipo e nível. O público escolhido acima também filtra os exemplos. Ou use um capítulo completo como modelo.'), h('div', { class: 'biblioteca-filtros' }, busca, nivelBanco, tipoFiltro), bancoUI),
     h('section', { class: 'folha' }, h('h2', {}, 'Questões que você escreveu'), propriasUI, h('div', { class: 'linha-acoes' }, h('button', { type: 'button', class: 'btn btn-sec', on: { click: escreverPergunta } }, icone('plus'), 'Escrever uma questão'))),
-    h('div', { class: 'barra-acao barra-acao--fixa' }, h('div', { class: 'barra-acao__in' }, resumo, h('div', { class: 'editor-acoes' }, previa, publicar))));
+    h('div', { class: 'barra-acao barra-acao--fixa' }, h('div', { class: 'barra-acao__in' }, resumo, h('div', { class: 'editor-acoes' }, previa, salvar, publicar))));
+  if (editarId) { const { atividade: a } = await api(`/turmas/${turmaId}/atividades/${editarId}/editar`); if(a.estado!=='rascunho') { ir(`#/turma/${turmaId}/a${editarId}`); return; } titulo.value=a.titulo; descricao.value=a.descricao||''; prazo.value=a.prazo||''; tema.value=a.tema||''; faixa.value=a.faixa; nivel.value=a.nivel; explicacao.value=a.material.explicacao||''; leitura.value=a.material.texto||''; traducao.value=a.material.traducao||''; vocabulario.value=(a.material.vocab||[]).map(v=>v.en+' = '+v.pt).join('\n'); a.banco.forEach(id=>escolhidas.add(id)); proprias.push(...a.proprias); }
   atualizar(); desenharProprias(); desenharBanco();
 }

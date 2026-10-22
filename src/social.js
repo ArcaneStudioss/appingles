@@ -11,9 +11,10 @@ const CARTAS = {
  'pratica-5': ['Ponte de palavras', '🌉'], 'pratica-6': ['Música sem fronteiras', '🎵'],
  'grupo-exercicios': ['Time que aprende junto', '🤝'], 'grupo-sequencia': ['Constância em equipe', '🔥'],
 };
-const REGRAS = 'Cada exercício correto na primeira tentativa, sem dica ou resposta revelada, rende 1 moeda e 1 ponto. A mesma questão conta uma vez por dia, em UTC. Repetições, cartões com nota própria e nivelamento não pontuam. A cada 5 pontos você ganha uma figurinha. Só conta o que for feito depois do início e antes do fim do desafio. Empate devolve as duas figurinhas.';
+const LIMITE_PLACAR = 20;
+const REGRAS = 'Cada exercício correto na primeira tentativa, sem dica ou resposta revelada, rende 1 moeda e 1 ponto. A mesma questão conta uma vez por dia, em UTC. Repetições, cartões com nota própria e nivelamento não pontuam. A cada 5 pontos você ganha uma figurinha. Só conta o que for feito depois do início e antes do fim do desafio. Nos desafios contam no máximo 20 exercícios por dia UTC, ou um dia de constância. Desafios amistosos não retiram itens. Só adultos podem combinar troca de cópias repetidas; conquistas pessoais não são transferidas. Empate conserva as cópias.';
 const RARIDADES = { comum: {nome:'Comum',chance:65,valor:1}, rara: {nome:'Rara',chance:25,valor:3}, epica: {nome:'Épica',chance:9,valor:8}, lendaria: {nome:'Lendária',chance:1,valor:25} };
-const PRODUTOS = [{id:'caixa',nome:'Caixa de figurinhas',preco:15,descricao:'Uma figurinha surpresa. Confira as chances antes de abrir.'},{id:'pocao',nome:'Poção de XP em dobro',preco:20,descricao:'Dobra o XP ganho durante 30 minutos após ativar. Não altera moedas nem placares por exercícios.'}];
+const PRODUTOS = [{id:'cenario-praca',nome:'Praça brasileira',preco:25,descricao:'Personalização permanente do fundo. Não muda XP, moedas ou aprendizagem.'},{id:'cenario-sol',nome:'Pôr do sol',preco:25,descricao:'Personalização permanente do fundo. Pode trocar quando quiser.'},{id:'caixa',nome:'Caixa de figurinhas',preco:15,descricao:'Uma figurinha surpresa. Confira as chances antes de abrir.'},{id:'pocao',nome:'Poção de XP em dobro',preco:20,descricao:'Dobra o XP ganho durante 30 minutos após ativar. Não altera moedas nem placares por exercícios.'}];
 function criarSocial(db, { agora = () => new Date(), sortear = randomInt } = {}) {
  const q = sql => db.prepare(sql), iso = () => agora().toISOString(), mais = (d, ms) => new Date(Date.parse(d) + ms).toISOString();
  const xp = uid => q('SELECT COALESCE(SUM(quantidade),0) n FROM xp_extrato WHERE user_id=?').get(uid).n;
@@ -33,13 +34,19 @@ function criarSocial(db, { agora = () => new Date(), sortear = randomInt } = {})
   return {id:uid,codigo:p.codigo,apelido:p.apelido};
  }
  const pessoa = uid => {const p=q('SELECT apelido FROM social_perfis WHERE user_id=?').get(uid);return {id:uid,apelido:p?.apelido||'Aprendiz'};};
+ const adulto = uid => { const idade=q('SELECT idade FROM perfis WHERE user_id=?').get(uid)?.idade;return Number.isInteger(idade)&&idade>=18; };
+ function repetidas(c) { return q('SELECT COUNT(*) n FROM colecao_figurinhas WHERE user_id=? AND modelo=? AND raridade=?').get(c.user_id,c.modelo,c.raridade).n; }
+ function trocaPermitida(a,b) { if(!adulto(a)||!adulto(b)) throw new ErroHttp(403,'Trocas em desafios são opcionais e exclusivas para adultos. Escolha um desafio amistoso, sem perder figurinhas.'); }
+ function copiaRepetida(c) { if(c.modelo.startsWith('conquista:') || repetidas(c)<2)throw new ErroHttp(409,'Escolha uma cópia repetida. Sua última cópia e suas conquistas ficam protegidas.'); }
+ const conquistasNomes={'primeira-licao':'Minha primeira aula','primeira-conversa':'Minha primeira conversa','primeira-demonstracao':'Consegui fazer sozinho','primeira-sessao':'Minha primeira sessão guiada',retido:'Lembrei em outra situação'};
+ function nomeDaCarta(c){const codigo=c.modelo.replace(/^conquista:/,'');if(codigo.startsWith('passaporte:'))return 'Passaporte: '+(require('./conteudo/biblioteca').POR_UNIDADE[codigo.slice(11)]?.titulo||'Missão cultural');return CARTAS[c.modelo]?.[0]||conquistasNomes[codigo]||'Figurinha de conquista';}
  function carta(c) {
   if(!c) return null;
-  return {id:c.id,modelo:c.modelo,nome:CARTAS[c.modelo]?.[0]||'Figurinha de conquista',imagem:CARTAS[c.modelo]?.[1]||'🏅',raridade:c.raridade,valor:RARIDADES[c.raridade].valor,reservada:!!q('SELECT 1 FROM figurinhas_reservas WHERE figurinha_id=?').get(c.id),criadaEm:c.criada_em};
+  return {id:c.id,repetidas:repetidas(c),transferivel:adulto(c.user_id)&&!c.modelo.startsWith('conquista:')&&repetidas(c)>1,modelo:c.modelo,nome:nomeDaCarta(c),imagem:CARTAS[c.modelo]?.[1]||'🏅',raridade:c.raridade,valor:RARIDADES[c.raridade].valor,reservada:!!q('SELECT 1 FROM figurinhas_reservas WHERE figurinha_id=?').get(c.id),criadaEm:c.criada_em};
  }
  const colecao = uid => q('SELECT * FROM colecao_figurinhas WHERE user_id=? ORDER BY id DESC LIMIT 500').all(uid).map(carta);
- function disponivel(id,uid) { const c=q('SELECT * FROM colecao_figurinhas WHERE id=? AND user_id=?').get(id,uid);if(!c||q('SELECT 1 FROM figurinhas_reservas WHERE figurinha_id=?').get(id)) throw new ErroHttp(409,'Essa figurinha não está disponível. Escolha outra.');return c; }
- const contar = (uid,inicio,fim,marco=0) => q('SELECT COUNT(*) n FROM pontos_estudo WHERE user_id=? AND em>=? AND em<? AND id>?').get(uid,inicio,fim,marco).n;
+ function disponivel(id,uid) { const c=q('SELECT * FROM colecao_figurinhas WHERE id=? AND user_id=?').get(id,uid);if(!c||q('SELECT 1 FROM figurinhas_reservas WHERE figurinha_id=?').get(id)) throw new ErroHttp(409,'Essa figurinha não está disponível. Escolha outra.');copiaRepetida(c); if(q('SELECT COUNT(*) n FROM colecao_figurinhas f WHERE user_id=? AND modelo=? AND raridade=? AND NOT EXISTS(SELECT 1 FROM figurinhas_reservas r WHERE r.figurinha_id=f.id)').get(uid,c.modelo,c.raridade).n<2)throw new ErroHttp(409,'Uma cópia deve continuar livre na sua coleção.');return c; }
+ const contar = (uid,inicio,fim,marco=0,criterio='exercicios') => q('SELECT COALESCE(SUM('+(criterio==='constancia'?'1':'MIN(n,'+LIMITE_PLACAR+')')+'),0) n FROM (SELECT COUNT(*) n FROM pontos_estudo WHERE user_id=? AND em>=? AND em<? AND id>? GROUP BY substr(em,1,10))').get(uid,inicio,fim,marco).n;
  function meuDuelo(id,uid) { const d=q('SELECT * FROM duelos WHERE id=? AND (criador=? OR convidado=?)').get(id,uid,uid);if(!d)throw new ErroHttp(404,'Desafio não encontrado.');return d; }
  const liberar = id => q('DELETE FROM figurinhas_reservas WHERE duelo_id=?').run(id);
  function membros(gid) {return q("SELECT user_id FROM grupos_membros WHERE grupo_id=? AND estado='aceito' ORDER BY user_id").all(gid).map(x=>x.user_id);}
@@ -59,13 +66,14 @@ function criarSocial(db, { agora = () => new Date(), sortear = randomInt } = {})
   const em=iso();
   // Chamado dentro de transação: duas réplicas não conseguem entregar a mesma figurinha duas vezes.
   for(const d of q("SELECT * FROM duelos WHERE estado IN ('escolha','confirmacao','ativo')"+(uid===null?'':' AND (criador=? OR convidado=?)')).all(...(uid===null?[]:[uid,uid]))) {
+   if(d.modalidade==='troca' && (!adulto(d.criador)||!adulto(d.convidado)||[d.figurinha_a,d.figurinha_b].filter(Boolean).some(id=>{const c=q('SELECT * FROM colecao_figurinhas WHERE id=?').get(id);return !c||c.modelo.startsWith('conquista:')||repetidas(c)<2;}))) {q("UPDATE duelos SET estado='cancelado' WHERE id=?").run(d.id);liberar(d.id);continue;}
    if(d.estado!=='ativo') {if(d.expira_em<=em){q("UPDATE duelos SET estado='expirado' WHERE id=?").run(d.id);liberar(d.id);}continue;}
    if(d.fim>em)continue;
-   const a=contar(d.criador,d.inicio,d.fim,d.marco_ponto),b=contar(d.convidado,d.inicio,d.fim,d.marco_ponto);
+   const a=contar(d.criador,d.inicio,d.fim,d.marco_ponto,d.criterio),b=contar(d.convidado,d.inicio,d.fim,d.marco_ponto,d.criterio);
    const vencedor=a===b?null:a>b?d.criador:d.convidado;
-   const validas=q('SELECT COUNT(*) n FROM figurinhas_reservas r JOIN colecao_figurinhas f ON f.id=r.figurinha_id WHERE r.duelo_id=? AND ((f.id=? AND f.user_id=?) OR (f.id=? AND f.user_id=?))').get(d.id,d.figurinha_a,d.convidado,d.figurinha_b,d.criador).n===2;
+   const validas=d.modalidade==='amistoso'||q('SELECT COUNT(*) n FROM figurinhas_reservas r JOIN colecao_figurinhas f ON f.id=r.figurinha_id WHERE r.duelo_id=? AND ((f.id=? AND f.user_id=?) OR (f.id=? AND f.user_id=?))').get(d.id,d.figurinha_a,d.convidado,d.figurinha_b,d.criador).n===2;
    if(!validas){q("UPDATE duelos SET estado='cancelado' WHERE id=?").run(d.id);liberar(d.id);continue;}
-   if(vencedor) q('UPDATE colecao_figurinhas SET user_id=? WHERE id=?').run(vencedor,vencedor===d.criador?d.figurinha_a:d.figurinha_b);
+   if(vencedor && d.modalidade==='troca') q('UPDATE colecao_figurinhas SET user_id=? WHERE id=?').run(vencedor,vencedor===d.criador?d.figurinha_a:d.figurinha_b);
    q("UPDATE duelos SET estado='concluido',placar_a=?,placar_b=?,vencedor=? WHERE id=?").run(a,b,vencedor,d.id);liberar(d.id);
   }
   for(const g of q("SELECT * FROM grupos_desafio WHERE estado IN ('convite','ativo')"+(uid===null?'':' AND id IN (SELECT grupo_id FROM grupos_membros WHERE user_id=?)')).all(...(uid===null?[]:[uid]))) {
@@ -79,13 +87,13 @@ function criarSocial(db, { agora = () => new Date(), sortear = randomInt } = {})
  }
  function dueloPublico(d,uid) {
   const a=carta(q('SELECT * FROM colecao_figurinhas WHERE id=?').get(d.figurinha_a)), b=carta(q('SELECT * FROM colecao_figurinhas WHERE id=?').get(d.figurinha_b));
-  return {id:d.id,criador:pessoa(d.criador),convidado:pessoa(d.convidado),dias:d.dias,estado:d.estado,inicio:d.inicio,fim:d.fim,expiraEm:d.expira_em,figurinhaDoConvidado:a,figurinhaDoCriador:b,placarCriador:d.estado==='ativo'?contar(d.criador,d.inicio,d.fim,d.marco_ponto):d.placar_a,placarConvidado:d.estado==='ativo'?contar(d.convidado,d.inicio,d.fim,d.marco_ponto):d.placar_b,vencedor:d.vencedor,euSouCriador:d.criador===uid};
+  return {id:d.id,modalidade:d.modalidade,criterio:d.criterio,limiteDiario:LIMITE_PLACAR,criador:pessoa(d.criador),convidado:pessoa(d.convidado),dias:d.dias,estado:d.estado,inicio:d.inicio,fim:d.fim,expiraEm:d.expira_em,figurinhaDoConvidado:a,figurinhaDoCriador:b,placarCriador:d.estado==='ativo'?contar(d.criador,d.inicio,d.fim,d.marco_ponto,d.criterio):d.placar_a,placarConvidado:d.estado==='ativo'?contar(d.convidado,d.inicio,d.fim,d.marco_ponto,d.criterio):d.placar_b,vencedor:d.vencedor,euSouCriador:d.criador===uid};
  }
  function grupoPublico(g,uid) {return {id:g.id,nome:g.nome,tipo:g.tipo,dias:g.dias,meta:g.meta,diaria:g.diaria,estado:g.estado,inicio:g.inicio,fim:g.fim,expiraEm:g.expira_em,criador:g.criador,minhaResposta:q('SELECT estado FROM grupos_membros WHERE grupo_id=? AND user_id=?').get(g.id,uid)?.estado,...placarGrupo(g),convites:q("SELECT user_id,estado FROM grupos_membros WHERE grupo_id=? AND estado<>'aceito'").all(g.id).map(m=>({...pessoa(m.user_id),estado:m.estado}))};}
  function painel(uid) {return transacao(db,()=>{
   atualizar(uid);const eu=perfil(uid);
   const ligacoes=q('SELECT * FROM amizades WHERE de=? OR para=? ORDER BY em DESC').all(uid,uid);
-  return {eu,saldo:saldo(uid),xp:xp(uid),nivel:1+Math.floor(xp(uid)/100),pocaoAte:q('SELECT ate FROM xp_efeitos WHERE user_id=? AND ate>?').get(uid,iso())?.ate||null,inventario:Object.fromEntries(q('SELECT produto,quantidade FROM loja_inventario WHERE user_id=?').all(uid).map(i=>[i.produto,i.quantidade])),raridades:RARIDADES,regras:REGRAS,colecao:colecao(uid),amigos:ligacoes.filter(a=>a.estado==='aceita').map(a=>pessoa(a.de===uid?a.para:a.de)),pedidos:ligacoes.filter(a=>a.estado==='pendente').map(a=>({...pessoa(a.de===uid?a.para:a.de),recebido:a.para===uid})),duelos:q('SELECT * FROM duelos WHERE criador=? OR convidado=? ORDER BY id DESC LIMIT 100').all(uid,uid).map(d=>dueloPublico(d,uid)),grupos:q("SELECT g.* FROM grupos_desafio g JOIN grupos_membros m ON m.grupo_id=g.id WHERE m.user_id=? AND m.estado<>'recusado' ORDER BY g.id DESC LIMIT 100").all(uid).map(g=>grupoPublico(g,uid)),extrato:q('SELECT id,quantidade,motivo,em FROM moedas_extrato WHERE user_id=? ORDER BY id DESC LIMIT 50').all(uid),loja:{disponivel:true,produtos:PRODUTOS}};
+  return {eu:{...eu,podeTrocar:adulto(uid),cenario:q('SELECT cenario FROM social_perfis WHERE user_id=?').get(uid)?.cenario||'padrao'},saldo:saldo(uid),xp:xp(uid),nivel:1+Math.floor(xp(uid)/100),pocaoAte:q('SELECT ate FROM xp_efeitos WHERE user_id=? AND ate>?').get(uid,iso())?.ate||null,inventario:Object.fromEntries(q('SELECT produto,quantidade FROM loja_inventario WHERE user_id=?').all(uid).map(i=>[i.produto,i.quantidade])),raridades:RARIDADES,regras:REGRAS,colecao:colecao(uid),amigos:ligacoes.filter(a=>a.estado==='aceita').map(a=>pessoa(a.de===uid?a.para:a.de)),pedidos:ligacoes.filter(a=>a.estado==='pendente').map(a=>({...pessoa(a.de===uid?a.para:a.de),recebido:a.para===uid})),duelos:q('SELECT * FROM duelos WHERE criador=? OR convidado=? ORDER BY id DESC LIMIT 100').all(uid,uid).map(d=>dueloPublico(d,uid)),grupos:q("SELECT g.* FROM grupos_desafio g JOIN grupos_membros m ON m.grupo_id=g.id WHERE m.user_id=? AND m.estado<>'recusado' ORDER BY g.id DESC LIMIT 100").all(uid).map(g=>grupoPublico(g,uid)),extrato:q('SELECT id,quantidade,motivo,em FROM moedas_extrato WHERE user_id=? ORDER BY id DESC LIMIT 50').all(uid),loja:{disponivel:true,produtos:PRODUTOS}};
  });}
  function executar(uid,fn) {return transacao(db,()=>{atualizar(uid);return fn();});}
  function pedir(uid,codigo) {return executar(uid,()=>{
@@ -107,21 +115,22 @@ function criarSocial(db, { agora = () => new Date(), sortear = randomInt } = {})
   for(const d of q("SELECT id FROM duelos WHERE estado IN ('escolha','confirmacao') AND ((criador=? AND convidado=?) OR (criador=? AND convidado=?))").all(uid,outro,outro,uid)){q("UPDATE duelos SET estado='cancelado' WHERE id=?").run(d.id);liberar(d.id);}
   return {ok:true};
  });}
- function novoDuelo(uid,outro,dias,figurinha) {return executar(uid,()=>{
-  exigirAmigo(uid,outro);disponivel(figurinha,outro);
+ function novoDuelo(uid,outro,dias,figurinha=null,criterio='exercicios') {return executar(uid,()=>{
+  exigirAmigo(uid,outro);const modalidade=figurinha===null?'amistoso':'troca';if(modalidade==='troca'){trocaPermitida(uid,outro);disponivel(figurinha,outro);}
   if(q("SELECT COUNT(*) n FROM duelos WHERE (criador=? OR convidado=?) AND estado IN ('escolha','confirmacao','ativo')").get(uid,uid).n>=10)throw new ErroHttp(409,'Conclua ou cancele um desafio antes de criar outro.');
-  const em=iso(),r=q("INSERT INTO duelos(criador,convidado,dias,estado,figurinha_a,criado_em,expira_em) VALUES(?,?,?,'escolha',?,?,?)").run(uid,outro,dias,figurinha,em,mais(em,PRAZO));return {ok:true,id:Number(r.lastInsertRowid)};
+  const em=iso(),r=q("INSERT INTO duelos(criador,convidado,dias,estado,figurinha_a,criado_em,expira_em,modalidade,criterio) VALUES(?,?,?,'escolha',?,?,?,?,?)").run(uid,outro,dias,figurinha,em,mais(em,PRAZO),modalidade,criterio);return {ok:true,id:Number(r.lastInsertRowid)};
  });}
  function escolher(uid,id,figurinha) {return executar(uid,()=>{
   const d=meuDuelo(id,uid);if(d.estado!=='escolha'||d.convidado!==uid)throw new ErroHttp(409,'Esta escolha não está disponível.');
-  exigirAmigo(d.criador,d.convidado);disponivel(d.figurinha_a,uid);disponivel(figurinha,d.criador);
-  q('INSERT INTO figurinhas_reservas(figurinha_id,duelo_id) VALUES(?,?),(?,?)').run(d.figurinha_a,id,figurinha,id);
-  q("UPDATE duelos SET estado='confirmacao',figurinha_b=?,expira_em=? WHERE id=?").run(figurinha,mais(iso(),PRAZO),id);return {ok:true};
+  exigirAmigo(d.criador,d.convidado);if(d.modalidade==='troca'){trocaPermitida(uid,d.criador);disponivel(d.figurinha_a,uid);disponivel(figurinha,d.criador);
+  q('INSERT INTO figurinhas_reservas(figurinha_id,duelo_id) VALUES(?,?),(?,?)').run(d.figurinha_a,id,figurinha,id);}
+  q("UPDATE duelos SET estado='confirmacao',figurinha_b=?,expira_em=? WHERE id=?").run(d.modalidade==='troca'?figurinha:null,mais(iso(),PRAZO),id);return {ok:true};
  });}
  function confirmar(uid,id) {return executar(uid,()=>{
   const d=meuDuelo(id,uid);if(d.estado!=='confirmacao'||d.criador!==uid)throw new ErroHttp(409,'A confirmação não está disponível.');
   exigirAmigo(d.criador,d.convidado);
-  if(q('SELECT COUNT(*) n FROM figurinhas_reservas WHERE duelo_id=?').get(id).n!==2)throw new ErroHttp(409,'As figurinhas não estão reservadas.');
+  if(d.modalidade==='troca')trocaPermitida(uid,d.convidado);
+  if(d.modalidade==='troca'&&q('SELECT COUNT(*) n FROM figurinhas_reservas WHERE duelo_id=?').get(id).n!==2)throw new ErroHttp(409,'As figurinhas não estão reservadas.');
   const inicio=iso();q("UPDATE duelos SET estado='ativo',inicio=?,fim=?,marco_ponto=(SELECT COALESCE(MAX(id),0) FROM pontos_estudo) WHERE id=?").run(inicio,mais(inicio,d.dias*DIA),id);return {ok:true};
  });}
  function cancelarDuelo(uid,id) {return executar(uid,()=>{const d=meuDuelo(id,uid);if(!['escolha','confirmacao'].includes(d.estado))throw new ErroHttp(409,'O duelo já começou ou foi encerrado.');q("UPDATE duelos SET estado='cancelado' WHERE id=?").run(id);liberar(id);return {ok:true};});}
@@ -154,9 +163,9 @@ function criarSocial(db, { agora = () => new Date(), sortear = randomInt } = {})
   q('DELETE FROM grupos_desafio WHERE criador=?').run(uid);q('DELETE FROM grupos_membros WHERE user_id=?').run(uid);
   q('DELETE FROM duelos WHERE criador=? OR convidado=?').run(uid,uid);
   q('DELETE FROM amizades WHERE de=? OR para=?').run(uid,uid);q('DELETE FROM social_bloqueios WHERE user_id=? OR bloqueado_id=?').run(uid,uid);
-  for(const t of ['social_perfis','colecao_figurinhas','loja_compras','loja_inventario','xp_efeitos','xp_extrato','moedas_extrato','pontos_estudo'])q(`DELETE FROM ${t} WHERE user_id=?`).run(uid);
+  for(const t of ['exercicios_recebidos','social_perfis','colecao_figurinhas','loja_compras','loja_inventario','xp_efeitos','xp_extrato','moedas_extrato','pontos_estudo'])q(`DELETE FROM ${t} WHERE user_id=?`).run(uid);
  }
- function exportar(uid) {return {perfil:q('SELECT * FROM social_perfis WHERE user_id=?').get(uid)||null,colecao:colecao(uid),xp:q('SELECT quantidade,base,multiplicador,motivo,em FROM xp_extrato WHERE user_id=? ORDER BY id').all(uid),inventario:q('SELECT produto,quantidade FROM loja_inventario WHERE user_id=?').all(uid),efeitos:q('SELECT ate FROM xp_efeitos WHERE user_id=?').get(uid)||null,compras:q('SELECT produto,resultado,em FROM loja_compras WHERE user_id=?').all(uid),moedas:q('SELECT quantidade,motivo,em FROM moedas_extrato WHERE user_id=? ORDER BY id').all(uid),pontos:q('SELECT item,dia,em,origem FROM pontos_estudo WHERE user_id=?').all(uid),amizades:q('SELECT de,para,estado,em FROM amizades WHERE de=? OR para=?').all(uid,uid),duelos:q('SELECT * FROM duelos WHERE criador=? OR convidado=?').all(uid,uid),grupos:q('SELECT grupo_id,estado FROM grupos_membros WHERE user_id=?').all(uid)};}
+ function exportar(uid) {return {exerciciosRecebidos:q('SELECT item,dia FROM exercicios_recebidos WHERE user_id=?').all(uid),perfil:q('SELECT * FROM social_perfis WHERE user_id=?').get(uid)||null,colecao:colecao(uid),xp:q('SELECT quantidade,base,multiplicador,motivo,em FROM xp_extrato WHERE user_id=? ORDER BY id').all(uid),inventario:q('SELECT produto,quantidade FROM loja_inventario WHERE user_id=?').all(uid),efeitos:q('SELECT ate FROM xp_efeitos WHERE user_id=?').get(uid)||null,compras:q('SELECT produto,resultado,em FROM loja_compras WHERE user_id=?').all(uid),moedas:q('SELECT quantidade,motivo,em FROM moedas_extrato WHERE user_id=? ORDER BY id').all(uid),pontos:q('SELECT item,dia,em,origem FROM pontos_estudo WHERE user_id=?').all(uid),amizades:q('SELECT de,para,estado,em FROM amizades WHERE de=? OR para=?').all(uid,uid),duelos:q('SELECT * FROM duelos WHERE criador=? OR convidado=?').all(uid,uid),grupos:q('SELECT grupo_id,estado FROM grupos_membros WHERE user_id=?').all(uid)};}
  function creditoXp(uid,base,chave,motivo) {
   const em=iso(),mult=q('SELECT 1 FROM xp_efeitos WHERE user_id=? AND ate>?').get(uid,em)?2:1;
   return q('INSERT OR IGNORE INTO xp_extrato(user_id,quantidade,base,multiplicador,motivo,chave,em) VALUES(?,?,?,?,?,?,?)').run(uid,base*mult,base,mult,motivo,chave,em).changes?base*mult:0;
@@ -165,13 +174,14 @@ function criarSocial(db, { agora = () => new Date(), sortear = randomInt } = {})
   const ja=q('SELECT produto,resultado FROM loja_compras WHERE user_id=? AND chave=?').get(uid,chave);
   if(ja){if(ja.produto!==produto)throw new ErroHttp(409,'Este pedido já foi usado.');return {...JSON.parse(ja.resultado),repetida:true};}
   const p=PRODUTOS.find(p=>p.id===produto);if(!p)throw new ErroHttp(422,'Produto inválido.');
+  if(produto.startsWith('cenario-')&&q('SELECT 1 FROM loja_inventario WHERE user_id=? AND produto=? AND quantidade>0').get(uid,produto))throw new ErroHttp(409,'Este cenário já é seu. Use-o em Seus itens.');
   if(saldo(uid)<p.preco)throw new ErroHttp(409,'Você ainda não tem moedas suficientes. Continue estudando para juntar mais.');
   q('INSERT INTO moedas_extrato(user_id,quantidade,motivo,chave,em) VALUES(?,?,?,?,?)').run(uid,-p.preco,p.nome,'compra:'+uid+':'+chave,iso());
   q('INSERT INTO loja_inventario(user_id,produto,quantidade) VALUES(?,?,1) ON CONFLICT(user_id,produto) DO UPDATE SET quantidade=quantidade+1').run(uid,produto);
   const resultado={ok:true,produto,saldo:saldo(uid)};q('INSERT INTO loja_compras(user_id,chave,produto,resultado,em) VALUES(?,?,?,?,?)').run(uid,chave,produto,JSON.stringify(resultado),iso());return resultado;
  });}
  function consumir(uid,produto,chave) {return executar(uid,()=>{
-  const operacao=produto==='caixa'?'abrir-caixa':'ativar-pocao';
+  const operacao=produto==='caixa'?'abrir-caixa':produto==='pocao'?'ativar-pocao':'equipar:'+produto;
   const ja=q('SELECT produto,resultado FROM loja_compras WHERE user_id=? AND chave=?').get(uid,chave);
   if(ja){if(ja.produto!==operacao)throw new ErroHttp(409,'Este pedido já foi usado.');return {...JSON.parse(ja.resultado),repetida:true};}
   if(produto==='pocao'&&q('SELECT 1 FROM xp_efeitos WHERE user_id=? AND ate>?').get(uid,iso()))throw new ErroHttp(409,'Já há uma poção ativa. Use a próxima quando esta terminar.');
@@ -179,8 +189,12 @@ function criarSocial(db, { agora = () => new Date(), sortear = randomInt } = {})
   let resultado;
   if(produto==='pocao') {
    const ate=mais(iso(),30*60e3);q('INSERT INTO xp_efeitos(user_id,ate) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET ate=excluded.ate').run(uid,ate);resultado={ok:true,ate};
+  } else if(produto.startsWith('cenario-')) {
+   q('UPDATE loja_inventario SET quantidade=quantidade+1 WHERE user_id=? AND produto=?').run(uid,produto);perfil(uid);const cenario=q('SELECT cenario FROM social_perfis WHERE user_id=?').get(uid).cenario===produto?'padrao':produto;q('UPDATE social_perfis SET cenario=? WHERE user_id=?').run(cenario,uid);resultado={ok:true,cenario};
   } else {
-   const n=sortear(100),raridade=n<65?'comum':n<90?'rara':n<99?'epica':'lendaria',modelo='pratica-'+(sortear(6)+1);
+   const n=sortear(100),raridade=n<65?'comum':n<90?'rara':n<99?'epica':'lendaria';
+   const todos=Array.from({length:6},(_,i)=>'pratica-'+(i+1)),faltantes=todos.filter(m=>!q('SELECT 1 FROM colecao_figurinhas WHERE user_id=? AND modelo=? AND raridade=?').get(uid,m,raridade));
+   const opcoes=faltantes.length?faltantes:todos,modelo=opcoes[sortear(opcoes.length)];
    const f=q('INSERT INTO colecao_figurinhas(user_id,modelo,raridade,origem_chave,criada_em) VALUES(?,?,?,?,?)').run(uid,modelo,raridade,'caixa:'+uid+':'+chave,iso());
    resultado={ok:true,figurinha:carta(q('SELECT * FROM colecao_figurinhas WHERE id=?').get(Number(f.lastInsertRowid)))};
   }
@@ -192,16 +206,16 @@ function registrar({db,rota,V,social}) {
  const limite=auth.limitadorBanco(db,'social-convites',{janelaMs:15*60e3,max:30});
  const limitar=ctx=>{if(!limite.tentar('u'+ctx.u.id))throw new ErroHttp(429,'Muitos convites. Tente novamente mais tarde.');};
  const chave=ctx=>V.str(ctx.corpo.chave,80,{min:16,campo:'Identificador do pedido'});
- rota('POST','/social/loja/comprar',ctx=>social.compra(ctx.u.id,V.um(ctx.corpo.produto,['caixa','pocao'],'Produto'),chave(ctx)));
- rota('POST','/social/loja/usar',ctx=>social.consumir(ctx.u.id,V.um(ctx.corpo.produto,['caixa','pocao'],'Produto'),chave(ctx)));
+ rota('POST','/social/loja/comprar',ctx=>social.compra(ctx.u.id,V.um(ctx.corpo.produto,PRODUTOS.map(p=>p.id),'Produto'),chave(ctx)));
+ rota('POST','/social/loja/usar',ctx=>social.consumir(ctx.u.id,V.um(ctx.corpo.produto,PRODUTOS.map(p=>p.id),'Produto'),chave(ctx)));
  rota('GET','/social',ctx=>social.painel(ctx.u.id));
  rota('PUT','/social/perfil',ctx=>{const apelido=V.str(ctx.corpo.apelido,24,{min:2,campo:'Apelido'});social.perfil(ctx.u.id);db.prepare('UPDATE social_perfis SET apelido=? WHERE user_id=?').run(apelido,ctx.u.id);return {ok:true};});
  rota('POST','/social/amigos',ctx=>{limitar(ctx);return social.pedir(ctx.u.id,V.str(ctx.corpo.codigo,30,{min:1,campo:'Código'}).toUpperCase());});
  rota('POST','/social/amigos/:id/responder',ctx=>social.responderAmizade(ctx.u.id,V.id(ctx.params.id),V.um(ctx.corpo.acao,['aceitar','recusar'],'Resposta')==='aceitar'));
  rota('DELETE','/social/amigos/:id',ctx=>social.remover(ctx.u.id,V.id(ctx.params.id),ctx.corpo.bloquear===true));
  rota('GET','/social/amigos/:id/colecao',ctx=>{const id=V.id(ctx.params.id);social.exigirAmigo(ctx.u.id,id);social.painel(ctx.u.id);return {colecao:social.colecao(id)};});
- rota('POST','/social/duelos',ctx=>{limitar(ctx);return social.novoDuelo(ctx.u.id,V.id(ctx.corpo.amigoId),V.um(ctx.corpo.dias,[2,7,30],'Duração'),V.id(ctx.corpo.figurinhaId));});
- rota('POST','/social/duelos/:id/escolher',ctx=>social.escolher(ctx.u.id,V.id(ctx.params.id),V.id(ctx.corpo.figurinhaId)));
+ rota('POST','/social/duelos',ctx=>{limitar(ctx);return social.novoDuelo(ctx.u.id,V.id(ctx.corpo.amigoId),V.um(ctx.corpo.dias,[2,7,30],'Duração'),ctx.corpo.figurinhaId==null?null:V.id(ctx.corpo.figurinhaId),V.um(ctx.corpo.criterio||'exercicios',['exercicios','constancia'],'Critério'));});
+ rota('POST','/social/duelos/:id/escolher',ctx=>social.escolher(ctx.u.id,V.id(ctx.params.id),ctx.corpo.figurinhaId==null?null:V.id(ctx.corpo.figurinhaId)));
  rota('POST','/social/duelos/:id/confirmar',ctx=>social.confirmar(ctx.u.id,V.id(ctx.params.id)));
  rota('POST','/social/duelos/:id/cancelar',ctx=>social.cancelarDuelo(ctx.u.id,V.id(ctx.params.id)));
  rota('POST','/social/grupos',ctx=>{

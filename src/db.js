@@ -324,6 +324,48 @@ CREATE TRIGGER pontos_recompensa AFTER INSERT ON pontos_estudo BEGIN
  FROM pontos_estudo WHERE user_id = NEW.user_id HAVING COUNT(*) % 5 = 0;
 END;
 `,
+  // 12: evolução aditiva; os registros existentes continuam publicados e conservam seus IDs.
+  `ALTER TABLE conversas ADD COLUMN material_id INTEGER REFERENCES materiais(id) ON DELETE SET NULL;
+   ALTER TABLE atividades ADD COLUMN estado TEXT NOT NULL DEFAULT 'publicada';
+   ALTER TABLE atividades ADD COLUMN versao INTEGER NOT NULL DEFAULT 1;
+   ALTER TABLE atividades ADD COLUMN origem_id INTEGER REFERENCES atividades(id) ON DELETE SET NULL;
+   ALTER TABLE duelos ADD COLUMN modalidade TEXT NOT NULL DEFAULT 'troca';
+   ALTER TABLE duelos ADD COLUMN criterio TEXT NOT NULL DEFAULT 'exercicios';
+   ALTER TABLE social_perfis ADD COLUMN cenario TEXT NOT NULL DEFAULT 'padrao';
+   CREATE TABLE sessoes_guiadas (
+     id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+     data TEXT NOT NULL, minutos INTEGER NOT NULL, dados TEXT NOT NULL, respondidos TEXT NOT NULL DEFAULT '{}',
+     apoios TEXT NOT NULL DEFAULT '{}', criada_em TEXT NOT NULL, concluida_em TEXT, UNIQUE(user_id,data)
+   );
+   CREATE TABLE relatos_conteudo (
+     id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+     tipo TEXT NOT NULL, referencia TEXT NOT NULL, motivo TEXT NOT NULL, estado TEXT NOT NULL DEFAULT 'pendente',
+     criado_em TEXT NOT NULL, revisado_em TEXT, parecer TEXT, revisor_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL
+   );
+   CREATE TABLE edicoes_cultura (
+     id INTEGER PRIMARY KEY AUTOINCREMENT, referencia TEXT NOT NULL, dados TEXT NOT NULL,
+     revisor_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL, revisado_em TEXT NOT NULL
+   );
+   CREATE TABLE diagnosticos (
+     id INTEGER PRIMARY KEY AUTOINCREMENT, tipo TEXT NOT NULL, codigo TEXT NOT NULL,
+     duracao_ms INTEGER NOT NULL DEFAULT 0, em TEXT NOT NULL
+   );
+   CREATE INDEX diagnosticos_em ON diagnosticos(em);
+   CREATE TABLE exercicios_recebidos (
+     user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+     item TEXT NOT NULL, dia TEXT NOT NULL, PRIMARY KEY(user_id,item,dia)
+   );
+   INSERT OR IGNORE INTO exercicios_recebidos(user_id,item,dia)
+     SELECT user_id,item_id,substr(em,1,10) FROM tentativas WHERE item_id IS NOT NULL
+     AND origem IN ('licao','biblioteca','treino','turma','estudo','simulado','material','podcast');
+   DROP TRIGGER exercicio_pontos;
+   CREATE TRIGGER exercicio_pontos AFTER INSERT ON tentativas
+   WHEN NEW.item_id IS NOT NULL AND NEW.origem IN ('licao','biblioteca','treino','turma','estudo','simulado','material','podcast','sessao') BEGIN
+     INSERT OR IGNORE INTO exercicios_recebidos(user_id,item,dia) VALUES(NEW.user_id,NEW.item_id,substr(NEW.em,1,10));
+     INSERT OR IGNORE INTO pontos_estudo(user_id,item,dia,em,origem,tentativa_id)
+     SELECT NEW.user_id,NEW.item_id,substr(NEW.em,1,10),NEW.em,NEW.origem,NEW.id
+     WHERE changes()=1 AND NEW.correto=1 AND NEW.dica=0;
+   END;`,
 ];
 
 function abrir(dir) {

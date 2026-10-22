@@ -2,9 +2,23 @@
 
 Plataforma de inglês por assinatura para crianças, adolescentes e adultos, com estudo individual e turmas de professores. A idade orienta os temas e a linguagem; o nível de inglês orienta a dificuldade. O objetivo do aluno monta o curso, e as dificuldades das atividades e conversas ajudam a escolher a próxima aula.
 
+## Evolução de 22/10/2026
+
+- **Hoje:** sessão de até 5, 10 ou 20 minutos, com exemplos, prática, retomada e apoio. A primeira sessão começa pelo reconhecimento. Respostas e pedidos de ajuda ficam no servidor; sair não perde o progresso. XP de conclusão só é concedido uma vez por dia, inclusive após apagar respostas.
+- **Domínio:** comparação entre amostras da mesma missão e retestes após 3 dias e, depois, intervalos de 7, 14 e 30 dias. XP, carimbos e nível de participação permanecem separados do nível de inglês.
+- **Passaporte cultural:** quatro missões por público usando os capítulos existentes, com fontes, prática real e carimbos pessoais. Relatos de conteúdo chegam à fila editorial.
+- **Professores:** uma conta pode estudar e ensinar (`ambos`). Atividades têm rascunho, publicação, encerramento e versões. Publicações já respondidas não são alteradas; reutilizar cria um rascunho sem respostas.
+- **Amigos e coleção:** amistosos para todas as idades, pontuação por exercícios ou dias de constância e teto de 20 exercícios por dia UTC. Trocas opcionais só entre adultos, com cópias repetidas; conquistas e últimas cópias ficam protegidas. A coleção filtra repetidas e reservas. Caixas priorizam modelos faltantes dentro da raridade sorteada; as probabilidades não mudam. A loja inclui dois fundos permanentes por 25 moedas cada.
+- **Material próprio:** o botão de conversa leva o material à simulação, com autorização por conta, tanto no roteiro quanto no tutor com IA.
+- **Vozes:** conteúdo fixo do catálogo tem cache compartilhado; textos pessoais e contextos continuam separados por conta. `npm run vozes:preparar` apenas dimensiona um lote. Gerar exige `-- --gerar`, credencial do servidor e conta administrativa autorizada.
+- **Qualidade:** `#/admin` recebe relatos, permite publicar revisões culturais com fontes e exibe métricas agregadas. Só os IDs configurados em `INGLOU_ADMIN_IDS` acessam a área; o papel professor não concede esse acesso.
+- **Acessibilidade:** ampliação por gesto preservada, campos com fonte mínima de 16px e alvos de toque maiores. A validação em WebKit não substitui teste em iPhone físico.
+
+Inventário, regras e dependências externas: [docs/EVOLUCAO.md](docs/EVOLUCAO.md).
+
 ## Experiência por idade e papel
 
-- Cadastro com idade e escolha entre aluno e professor. Contas existentes informam esses dados uma vez na entrada; alterações ficam em Conta. Faixas: crianças até 12 anos, adolescentes de 13 a 17, adultos a partir de 18. O cadastro de menores registra a confirmação de autorização do responsável.
+- Cadastro com idade e escolha entre aluno, professor ou ambos. Contas existentes informam esses dados uma vez na entrada; alterações ficam em Conta. Faixas: crianças até 12 anos, adolescentes de 13 a 17, adultos a partir de 18. O cadastro de menores registra a confirmação de autorização do responsável.
 - Região do Brasil opcional no cadastro e na conta: Norte, Nordeste, Centro-Oeste, Sudeste e Sul, além de não informar ou morar fora do Brasil. A escolha é salva por conta, destaca o vocabulário regional e orienta o contexto do tutor, sem restringir outros exemplos nem usar geolocalização.
 - Navegação principal curta no celular e no computador: Hoje, Biblioteca, Progresso, Turmas e Mais. Professores têm Painel, Biblioteca, Conta e Mais. Os demais recursos ficam agrupados por finalidade em Mais, e turmas e aulas têm caminhos de volta visíveis. Cores, cartões, mascote e temas dia/noite mantêm a identidade do app.
 - Contextos diferentes na trilha, biblioteca, nivelamento e conversas. A idade não limita o nível alcançado. O tutor com IA recebe a orientação de público, além do nível e do objetivo.
@@ -12,8 +26,8 @@ Plataforma de inglês por assinatura para crianças, adolescentes e adultos, com
 - Toque nas palavras sublinhadas em inglês para abrir a tradução acima delas. O dicionário funciona localmente, complementado pelo vocabulário do catálogo; palavras ainda não cobertas não recebem traduções inventadas. O significado contextual da frase aparece quando disponível. Os botões de seleção de resposta mantêm sua função original.
 - Leitura em voz alta: as palavras ficam no azul do app conforme a transcrição parcial as reconhece, inclusive em uma nova gravação. O destaque não muda a nota e preserva a tradução ao toque.
 - Biblioteca (`#/biblioteca`): 21 capítulos, sete por público, de A1 a B1, com 105 questões de vocabulário, leitura e aplicação. Há texto, tradução de apoio, áudio, explicação e cartões de revisão. Professores podem acrescentar seus conteúdos, inclusive de outros níveis.
-- Do Brasil pro mundo (`#/brasil`): 55 fichas com nomes regionais, convivência, gírias de internet e ditados; equivalentes, exemplos, contexto, registro, áudio e fontes. Busca por aliases (bergamota, mexerica, tangerina) e destaque das cinco regiões. Filtros por situação de uso e por público para professores; alternativas neutras e exemplos com as vozes oficiais. Doze capítulos da biblioteca praticam esses conteúdos em 60 questões. O tradutor entende expressões inteiras, como no cap. Critérios em [docs/brasil-pro-mundo.md](docs/brasil-pro-mundo.md) e pesquisa da ampliação em [docs/linguagem-brasileira-pesquisa.md](docs/linguagem-brasileira-pesquisa.md).
-- Amigos e coleção: `#/desafios` tem amizades por código e aceite, duelos de 2/7/30 dias por figurinhas e metas/sequências em grupo. `#/colecao` mostra propriedade, reservas e quatro raridades. `#/loja` usa moedas ganhas nos exercícios para caixas e poções de XP em dobro. Conquistas pessoais continuam no álbum. Regras, preços, chances e persistência em [docs/desafios-e-economia.md](docs/desafios-e-economia.md).
+- Do Brasil pro mundo (`#/brasil`): 60 fichas com expressões em inglês, nomes regionais, convivência, gírias de internet e ditados; equivalentes, exemplos, contexto, registro, áudio e fontes. Busca por aliases (bergamota, mexerica, tangerina) e destaque das cinco regiões. Filtros por situação de uso e por público para professores; alternativas neutras e exemplos com as vozes oficiais. Doze capítulos culturais e três capítulos de expressões em inglês praticam esses conteúdos em 75 questões. O tradutor entende expressões inteiras, como no cap. Critérios em [docs/brasil-pro-mundo.md](docs/brasil-pro-mundo.md) e pesquisa da ampliação em [docs/linguagem-brasileira-pesquisa.md](docs/linguagem-brasileira-pesquisa.md).
+- Amigos e coleção: `#/desafios` tem amizades por código e aceite, desafios amistosos de 2/7/30 dias e trocas opcionais de repetidas entre adultos e metas/sequências em grupo. `#/colecao` mostra propriedade, reservas e quatro raridades. `#/loja` usa moedas ganhas nos exercícios para caixas e poções de XP em dobro. Conquistas pessoais continuam no álbum. Regras, preços, chances e persistência em [docs/desafios-e-economia.md](docs/desafios-e-economia.md).
 - Área do professor (`#/professor`): criar turma com público e nível, filtrar questões por assunto, tipo e nível, usar capítulos como modelo, escrever interpretação de texto e vocabulário, acrescentar material de estudo, conferir a prévia e publicar a aula. É possível reutilizar uma aula em outra turma sem copiar respostas.
 - Área do aluno (`#/turmas`): entrar por código, estudar o material do professor, responder uma questão por vez, consultar o conteúdo e rever respostas e explicações. A primeira tentativa fica registrada; novas tentativas de prática não duplicam notas nem progresso.
 
@@ -23,12 +37,13 @@ Proposta original, personalização e custos de IA: **[docs/PROPOSTA.md](docs/PR
 
 ## Rodar
 
-Requisitos: Node 22.13 ou mais novo (usa o SQLite nativo `node:sqlite`). Uma única dependência: `@anthropic-ai/sdk`.
+Requisitos: Node 22.13 ou mais novo (usa o SQLite nativo `node:sqlite`). Dependências de produção: `@anthropic-ai/sdk` e `@supabase/supabase-js`. Playwright é uma dependência de desenvolvimento para validar a interface.
 
 ```bash
 npm ci
 npm run dev          # http://localhost:8080 (pagamento simulado, para testar a assinatura)
-npm test             # 130 testes: login, Google, segurança, vozes, turmas e aprendizagem guiada
+npm test             # testes de login, Google, segurança, vozes, turmas, economia e aprendizagem
+npm run test:browser # Chromium e WebKit (instalar antes: npx playwright install --with-deps chromium webkit)
 ```
 
 Sem `ANTHROPIC_API_KEY` o app funciona inteiro no **modo de prática**: conversa por roteiro do cenário, correção por regras (14 erros típicos de brasileiros), tutor que responde pelos pontos do catálogo. Com a chave, entram a conversa livre, a correção detalhada, os exercícios escritos com a situação do aluno e o processamento de materiais. Para testar os caminhos com IA sem gastar: `IA_FAKE=1` (só fora de produção).
@@ -62,7 +77,7 @@ Para quem tem uma prova, entrevista ou viagem: `#/sobmedida`. O aluno descreve o
 Qualquer conta pode **criar uma turma** (vira professor dela) e **entrar em turmas** por código. O aluno acessa `#/turmas` pela barra principal; o professor acessa `#/professor` pelo Painel ou por Mais > Área do professor. Ao criar a turma, recebe um código de 6 caracteres (sem 0/O/1/I/L) e um link (`#/turmas?codigo=...`: quem abre sem conta cria uma e volta para a tela de entrada). Painel da turma (`#/turma/ID`): código com copiar/trocar, atividades, alunos (respondidas, acerto, atividades feitas, última) e **dificuldades da turma** (erros por ponto de gramática ou habilidade). Nova atividade (`#/turma/ID/nova`): material de estudo, questões filtradas por tema, nível, público e tipo, capítulos prontos como modelo e perguntas próprias (escolha, vocabulário, leitura, lacuna e tradução), com prévia e prazo opcional. Resultado por pergunta e por aluno em `#/turma/ID/aN`; a aula pode ser reutilizada em outra turma. O aluno vê um cartão em Hoje com as atividades pendentes e faz a atividade como a lição (a correção é no servidor; o gabarito aparece após responder ou pedir ajuda). As respostas também alimentam o plano pessoal do aluno.
 - **Privacidade:** o professor vê nome, acertos, tempo e conclusão só nas atividades da turma; nunca o que o aluno digitou, conversas, textos, cartões nem o resto do estudo. O aluno entra ciente disso, pode sair quando quiser (as respostas dele na turma são apagadas) e a exportação de dados inclui a participação em turmas.
 - **Código:** `src/turmas.js` (rotas), `src/motor/turmas.js` (código, validação das perguntas, métricas), telas `telas/turmas.js` (aluno) e `telas/professor.js`. Migração 6 (só acréscimo): `turmas`, `turma_alunos`, `atividades`, `atividade_respostas`. Testes em `tests/turmas.test.js`.
-- **Ainda não tem:** convite por e-mail (o app não envia e-mail), perguntas de escuta/fala escritas pelo professor, e a edição de atividades já publicadas.
+- **Ainda não tem:** convite por e-mail (o app não envia e-mail), perguntas de escuta/fala escritas pelo professor, e a alteração direta de publicações: para preservar respostas, a edição cria uma nova versão em rascunho.
 
 ## Mascote
 **Tuiuiú é uma arara-azul-grande** (orgulho do Brasil; azul-cobalto, anel e bochechas amarelos, bico curvo). A **Mia**, que dá voz ao inglês na Rádio Tuiuiú, é a **tutora e dona do Tuiuiú**: uma adolescente negra de tranças (miçangas rosa e amarelas, camisa azul, jeans e tênis). Mesmos 5 humores do Tuiuiú. Desenho em `public/assets/js/diversao.js` (função `lou` para o Tuiuiú, com cores por variável `--arara-*` que acompanham Dia/Noite; `lou(humor, { mia: true })` desenha a Mia, com cores fixas). Ícones do app e favicon: arara sobre fundo amarelo (`public/assets/img/`, `public/favicon.svg`).
@@ -91,7 +106,7 @@ tests/                 seguranca, motor, ciclo
 Nível C (backend com login e dados pessoais). Verificado em 18/10/2026:
 - `templates/seguranca/auditar-codigo.sh .`: **0 falhas**, 4 atenções justificadas: HTML fixo e rede de segurança do `alert` no `arcane-ui.js` do kit; `VACUUM INTO` da biblioteca de backup (caminho gerado pelo servidor, aspas escapadas); a CSP fica em `src/http.js`, não no `server.js` (coberta pelo teste 12).
 - `npm test`: traversal e byte nulo, lixo no corpo sem erro 500, SQL injection, 413, senha fraca e hash no banco, IDOR entre alunos, força bruta com IP forjado, limite geral, CSRF, cookie `__Host-` HttpOnly/Secure/SameSite, sem CORS, cabeçalhos e CSP sem `unsafe-inline`, mensagens sem vazamento, clique duplo, gabarito que não vai ao navegador, logout e exclusão de conta.
-- **Não verificado ainda:** `auditar-site.sh` no ar (depende do deploy), 2FA e recuperação de senha por e-mail (não implementados no MVP).
+- **Não verificado ainda:** `auditar-site.sh` no ar (depende do deploy), 2FA (não implementado) e recuperação/confirmação por e-mail no provedor real (exigem Supabase configurado).
 
 ## Backup (playbooks/backup.md da Arcane)
 - [x] Tipo B (app com SQLite): backup diário automático, consistente (`VACUUM INTO`), verificado (`integrity_check`), cifrado (AES-256-GCM), retenção 7/4/6.

@@ -17,6 +17,18 @@ function ambiente(t, { fetchImpl, env = {} } = {}) {
 }
 const pedido = { texto: 'Hello!', personagem: 'mia', idioma: 'en' };
 
+test('conteúdo fixo do catálogo é reutilizado entre contas e contexto pessoal permanece privado', async t => {
+  const { servico, chamadas }=ambiente(t);
+  const { CATALOGO_VOZ }=require('../src/conteudo/vozes-catalogo');
+  const texto=[...CATALOGO_VOZ].find(t=>t.includes(' ')&&t.length>15);
+  const entrada={texto,personagem:'mia',idioma:'en'};
+  await servico.sintetizar(1,entrada);
+  assert.equal((await servico.sintetizar(2,entrada)).cache,true);assert.equal(chamadas.length,1);
+  await servico.sintetizar(1,{...entrada,anterior:'Minha apresentação particular.'});
+  await servico.sintetizar(2,{...entrada,anterior:'Minha apresentação particular.'});
+  assert.equal(chamadas.length,3,'contexto por pessoa não compartilha o cache');
+});
+
 test('as quatro combinações usam exclusivamente o ID oficial e o idioma correto', async t => {
   const { servico, chamadas } = ambiente(t);
   for (const personagem of ['mia', 'tuiuiu']) for (const idioma of ['pt', 'en']) {
@@ -32,6 +44,7 @@ test('as quatro combinações usam exclusivamente o ID oficial e o idioma corret
 
 test('repetição simultânea e cache persistente cobram uma geração; contas ficam isoladas', async t => {
   const { servico, chamadas, db, dir } = ambiente(t);
+  const pedido = { texto: 'My private presentation about my own life in Recife.', personagem:'mia', idioma:'en' };
   const respostas = await Promise.all(Array.from({ length: 8 }, () => servico.sintetizar(1, pedido)));
   assert.equal(chamadas.length, 1); respostas.forEach(r => assert.deepEqual(r.audio, MP3));
   assert.equal((await servico.sintetizar(1, pedido)).cache, true);
@@ -92,6 +105,7 @@ test('as quatro vozes leem com o modelo expressivo e direção de emoção sem t
 
 test('contexto natural não força alegria e cache distingue emoção, velocidade, modelo e contexto', async t => {
   const { servico, chamadas, db, dir } = ambiente(t);
+  const pedido = { texto: 'My private presentation about my own life in Recife.', personagem:'mia', idioma:'en' };
   const p = { ...pedido, texto: 'I miss my old friend. We used to walk together.' };
   await servico.sintetizar(1, p); assert.equal(JSON.parse(chamadas.at(-1).opts.body).text, p.texto);
   assert.equal((await servico.sintetizar(1, p)).cache, true);

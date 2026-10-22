@@ -5,6 +5,7 @@ const path = require('node:path');
 const { createHash, randomUUID } = require('node:crypto');
 const { ErroHttp } = require('./http');
 const { transacao } = require('./db');
+const { CATALOGO_VOZ } = require('./conteudo/vozes-catalogo');
 
 const EMOCOES = { contexto: '', feliz: '[happy]', triste: '[sad]', animado: '[excited]', calmo: '[calm]', acolhedor: '[warmly]', curioso: '[curious]' };
 const VOZES = {
@@ -47,6 +48,8 @@ function criarVozes({ db, dir, env = process.env, fetchImpl = fetch, diaDe = () 
     const pedido = pedidoValido(entrada);
     if (!Number.isSafeInteger(uid) || uid < 1) throw new ErroHttp(401, 'Faça login para ouvir.');
     const voz = vozes[pedido.personagem][pedido.idioma];
+    const publico = !pedido.anterior && !pedido.seguinte && CATALOGO_VOZ.has(pedido.texto);
+    const donoCache = publico ? 0 : uid;
     const leitura = pedido.texto.length >= 160 || !!pedido.anterior || !!pedido.seguinte || /\n/.test(pedido.texto);
     const modelo = leitura || pedido.emocao !== 'contexto' || /\s/.test(pedido.texto) ? modeloTexto : modeloCurto;
     const expressivo = /^eleven_v[34](?:_|$)/.test(modelo);
@@ -55,14 +58,14 @@ function criarVozes({ db, dir, env = process.env, fetchImpl = fetch, diaDe = () 
     const direcao = expressivo ? [EMOCOES[pedido.emocao], pedido.velocidade <= .9 ? '[slowly]' : pedido.velocidade >= 1.15 ? '[speaking quickly]' : ''].filter(Boolean).join(' ') : '';
     const textoFalado = direcao ? direcao + ' ' + pedido.texto : pedido.texto;
     if (!/^[A-Za-z0-9]{20,64}$/.test(voz)) throw new ErroHttp(503, 'A voz deste personagem ainda não está configurada.');
-    const hash = createHash('sha256').update(JSON.stringify([uid, voz, modelo, 'expressiva-v3', pedido.emocao, pedido.velocidade, ajustes, pedido.idioma, pedido.texto, pedido.anterior, pedido.seguinte])).digest('hex');
-    const arquivo = path.join(pasta(uid), hash + '.mp3');
+    const hash = createHash('sha256').update(JSON.stringify([donoCache, voz, modelo, 'expressiva-v3', pedido.emocao, pedido.velocidade, ajustes, pedido.idioma, pedido.texto, pedido.anterior, pedido.seguinte])).digest('hex');
+    const arquivo = path.join(pasta(donoCache), hash + '.mp3');
     try {
       const stat = await fs.stat(arquivo);
       if (stat.mtimeMs + diasCache * 864e5 > agora()) return { audio: await fs.readFile(arquivo), cache: true };
       await fs.unlink(arquivo);
     } catch (e) { if (e.code !== 'ENOENT') throw new ErroHttp(503, 'Não foi possível preparar o áudio agora.'); }
-    const id = uid + ':' + hash;
+    const id = donoCache + ':' + hash;
     if (pendentes.has(id)) return pendentes.get(id);
     if (!chave.startsWith('sk_')) throw new ErroHttp(503, 'As vozes da Mia e do Tuiuiú ainda não estão disponíveis neste servidor.');
     if (pendentes.size >= 4) throw new ErroHttp(429, 'Estamos preparando outros áudios. Tente ouvir de novo em instantes.');
@@ -83,8 +86,8 @@ function criarVozes({ db, dir, env = process.env, fetchImpl = fetch, diaDe = () 
         if (audio.length < 3 || !(audio.subarray(0, 3).toString() === 'ID3' || (audio[0] === 0xff && (audio[1] & 0xe0) === 0xe0))) throw new Error('audio_invalido');
         // Apagar dados durante a geração também impede a criação posterior do arquivo.
         if ((versoes.get(uid) || 0) === versao) {
-          await fs.mkdir(pasta(uid), { recursive: true, mode: 0o700 });
-          temporario = path.join(pasta(uid), '.' + randomUUID() + '.tmp');
+          await fs.mkdir(pasta(donoCache), { recursive: true, mode: 0o700 });
+          temporario = path.join(pasta(donoCache), '.' + randomUUID() + '.tmp');
           await fs.writeFile(temporario, audio, { mode: 0o600 });
           if ((versoes.get(uid) || 0) === versao) await fs.rename(temporario, arquivo);
         }
