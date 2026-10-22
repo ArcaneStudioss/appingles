@@ -3,7 +3,7 @@
 // Sem vidas e sem "ofensiva" que se perde: os dias do mês só somam.
 import { api } from '../api.js?v=__V__';
 import { h, icone, dataBR, plural, toast, janela, localStorageGet, localStorageSet } from '../ui.js?v=__V__';
-import { lou } from '../diversao.js?v=__V__';
+import { lou, louFala } from '../diversao.js?v=__V__';
 import { configurarLembrete, lembreteDeHoje, jaPassouDaHora } from '../lembrete.js?v=__V__';
 
 const CONQ = { 'primeiro-passo': 'Primeiro passo: teste de nível feito', 'primeira-licao': 'Primeira lição concluída', 'primeira-conversa': 'Primeira conversa', 'primeira-demonstracao': 'Primeira missão demonstrada', retido: 'Missão mantida depois de dias', 'foco-superado': 'Superou uma dificuldade', 'revisoes-50': '50 revisões', material: 'Estudou com material seu', 'licoes-10': '10 lições', 'dias-3': '3 dias de estudo', 'dias-10': '10 dias de estudo', 'dias-30': '30 dias de estudo', 'dias-60': '60 dias de estudo', radio: 'Primeiro episódio da Rádio Tuiuiú', 'estudo-1': 'Primeiro assunto do estudo sob medida', 'estudo-completo': 'Estudo sob medida completo', 'simulado-1': 'Primeiro simulado', 'treino-1': 'Primeiro treino focado', 'treino-7': '7 treinos focados',
@@ -112,6 +112,7 @@ export async function telaHoje(el, { ir, estado }) {
       h('a', { class: 'btn btn-peq', href: '#/licao' }, L?.iniciada ? 'Continuar a aula' : 'Começar agora')));
   }
 
+  let balao = null;
   if (L) {
     balao = louFala(feita ? 'feliz' : 'oi', h('p', {}, iniciante ? (feita ? 'Aula concluída. Você pode rever as palavras ou explorar um capítulo da biblioteca.' : infantil ? 'Eu ajudo você! Ouça as palavras e descubra o significado. Depois vamos brincar de responder.' : 'Comece com as expressões da aula. Há áudio, tradução e explicações para estudar com autonomia.') : feita ? 'Aula de hoje feita! Que tal revisar uns cartões ou conversar um pouco?' : (L.porque?.[0] || 'Sua aula de hoje está pronta.')));
     principal.append(h('section', { class: 'aula' + (feita ? ' aula--feita' : ''), 'aria-labelledby': 'aula-t' },
