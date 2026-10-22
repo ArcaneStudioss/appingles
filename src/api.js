@@ -69,6 +69,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
   const supabase = supabaseInjetado || criarSupabase();
   const agoraISO = () => new Date().toISOString();
   const q = (sql) => db.prepare(sql);
+  const social = require('./social').criarSocial(db);
   // limites de segurança (login e cadastro) valem para todas as cópias do app; o geral e o da IA são por cópia (só anti-sobrecarga)
   const limLoginIp = auth.limitadorBanco(db, 'login-ip', { janelaMs: 15 * 60e3, max: 20 });
   const limLoginConta = auth.limitadorBanco(db, 'login-conta', { janelaMs: 15 * 60e3, max: 8 });
@@ -475,7 +476,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     const diasNoMes = q('SELECT COUNT(*) n FROM dias_estudo WHERE user_id = ? AND data LIKE ?').get(uid, h.slice(0, 7) + '%').n;
     const novasConquistas = q('SELECT codigo FROM conquistas WHERE user_id = ? AND em >= ?').all(uid, new Date(Date.now() - 864e5).toISOString()).map(r => r.codigo);
     return {
-      nome: ctx.u.nome.split(' ')[0], hoje: h,
+      nome: ctx.u.nome.split(' ')[0], hoje: h, economia: { xp: social.xp(uid), moedas: social.saldo(uid) },
       licao: lic ? { status: lic.status, minutos: lic.dados.minutos, missao: lic.dados.missao, porque: lic.dados.porque, guiada: !!lic.dados.guiada, iniciada: !!lic.iniciada_em } : null,
       revisoesPendentes: pend, proximo,
       meta: { minutos: p.meta_diaria || 15, feitos: Math.round(minutosHoje) },
@@ -1117,6 +1118,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     if (!a.concluido_em) {
       a.concluido_em = agoraISO();
       salvarEstudo(uid, e);
+      if (Object.keys(a.respondidos || {}).length) social.creditoXp(uid, 25, `assunto:${id}:${a.id}`, 'Aula sob medida concluída');
       conq.push(...somarMinutos(uid, h, 6 + Math.min(10, Object.keys(a.respondidos).length)));
       if (conquistar(uid, 'estudo-1')) conq.push('estudo-1');
       if (e.assuntos.every(x => x.concluido_em) && conquistar(uid, 'estudo-completo')) conq.push('estudo-completo');
@@ -1436,7 +1438,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     const tudo = t => q(`SELECT * FROM ${t} WHERE user_id = ?`).all(uid);
     const u = q('SELECT nome, email, criado_em, consentiu_em FROM usuarios WHERE id = ?').get(uid);
     ctx.res.setHeader('Content-Disposition', `attachment; filename="inglou-meus-dados-${hojeDe(uid)}.json"`);
-    return { exportadoEm: agoraISO(), turmas: { comoProfessor: q('SELECT id, nome, codigo, criado_em FROM turmas WHERE professor_id = ?').all(uid), comoAluno: q('SELECT turma_id, entrou_em FROM turma_alunos WHERE user_id = ?').all(uid), minhasRespostas: q('SELECT atividade_id, item_id, correto, tempo_ms, em, resposta FROM atividade_respostas WHERE user_id = ?').all(uid) }, conta: u, perfil: perfilDe(uid), assinatura: assinaturaDe(uid), nivelamentos: tudo('nivelamentos'), planos: tudo('planos'), licoes: tudo('licoes'), tentativas: tudo('tentativas'), cartoes: tudo('cartoes'), revisoes: tudo('revisoes'), conversas: tudo('conversas'), focos: tudo('focos'), amostras: tudo('amostras'), competencias: tudo('competencias'), materiais: tudo('materiais'), conquistas: tudo('conquistas'), uso_ia: tudo('uso_ia'), dias_estudo: tudo('dias_estudo'), podcasts: tudo('podcasts'), estudos: tudo('estudos'), treinos: tudo('treinos'), biblioteca: tudo('biblioteca_progressos'), uso_voz: tudo('uso_voz') };
+    return { exportadoEm: agoraISO(), social: social.exportar(uid), turmas: { comoProfessor: q('SELECT id, nome, codigo, criado_em FROM turmas WHERE professor_id = ?').all(uid), comoAluno: q('SELECT turma_id, entrou_em FROM turma_alunos WHERE user_id = ?').all(uid), minhasRespostas: q('SELECT atividade_id, item_id, correto, tempo_ms, em, resposta FROM atividade_respostas WHERE user_id = ?').all(uid) }, conta: u, perfil: perfilDe(uid), assinatura: assinaturaDe(uid), nivelamentos: tudo('nivelamentos'), planos: tudo('planos'), licoes: tudo('licoes'), tentativas: tudo('tentativas'), cartoes: tudo('cartoes'), revisoes: tudo('revisoes'), conversas: tudo('conversas'), focos: tudo('focos'), amostras: tudo('amostras'), competencias: tudo('competencias'), materiais: tudo('materiais'), conquistas: tudo('conquistas'), uso_ia: tudo('uso_ia'), dias_estudo: tudo('dias_estudo'), podcasts: tudo('podcasts'), estudos: tudo('estudos'), treinos: tudo('treinos'), biblioteca: tudo('biblioteca_progressos'), uso_voz: tudo('uso_voz') };
   });
   const ESCOPOS = {
     respostas: ['tentativas', 'revisoes', 'focos', 'descartes', 'podcasts', 'treinos', 'biblioteca_progressos'],
@@ -1450,7 +1452,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
   rota('POST', '/dados/apagar', async (ctx) => {
     const uid = ctx.u.id;
     const escopo = V.um(ctx.corpo.escopo, Object.keys(ESCOPOS), 'O que apagar');
-    transacao(db, () => { for (const t of ESCOPOS[escopo]) q(`DELETE FROM ${t} WHERE user_id = ?`).run(uid); });
+    transacao(db, () => { if (escopo === 'tudo') social.apagar(uid); for (const t of ESCOPOS[escopo]) q(`DELETE FROM ${t} WHERE user_id = ?`).run(uid); });
     await vozes.limparUsuario(uid);
     return { ok: true, refazerNivelamento: escopo === 'tudo' };
   });
@@ -1480,6 +1482,8 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     ctx.res.end(ics);
     return undefined;
   });
+
+  require('./social').registrar({ db, rota, V, social });
 
   // ---------- turmas (professor e aluno) ----------
   const turmasMod = require('./turmas').registrar({ db, rota, q, V, lerJson, transacao, agoraISO, hojeDe, registrarTentativa, somarMinutos });
@@ -1513,7 +1517,19 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     const usuario = usuarioDaSessao(req);
     ctx.u = achou.publica && caminho !== '/auth/estado' ? usuario : await contasAuth.validarSessao(ctx, usuario);
     if (!achou.publica && !ctx.u) return erro(res, 401, 'Faça login para continuar.');
+    const premiavel = ctx.u && metodo === 'POST' && /\/(responder|concluir)$/.test(caminho);
+    const marco = premiavel ? {
+      moedas: q('SELECT COALESCE(MAX(id),0) n FROM moedas_extrato WHERE user_id=?').get(ctx.u.id).n,
+      xp: q('SELECT COALESCE(MAX(id),0) n FROM xp_extrato WHERE user_id=?').get(ctx.u.id).n,
+      figurinhas: q('SELECT COALESCE(MAX(id),0) n FROM colecao_figurinhas WHERE user_id=?').get(ctx.u.id).n,
+    } : null;
     const out = await achou.fn(ctx);
+    if (marco && out && !out.repetida && !out.pratica) {
+      const moedas = q('SELECT COALESCE(SUM(quantidade),0) n FROM moedas_extrato WHERE user_id=? AND id>? AND quantidade>0').get(ctx.u.id,marco.moedas).n;
+      const xp = q('SELECT COALESCE(SUM(quantidade),0) n FROM xp_extrato WHERE user_id=? AND id>?').get(ctx.u.id,marco.xp).n;
+      const figurinhas = q('SELECT COUNT(*) n FROM colecao_figurinhas WHERE user_id=? AND id>?').get(ctx.u.id,marco.figurinhas).n;
+      if (moedas || xp || figurinhas) out.recompensa = { moedas, xp, figurinhas, saldo: social.saldo(ctx.u.id), xpTotal: social.xp(ctx.u.id) };
+    }
     if (out !== undefined && !res.writableEnded) json(res, 200, out);
   }
 

@@ -38,14 +38,14 @@ export async function telaLicao(el, { ir }) {
   // combo: acertos seguidos. Nunca pune: errar só zera o contador, sem som feio nem perda de pontos
   let combo = 0, melhorCombo = 0;
   const chipCombo = h('span', { class: 'combo', hidden: true, 'aria-live': 'polite' }, icone('flame'), h('b', {}, '0'), h('span', { class: 'oculto' }, ' acertos seguidos'));
-  function marcarCombo(certo) {
+  function marcarCombo(certo, xp = 0) {
     combo = certo ? combo + 1 : 0;
     melhorCombo = Math.max(melhorCombo, combo);
     chipCombo.hidden = combo < 2;
     // o Tuiuiú da barra reage: pula quando acerta, balança quando erra
     const mascote = topo.querySelector('.trilho__lou');
     mascote.classList.remove('trilho__lou--pula', 'trilho__lou--ops'); void mascote.offsetWidth; mascote.classList.add(certo ? 'trilho__lou--pula' : 'trilho__lou--ops');
-    if (certo) pontosFlutuantes(mascote, combo >= 3 ? `+10  x${combo}` : '+10');
+    if (certo && xp) pontosFlutuantes(mascote, `+${xp} XP`);
     chipCombo.querySelector('b').textContent = String(combo);
     chipCombo.classList.remove('combo--pula'); void chipCombo.offsetWidth; chipCombo.classList.add('combo--pula');
   }
@@ -88,7 +88,7 @@ export async function telaLicao(el, { ir }) {
       tela.append(exercicio(p.ex, {
         ja: respondidos[p.ex.id],
         devagar: !!p.b.devagar,
-        responder: async (resposta, meta) => { const r = await api('/licao/responder', { metodo: 'POST', corpo: { itemId: p.ex.id, resposta, ...meta } }); if (!r.pratica) { respondidos[p.ex.id] = { ...r, resposta }; if (!r.repetida) marcarCombo(r.correto && !r.ajuda); } return { ...r, sequencia: !r.pratica && !r.repetida ? combo : 0 }; },
+        responder: async (resposta, meta) => { const r = await api('/licao/responder', { metodo: 'POST', corpo: { itemId: p.ex.id, resposta, ...meta } }); if (!r.pratica) { respondidos[p.ex.id] = { ...r, resposta }; if (!r.repetida) marcarCombo(r.correto && !r.ajuda, r.recompensa?.xp || 0); } return { ...r, sequencia: !r.pratica && !r.repetida ? combo : 0 }; },
         contestar: async () => (await api('/licao/contestar', { metodo: 'POST', corpo: { itemId: p.ex.id } })).mensagem,
         aoProximo: avancar,
         barraFixa: true,
@@ -230,7 +230,6 @@ export async function telaLicao(el, { ir }) {
       h('h2', { class: 'fim-titulo' }, infantil && pct >= 80 ? 'Figurinha colada!' : 'Aula concluída. Bom trabalho!'),
       h('p', { class: 'chip c-lilas' }, icone('book-open-text'), infantil ? 'Mais uma figurinha no seu álbum' : 'Mais uma etapa da sua aprendizagem'),
       licao.guiada ? h('p', { class: 'ajuda' }, 'Você praticou mais um pouquinho. Cada palavra aprendida conta!') : h('div', { class: 'placar' },
-        h('div', { class: 'placar__item placar__item--sol' }, h('span', {}, 'Pontos'), h('strong', {}, String(certos * 10 + 20))),
         h('div', { class: 'placar__item' }, h('span', {}, 'Acertos'), h('strong', {}, `${pct}%`)),
         melhorCombo >= 3 ? h('div', { class: 'placar__item placar__item--coral' }, h('span', {}, 'Melhor combo'), h('strong', {}, `x${melhorCombo}`)) : null,
         h('div', { class: 'placar__item placar__item--azul' }, h('span', {}, 'Tempo'), h('strong', {}, `${minutos} min`))),

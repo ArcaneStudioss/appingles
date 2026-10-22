@@ -145,6 +145,7 @@ export function exercicio(ex, config) {
         raiz.replaceWith(novo);
         novo.querySelector('h2')?.setAttribute('tabindex', '-1'); novo.querySelector('h2')?.focus();
       } } }, icone('arrow-counter-clockwise'), 'Tentar de novo') : null));
+    if (!silencioso && r.recompensa) corpo.push(h('p', { class: 'exercicio-recompensa' }, r.recompensa.xp ? `+${r.recompensa.xp} XP` : null, r.recompensa.moedas ? ` · +${r.recompensa.moedas} moeda${r.recompensa.moedas === 1 ? '' : 's'}` : null, r.recompensa.figurinhas ? ' · Nova figurinha na coleção!' : null));
     // Resultados vêm do servidor. Revelar a resposta é estudo, nunca uma comemoração de acerto.
     const combo = r.correto && !r.ajuda && !pratica && [3, 5, 8, 10].includes(r.sequencia);
     companhia.reagir(r.ajuda ? 'aprender' : r.quase ? 'quase' : r.correto ? pratica ? 'superacao' : combo ? 'combo' : 'acerto' : 'apoio', { silencioso });

@@ -1357,3 +1357,33 @@ body[data-publico=adolescente] .companheiros{--salto-dupla:8px}
 @keyframes tui-bate-asa{0%,100%{transform:rotate(0)}50%{transform:rotate(70deg)}}
 @keyframes dupla-danca{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(calc(-1 * var(--salto-dupla,12px))) rotate(-4deg)}65%{transform:translateY(0) rotate(4deg)}}
 @keyframes dupla-conversa{50%{transform:translateY(-2px) rotate(1deg)}}
+
+/* Desafios e coleção: mesmas cores, cartões e personagens da área de estudo. */
+.social-links,.social-abas{display:flex;flex-wrap:wrap;gap:.6rem;margin:1rem 0}
+.social-links [aria-current=page],.social-abas [aria-pressed=true]{background:var(--lilas-fundo);border-color:var(--lilas);color:var(--lilas-forte)}
+.social-carteira{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;background:var(--sol-fundo);border:2px solid var(--borda);border-radius:var(--raio);padding:1rem;margin:1rem 0}
+.social-carteira>div{flex:1;min-width:140px;display:grid;gap:.3rem}.social-carteira small{display:block;color:var(--tinta-2)}
+.social-saldo{display:flex;align-items:center;gap:.45rem;color:var(--tinta);font-weight:800;text-decoration:none}.social-saldo>span{font-size:1.8rem}
+.social-carteira progress,.social-desafio progress{display:block;width:100%;height:12px;accent-color:var(--lilas);border:0}
+.social-codigo{font:700 1.2rem var(--f-titulo);letter-spacing:.05em;overflow-wrap:anywhere}
+.social-pedido{display:flex;flex-wrap:wrap;align-items:end;gap:.8rem;margin-top:1rem}.social-pedido label{flex:1;min-width:160px;margin:0}.social-pedido input{margin-top:.4rem}
+.social-lista{list-style:none;padding:0;margin:.6rem 0}.social-lista>li{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.7rem;padding:.8rem 0;border-bottom:1px solid var(--borda)}
+.social-lista small{display:block;color:var(--tinta-2);font-size:.8rem}.social-lista .linha-acoes{margin:0}
+.social-placar{font:600 2.8rem var(--f-titulo);color:var(--lilas-forte);text-align:center;margin:.8rem 0}
+.social-desafio>.btn{margin:.4rem .4rem .4rem 0}.social-desafio{overflow-wrap:anywhere}
+.social-apostas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;margin:.8rem 0}.social-apostas:has(>div:only-child){grid-template-columns:minmax(0,220px)}
+.colecao-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:1rem;margin:1rem 0}
+.colecao-carta{--rar-cor:var(--turquesa-forte);display:flex;flex-direction:column;align-items:center;gap:.6rem;min-width:0;padding:.85rem;text-align:center;border:3px solid var(--rar-cor);border-radius:var(--raio);background:var(--cartao);box-shadow:0 5px 0 color-mix(in srgb,var(--rar-cor) 25%,var(--borda));overflow-wrap:anywhere}
+.colecao-carta strong{font-family:var(--f-titulo);font-weight:600;line-height:1.2}.colecao-carta small{font-size:.78rem;color:var(--tinta-2)}
+.colecao-carta .chip{font-size:.7rem;padding:.25rem .4rem}.colecao-raridade{color:var(--rar-cor);font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;font-weight:900}
+.raridade-rara{--rar-cor:var(--azul)}.raridade-epica{--rar-cor:var(--lilas)}.raridade-lendaria{--rar-cor:var(--sol-forte);background:linear-gradient(145deg,var(--sol-fundo),var(--cartao));border-style:double;border-width:5px}
+.colecao-arte{position:relative;width:100%;display:grid;place-items:center;padding:.4rem;background:var(--cartao-2);border-radius:12px}.colecao-arte>span{position:absolute;right:2%;bottom:0;font-size:1.7rem}
+.selecao-figurinha{position:relative;cursor:pointer;margin:0;min-width:0}.selecao-figurinha input{position:absolute;z-index:1;top:.6rem;left:.6rem;accent-color:var(--lilas)}
+.selecao-figurinha:has(input:checked) .colecao-carta{outline:4px solid var(--lilas);outline-offset:2px;background:var(--lilas-fundo)}.selecao-figurinha:has(input:focus-visible){outline:3px solid var(--azul);outline-offset:5px;border-radius:var(--raio)}
+.social-check{display:flex;align-items:center;gap:.6rem;font-weight:700;padding:.4rem}.social-check input{accent-color:var(--lilas)}
+.loja-produtos{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:1.2rem}.loja-produtos article{padding:1rem;background:var(--cartao-2);border-radius:var(--raio-p);border:1px solid var(--borda)}
+.loja-revelacao{max-width:280px;margin:auto}.loja-revelacao .colecao-carta{min-height:240px;justify-content:center}
+.exercicio-recompensa{font-weight:900;color:var(--lilas-forte);background:var(--lilas-fundo);padding:.7rem;border-radius:var(--raio-p)}
+@media(prefers-reduced-motion:no-preference){.loja-revelacao .colecao-carta{animation:colecao-aparece .55s var(--mola) both}}
+@keyframes colecao-aparece{from{opacity:0;transform:scale(.85) rotate(-4deg)}to{opacity:1;transform:scale(1) rotate(0)}}
+@media(max-width:380px){.colecao-grade{grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}.colecao-carta{padding:.6rem}.social-apostas{gap:.6rem}.social-links .btn,.social-abas .btn{padding-inline:.7rem}}

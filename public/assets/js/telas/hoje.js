@@ -171,6 +171,7 @@ export async function telaHoje(el, { ir, estado }) {
     d.radio && completo ? atalho('radio', 'rosa', '#/podcast', 'headphones', 'Rádio Tuiuiú') : null,
     d.treino && completo ? atalho('treino', 'limao', treinoPronto ? '#/treino' : '#/aprender', treinoPronto ? 'target' : 'compass', treinoPronto ? 'Meu treino' : 'Meu jeito') : null));
   if (pr.acao === 'assinatura') principal.append(h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, pr.texto, ' ', h('a', { href: '#/conta' }, 'Ver planos'))));
+  principal.append(h('a', { class: 'treino-card c-lilas social-convite', href: '#/desafios' }, h('span', { class: 'bolha' }, icone('users-three')), h('span', { class: 'treino-card__txt' }, h('strong', {}, 'Desafios com amigos'), h('small', {}, d.economia ? `${d.economia.xp} XP · ${d.economia.moedas} moedas · metas e figurinhas` : 'Figurinhas, metas em grupo, XP e moedas')), icone('caret-right')));
   if (d.novasConquistas?.length) principal.append(h('p', { class: 'conquista-recente' }, h('span', { class: 'medalha medalha--peq' }, icone('medal')), 'Nova figurinha: ', nomeConquista(d.novasConquistas[0])));
 
   // A aula e as atividades da turma são os próximos passos. As outras opções aparecem sob demanda.
@@ -180,7 +181,7 @@ export async function telaHoje(el, { ir, estado }) {
   }
 
   const lado = h('div', { class: 'hoje__col hoje__col--lado' });
-  const extras = [...principal.querySelectorAll('.treino-card:not(.turma-atalho),.radio-card,.atalhos,.aviso-lembrete')];
+  const extras = [...principal.querySelectorAll('.treino-card:not(.turma-atalho):not(.social-convite),.radio-card,.atalhos,.aviso-lembrete')];
   if (iniciante && statusEl) extras.unshift(statusEl);
   principal.append(h('details', { class: 'outras-atividades' }, h('summary', {}, icone('dots-three'), iniciante ? 'Outras atividades e meu progresso' : 'Mais maneiras de praticar'), h('div', { class: 'outras-atividades__conteudo' }, extras)));
   if (p?.plano) lado.append(h('details', { class: 'outras-atividades' }, h('summary', {}, icone('path'), 'Meu caminho de aprendizagem'), album(p.plano, { licaoFeita: feita })));

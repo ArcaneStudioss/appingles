@@ -13,6 +13,7 @@ Plataforma de inglês por assinatura para crianças, adolescentes e adultos, com
 - Leitura em voz alta: as palavras ficam no azul do app conforme a transcrição parcial as reconhece, inclusive em uma nova gravação. O destaque não muda a nota e preserva a tradução ao toque.
 - Biblioteca (`#/biblioteca`): 21 capítulos, sete por público, de A1 a B1, com 105 questões de vocabulário, leitura e aplicação. Há texto, tradução de apoio, áudio, explicação e cartões de revisão. Professores podem acrescentar seus conteúdos, inclusive de outros níveis.
 - Do Brasil pro mundo (`#/brasil`): 55 fichas com nomes regionais, convivência, gírias de internet e ditados; equivalentes, exemplos, contexto, registro, áudio e fontes. Busca por aliases (bergamota, mexerica, tangerina) e destaque das cinco regiões. Filtros por situação de uso e por público para professores; alternativas neutras e exemplos com as vozes oficiais. Doze capítulos da biblioteca praticam esses conteúdos em 60 questões. O tradutor entende expressões inteiras, como no cap. Critérios em [docs/brasil-pro-mundo.md](docs/brasil-pro-mundo.md) e pesquisa da ampliação em [docs/linguagem-brasileira-pesquisa.md](docs/linguagem-brasileira-pesquisa.md).
+- Amigos e coleção: `#/desafios` tem amizades por código e aceite, duelos de 2/7/30 dias por figurinhas e metas/sequências em grupo. `#/colecao` mostra propriedade, reservas e quatro raridades. `#/loja` usa moedas ganhas nos exercícios para caixas e poções de XP em dobro. Conquistas pessoais continuam no álbum. Regras, preços, chances e persistência em [docs/desafios-e-economia.md](docs/desafios-e-economia.md).
 - Área do professor (`#/professor`): criar turma com público e nível, filtrar questões por assunto, tipo e nível, usar capítulos como modelo, escrever interpretação de texto e vocabulário, acrescentar material de estudo, conferir a prévia e publicar a aula. É possível reutilizar uma aula em outra turma sem copiar respostas.
 - Área do aluno (`#/turmas`): entrar por código, estudar o material do professor, responder uma questão por vez, consultar o conteúdo e rever respostas e explicações. A primeira tentativa fica registrada; novas tentativas de prática não duplicam notas nem progresso.
 
@@ -27,7 +28,7 @@ Requisitos: Node 22.13 ou mais novo (usa o SQLite nativo `node:sqlite`). Uma ún
 ```bash
 npm ci
 npm run dev          # http://localhost:8080 (pagamento simulado, para testar a assinatura)
-npm test             # 111 testes: login, Google, segurança, vozes, turmas e aprendizagem guiada
+npm test             # 130 testes: login, Google, segurança, vozes, turmas e aprendizagem guiada
 ```
 
 Sem `ANTHROPIC_API_KEY` o app funciona inteiro no **modo de prática**: conversa por roteiro do cenário, correção por regras (14 erros típicos de brasileiros), tutor que responde pelos pontos do catálogo. Com a chave, entram a conversa livre, a correção detalhada, os exercícios escritos com a situação do aluno e o processamento de materiais. Para testar os caminhos com IA sem gastar: `IA_FAKE=1` (só fora de produção).

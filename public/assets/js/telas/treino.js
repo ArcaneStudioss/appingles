@@ -72,7 +72,7 @@ export async function telaTreino(el, { ir }) {
     const pct = r.feitos ? Math.round(100 * r.certos / r.feitos) : 0;
     tela.replaceChildren(
       companheirosAula({ fase: 'fim', silencioso: jaConcluido }).elemento, h('h2', { class: 'fim-titulo' }, pct >= 70 ? 'Treino feito. Mandou bem!' : 'Treino feito. É assim que se aprende.'),
-      h('div', { class: 'placar' }, h('div', { class: 'placar__item' }, h('span', {}, 'Certas'), h('strong', {}, `${r.certos}/${r.feitos}`)), h('div', { class: 'placar__item placar__item--sol' }, h('span', {}, 'Acerto'), h('strong', {}, `${pct}%`)), h('div', { class: 'placar__item placar__item--azul' }, h('span', {}, 'Pontos'), h('strong', {}, String(r.certos * 10 + 15)))),
+      h('div', { class: 'placar' }, h('div', { class: 'placar__item' }, h('span', {}, 'Certas'), h('strong', {}, `${r.certos}/${r.feitos}`)), h('div', { class: 'placar__item placar__item--sol' }, h('span', {}, 'Acerto'), h('strong', {}, `${pct}%`)), h('div', { class: 'placar__item placar__item--azul' }, h('span', {}, 'XP de conclusão'), h('strong', {}, String(r.recompensa?.xp || 0)))),
       h('section', { class: 'folha treino-resumo c-limao' }, h('h2', {}, 'Por dificuldade'), h('ul', { class: 'barras' }, r.porTag.map(x => h('li', {}, h('span', { class: 'barras-rotulo' }, x.nome), h('span', { class: 'barras-trilho', 'aria-hidden': 'true' }, h('span', { style: `transform:scaleX(${(x.certos / Math.max(1, x.total)).toFixed(2)})` })), h('strong', {}, `${x.certos}/${x.total}`)))),
         h('p', { class: 'ajuda' }, 'O que você errou virou cartão de revisão e volta amanhã, de outro jeito.')),
       h('div', { class: 'linha-acoes' },

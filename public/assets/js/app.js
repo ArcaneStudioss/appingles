@@ -26,6 +26,7 @@ import { iniciarTraducoes } from './traducao.js?v=__V__';
 import { telaPublico } from './telas/publico.js?v=__V__';
 import { telaBiblioteca, telaUnidade } from './telas/biblioteca.js?v=__V__';
 import { telaBrasil } from './telas/brasil.js?v=__V__';
+import { telaSocial, telaColecao, telaLoja } from './telas/social.js?v=__V__';
 
 const palco = document.getElementById('conteudo');
 // Mantém a escala da área de estudo; a rolagem continua livre no celular.
@@ -55,6 +56,9 @@ btnTema.addEventListener('click', () => {
 
 // A mesma navegação curta no celular e no computador. Os outros recursos ficam agrupados por finalidade.
 const MAIS = [
+  { grupo: 'Amigos e coleção', rota: 'desafios', cor: 'lilas', ic: 'users-three', t: 'Desafios com amigos', s: 'duelos, metas e sequências em grupo' },
+  { grupo: 'Amigos e coleção', rota: 'colecao', cor: 'sol', ic: 'cards', t: 'Minhas figurinhas', s: 'raridades e figurinhas para os duelos' },
+  { grupo: 'Amigos e coleção', rota: 'loja', cor: 'lilas', ic: 'medal', t: 'Loja e moedas', s: 'XP, poções e caixas de figurinhas' },
   { grupo: 'Praticar inglês', rota: 'revisar', cor: 'sol', ic: 'cards', t: 'Revisar palavras', s: 'relembre o que aprendeu' },
   { grupo: 'Praticar inglês', rota: 'conversar', cor: 'menta', ic: 'chats', t: 'Conversar', s: 'pratique em situações reais' },
   { grupo: 'Praticar inglês', rota: 'treino', cor: 'limao', ic: 'target', t: 'Treinar dificuldades', s: 'questões para reforçar o que precisa' },
@@ -78,6 +82,7 @@ btnMais?.addEventListener('click', () => {
 });
 
 const ROTAS = {
+  desafios: telaSocial, colecao: telaColecao, loja: telaLoja,
   brasil: telaBrasil,
   biblioteca: telaBiblioteca, unidade: telaUnidade,
   publico: telaPublico, professor: telaTurmas,
@@ -132,7 +137,7 @@ async function render() {
     const passo = estado.eu.passo;
     if (!estado.eu.publico?.informado && rota !== 'publico') { location.hash = '#/publico'; return; }
     if (rota === 'hoje' && estado.eu.perfil?.papel === 'professor') { location.hash = '#/professor'; return; }
-    const TURMA_LIVRE = ['publico', 'professor', 'conta', 'biblioteca', 'brasil', 'unidade', 'turmas', 'turma', 'minhaturma', 'atividade'].includes(rota);
+    const TURMA_LIVRE = ['publico', 'professor', 'conta', 'biblioteca', 'brasil', 'unidade', 'desafios', 'colecao', 'loja', 'turmas', 'turma', 'minhaturma', 'atividade'].includes(rota);
     if (passo === 'perfil' && rota !== 'perfil' && !TURMA_LIVRE) { location.hash = '#/perfil'; return; }
     if (passo === 'nivelamento' && !['perfil', 'nivelamento'].includes(rota) && !TURMA_LIVRE) { location.hash = '#/nivelamento'; return; }
     if (passo === 'app' && localStorageGet('turma-pendente') && rota !== 'turmas') { location.hash = '#/turmas'; return; }
