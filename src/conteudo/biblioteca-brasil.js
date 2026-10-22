@@ -73,6 +73,7 @@ const UNIDADES_BRASIL = [
     ],
     lacuna: { frase: 'We are making progress little by ___.', resposta: ['little'], explica: 'Little by little é pouco a pouco. Ajuda a explicar a ideia de avanços pequenos sem precisar traduzir cada palavra de um ditado.' },
   },
+  ...require('./biblioteca-brasil-contextos').UNIDADES_CONTEXTOS,
 ].map(u => ({ ...u, colecao: 'brasil-mundo' }));
 
 module.exports = { UNIDADES_BRASIL };

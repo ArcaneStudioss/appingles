@@ -1,4 +1,5 @@
 import { tocarVoz, pararVoz as pararAudio } from './voz.js?v=__V__';
+import { destacarReconhecidas } from './fala-acompanhada.js?v=__V__';
 // Interface: construtor de elementos SEGURO (só textContent, nunca HTML com dado do usuário),
 // ícones, janela (modal), confirmação e aviso no lugar de alert/confirm/prompt, áudio e microfone.
 
@@ -229,6 +230,10 @@ export function palavrasToque(texto) {
     else if (pedaco) frag.append(pedaco);
   });
   return frag;
+}
+export function acompanharFala(texto) {
+  const elemento = h('span', { class: 'leitura-acompanhada' }, palavrasToque(texto));
+  return { elemento, atualizar: transcricao => destacarReconhecidas(elemento, transcricao) };
 }
 const cacheSentidos = new Map();
 export function abrirPalavra(palavra, frase) {

@@ -106,7 +106,7 @@ test('erro explica; repetição corrige sem alterar o primeiro resultado nem con
 test('biblioteca seleciona público no servidor; leitura e vocabulário têm explicação e respeitam assinatura', async () => {
   for (const quem of ['crianca', 'adolescente', 'adulto']) {
     const d = await R(quem, 'GET', '/biblioteca');
-    assert.equal(d.unidades.length, 5); assert.ok(d.unidades.every(u => u.faixa === quem));
+    assert.equal(d.unidades.length, 7); assert.ok(d.unidades.every(u => u.faixa === quem));
   }
   assert.equal((await R('crianca', 'GET', '/biblioteca/adulto-viagem')).status, 404);
   const cenarios = (await R('crianca', 'GET', '/conversas/cenarios')).cenarios;
@@ -132,7 +132,7 @@ test('equivalências brasileiras distinguem contexto, nomes regionais e gírias;
   const teen = await R('adolescente', 'GET', '/brasil-mundo');
   assert.ok(crianca.expressoes.some(e => e.id === 'bergamota'));
   assert.ok(!crianca.expressoes.some(e => e.categoria === 'internet'));
-  assert.equal(teen.expressoes.length, 24);
+  assert.equal(teen.expressoes.length, 54);
   assert.ok(teen.expressoes.some(e => e.id === 'papo-reto' && e.registro.includes('Informal')));
   assert.equal(Object.keys(teen.regioes).length, 5);
   const fruta = teen.expressoes.find(e => e.id === 'bergamota');
@@ -151,7 +151,7 @@ test('equivalências brasileiras distinguem contexto, nomes regionais e gírias;
 
 test('aulas de gírias praticam sentido e registro; correção e consulta não duplicam progresso', async () => {
   const lista = await R('adolescente', 'GET', '/biblioteca');
-  assert.equal(lista.unidades.filter(u => u.colecao === 'brasil-mundo').length, 2);
+  assert.equal(lista.unidades.filter(u => u.colecao === 'brasil-mundo').length, 4);
   assert.ok(lista.unidades.find(u => u.id === 'adolescente-brasil-girias').termos.includes('papo reto'));
   assert.equal((await R('crianca', 'GET', '/biblioteca/adolescente-brasil-girias')).status, 404);
   const aula = await R('adolescente', 'GET', '/biblioteca/adolescente-brasil-girias');
@@ -166,6 +166,56 @@ test('aulas de gírias praticam sentido e registro; correção e consulta não d
   const recarregada = await R('adolescente', 'GET', '/biblioteca/adolescente-brasil-girias');
   assert.equal(recarregada.respondidos[ex.id].correto, false);
   assert.equal(db.prepare('SELECT COUNT(*) n FROM tentativas WHERE user_id = ? AND item_id = ?').get(usuarios.adolescente.id, ex.id).n, 1);
+});
+
+test('ampliação cultural mantém contexto, fontes e acesso por idade sem atribuir uma fala à região', async () => {
+  const { EXPRESSOES, CONTEXTOS } = require('../src/conteudo/brasil-mundo');
+  assert.equal(new Set(EXPRESSOES.map(e => e.id)).size, EXPRESSOES.length);
+  for (const e of EXPRESSOES) {
+    assert.ok(e.contextos.length && e.contextos.every(c => Object.hasOwn(CONTEXTOS, c)), e.id);
+    assert.ok(e.fontes.length && e.fontes.every(f => new URL(f.url).protocol === 'https:'), e.id);
+  }
+  const adulto = await R('adulto', 'GET', '/brasil-mundo');
+  const crianca = await R('crianca', 'GET', '/brasil-mundo');
+  const prof = await R('prof', 'GET', '/brasil-mundo');
+  assert.ok(adulto.expressoes.some(e => e.id === 'bico' && e.contextos.includes('trabalho')));
+  assert.ok(!crianca.expressoes.some(e => ['bico', 'rizz', 'delulu', 'ghosting'].includes(e.id)));
+  assert.ok(crianca.expressoes.some(e => e.id === 'pega-pega' && e.contextos.includes('escola')));
+  assert.ok(prof.expressoes.some(e => e.id === 'bico'));
+  for (const regiao of Object.keys(adulto.regioes)) {
+    assert.ok(adulto.expressoes.some(e => e.regioes.includes(regiao) && e.alternativaNeutra), regiao);
+  }
+  const ficha = id => adulto.expressoes.find(e => e.id === id);
+  assert.ok(ficha('trem').equivalentes.some(v => v.en === 'thing'));
+  assert.ok(!ficha('trem').equivalentes.some(v => v.en === 'train'));
+  assert.ok(ficha('quebrar-galho').equivalentes.some(v => v.en === 'help out'));
+  assert.ok(ficha('quebrar-galho').equivalentes.some(v => v.en === 'do for now'));
+  assert.match(ficha('ghosting').cuidado, /não presumir intenção/);
+  assert.match(ficha('delulu').cuidado, /Evite.*rotular/);
+  assert.equal(adulto.contextos.comunidade, 'Comunidade');
+});
+
+test('novas aulas culturais praticam situação e registro com correção no servidor e entram no banco docente', async () => {
+  const { UNIDADES_CONTEXTOS } = require('../src/conteudo/biblioteca-brasil-contextos');
+  const banco = await R('prof', 'GET', '/professor/banco');
+  for (const nova of UNIDADES_CONTEXTOS) {
+    const aula = await R(nova.faixa, 'GET', '/biblioteca/' + nova.id);
+    assert.equal(aula.status, 200, nova.id);
+    assert.equal(aula.itens.length, 5);
+    assert.doesNotMatch(JSON.stringify(aula.itens), /"(?:resposta|aceitas)":/);
+    assert.ok(banco.missoes.some(m => m.id === nova.id && m.exercicios.length === 5));
+    const ex = aula.itens.find(e => e.tipo === 'leitura');
+    const erro = await R(nova.faixa, 'POST', '/biblioteca/' + nova.id + '/responder', { itemId: ex.id, resposta: 'resposta fora do contexto' });
+    assert.equal(erro.correto, false);
+    assert.ok(erro.explica && erro.esperado);
+    const treino = await R(nova.faixa, 'POST', '/biblioteca/' + nova.id + '/responder', { itemId: ex.id, resposta: erro.esperado, treinar: true });
+    assert.equal(treino.correto, true);
+    assert.equal(treino.pratica, true);
+    const recarga = await R(nova.faixa, 'GET', '/biblioteca/' + nova.id);
+    assert.equal(recarga.respondidos[ex.id].correto, false);
+    const outraFaixa = nova.faixa === 'crianca' ? 'adulto' : 'crianca';
+    assert.equal((await R(outraFaixa, 'GET', '/biblioteca/' + nova.id)).status, 404);
+  }
 });
 
 test('professor encontra nomes regionais no banco e usa capítulos culturais em prévia sem publicar', async () => {

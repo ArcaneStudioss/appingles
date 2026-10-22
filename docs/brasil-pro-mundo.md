@@ -4,13 +4,13 @@ O aluno pode levar seu repertório brasileiro para a conversa em inglês. O obje
 
 ## Conteúdo e navegação
 
-A Biblioteca dá acesso a `#/brasil`: 24 fichas, divididas em nomes regionais, internet e ditados. A busca reconhece nomes alternativos, inglês e termos sem acento. O seletor destaca exemplos relacionados às cinco regiões sem esconder os outros. As regiões indicam usos encontrados, não fronteiras linguísticas nem a origem presumida de uma pessoa.
+A Biblioteca dá acesso a `#/brasil`: 55 fichas, divididas em nomes regionais, convivência e cotidiano, internet e ditados. A busca reconhece nomes alternativos, inglês e termos sem acento. O seletor destaca exemplos relacionados às cinco regiões sem esconder os outros. As regiões indicam usos encontrados, não fronteiras linguísticas nem a origem presumida de uma pessoa.
 
 A região é opcional no cadastro e pode ser alterada em Conta ou no próprio seletor de exemplos. Há também as opções de não informar e morar fora do Brasil. A escolha fica na conta, entra na exportação e no contexto do tutor e não é exibida ao professor. A migração 8 acrescenta apenas uma coluna opcional; contas antigas continuam com região não informada. Não se usa geolocalização.
 
-As fichas mostram significado, situações de uso, exemplos com áudio e tradução, diferenças culturais, fontes e data de revisão. Crianças recebem vocabulário e ditados; adolescentes e adultos também encontram mensagens e redes sociais. A leitura de referência é acessível a contas autenticadas. A prática segue as regras de assinatura da biblioteca.
+As fichas mostram significado, situações de uso, exemplos com áudio e tradução, diferenças culturais, fontes e data de revisão. Filtros de situação de uso ajudam a escolher entre família, escola, amizades, redes, jogos, lazer, trabalho, serviços, viagens e comunidade. Professores também podem filtrar o público. Crianças recebem vocabulário, convivência e ditados; adolescentes e adultos também encontram mensagens e redes sociais. A leitura de referência é acessível a contas autenticadas. A prática segue as regras de assinatura da biblioteca.
 
-Seis capítulos novos, dois por público, oferecem 30 questões de vocabulário, leitura e escolha de contexto, com correção e explicação no servidor. Os capítulos entram no banco do professor, com seus nomes regionais na busca, e podem ser usados como material de aula. Toda a biblioteca soma 15 capítulos e 75 questões.
+Doze capítulos culturais, quatro por público, oferecem 60 questões de vocabulário, leitura e escolha de contexto, com correção e explicação no servidor. Os capítulos entram no banco do professor, com seus nomes regionais na busca, e podem ser usados como material de aula. Toda a biblioteca soma 21 capítulos e 105 questões.
 
 ## Critérios editoriais
 
@@ -23,6 +23,8 @@ Seis capítulos novos, dois por público, oferecem 30 questões de vocabulário,
 - Usar exemplos originais e citar as referências, sem copiar verbetes ou material de redes sociais.
 
 O contexto do tutor reforça essas escolhas. As explicações e os exercícios escritos funcionam sem IA. O catálogo é editorial: a data de revisão não indica monitoramento em tempo real de tendências. Novas gírias devem passar por revisão de sentido, exemplo, registro e público antes de entrar.
+
+A ampliação de 22/10/2026, com 31 fichas e seis capítulos adicionais, está documentada em [Linguagem brasileira: pesquisa](linguagem-brasileira-pesquisa.md), com referências e limites da consulta.
 
 ## Referências iniciais
 

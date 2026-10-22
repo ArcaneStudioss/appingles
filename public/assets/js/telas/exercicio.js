@@ -1,8 +1,8 @@
 // Componente de exercício. Padrão de jogo: escolhe ou escreve, toca em "Conferir",
 // e uma folha de resposta sobe de baixo (azul quando acerta, coral suave quando é "quase").
 // Teclado: 1 a 9 escolhem alternativas, Enter confere e continua. A correção vem do servidor.
-import { h, icone, falar, falarPt, pararVoz, toast, ocupado, ouvirMicrofone, palavrasToque } from '../ui.js?v=__V__';
-import { som, brilho, vibrar } from '../diversao.js?v=__V__';
+import { h, icone, falar, falarPt, pararVoz, toast, ocupado, ouvirMicrofone, palavrasToque, acompanharFala } from '../ui.js?v=__V__';
+import { lou, som, brilho, vibrar } from '../diversao.js?v=__V__';
 import { companheirosAula } from '../companheiros.js?v=__V__';
 import { fraseConhecida } from '../traducao.js?v=__V__';
 
@@ -204,34 +204,35 @@ export function exercicio(ex, config) {
     setTimeout(() => campo.focus({ preventScroll: true }), 60);
   } else if (ex.tipo === 'fala') {
     // fala em voz alta: reconhecimento de voz do aparelho quando existir; sempre dá para escrever o que disse.
-    // O que o aparelho "ouviu" não aparece na tela (ver o texto errado desanima e sotaque não é erro): só dizemos se ouvimos algo.
+    // A frase ganha azul à medida que o navegador reconhece as palavras, sem alterar a correção.
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const leitura = acompanharFala(ex.frase);
     let ouvido = '';
     const eco = h('p', { class: 'fala-eco', 'aria-live': 'polite' }, '');
     const campo = h('input', { type: 'text', class: 'resposta-livre', lang: 'en', autocapitalize: 'off', spellcheck: 'false', maxlength: 200, placeholder: SR ? 'Ou escreva o que você disse' : 'Escreva o que você disse', 'aria-label': 'O que você disse, escrito' });
-    campo.addEventListener('input', () => { ouvido = ''; eco.textContent = ''; habilitar(!!campo.value.trim()); });
+    campo.addEventListener('input', () => { ouvido = ''; leitura.atualizar(''); eco.textContent = ''; habilitar(!!campo.value.trim()); });
     const btnFalar = SR ? h('button', { type: 'button', class: 'btn btn-ouvir-grande btn-falar', 'aria-pressed': 'false', 'aria-label': 'Falar no microfone' }, icone('microphone')) : null;
     const parar = () => { try { rec?.stop(); } catch {} btnFalar?.setAttribute('aria-pressed', 'false'); };
     btnFalar?.addEventListener('click', () => {
       if (btnFalar.getAttribute('aria-pressed') === 'true') { parar(); return; }
       try {
-        ouvido = ''; campo.value = ''; habilitar(false);
+        pararVoz(); ouvido = ''; campo.value = ''; leitura.atualizar(''); habilitar(false);
         eco.textContent = 'Estou ouvindo... pode falar a frase inteira, sem pressa.';
         btnFalar.setAttribute('aria-pressed', 'true');
         rec = ouvirMicrofone({
           alvo: ex.frase,
-          aoTexto: t => { ouvido = t; if (t) { habilitar(true); eco.textContent = 'Estou ouvindo...'; } },
+          aoTexto: t => { ouvido = t; const p = leitura.atualizar(t); habilitar(!!t); eco.textContent = p.reconhecidas ? `Reconheci ${p.reconhecidas} de ${p.total} palavras. Pode continuar.` : 'Estou ouvindo...'; },
           aoFim: () => { btnFalar.setAttribute('aria-pressed', 'false'); rec = null; eco.textContent = ouvido ? 'Ouvi você! Toque em Conferir, ou fale de novo se quiser.' : 'Não consegui ouvir. Tente de novo mais perto do microfone, ou escreva abaixo.'; },
         });
       } catch { toast('O microfone não abriu. Escreva abaixo o que você disse.'); parar(); }
     });
     area.append(
-      h('div', { class: 'frase-fala' }, h('p', { class: 'frase-fala__en', lang: 'en' }, ex.frase), ex.pt ? h('p', { class: 'ajuda' }, ex.pt) : null),
+      h('div', { class: 'frase-fala' }, h('p', { class: 'frase-fala__en', lang: 'en' }, leitura.elemento), ex.pt ? h('p', { class: 'ajuda' }, ex.pt) : null),
       h('div', { class: 'escuta-caixa' },
         h('button', { type: 'button', class: 'btn btn-sec', 'aria-label': 'Ouvir como se fala', on: { click: () => falar(ex.audio || ex.frase, { velocidade: vel }) } }, icone('speaker-high'), 'Ouvir'),
         btnFalar),
       eco, campo,
-      h('p', { class: 'ajuda' }, SR ? 'Toque no microfone e fale a frase. Se preferir, escreva o que disse.' : 'Seu aparelho não tem reconhecimento de voz. Fale em voz alta e escreva o que disse.'));
+      h('p', { class: 'ajuda' }, SR ? 'Toque no microfone e fale a frase. As palavras reconhecidas ficam azuis. Se preferir, escreva o que disse.' : 'Seu aparelho não tem reconhecimento de voz. Fale em voz alta e escreva o que disse.'));
     pegarResposta = () => (ouvido || campo.value).trim();
   } else if (ex.tipo === 'detetive') {
     // caça ao erro: a frase vira palavras tocáveis; a resposta enviada é a posição da palavra

@@ -1,6 +1,6 @@
 // Teste de nivelamento: uma pergunta por tela, "não sei" sem culpa, escrita e fala opcionais, resultado com incerteza.
 import { api } from '../api.js?v=__V__';
-import { h, ocupado, icone, pararVoz, temVoz, temMicrofone, ouvirMicrofone, toast, confirmar, reduzirMovimento, palavrasToque } from '../ui.js?v=__V__';
+import { h, ocupado, icone, falar, pararVoz, temVoz, temMicrofone, ouvirMicrofone, toast, confirmar, reduzirMovimento, palavrasToque, acompanharFala } from '../ui.js?v=__V__';
 import { lou, louFala, som, confete, botaoSom, vibrar } from '../diversao.js?v=__V__';
 import { caixaEscuta } from './exercicio.js?v=__V__';
 
@@ -113,20 +113,28 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
 
   function abertaFala() {
     if (!temMicrofone()) return enviar();
+    const leitura = acompanharFala(abertas.fala.alvo + '.');
+    leitura.atualizar(fala);
     const saida = h('p', { class: 'ajuda', 'aria-live': 'polite' }, fala ? 'Gravado. Pode regravar se quiser.' : '');
-    let rec = null;
-    const soltar = () => { try { rec?.abort(); } catch {} rec = null; };
+    let rec = null, gravacao = 0;
+    const soltar = () => { gravacao++; try { rec?.stop(); } catch {} rec = null; };
     const gravar = h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => {
       if (rec) { rec.stop(); return; }
+      pararVoz(); const minha = ++gravacao; leitura.atualizar('');
       gravar.lastChild.textContent = 'Parar'; fala = ''; saida.textContent = 'Estou ouvindo... leia com calma, a frase inteira.';
-      rec = ouvirMicrofone({ alvo: abertas.fala.alvo, aoTexto: t => { fala = t; }, aoFim: () => { rec = null; gravar.lastChild.textContent = 'Gravar de novo'; saida.textContent = fala ? 'Gravado! Pode regravar se quiser.' : 'Não consegui ouvir. Tente de novo mais perto do microfone, ou pule.'; } });
+      gravar.setAttribute('aria-pressed', 'true');
+      try {
+        rec = ouvirMicrofone({ alvo: abertas.fala.alvo,
+          aoTexto: t => { if (minha !== gravacao) return; fala = t; const p = leitura.atualizar(t); saida.textContent = p.reconhecidas ? `Reconheci ${p.reconhecidas} de ${p.total} palavras. Pode continuar.` : 'Estou ouvindo...'; },
+          aoFim: () => { if (minha !== gravacao) return; rec = null; gravar.setAttribute('aria-pressed', 'false'); gravar.lastChild.textContent = 'Gravar de novo'; saida.textContent = fala ? 'Gravado! Pode regravar se quiser.' : 'Não consegui ouvir. Tente de novo ou pule.'; } });
+      } catch { rec = null; gravar.setAttribute('aria-pressed', 'false'); gravar.lastChild.textContent = 'Gravar de novo'; saida.textContent = 'O microfone não abriu. Tente de novo ou pule.'; }
     } } }, icone('microphone'), h('span', {}, 'Gravar'));
     mostrar(
       h('p', { class: 'chip chip-neutro' }, 'Fala (opcional)'),
       h('h2', {}, 'Leia em voz alta'),
-      h('blockquote', { class: 'texto-leitura', lang: 'en' }, palavrasToque(abertas.fala.alvo + '.')),
+      h('blockquote', { class: 'texto-leitura', lang: 'en' }, leitura.elemento),
       gravar, saida,
-      h('p', { class: 'ajuda' }, 'O reconhecimento de voz é feito pelo seu navegador (no Chrome, pelo serviço do Google). Não guardamos o áudio, só o texto reconhecido. Sotaque não é erro: medimos se dá para entender.'),
+      h('p', { class: 'ajuda' }, 'As palavras reconhecidas ficam azuis enquanto você fala.'),
       h('div', { class: 'linha-acoes' },
         h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => { soltar(); fala = ''; enviar(); } } }, 'Pular'),
         h('button', { type: 'button', class: 'btn', on: { click: () => { soltar(); enviar(); } } }, 'Ver meu resultado')));

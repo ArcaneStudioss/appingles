@@ -1,8 +1,9 @@
 'use strict';
 // Equivalências de função e contexto. As regiões destacam usos, nunca delimitam quem pode falar assim.
 const REGIOES = { norte: 'Norte', nordeste: 'Nordeste', 'centro-oeste': 'Centro-Oeste', sudeste: 'Sudeste', sul: 'Sul' };
-const CATEGORIAS = { regional: 'Jeitos do Brasil', internet: 'Internet e conversas', ditados: 'Ditados do dia a dia' };
-const revisadoEm = '2026-10-21';
+const CATEGORIAS = { regional: 'Jeitos do Brasil', internet: 'Internet e conversas', ditados: 'Ditados do dia a dia', cotidiano: 'Convivência e cotidiano' };
+const revisadoEm = '2026-10-22';
+const CONTEXTOS = { familia: 'Família', amigos: 'Amizades', escola: 'Escola', redes: 'Redes e mensagens', jogos: 'Jogos', lazer: 'Lazer', trabalho: 'Trabalho', servicos: 'Compras e serviços', viagem: 'Viagens', comunidade: 'Comunidade' };
 const fonte = (titulo, url) => ({ titulo, url });
 const cambridge = termo => fonte('Cambridge Dictionary: ' + termo.replaceAll('-', ' '), 'https://dictionary.cambridge.org/dictionary/english/' + termo);
 const REGIONAL = fonte('Guia Michelin: nomes regionais de alimentos', 'https://guide.michelin.com/br/pt_BR/article/news-and-views/afinal-qual-e-o-nome');
@@ -165,10 +166,11 @@ const EXPRESSOES = [
     equivalentes: [equivalente("don't judge a book by its cover", 'não julgue pela aparência', 'Ditado que usa a imagem da capa de um livro.', "He looks serious, but he is kind. Don't judge a book by its cover.", 'Ele parece sério, mas é gentil. Não julgue pela aparência.')],
     cuidado: 'A imagem muda, mas o conselho é próximo. Não é necessário traduzir cara e coração palavra por palavra.', fontes: [cambridge('you-can-t-judge-a-book-by-its-cover')],
   },
-].map(e => ({ regioes: [], registro: e.categoria === 'internet' ? 'Informal: mensagens e amigos' : e.categoria === 'ditados' ? 'Conversa: escolha o momento' : 'Cotidiano: descreva o contexto', ...e,
+  ...require('./brasil-expressoes').NOVAS_EXPRESSOES,
+].map(e => ({ regioes: [], contextos: e.categoria === 'internet' ? ['amigos', 'redes', 'jogos'] : e.categoria === 'ditados' ? ['familia', 'escola', 'amigos'] : ['familia', 'servicos'], registro: e.categoria === 'internet' ? 'Informal: mensagens e amigos' : e.categoria === 'ditados' ? 'Conversa: escolha o momento' : 'Cotidiano: descreva o contexto', ...e,
   // Crianças têm contato com vocabulário e ditados concretos; a seção de redes é para adolescentes e adultos.
-  faixas: e.categoria === 'internet' ? ['adolescente', 'adulto'] : ['crianca', 'adolescente', 'adulto'], revisadoEm }));
+  faixas: e.faixas || (e.categoria === 'internet' ? ['adolescente', 'adulto'] : ['crianca', 'adolescente', 'adulto']), revisadoEm }));
 
 const POR_EXPRESSAO = Object.fromEntries(EXPRESSOES.map(e => [e.id, e]));
 const dicionarioCultural = () => Object.fromEntries(EXPRESSOES.flatMap(e => e.equivalentes.map(v => [v.en, v.pt])));
-module.exports = { REGIOES, CATEGORIAS, EXPRESSOES, POR_EXPRESSAO, dicionarioCultural, revisadoEm };
+module.exports = { REGIOES, CATEGORIAS, CONTEXTOS, EXPRESSOES, POR_EXPRESSAO, dicionarioCultural, revisadoEm };
