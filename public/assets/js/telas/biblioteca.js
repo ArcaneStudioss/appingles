@@ -3,6 +3,7 @@ import { h, icone } from '../ui.js?v=__V__';
 import { materialAula } from '../material-aula.js?v=__V__';
 import { exercicio } from './exercicio.js?v=__V__';
 import { NOMES_PUBLICO } from './publico.js?v=__V__';
+import { companheirosAula } from '../companheiros.js?v=__V__';
 const normalizar = texto => texto.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/\p{Diacritic}/gu, '').trim();
 
 export async function telaBiblioteca(el, { estado }) {
@@ -54,7 +55,7 @@ export async function telaUnidade(el, { param, ir }) {
       tela.append(h('a', { class: 'btn btn-texto btn-peq', href: '#', on: { click: e => { e.preventDefault(); i = 0; desenhar(); } } }, icone('book-open-text'), 'Consultar o material'),
         exercicio(ex, { permitirTreino: true, barraFixa: true, ja: respondidos[ex.id], aoProximo: avancar,
           responder: async (resposta, meta) => { const r = await api(`/biblioteca/${u.id}/responder`, { metodo: 'POST', corpo: { itemId: ex.id, resposta, ...meta } }); if (!r.pratica) respondidos[ex.id] = { ...r, resposta }; return r; } }));
-    } else tela.append(h('span', { class: 'etapa' }, icone('check'), 'Você concluiu este capítulo'), h('h1', {}, 'Mais palavras para usar de verdade'), h('p', {}, 'As expressões desta aula também estão nos seus cartões de revisão. Você pode voltar ao material e às explicações quando quiser.'), materialAula({ vocab: u.vocab }), barra('Voltar à biblioteca', () => ir('#/biblioteca')));
+    } else tela.append(companheirosAula({ fase: 'fim', silencioso: d.concluida === true }).elemento, h('span', { class: 'etapa' }, icone('check'), 'Você concluiu este capítulo'), h('h1', {}, 'Mais palavras para usar de verdade'), h('p', {}, 'As expressões desta aula também estão nos seus cartões de revisão. Você pode voltar ao material e às explicações quando quiser.'), materialAula({ vocab: u.vocab }), barra('Voltar à biblioteca', () => ir('#/biblioteca')));
     tela.querySelector('h1,h2')?.setAttribute('tabindex', '-1'); tela.querySelector('h1,h2')?.focus({ preventScroll: true });
   }
   desenhar();

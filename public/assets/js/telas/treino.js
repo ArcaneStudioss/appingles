@@ -4,6 +4,7 @@ import { api } from '../api.js?v=__V__';
 import { h, icone, toast, confirmar, ocupado } from '../ui.js?v=__V__';
 import { lou, louFala, som, confete } from '../diversao.js?v=__V__';
 import { exercicio } from './exercicio.js?v=__V__';
+import { companheirosAula } from '../companheiros.js?v=__V__';
 import { nomeConquista } from './hoje.js?v=__V__';
 
 const MODO = { ler: ['book-open-text', 'azul', 'lendo'], escrever: ['pencil-simple', 'menta', 'escrevendo'], ouvir: ['headphones', 'turquesa', 'ouvindo'] };
@@ -61,15 +62,16 @@ export async function telaTreino(el, { ir }) {
   }
 
   async function fim(tela) {
+    const jaConcluido = t.concluido;
     tela.classList.add('passo--fim');
-    tela.append(lou('festa', { tamanho: 130 }), h('h2', { class: 'fim-titulo' }, 'Treino feito!'), h('p', { class: 'ajuda' }, 'Contando as suas respostas...'));
+    tela.append(h('h2', { class: 'fim-titulo' }, 'Treino feito!'), h('p', { class: 'ajuda' }, 'Contando as suas respostas...'));
     let r;
     try { r = await api('/treino/concluir', { metodo: 'POST' }); } catch (e) { toast(e.message, { tipo: 'erro' }); return; }
     if (!t.concluido) { som('fim'); confete(); t.concluido = true; }
     for (const c of r.conquistas || []) toast('Nova figurinha: ' + nomeConquista(c), { tipo: 'ok' });
     const pct = r.feitos ? Math.round(100 * r.certos / r.feitos) : 0;
     tela.replaceChildren(
-      lou(pct >= 70 ? 'festa' : 'feliz', { tamanho: 130 }), h('h2', { class: 'fim-titulo' }, pct >= 70 ? 'Treino feito. Mandou bem!' : 'Treino feito. É assim que se aprende.'),
+      companheirosAula({ fase: 'fim', silencioso: jaConcluido }).elemento, h('h2', { class: 'fim-titulo' }, pct >= 70 ? 'Treino feito. Mandou bem!' : 'Treino feito. É assim que se aprende.'),
       h('div', { class: 'placar' }, h('div', { class: 'placar__item' }, h('span', {}, 'Certas'), h('strong', {}, `${r.certos}/${r.feitos}`)), h('div', { class: 'placar__item placar__item--sol' }, h('span', {}, 'Acerto'), h('strong', {}, `${pct}%`)), h('div', { class: 'placar__item placar__item--azul' }, h('span', {}, 'Pontos'), h('strong', {}, String(r.certos * 10 + 15)))),
       h('section', { class: 'folha treino-resumo c-limao' }, h('h2', {}, 'Por dificuldade'), h('ul', { class: 'barras' }, r.porTag.map(x => h('li', {}, h('span', { class: 'barras-rotulo' }, x.nome), h('span', { class: 'barras-trilho', 'aria-hidden': 'true' }, h('span', { style: `transform:scaleX(${(x.certos / Math.max(1, x.total)).toFixed(2)})` })), h('strong', {}, `${x.certos}/${x.total}`)))),
         h('p', { class: 'ajuda' }, 'O que você errou virou cartão de revisão e volta amanhã, de outro jeito.')),

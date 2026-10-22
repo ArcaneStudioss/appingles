@@ -63,7 +63,9 @@ Qualquer conta pode **criar uma turma** (vira professor dela) e **entrar em turm
 - **Ainda não tem:** convite por e-mail (o app não envia e-mail), perguntas de escuta/fala escritas pelo professor, e a edição de atividades já publicadas.
 
 ## Mascote
-**Tuiuiú é uma arara-azul-grande** (orgulho do Brasil; azul-cobalto, anel e bochechas amarelos, bico curvo). A **Mia**, que dá voz ao inglês na Rádio Tuiuiú, é a **tutora e dona do Tuiuiú**: uma adolescente negra de tranças (miçangas rosa e amarelas, blusa amarela). Mesmos 5 humores do Tuiuiú. Desenho em `public/assets/js/diversao.js` (função `lou` para o Tuiuiú, com cores por variável `--arara-*` que acompanham Dia/Noite; `lou(humor, { mia: true })` desenha a Mia, com cores fixas). Ícones do app e favicon: arara sobre fundo amarelo (`public/assets/img/`, `public/favicon.svg`).
+**Tuiuiú é uma arara-azul-grande** (orgulho do Brasil; azul-cobalto, anel e bochechas amarelos, bico curvo). A **Mia**, que dá voz ao inglês na Rádio Tuiuiú, é a **tutora e dona do Tuiuiú**: uma adolescente negra de tranças (miçangas rosa e amarelas, camisa azul, jeans e tênis). Mesmos 5 humores do Tuiuiú. Desenho em `public/assets/js/diversao.js` (função `lou` para o Tuiuiú, com cores por variável `--arara-*` que acompanham Dia/Noite; `lou(humor, { mia: true })` desenha a Mia, com cores fixas). Ícones do app e favicon: arara sobre fundo amarelo (`public/assets/img/`, `public/favicon.svg`).
+
+Mia e Tuiuiú acompanham as atividades em `public/assets/js/companheiros.js`: instruções próprias para cada tipo de questão, dicas, incentivo ao errar, toca aqui nos acertos, palmas após conseguir numa nova tentativa e dança ao concluir. Braços, cabeça e asa têm movimentos separados; a fala anima somente o personagem da atividade atual. As mensagens são adequadas à faixa etária, respeitam movimento reduzido e só são lidas ao tocar em Ouvir, com a voz oficial de quem fala. A resposta e a explicação continuam visíveis; a comemoração de combo acontece no próprio retorno, sem um painel sobre a questão. Exercícios de lições, biblioteca, treinos e turmas usam o mesmo componente.
 
 ## Estrutura
 
@@ -105,3 +107,5 @@ Nível C (backend com login e dados pessoais). Verificado em 18/10/2026:
 
 ## Acesso à conta com Supabase Auth
 O servidor pode usar Supabase Auth para cadastro com confirmação por código, login por senha, recuperação por e-mail e migração das contas locais sem trocar seus IDs ou perder estudos e turmas. JWT e refresh token ficam cifrados no servidor; o navegador recebe apenas cookies HttpOnly. A interface apresenta uma etapa por vez, com mostrar senha, reenviar código e redefinição de senha. O provedor é ativado por configuração depois de preparar o projeto e o envio de e-mails; o modo local continua disponível para a transição. Configuração e limites em [docs/autenticacao-supabase.md](docs/autenticacao-supabase.md).
+
+Para criar a credencial do Google Cloud e ativar o provedor Google, siga [o passo a passo de OAuth](docs/google-oauth-passo-a-passo.md).

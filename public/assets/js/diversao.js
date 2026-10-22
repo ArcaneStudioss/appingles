@@ -11,6 +11,7 @@ const el = (tag, attrs = {}, ...filhos) => { const e = document.createElementNS(
 // o segundo valor de cada var() é a cor de reserva (página de vendas e ícones, onde não há tema).
 const TINTA_OLHO = '#16224A';
 const PALETA_TUI = { corpo: 'var(--arara-1,#2447D0)', sombra: 'var(--arara-2,#1A33A0)', luz: 'var(--arara-3,#6C8DFF)', bico: '#3A4254', bicoLuz: '#7A849B', anel: '#FFC83D' };
+let desenhoSequencia = 0;
 
 // Mia de corpo inteiro (viewBox 120 x 264, com folga em cima para o chapéu de festa), proporções de adolescente (cabeça com cerca de 1/7 da altura), camisa azul, jeans e tênis, tranças com miçangas.
 // Em tamanho pequeno (até 60) mostra só da cabeça aos ombros. Cores fixas: pele e cabelo não mudam no modo Noite.
@@ -30,17 +31,19 @@ function tutora(humor, { tamanho, rotulo }) {
     el('path', { d: 'M74 220 H64 L63 227 Q62 231 66 233 H77 Q81 233 80 229 Z', fill: '#FFF8E6', stroke: '#BFA986', 'stroke-width': 1 }),
     traco('M41 231 H56', '#FFC83D', 2), traco('M79 231 H64', '#FFC83D', 2));
   // pescoço, mãos e antebraços, camisa azul solta (colarinho, botões, bolso), mangas dobradas
-  corpo.append(el('rect', { x: 53.5, y: 46, width: 13, height: 16, rx: 4, fill: PELE_SOMBRA }),
-    el('path', { d: 'M29 100 L27 128 L33 129 L39 104 Z', fill: PELE }), el('path', { d: 'M91 100 L93 128 L87 129 L81 104 Z', fill: PELE }),
-    el('ellipse', { cx: 30, cy: 134, rx: 4, ry: 5.5, fill: PELE }), el('ellipse', { cx: 90, cy: 134, rx: 4, ry: 5.5, fill: PELE }),
+  const bracoEsquerdo = el('g', { class: 'mia__braco mia__braco--esquerdo' },
+    el('path', { d: 'M29 100 L27 128 L33 129 L39 104 Z', fill: PELE }), el('ellipse', { cx: 30, cy: 134, rx: 4, ry: 5.5, fill: PELE }),
+    el('path', { d: 'M41 64 Q33 66 31 78 L29 100 L39 104 L44 78 Z', fill: AZUL }), traco('M29 100 L39 104', AZUL_ESC, 1.4));
+  const bracoDireito = el('g', { class: 'mia__braco mia__braco--direito' },
+    el('path', { d: 'M91 100 L93 128 L87 129 L81 104 Z', fill: PELE }), el('ellipse', { cx: 90, cy: 134, rx: 4, ry: 5.5, fill: PELE }),
+    el('path', { d: 'M79 64 Q87 66 89 78 L91 100 L81 104 L76 78 Z', fill: AZUL }), traco('M91 100 L81 104', AZUL_ESC, 1.4));
+  corpo.append(el('rect', { x: 53.5, y: 46, width: 13, height: 16, rx: 4, fill: PELE_SOMBRA }), bracoEsquerdo, bracoDireito,
     el('path', { d: 'M41 64 Q60 57 79 64 Q80 84 76 104 Q74 122 81 142 Q60 147 39 142 Q46 122 44 104 Q40 84 41 64 Z', fill: AZUL }),
     el('path', { d: 'M60 60 L79 64 Q80 84 76 104 Q74 122 81 142 L60 146 Z', fill: AZUL_ESC, opacity: '.16' }),
     traco('M60 74 L60 144', AZUL_ESC, 1.2),
     el('path', { d: 'M52 58 L60 74 L54 77 L47 62 Z', fill: '#7FB0F5' }), el('path', { d: 'M68 58 L60 74 L66 77 L73 62 Z', fill: '#7FB0F5' }),
     el('rect', { x: 66, y: 86, width: 9, height: 9, rx: 1, fill: 'none', stroke: AZUL_ESC, 'stroke-width': 1 }),
-    traco('M39 140 Q60 144 81 140', AZUL_ESC, 1.6),
-    el('path', { d: 'M41 64 Q33 66 31 78 L29 100 L39 104 L44 78 Z', fill: AZUL }), el('path', { d: 'M79 64 Q87 66 89 78 L91 100 L81 104 L76 78 Z', fill: AZUL }),
-    traco('M29 100 L39 104', AZUL_ESC, 1.4), traco('M91 100 L81 104', AZUL_ESC, 1.4));
+    traco('M39 140 Q60 144 81 140', AZUL_ESC, 1.6));
   for (const y of [84, 98, 112, 126]) corpo.append(el('circle', { cx: 60, cy: y, r: 1.3, fill: '#DCEBFF' }));
   // tranças em frente aos ombros, trançadas de verdade (segmentos em relevo) e com miçangas; 3 de cada lado
   [['M46 18 Q33 60 38 112', 38, 112, '#FF6FA5'], ['M50 22 Q41 64 46 118', 46, 118, '#FFC83D'], ['M43 24 Q27 58 31 100', 31, 100, '#FFC83D'],
@@ -85,15 +88,16 @@ function tutora(humor, { tamanho, rotulo }) {
   if (humor === 'festa') {
     // chapéu de festa torto, com listras diagonais, bolinhas, aba rosa e pompom de papel
     const cone = 'M41 16 L57 -12 L75 16 Q58 22 41 16 Z';
+    const idChapeu = 'mia-chapeu-' + ++desenhoSequencia;
     cabeca.append(el('g', { transform: 'rotate(-14 58 14)' },
-      el('clipPath', { id: 'mia-chapeu' }, el('path', { d: cone })),
+      el('clipPath', { id: idChapeu }, el('path', { d: cone })),
       el('path', { d: cone, fill: '#FFC83D' }),
-      el('g', { 'clip-path': 'url(#mia-chapeu)' }, traco('M32 14 L68 -8', '#FF6FA5', 5), traco('M32 24 L80 -4', '#FF6FA5', 5), traco('M44 28 L86 6', '#FF6FA5', 5),
+      el('g', { 'clip-path': `url(#${idChapeu})` }, traco('M32 14 L68 -8', '#FF6FA5', 5), traco('M32 24 L80 -4', '#FF6FA5', 5), traco('M44 28 L86 6', '#FF6FA5', 5),
         el('circle', { cx: 51, cy: 6, r: 1.5, fill: '#fff' }), el('circle', { cx: 63, cy: 2, r: 1.5, fill: '#fff' }), el('circle', { cx: 66, cy: 12, r: 1.5, fill: '#fff' }), el('circle', { cx: 56, cy: -4, r: 1.2, fill: '#fff' })),
       el('path', { d: 'M41 16 Q58 22 75 16 L74 12 Q58 18 42 12 Z', fill: '#E8408A' }),
       el('circle', { cx: 57, cy: -13, r: 5.2, fill: '#FF6FA5' }), el('circle', { cx: 55.6, cy: -14.4, r: 1.8, fill: '#fff', opacity: '.7' })));
   }
-  corpo.append(cabeca);
+  corpo.append(el('g', { class: 'mia__cabeca' }, cabeca));
 
   if (humor === 'pensando') corpo.append(el('circle', { cx: 86, cy: 22, r: 2, fill: 'var(--tinta-2,#46557A)' }), el('circle', { cx: 91, cy: 14, r: 2.8, fill: 'var(--tinta-2,#46557A)' }), el('circle', { cx: 97, cy: 4, r: 3.8, fill: 'var(--tinta-2,#46557A)' }));
   if (humor === 'ops') corpo.append(el('path', { d: 'M84 14 Q88 21 84 25 Q80 21 84 14 Z', fill: '#7FD3F5' }));
@@ -116,8 +120,8 @@ export function lou(humor = 'oi', { tamanho = 96, rotulo = 'Tuiuiú, a arara-azu
   // corpo, barriga clara, asa com penas, patas
   corpo.append(el('ellipse', { cx: 62, cy: 76, rx: 24, ry: 34, fill: P.corpo, transform: 'rotate(8 62 76)' }),
     el('ellipse', { cx: 70, cy: 80, rx: 10, ry: 22, fill: P.luz, opacity: '.3', transform: 'rotate(8 70 80)' }),
-    el('path', { d: 'M44 60 Q35 86 44 104 Q57 98 63 78 Q59 60 44 60 Z', fill: P.sombra }),
-    traco('M47 74 Q50 88 52 100', P.luz, 2, { opacity: '.45' }), traco('M52 70 Q56 84 57 96', P.luz, 2, { opacity: '.35' }),
+    el('g', { class: 'tui__asa' }, el('path', { d: 'M44 60 Q35 86 44 104 Q57 98 63 78 Q59 60 44 60 Z', fill: P.sombra }),
+      traco('M47 74 Q50 88 52 100', P.luz, 2, { opacity: '.45' }), traco('M52 70 Q56 84 57 96', P.luz, 2, { opacity: '.35' })),
     traco('M56 106 Q54 112 50 112', '#5B6275', 3), traco('M64 107 Q64 113 68 113', '#5B6275', 3));
   // cabeça
   corpo.append(el('circle', { cx: 68, cy: 40, r: 19, fill: P.corpo }), traco('M54 30 Q58 22 66 21', '#fff', 3, { opacity: '.3' }));

@@ -5,6 +5,7 @@ import { h, icone, toast, confirmar, formulario, janela, ocupado, dataBR, plural
 import { lou, louFala, som, confete } from '../diversao.js?v=__V__';
 import { exercicio } from './exercicio.js?v=__V__';
 import { materialAula } from '../material-aula.js?v=__V__';
+import { companheirosAula } from '../companheiros.js?v=__V__';
 
 const prazoTxt = p => (p ? `até ${dataBR(p)}` : 'sem prazo');
 const codigoDaUrl = () => (location.hash.match(/[?&]codigo=([\w-]+)/) || [])[1] || '';
@@ -128,13 +129,13 @@ export async function telaAtividade(el, { param, ir }) {
     const faltam = itens.length - feitas.length;
     const pct = feitas.length ? Math.round(100 * certas / feitas.length) : 0;
     tela.classList.add('passo--fim');
-    tela.append(lou(pct >= 70 ? 'festa' : 'feliz', { tamanho: 130 }), h('h2', { class: 'fim-titulo' }, faltam ? 'Seu progresso ficou salvo' : pct >= 70 ? 'Atividade concluída. Bom trabalho!' : 'Atividade concluída. Continue praticando.'),
+    tela.append(companheirosAula({ fase: faltam ? 'pausa' : 'fim', silencioso: feitos === itens.length }).elemento, h('h2', { class: 'fim-titulo' }, faltam ? 'Seu progresso ficou salvo' : pct >= 70 ? 'Atividade concluída. Bom trabalho!' : 'Atividade concluída. Continue praticando.'),
       h('div', { class: 'placar' }, h('div', { class: 'placar__item' }, h('span', {}, 'Certas'), h('strong', {}, `${certas}/${itens.length}`)), h('div', { class: 'placar__item placar__item--sol' }, h('span', {}, 'Acerto'), h('strong', {}, `${pct}%`))),
       h('p', { class: 'ajuda' }, faltam ? `Faltam ${plural(faltam, 'questão', 'questões')}. Você pode voltar à turma e continuar depois.` : 'Seu professor já pode ver o seu resultado nesta atividade.'),
       h('details', { class: 'folha' }, h('summary', {}, 'Rever material da aula'), materialAula(a.material)),
       h('details', { class: 'folha respostas-da-aula' }, h('summary', {}, 'Rever respostas e explicações'), itens.map(ex => { const r = respondidos[ex.id]; return r ? h('div', { class: 'resumo-resposta' }, h('strong', {}, ex.enunciado || ex.pergunta || 'Prática'), h('p', { lang: r.audioResposta ? 'en' : null, 'data-traducao': r.traducao || null }, r.fraseCompleta || r.esperado), h('p', {}, r.explica)) : null; })),
       h('div', { class: 'barra-acao barra-acao--fixa' }, h('div', { class: 'barra-acao__in' }, h('a', { class: 'btn btn-bloco', href: `#/minhaturma/${a.turmaId}` }, 'Voltar à turma'))));
-    if (feitas.length === itens.length) { som('fim'); if (pct >= 70) confete(); }
+    if (feitas.length === itens.length && feitos !== itens.length) { som('fim'); if (pct >= 70) confete(); }
   }
   desenhar();
 }

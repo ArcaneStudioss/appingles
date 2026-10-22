@@ -2,7 +2,8 @@
 // e uma folha de resposta sobe de baixo (azul quando acerta, coral suave quando é "quase").
 // Teclado: 1 a 9 escolhem alternativas, Enter confere e continua. A correção vem do servidor.
 import { h, icone, falar, falarPt, pararVoz, toast, ocupado, ouvirMicrofone, palavrasToque } from '../ui.js?v=__V__';
-import { lou, som, brilho, vibrar } from '../diversao.js?v=__V__';
+import { som, brilho, vibrar } from '../diversao.js?v=__V__';
+import { companheirosAula } from '../companheiros.js?v=__V__';
 import { fraseConhecida } from '../traducao.js?v=__V__';
 
 const ehIngles = s => /^[\x20-\x7E’‘]+$/.test(s || '');
@@ -50,14 +51,15 @@ export function exercicio(ex, config) {
   const t0 = performance.now();
   let usouDica = pratica, conferido = false, enviando = false, rec = null, pegarResposta = () => null;
   const raiz = h('article', { class: 'exercicio', dados: { tipo: ex.tipo } });
+  const companhia = companheirosAula({ tipo: ex.tipo, fase: pratica ? 'tentar' : 'inicio' });
   raiz.addEventListener('inglou:traducao', () => { usouDica = true; });
   const area = h('div', { class: 'exercicio__area' });
   const vel = devagar ? 0.85 : 1;
   const btnConferir = h('button', { type: 'button', class: 'btn btn-bloco', disabled: true }, 'Conferir');
-  const folha = h('section', { class: 'folha-resposta retorno-exercicio', 'aria-live': 'polite', tabindex: '-1', hidden: true });
+  const folha = h('section', { class: 'folha-resposta folha-resposta--companheiros retorno-exercicio', 'aria-live': 'polite', tabindex: '-1', hidden: true });
   const barra = h('div', { class: 'barra-acao' + (barraFixa ? ' barra-acao--fixa' : '') }, h('div', { class: 'barra-acao__in' }, btnConferir));
   const habilitar = (sim) => { btnConferir.disabled = !sim; };
-  const dica = h('details', { class: 'ajuda-exercicio', on: { toggle: e => { if (e.currentTarget.open) usouDica = true; } } },
+  const dica = h('details', { class: 'ajuda-exercicio', on: { toggle: e => { if (e.currentTarget.open) { usouDica = true; companhia.reagir('dica', { texto: ex.dica }); } } } },
     h('summary', {}, icone('lightbulb'), 'Preciso de uma dica'),
     h('p', {}, ex.dica || 'Vá com calma. Releia o pedido e lembre do exemplo da aula.'),
     (ex.apoio || []).map(v => h('p', { class: 'apoio-palavra' }, h('span', {}, h('strong', { lang: 'en', 'data-traducao': v.pt }, v.en), ' = ', v.pt), h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir ' + v.en, on: { click: () => falar(v.en, { velocidade: 0.8 }) } }, icone('speaker-high')))));
@@ -74,6 +76,7 @@ export function exercicio(ex, config) {
     ex.guiado && infantil ? h('p', { class: 'rotulo-pequeno' }, ({ escolha: 'Escolha e descubra', lacuna: 'Encaixe a palavra', ordenar: 'Monte com bloquinhos', escuta: 'Ouvidos atentos', pares: 'Junte as duplas' })[ex.tipo]) : null,
     h('h2', { class: 'enunciado' }, trechosTitulo), ex.instrucao ? h('p', { class: 'instrucao' }, ex.instrucao) : null);
   if (ex.tipo === 'escuta' && ex.pergunta && ex.enunciado) raiz.append(h('p', {}, ex.pergunta));
+  raiz.append(companhia.elemento);
   // debate: a outra pessoa fala primeiro e o aluno escolhe a melhor resposta
   if (ex.oponente) raiz.insertBefore(h('div', { class: 'oponente' }, h('span', { class: 'oponente__nome' }, ex.oponente.nome), h('p', { class: 'oponente__fala', lang: 'en' }, ex.oponente.fala), h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir ' + ex.oponente.nome, on: { click: () => falar(ex.oponente.fala) } }, icone('speaker-high'))), raiz.firstChild);
 
@@ -134,7 +137,7 @@ export function exercicio(ex, config) {
     if (r.textoAudio && r.textoAudio !== r.fraseCompleta) corpo.push(h('p', { class: 'transcricao', lang: 'en' }, r.textoAudio));
     corpo.push(h('div', { class: 'linha-acoes retorno-exercicio__acoes' },
       r.audioResposta ? h('button', { type: 'button', class: 'btn btn-sec btn-peq', on: { click: () => falar(r.audioResposta, { velocidade: 0.8 }) } }, icone('speaker-high'), 'Ouvir resposta') : null,
-      r.explica ? h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => falarPt(r.explica) } }, icone('speaker-high'), 'Ler explicação') : null,
+      r.explica ? h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => falarPt(r.explica, null, { personagem: 'mia', emocao: r.correto ? 'feliz' : 'acolhedor' }) } }, icone('speaker-high'), 'Ler explicação') : null,
       !r.correto && permitirTreino ? h('button', { type: 'button', class: 'btn btn-sec btn-peq', on: { click: () => {
         document.removeEventListener('keydown', teclas);
         try { rec?.stop(); } catch {}
@@ -142,7 +145,11 @@ export function exercicio(ex, config) {
         raiz.replaceWith(novo);
         novo.querySelector('h2')?.setAttribute('tabindex', '-1'); novo.querySelector('h2')?.focus();
       } } }, icone('arrow-counter-clockwise'), 'Tentar de novo') : null));
-    folha.replaceChildren(h('div', { class: 'folha-resposta__lou' }, lou(r.correto ? 'feliz' : 'ops', { tamanho: 56, rotulo: '' })), h('div', { class: 'folha-resposta__texto' }, corpo));
+    // Resultados vêm do servidor. Revelar a resposta é estudo, nunca uma comemoração de acerto.
+    const combo = r.correto && !r.ajuda && !pratica && [3, 5, 8, 10].includes(r.sequencia);
+    companhia.reagir(r.ajuda ? 'aprender' : r.quase ? 'quase' : r.correto ? pratica ? 'superacao' : combo ? 'combo' : 'acerto' : 'apoio', { silencioso });
+    if (combo && !silencioso) som('combo');
+    folha.replaceChildren(companhia.elemento, h('div', { class: 'folha-resposta__texto' }, corpo));
     btnConferir.hidden = false;
     btnConferir.textContent = rotuloProximo;
     btnConferir.disabled = false;
@@ -250,6 +257,7 @@ export function exercicio(ex, config) {
       const emIngles = sel.dataset.lado === 'en' ? sel : btn;
       const par = ex.pares[Number(emIngles.dataset.i)];
       retornoPar.replaceChildren(certo ? 'Isso! ' : 'Vamos lembrar: ', h('strong', { lang: 'en', 'data-traducao': par.pt }, par.en), ' = ', par.pt, certo ? '.' : '. Tente juntar essas duas.');
+      companhia.reagir(certo ? 'acerto' : 'apoio', { texto: certo ? 'Essa dupla combina! Vamos encontrar as outras.' : 'Vamos com calma. Veja o significado mostrado e procure a dupla que combina.' });
       if (certo) { for (const b of [sel, btn]) { b.classList.remove('sel'); b.classList.add('ok'); b.disabled = true; } feitos++; som('acerto'); if (feitos === ex.pares.length) { habilitar(true); conferir(); } }
       else { erros++; usouDica = true; for (const b of [sel, btn]) { b.classList.add('nao'); setTimeout(() => b.classList.remove('nao', 'sel'), 450); } }
       sel = null;
@@ -284,7 +292,8 @@ export function exercicio(ex, config) {
       area.querySelectorAll('input,textarea,.opcao,.peca,.par,button').forEach(b => { b.disabled = true; });
       raiz.classList.add('is-pulado'); ajuda.hidden = true; folha.hidden = false;
       btnConferir.hidden = true;
-      folha.replaceChildren(h('div', { class: 'folha-resposta__texto' }, h('p', { class: 'folha-resposta__titulo' }, 'Tudo bem!'), h('p', {}, 'A gente pula este por agora. Não conta como erro.')));
+      companhia.reagir('pausa');
+      folha.replaceChildren(companhia.elemento, h('div', { class: 'folha-resposta__texto' }, h('p', { class: 'folha-resposta__titulo' }, 'Tudo bem!'), h('p', {}, 'A gente pula este por agora. Não conta como erro.')));
       pular.disabled = true;
       pular.replaceWith(h('button', { type: 'button', class: 'btn', on: { click: aoProximo } }, 'Continuar'));
     } } }, icone(ex.tipo === 'fala' ? 'microphone' : 'speaker-x'), motivoPular);

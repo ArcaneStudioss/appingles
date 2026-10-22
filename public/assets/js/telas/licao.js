@@ -3,7 +3,8 @@ import { api } from '../api.js?v=__V__';
 import { h, icone, falar, falarPt, botaoOuvir, ocupado, toast, confirmar, temMicrofone, ouvirMicrofone, janela } from '../ui.js?v=__V__';
 import { exercicio } from './exercicio.js?v=__V__';
 import { nomeConquista } from './hoje.js?v=__V__';
-import { lou, louFala, som, confete, botaoSom, celebrar, pontosFlutuantes, contar, vibrar } from '../diversao.js?v=__V__';
+import { lou, louFala, som, confete, botaoSom, pontosFlutuantes, contar, vibrar } from '../diversao.js?v=__V__';
+import { companheirosAula } from '../companheiros.js?v=__V__';
 
 // cada tipo de passo tem cor e ícone fixos: a pessoa enxerga a estrutura da aula (entender, praticar, ouvir, sua vez)
 const ETAPAS = {
@@ -37,8 +38,6 @@ export async function telaLicao(el, { ir }) {
   // combo: acertos seguidos. Nunca pune: errar só zera o contador, sem som feio nem perda de pontos
   let combo = 0, melhorCombo = 0;
   const chipCombo = h('span', { class: 'combo', hidden: true, 'aria-live': 'polite' }, icone('flame'), h('b', {}, '0'), h('span', { class: 'oculto' }, ' acertos seguidos'));
-  const FRASES_COMBO = { 3: 'Combo x3!', 5: 'Combo x5! Voando!', 8: 'Combo x8! Imbatível!', 10: 'Combo x10! Lenda!' };
-  const NIVEL_COMBO = { 3: 1, 5: 2, 8: 3, 10: 4 };
   function marcarCombo(certo) {
     combo = certo ? combo + 1 : 0;
     melhorCombo = Math.max(melhorCombo, combo);
@@ -49,7 +48,6 @@ export async function telaLicao(el, { ir }) {
     if (certo) pontosFlutuantes(mascote, combo >= 3 ? `+10  x${combo}` : '+10');
     chipCombo.querySelector('b').textContent = String(combo);
     chipCombo.classList.remove('combo--pula'); void chipCombo.offsetWidth; chipCombo.classList.add('combo--pula');
-    if (FRASES_COMBO[combo]) celebrar(FRASES_COMBO[combo], { nivel: NIVEL_COMBO[combo] });
   }
   // retoma de onde parou
   if (status !== 'concluida' && Object.keys(respondidos).length) { const prox = passos.findIndex(p => p.tipo === 'ex' && !respondidos[p.ex.id]); if (prox > 1) i = Math.max(1, prox); }
@@ -90,7 +88,7 @@ export async function telaLicao(el, { ir }) {
       tela.append(exercicio(p.ex, {
         ja: respondidos[p.ex.id],
         devagar: !!p.b.devagar,
-        responder: async (resposta, meta) => { const r = await api('/licao/responder', { metodo: 'POST', corpo: { itemId: p.ex.id, resposta, ...meta } }); if (!r.pratica) { respondidos[p.ex.id] = { ...r, resposta }; marcarCombo(r.correto); } return r; },
+        responder: async (resposta, meta) => { const r = await api('/licao/responder', { metodo: 'POST', corpo: { itemId: p.ex.id, resposta, ...meta } }); if (!r.pratica) { respondidos[p.ex.id] = { ...r, resposta }; if (!r.repetida) marcarCombo(r.correto && !r.ajuda); } return { ...r, sequencia: !r.pratica && !r.repetida ? combo : 0 }; },
         contestar: async () => (await api('/licao/contestar', { metodo: 'POST', corpo: { itemId: p.ex.id } })).mensagem,
         aoProximo: avancar,
         barraFixa: true,
@@ -108,7 +106,7 @@ export async function telaLicao(el, { ir }) {
       etapa('intro'),
       h('h1', {}, licao.missao ? licao.missao.titulo : 'Manter e ampliar'),
       licao.missao ? h('p', { class: 'ajuda' }, `Parte ${licao.missao.parte} de ${licao.missao.total}. ${licao.missao.podeFazer}`) : null,
-      licao.guiada ? louFala('oi', h('p', {}, licao.reforco ? 'Vamos rever com mais apoio, sem pressa.' : infantil ? `Hoje são ${palavras.length} palavras e ${passos.filter(p => p.tipo === 'ex').length} atividades curtinhas. Eu ajudo você!` : `${palavras.length} expressões úteis e ${passos.filter(p => p.tipo === 'ex').length} atividades curtas. Consulte as dicas e explicações sempre que precisar.`)) : louFala('oi', h('p', { class: 'bilhete pequeno' }, 'Por que esta aula'), h('ul', { class: 'por-que' }, licao.porque.map(t => h('li', {}, t)))),
+      licao.guiada ? companheirosAula({ texto: licao.reforco ? 'Vamos rever com mais apoio, sem pressa. Eu explico e o Tuiuiú pratica com você.' : infantil ? `Hoje são ${palavras.length} palavras e ${passos.filter(p => p.tipo === 'ex').length} atividades curtinhas. Eu e o Tuiuiú vamos com você!` : `${palavras.length} expressões úteis e ${passos.filter(p => p.tipo === 'ex').length} atividades curtas. Eu ajudo com as explicações e o Tuiuiú acompanha a prática.` }).elemento : louFala('oi', h('p', { class: 'bilhete pequeno' }, 'Por que esta aula'), h('ul', { class: 'por-que' }, licao.porque.map(t => h('li', {}, t)))),
       licao.guiada ? h('ol', { class: 'como-aprender' }, h('li', {}, icone('speaker-high'), h('span', {}, 'Veja, ouça e descubra o significado.')), h('li', {}, icone('hand-waving'), h('span', {}, 'Toque nas respostas. Pode pedir uma dica.')), h('li', {}, icone('smiley'), h('span', {}, 'Errou? Veja a explicação e tente de novo.'))) : null,
       barraBotao(status === 'concluida' ? 'Rever a aula' : 'Vamos aprender'));
   }
@@ -116,6 +114,7 @@ export async function telaLicao(el, { ir }) {
   function desenharPalavra(tela, { v, b }) {
     const exemplo = b.exemplos?.find(e => e.en === v.ex);
     tela.append(etapa('explicacao', 'Vamos aprender'),
+      companheirosAula({ texto: infantil ? 'Vamos descobrir uma palavra! Ouça o som, veja o significado e repita com a gente.' : 'Associe o som ao significado. Ouça a palavra e observe como ela aparece no exemplo.' }).elemento,
       h('section', { class: 'palavra-nova' },
         v.imagem ? h('span', { class: 'palavra-nova__imagem', 'aria-hidden': 'true' }, v.imagem) : lou('oi', { tamanho: 90, rotulo: '' }),
         h('p', { class: 'rotulo-pequeno' }, 'Em inglês'),
@@ -227,7 +226,7 @@ export async function telaLicao(el, { ir }) {
     const minutos = Math.max(1, Math.round((Date.now() - inicio) / 60000));
     tela.classList.add('passo--fim');
     tela.append(
-      lou('festa', { tamanho: 150 }),
+      companheirosAula({ fase: 'fim', silencioso: status === 'concluida' }).elemento,
       h('h2', { class: 'fim-titulo' }, infantil && pct >= 80 ? 'Figurinha colada!' : 'Aula concluída. Bom trabalho!'),
       h('p', { class: 'chip c-lilas' }, icone('book-open-text'), infantil ? 'Mais uma figurinha no seu álbum' : 'Mais uma etapa da sua aprendizagem'),
       licao.guiada ? h('p', { class: 'ajuda' }, 'Você praticou mais um pouquinho. Cada palavra aprendida conta!') : h('div', { class: 'placar' },
@@ -249,6 +248,7 @@ export async function telaLicao(el, { ir }) {
 export function mostrarAvaliacao(alvo, r) {
   const a = r.avaliacao;
   alvo.replaceChildren(
+    companheirosAula({ fase: a.demonstrado ? 'superacao' : 'apoio', texto: a.demonstrado ? 'Você usou o inglês nesta situação. Vamos olhar juntos o que já funcionou bem.' : 'A Mia ajuda com os ajustes e o Tuiuiú incentiva mais uma tentativa. Confira a correção abaixo.' }).elemento,
     r.aviso ? h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, r.aviso)) : null,
     h('div', { class: 'folha avaliacao' + (a.demonstrado ? ' avaliacao--ok' : '') },
       h('p', { class: 'bilhete' }, a.demonstrado ? 'Demonstrado!' : 'Corrigido'),

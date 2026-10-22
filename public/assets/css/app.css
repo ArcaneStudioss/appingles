@@ -1301,3 +1301,61 @@ body[data-publico="adulto"] .capitulo-card__imagem{font-size:1.8rem}
 .auth-google{min-height:44px;gap:.7rem;background:var(--folha);color:var(--tinta)}
 .auth-google img{flex-shrink:0}
 .auth-ou{text-align:center;font-size:.85rem;color:var(--grafite);margin:.8rem 0 1rem}
+
+/* Companheiros da aula: as reações ocupam o próprio espaço da atividade. */
+.companheiros{--mia-alto:120px;--tui-alto:88px;--dupla-largo:140px;--salto-dupla:12px;display:grid;grid-template-columns:var(--dupla-largo) minmax(0,1fr);align-items:center;gap:.7rem;width:100%;margin:.6rem 0 1rem;text-align:left}
+.companheiros__figuras{align-self:center}
+.dupla{display:flex;align-items:flex-end;justify-content:center;width:var(--dupla-largo,156px);min-height:var(--mia-alto,132px);isolation:isolate}
+.dupla__ator{display:flex;align-items:flex-end;transform-origin:center bottom}
+.dupla__ator--tuiuiu{margin-left:-8px}
+.dupla__ator--mia>.lou{height:var(--mia-alto,132px);width:auto}
+.dupla__ator--tuiuiu>.lou{height:var(--tui-alto,96px);width:auto}
+.dupla .lou__corpo,.dupla .lou__olhos,.dupla .lou__estrela{animation:none}
+.mia__braco--esquerdo{transform-origin:39px 68px}
+.mia__braco--direito{transform-origin:81px 68px}
+.mia__cabeca{transform-origin:60px 49px}
+.tui__asa{transform-origin:49px 65px}
+.companheiros__balao{min-width:0;background:var(--cartao);border:2px solid var(--borda);border-radius:20px 20px 20px 6px;padding:.65rem .8rem;box-shadow:0 3px 0 var(--borda)}
+.companheiros__nome{display:block;color:var(--azul-forte);font-family:var(--f-titulo);font-size:1.05rem}
+.companheiros .companheiros__mensagem{margin:.2rem 0 .3rem;font-size:.93rem;line-height:1.45;overflow-wrap:anywhere}
+.companheiros__ouvir{min-height:36px;padding:.25rem 0;white-space:normal}
+.companheiros__ouvir[aria-pressed=true]{color:var(--menta-forte)}
+.companheiros[data-fase=apoio] .companheiros__balao,.companheiros[data-fase=quase] .companheiros__balao{border-color:var(--lilas)}
+.companheiros[data-fase=acerto] .companheiros__balao,.companheiros[data-fase=superacao] .companheiros__balao,.companheiros[data-fase=combo] .companheiros__balao{border-color:var(--menta)}
+.folha-resposta.folha-resposta--companheiros{display:grid;gap:.5rem}
+.retorno-exercicio .companheiros{margin:0 0 .5rem}
+.passo--fim>.companheiros{max-width:580px;margin:.5rem auto 1rem}
+body[data-publico=adulto] .companheiros{--mia-alto:104px;--tui-alto:76px;--dupla-largo:124px;--salto-dupla:5px}
+body[data-publico=adolescente] .companheiros{--salto-dupla:8px}
+@media(max-width:480px){.companheiros{--mia-alto:120px;--tui-alto:80px;--dupla-largo:126px;gap:.4rem}.companheiros__balao{padding:.6rem}.companheiros .companheiros__mensagem{font-size:.88rem}}
+@media(max-width:350px){.companheiros{grid-template-columns:1fr;justify-items:center;gap:0}.companheiros__balao{width:100%}}
+@media(prefers-reduced-motion:no-preference){
+  .dupla[data-acao=inicio] .mia__braco--esquerdo{animation:mia-acena 1.2s ease-in-out 1}
+  .dupla[data-acao=acerto] .mia__braco--esquerdo{animation:mia-toca-aqui 1.5s var(--ease) 1}
+  .dupla[data-acao=acerto] .tui__asa{animation:tui-toca-aqui 1.5s var(--ease) 1}
+  .dupla[data-acao=acerto] .dupla__ator{animation:dupla-salto 1.5s var(--ease) 1}
+  .dupla[data-acao=acerto] .dupla__ator--tuiuiu{animation-name:tui-aproxima}
+  .dupla[data-acao=dica] .mia__braco--direito{animation:mia-aponta 1.6s ease-in-out 1}
+  .dupla[data-acao=dica] .dupla__ator--tuiuiu,.dupla[data-acao=apoio] .dupla__ator--tuiuiu{animation:tui-escuta 1.4s ease-in-out 1}
+  .dupla[data-acao=apoio] .mia__cabeca{animation:mia-concorda 1.2s ease-in-out 1}
+  .dupla[data-acao=superacao] .mia__braco--esquerdo,.dupla[data-acao=fim] .mia__braco--esquerdo,.dupla[data-acao=combo] .mia__braco--esquerdo{animation:mia-palmas-esquerda .65s ease-in-out 3}
+  .dupla[data-acao=superacao] .mia__braco--direito,.dupla[data-acao=fim] .mia__braco--direito,.dupla[data-acao=combo] .mia__braco--direito{animation:mia-palmas-direita .65s ease-in-out 3}
+  .dupla[data-acao=superacao] .tui__asa,.dupla[data-acao=fim] .tui__asa,.dupla[data-acao=combo] .tui__asa{animation:tui-bate-asa .65s ease-in-out 3}
+  .dupla[data-acao=fim] .dupla__ator,.dupla[data-acao=combo] .dupla__ator{animation:dupla-danca .8s ease-in-out 3}
+  .dupla[data-acao=fim] .dupla__ator--tuiuiu,.dupla[data-acao=combo] .dupla__ator--tuiuiu{animation-delay:.12s}
+  .dupla__ator.esta-falando .lou__corpo{animation:dupla-conversa .6s ease-in-out infinite}
+}
+.dupla.dupla--silenciosa,.dupla.dupla--silenciosa *{animation:none!important}
+@keyframes mia-acena{0%,100%{transform:rotate(0)}25%,65%{transform:rotate(125deg)}45%{transform:rotate(145deg)}}
+@keyframes mia-toca-aqui{0%,100%{transform:rotate(0)}35%,65%{transform:rotate(30deg)}50%{transform:rotate(34deg)}}
+@keyframes tui-toca-aqui{0%,100%{transform:rotate(0)}35%,65%{transform:rotate(135deg)}50%{transform:rotate(140deg)}}
+@keyframes dupla-salto{0%,20%,75%,100%{transform:translateY(0)}40%,60%{transform:translateY(calc(-1 * var(--salto-dupla,12px)))}}
+@keyframes tui-aproxima{0%,20%,75%,100%{transform:translate(0,0)}40%,60%{transform:translate(-8px,calc(-1 * var(--salto-dupla,12px)))}}
+@keyframes mia-aponta{0%,100%{transform:rotate(0)}25%,75%{transform:rotate(-115deg)}}
+@keyframes mia-concorda{0%,50%,100%{transform:rotate(0)}25%,75%{transform:rotate(5deg)}}
+@keyframes tui-escuta{0%,100%{transform:rotate(0)}40%,65%{transform:rotate(-5deg)}}
+@keyframes mia-palmas-esquerda{0%,100%{transform:rotate(-150deg)}50%{transform:rotate(-170deg)}}
+@keyframes mia-palmas-direita{0%,100%{transform:rotate(150deg)}50%{transform:rotate(170deg)}}
+@keyframes tui-bate-asa{0%,100%{transform:rotate(0)}50%{transform:rotate(70deg)}}
+@keyframes dupla-danca{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(calc(-1 * var(--salto-dupla,12px))) rotate(-4deg)}65%{transform:translateY(0) rotate(4deg)}}
+@keyframes dupla-conversa{50%{transform:translateY(-2px) rotate(1deg)}}
