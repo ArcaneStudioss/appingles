@@ -39,7 +39,7 @@ export async function telaConversa(el, { param, ir }) {
   const balao = (m) => {
     const li = h('li', { class: 'msg msg--' + m.papel },
       m.papel === 'tutor' ? h('span', { class: 'msg__avatar' }, lou('oi', { tamanho: 44, rotulo: '' })) : null,
-      h('div', { class: 'msg__balao', lang: 'en' }, m.texto,
+      h('div', { class: 'msg__balao', lang: 'en' }, h('span',{class:'msg__texto'},m.texto),
         m.papel === 'tutor' ? h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir', on: { click: () => falar(m.texto) } }, icone('speaker-high')) : null));
     return li;
   };

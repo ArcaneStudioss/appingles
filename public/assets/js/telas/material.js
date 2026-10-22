@@ -36,7 +36,7 @@ export async function telaMaterialItem(el, { param, ir }) {
   }
 
   el.append(
-    h('header', { class: 'cabeca' }, h('a', { class: 'btn btn-texto btn-peq', href: '#/material' }, icone('caret-left'), 'Materiais'), h('h1', {}, m.titulo), h('p', { class: 'ajuda' }, dataBR(m.criado_em))),
+    h('header', { class: 'cabeca cabeca--material' }, h('a', { class: 'btn btn-texto btn-peq', href: '#/material' }, icone('caret-left'), 'Materiais'), h('h1', {}, m.titulo), h('p', { class: 'ajuda' }, dataBR(m.criado_em))),
     m.aviso ? h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, m.aviso)) : null,
     m.resumo ? h('section', { class: 'folha com-margem' }, h('h2', {}, 'Resumo'), h('p', { lang: 'en' }, m.resumo), m.resumo_pt ? h('p', { class: 'ajuda' }, m.resumo_pt) : null, h('button', { type: 'button', class: 'btn btn-sec btn-peq', on: { click: () => falar(m.resumo, { velocidade: 0.95 }) } }, icone('speaker-high'), 'Ouvir o resumo')) : null,
     vocab.length ? h('section', { class: 'folha' }, h('h2', {}, 'Vocabulário do seu texto'),

@@ -10,7 +10,16 @@ import { nomeConquista } from './hoje.js?v=__V__';
 const MODO = { ler: ['book-open-text', 'azul', 'lendo'], escrever: ['pencil-simple', 'menta', 'escrevendo'], ouvir: ['headphones', 'turquesa', 'ouvindo'] };
 
 export async function telaTreino(el, { ir }) {
-  const { treino: t } = await api('/treino');
+  let t;
+  try { ({ treino: t } = await api('/treino')); }
+  catch (erro) {
+    if (erro.status !== 422) throw erro;
+    el.append(h('section', { class: 'folha vazio c-limao' }, lou('oi', { tamanho: 80 }),
+      h('h1', {}, 'Vamos preparar seu treino'), h('p', {}, erro.message),
+      h('a', { class: 'btn btn-cor', href: '#/licao' }, 'Fazer a aula de hoje'),
+      h('a', { class: 'btn btn-sec', href: '#/hoje' }, 'Voltar para Hoje')));
+    return;
+  }
   const itens = t.itens;
   const total = itens.length + 2;                       // intro + perguntas + fim
   let i = 0;
