@@ -1222,10 +1222,9 @@ body[data-publico="adulto"] .capitulo-card__imagem{font-size:1.8rem}
 .cultura-pratica{margin-top:1.3rem}
 .cultura-pratica li{padding:.4rem 0}
 .cultura-consulta summary{cursor:pointer;font-weight:800}
-.audio-status{position:fixed;left:50%;bottom:calc(98px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:210;display:flex;align-items:center;justify-content:space-between;gap:.75rem;width:min(92vw,440px);padding:.5rem .8rem;background:var(--cartao);color:var(--tinta);border:2px solid var(--azul);border-radius:var(--raio-p);box-shadow:var(--sombra-alta);font-size:.92rem;font-weight:800}
-.audio-status .btn{min-height:38px;box-shadow:none;padding:.4rem .6rem}
-body.foco-total .audio-status{bottom:calc(150px + env(safe-area-inset-bottom))}
-@media(min-width:960px){.audio-status{bottom:24px}body.foco-total .audio-status{bottom:140px}}
+.audio-status{display:inline-flex;position:static;align-items:center;gap:.4rem;max-width:100%;width:fit-content;margin:.35rem .45rem;padding:.15rem .45rem;background:var(--cartao-2);color:var(--tinta-2);border:1px solid var(--borda);border-radius:var(--raio-p);font-size:.8rem;font-weight:600;vertical-align:middle;white-space:normal;box-sizing:border-box}
+.audio-status>span{min-width:0;overflow-wrap:anywhere}
+.audio-status .btn{min-height:44px;flex-shrink:0;box-shadow:none;padding:.35rem .5rem;font-size:.8rem}
 
 
 /* ---- diversão: combo, caça ao erro e oponente do debate ---- */

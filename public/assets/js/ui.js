@@ -152,13 +152,22 @@ export function falarPt(texto, aoFim, { personagem } = {}) {
 export function botaoOuvir(texto, { velocidade = 1, rotulo = 'Ouvir' } = {}) {
   return h('button', { type: 'button', class: 'btn btn-sec btn-ouvir', on: { click: () => falar(texto, { velocidade }) } }, icone('speaker-high'), rotulo);
 }
-let avisoAudio;
+let avisoAudio, gatilhoAudio, dialogoAudio;
+// Guarda o botão também no Safari, que nem sempre o torna activeElement ao tocar.
+document.addEventListener('click', e => { gatilhoAudio = e.target.closest?.('button'); }, true);
 addEventListener('inglou:voz', e => {
   const { fase, personagem } = e.detail;
-  if (!avisoAudio) { avisoAudio = h('div', { class: 'audio-status', hidden: true }, h('span', { role: 'status', 'aria-live': 'polite' }), h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: pararAudio } }, 'Parar')); document.body.append(avisoAudio); }
-  if (fase !== 'parado') {
-    const destino = document.querySelector('dialog[open]') || document.body;
-    if (avisoAudio.parentElement !== destino) { destino.append(avisoAudio); if (destino.tagName === 'DIALOG') destino.addEventListener('close', pararAudio, { once: true }); }
+  if (!avisoAudio) avisoAudio = h('span', { class: 'audio-status', hidden: true }, h('span', { role: 'status', 'aria-live': 'polite' }), h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: pararAudio } }, 'Parar'));
+  if (fase === 'preparando') {
+    const dialogo = document.querySelector('dialog[open]');
+    const origem = gatilhoAudio?.isConnected ? gatilhoAudio : document.activeElement;
+    if (origem?.matches('button') && !avisoAudio.contains(origem) && (!dialogo || dialogo.contains(origem))) origem.after(avisoAudio);
+    else (dialogo?.querySelector('.janela__in') || dialogo || document.querySelector('main') || document.body).prepend(avisoAudio);
+    if (dialogoAudio !== dialogo) {
+      dialogoAudio?.removeEventListener('close', pararAudio);
+      dialogoAudio = dialogo;
+      dialogoAudio?.addEventListener('close', pararAudio);
+    }
   }
   avisoAudio.hidden = fase === 'parado';
   if (fase !== 'parado') {
