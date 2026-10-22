@@ -13,6 +13,9 @@ function criarSupabase({ env = process.env, fetchImpl = fetch, clienteDe } = {})
   const publica = env.SUPABASE_PUBLISHABLE_KEY, segredo = env.SUPABASE_SECRET_KEY;
   const chave = /^[a-f0-9]{64}$/i.test(env.AUTH_SESSION_KEY || '') ? Buffer.from(env.AUTH_SESSION_KEY, 'hex') : null;
   const disponivel = ativo && !!(url && publica && segredo && chave);
+  let site;
+  try { const u = new URL(env.SITE_URL); if ((u.protocol === 'https:' || u.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(u.hostname)) && !u.username && !u.password && u.pathname === '/' && !u.search && !u.hash) site = u.origin; } catch {}
+  const google = disponivel && env.AUTH_GOOGLE_ENABLED === '1' && !!site;
   const conferir = () => { if (!disponivel) throw new ErroHttp(503, 'O acesso à conta está temporariamente indisponível. Tente novamente mais tarde.'); };
   const cliente = (admin = false) => {
     conferir();
@@ -61,7 +64,7 @@ function criarSupabase({ env = process.env, fetchImpl = fetch, clienteDe } = {})
     const d = await executar(() => cliente().auth.getUser(tokens.access_token), 'Sua sessão expirou. Entre novamente.');
     const u = d.user;
     if (!u || u.is_anonymous || !/^[a-f0-9-]{36}$/i.test(u.id) || !u.email || !u.email_confirmed_at) throw new ErroHttp(401, 'Confirme seu e-mail para continuar.');
-    return { id: u.id, email: u.email.trim().toLowerCase() };
+    return { id: u.id, email: u.email.trim().toLowerCase(), google: !!u.identities?.some(i => i.provider === 'google' && i.identity_data?.email_verified === true && i.identity_data?.email?.toLowerCase() === u.email.toLowerCase()) };
   }
   let validador;
   async function validar(tokens) {
@@ -107,6 +110,30 @@ function criarSupabase({ env = process.env, fetchImpl = fetch, clienteDe } = {})
   }
   async function sair(tokens) { const c = await comSessao(tokens); await executar(() => c.auth.signOut({ scope: 'local' }), 'Não foi possível encerrar a sessão.'); }
   async function excluir(id) { await executar(() => cliente(true).auth.admin.deleteUser(id), 'Não foi possível excluir a conta agora.'); }
-  return { ativo, disponivel, conferir, selar, abrir, entrar, cadastrar, enviarCodigo, reenviarCadastro, confirmar, renovar, identidade, validar, alterarSenha, sair, excluir };
+  // O SDK gera o PKCE. Seu armazenamento existe apenas neste fluxo, cifrado no servidor.
+  // Nunca compartilhamos cliente/armazenamento OAuth entre navegadores ou réplicas.
+  function clienteOAuth(memoria) {
+    conferir(); if (!google) throw new ErroHttp(503, 'O login com Google ainda não está disponível.');
+    const dados = new Map(Object.entries(memoria || {}));
+    const storage = { getItem: k => dados.get(k) ?? null, setItem: (k, v) => { dados.set(k, v); }, removeItem: k => { dados.delete(k); } };
+    const opcoes = { auth: { flowType: 'pkce', storageKey: 'inglou-google', storage, persistSession: true, autoRefreshToken: false, detectSessionInUrl: false }, global: { fetch: (input, opts = {}) => fetchImpl(input, { ...opts, signal: AbortSignal.timeout(12000) }) } };
+    return { c: clienteDe ? clienteDe(false, opcoes) : createClient(url, publica, opcoes), dados };
+  }
+  async function iniciarGoogle() {
+    const { c, dados } = clienteOAuth();
+    const d = await executar(() => c.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: site + '/api/v1/auth/google/retorno', skipBrowserRedirect: true, queryParams: { prompt: 'select_account' } } }), 'Não foi possível iniciar o Google.');
+    const destino = new URL(d.url);
+    if (destino.origin !== url || destino.pathname !== '/auth/v1/authorize' || destino.searchParams.get('provider') !== 'google' || destino.searchParams.get('code_challenge_method') !== 's256') throw new ErroHttp(503, 'Não foi possível iniciar um acesso seguro.');
+    destino.searchParams.delete('skip_http_redirect');
+    return { url: destino.href, memoria: Object.fromEntries(dados) };
+  }
+  async function concluirGoogle(codigo, memoria) {
+    const { c } = clienteOAuth(memoria);
+    const d = await executar(() => c.auth.exchangeCodeForSession(codigo), 'O acesso com Google expirou. Comece novamente.');
+    const tokens = tokensDe(d.session), usuario = await identidade(tokens);
+    if (!usuario.google) { await sair(tokens).catch(() => {}); throw new ErroHttp(401, 'Confirme um e-mail verificado no Google para continuar.'); }
+    return { tokens, usuario };
+  }
+  return { ativo, disponivel, google, conferir, selar, abrir, entrar, cadastrar, enviarCodigo, reenviarCadastro, confirmar, renovar, identidade, validar, alterarSenha, sair, excluir, iniciarGoogle, concluirGoogle };
 }
 module.exports = { criarSupabase };

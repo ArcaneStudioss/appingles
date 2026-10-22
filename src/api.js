@@ -250,7 +250,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     ctx.res.setHeader('Cache-Control', 'private, no-store'); ctx.res.setHeader('X-Audio-Cache', cache ? 'hit' : 'miss');
     ctx.res.end(audio);
   });
-  rota('GET', '/auth/estado', (ctx) => ({ autenticacao: { provedor: supabase.ativo ? 'supabase' : 'local', disponivel: !supabase.ativo || supabase.disponivel, recuperacao: supabase.ativo && supabase.disponivel }, logado: !!ctx.u, usuario: ctx.u ? { nome: ctx.u.nome, email: ctx.u.email } : null, ia: ia.ativo() }), { publica: true });
+  rota('GET', '/auth/estado', (ctx) => ({ autenticacao: { provedor: supabase.ativo ? 'supabase' : 'local', disponivel: !supabase.ativo || supabase.disponivel, recuperacao: supabase.ativo && supabase.disponivel, google: supabase.google === true }, logado: !!ctx.u, usuario: ctx.u ? { nome: ctx.u.nome, email: ctx.u.email } : null, ia: ia.ativo() }), { publica: true });
 
   rota('POST', '/auth/cadastro', async (ctx) => {
     if (!limCadastro.tentar(ctx.ip)) throw new ErroHttp(429, 'Muitas tentativas. Tente de novo mais tarde.');

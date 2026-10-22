@@ -20,7 +20,7 @@ async function R(quem, metodo, rota, corpo) {
   return { status: r.status, ...(await r.json()) };
 }
 before(async () => {
-  servidor = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, '..', 'server.js')], { env: { ...process.env, PORT, DATA_DIR: DIR, BACKUP_DESLIGADO: '1', NODE_ENV: 'test', IA_FAKE: '1' }, stdio: 'ignore' });
+  servidor = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, '..', 'server.js')], { env: { ...process.env, AUTH_PROVIDER: 'local', PORT, DATA_DIR: DIR, BACKUP_DESLIGADO: '1', NODE_ENV: 'test', IA_FAKE: '1' }, stdio: 'ignore' });
   for (let i = 0; i < 60; i++) { try { await fetch(`http://localhost:${PORT}/saude`); break; } catch { await new Promise(r => setTimeout(r, 100)); } }
   for (const [quem, idade, papel] of [['crianca', 9, 'aluno'], ['adolescente', 16, 'aluno'], ['adulto', 35, 'aluno'], ['prof', 40, 'professor'], ['fora', 32, 'aluno']]) {
     const r = await fetch(BASE + '/auth/cadastro', { method: 'POST', headers: { 'X-Inglou': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: 'Pessoa ' + quem, idade, papel, regiao: quem === 'adolescente' ? 'nordeste' : null, responsavel: idade < 18, email: quem + '@experiencia.test', senha: 'frase segura girassol 2026', consentimento: true }) });

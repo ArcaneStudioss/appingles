@@ -40,11 +40,11 @@ O app exige código de confirmação no primeiro cadastro mesmo se a confirmaç�
 
 ## Sessões e recuperação
 
-- O navegador recebe cookies **HttpOnly**, **SameSite=Lax** e **Secure** em HTTPS. O cookie temporário de confirmação vale por 15 minutos e é restrito ao caminho de autenticação.
+- O navegador recebe cookies **HttpOnly**, **SameSite=Lax** e **Secure** em HTTPS. Sessão e confirmação usam o prefixo **__Host-**, sem Domain e com Path=/, para impedir injeção de cookies por subdomínios. O cookie temporário de confirmação vale por 15 minutos; em HTTP de desenvolvimento seu caminho é restrito à autenticação.
 - JWT e refresh tokens ficam cifrados com AES-256-GCM no servidor, vinculados ao hash da sessão. O Supabase valida o JWT; tokens são renovados antes de expirar. Falha de rede não libera acesso nem apaga o histórico.
 - Fluxos temporários são cifrados, expiram em 15 minutos e são removidos por uma limpeza periódica a cada minuto. Códigos são verificados pelo Supabase. Há limite de cinco verificações por fluxo e limites compartilhados no SQLite para tentativas e envio de e-mail nas duas réplicas.
 - Recuperação não revela se o e-mail existe e não abre uma sessão completa antes de salvar a nova senha. Alterar ou recuperar senha encerra as outras sessões do app e do provedor.
-- Excluir conta exige a senha atual e apaga primeiro a identidade no Supabase; somente depois remove os dados locais. Se o provedor não confirmar a exclusão, o histórico local é preservado para nova tentativa.
+- Excluir conta exige reautenticação recente por código ou senha e apaga primeiro a identidade no Supabase; somente depois remove os dados locais. Se o provedor não confirmar a exclusão, o histórico local é preservado para nova tentativa.
 - Dados de identidade e sessão não aparecem no painel do professor, na exportação de estudos ou nas respostas públicas. A política de privacidade descreve o envio de e-mail/senha ao Supabase.
 
 ## Validação sem projeto real
@@ -52,3 +52,22 @@ O app exige código de confirmação no primeiro cadastro mesmo se a confirmaç�
 `npm test` inclui cenários com provedor simulado: confirmação, limites de códigos, migração sem perda de histórico, isolamento de navegadores, recuperação, renovação concorrente, indisponibilidade, mudança de senha e exclusão. Essas verificações não substituem o teste real de SMTP e das chaves no projeto de produção.
 
 Referências oficiais: [Auth](https://supabase.com/docs/guides/auth), [senhas e recuperação](https://supabase.com/docs/guides/auth/passwords), [templates de e-mail](https://supabase.com/docs/guides/auth/auth-email-templates), [validação de JWT](https://supabase.com/docs/reference/javascript/auth-getclaims), [encerramento de sessões](https://supabase.com/docs/guides/auth/signout).
+
+## Entrar com Google
+
+1. No [Google Cloud Console](https://console.cloud.google.com/auth/clients), escolha/crie o projeto do Inglou, configure a tela de consentimento (nome, suporte e domínio `arcanestudios.io`) e crie um **OAuth Client ID → Web application**. Enquanto o projeto estiver em teste, inclua os e-mails dos testadores; publique a configuração para liberar aos demais alunos.
+2. Em **Authorized JavaScript origins**, cadastre `https://inglou.arcanestudios.io`. Em **Authorized redirect URIs**, cadastre **`https://zopcgkbmxcogqjojjccv.supabase.co/auth/v1/callback`** para o projeto atual. Esse retorno é o do Supabase, não o do aplicativo. Para outro projeto, use a URL exibida no painel dele.
+3. No Supabase, vá a **Authentication → Sign In / Providers → Google**, habilite Google e salve o **Client ID** e **Client Secret** obtidos no Google Cloud. Essas credenciais ficam no painel do Supabase; não entram no JavaScript público nem no Git.
+4. Em **Authentication → URL Configuration**, mantenha **Site URL** em `https://inglou.arcanestudios.io` e acrescente **Redirect URL** exatamente `https://inglou.arcanestudios.io/api/v1/auth/google/retorno`. Não é necessário liberar curingas ou URLs de outros sites.
+5. Em ambas as réplicas da VPS, confirme `SITE_URL=https://inglou.arcanestudios.io`, `AUTH_PROVIDER=supabase` e defina **`AUTH_GOOGLE_ENABLED=1`**. Recrie A, confira saúde, depois B. O botão só aparece quando essa opção e a configuração do servidor estão presentes. Execute `node scripts/verificar-auth.js --conexao`: ele informa se Google foi habilitado também no projeto e falha se a opção estiver ligada prematuramente.
+6. Teste pelo botão **Continuar com Google** no próprio app. Usuários novos informam nome, idade, papel, região opcional e consentimento; menores confirmam autorização do responsável. Usuários já vinculados continuam na mesma conta. Quem tem conta local antiga confirma a senha original antes de adicionar o Google; se não lembrar, usa a recuperação por e-mail. Isso preserva seus IDs, assinatura, progresso e turmas.
+
+O fluxo usa **PKCE S256** com o SDK oficial. O verificador é cifrado no servidor, vinculado ao cookie HttpOnly daquele navegador e consumido uma única vez. O código de retorno não abre acesso sem esse verificador. Não recebemos JWT por URL, não armazenamos tokens em localStorage e não aceitamos destinos de redirecionamento enviados pelo cliente. Falhas e cancelamentos voltam à tela de entrada com uma mensagem genérica, sem expor detalhes do provedor. Só aceitamos identidade Google com e-mail verificado, validada pelo Supabase no servidor.
+
+## Contas sem senha e ações sensíveis
+
+No painel da conta, **Gerenciar senha** permite criar ou trocar a senha mesmo para quem entrou só pelo Google. Para contas Supabase, criar/trocar senha e excluir conta exigem um código recém-enviado ao e-mail confirmado. Ele vale por cinco minutos, tem cinco tentativas, uso único e fica vinculado à sessão e à ação escolhida. Um código pedido em outro aparelho ou para trocar senha não autoriza a exclusão. O backend também mantém a reautenticação por senha para clientes anteriores. O envio depende do SMTP configurado no projeto.
+
+Testes adicionais cobrem o SDK real de PKCE com transporte simulado, tentativa de troca entre navegadores, reuso, e-mail Google não verificado, conflito de identidade, migração de professor com turma e ações sensíveis de contas sem senha. A autenticação real do Google e o recebimento de e-mail precisam ser testados após configurar os provedores; chaves Supabase aceitas não comprovam esses dois fluxos.
+
+Referências do Google: [Supabase Google OAuth](https://supabase.com/docs/guides/auth/social-login/auth-google), [PKCE e verificador](https://supabase.com/docs/guides/auth/sessions/pkce-flow).

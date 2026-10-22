@@ -1298,3 +1298,6 @@ body[data-publico="adulto"] .capitulo-card__imagem{font-size:1.8rem}
 .auth-cartao .erro-campo:empty{display:none}
 .auth-cartao form{display:grid;gap:1rem}
 .auth-cartao input{min-width:0}
+.auth-google{min-height:44px;gap:.7rem;background:var(--folha);color:var(--tinta)}
+.auth-google img{flex-shrink:0}
+.auth-ou{text-align:center;font-size:.85rem;color:var(--grafite);margin:.8rem 0 1rem}

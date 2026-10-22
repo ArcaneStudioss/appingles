@@ -25,9 +25,9 @@ async function ambiente(t) {
   function navegador() {
     const cookies = new Map(), ip = '10.0.0.' + ++n;
     return { cookies, async r(metodo, rota, corpo, headers = {}) {
-      const r = await fetch(base + rota, { method: metodo, headers: { Cookie: [...cookies].map(([k, v]) => `${k}=${v}`).join('; '), 'X-Forwarded-For': ip, ...(metodo !== 'GET' ? { 'X-Inglou': '1', 'Content-Type': 'application/json' } : {}), ...headers }, body: corpo === undefined ? undefined : JSON.stringify(corpo) });
+      const r = await fetch(base + rota, { method: metodo, redirect: 'manual', headers: { Cookie: [...cookies].map(([k, v]) => `${k}=${v}`).join('; '), 'X-Forwarded-For': ip, ...(metodo !== 'GET' ? { 'X-Inglou': '1', 'Content-Type': 'application/json' } : {}), ...headers }, body: corpo === undefined ? undefined : JSON.stringify(corpo) });
       for (const c of r.headers.getSetCookie()) { const [par] = c.split(';'), i = par.indexOf('='); if (/Max-Age=0(?:;|$)/.test(c)) cookies.delete(par.slice(0, i)); else cookies.set(par.slice(0, i), par.slice(i + 1)); }
-      const texto = await r.text(), dados = JSON.parse(texto); assert.doesNotMatch(texto, /access_token|refresh_token|secret-fixture|sb_secret_fixture/);
+      const texto = await r.text(), dados = texto ? JSON.parse(texto) : {}; assert.doesNotMatch(texto, /access_token|refresh_token|secret-fixture|sb_secret_fixture/);
       return { status: r.status, dados, headers: r.headers };
     } };
   }
@@ -196,4 +196,139 @@ test('recuperação migra conta local com senha esquecida somente após prova do
   assert.equal((await n.r('POST', '/auth/redefinir', { nova: NOVA })).status, 200);
   const u = a.db.prepare('SELECT * FROM usuarios').get(); assert.equal(u.id, 7); assert.equal(u.auth_provider, 'supabase');
   assert.equal((await n.r('GET', '/eu')).dados.perfil.regiao, 'sul');
+});
+
+async function iniciarGoogle(a, n, email = 'google@example.com', verificado = true) {
+  const r = await n.r('POST', '/auth/google'); assert.equal(r.status, 200);
+  const url = new URL(r.dados.url); assert.equal(url.searchParams.get('code_challenge_method'), 's256');
+  assert.equal(url.searchParams.get('redirect_to'), a.fake.env.SITE_URL + '/api/v1/auth/google/retorno');
+  const codigo = a.fake.autorizarGoogle(email, r.dados.url, verificado);
+  return { codigo, voltar: () => n.r('GET', '/auth/google/retorno?code=' + codigo) };
+}
+
+test('Google usa PKCE e exige perfil, idade e consentimento antes de liberar a nova conta', async t => {
+  const a = await ambiente(t), n = a.navegador();
+  assert.equal((await n.r('GET', '/auth/estado')).dados.autenticacao.google, true);
+  const g = await iniciarGoogle(a, n);
+  const selado = a.db.prepare('SELECT dados FROM auth_fluxos').get().dados;
+  assert.doesNotMatch(selado, /code-verifier|memoria/);
+  const r = await g.voltar(); assert.equal(r.status, 303); assert.equal(r.headers.get('location'), '/app/#/entrar');
+  assert.equal((await n.r('GET', '/eu')).status, 401);
+  assert.equal((await n.r('GET', '/auth/fluxo')).dados.etapa, 'completar');
+  assert.equal((await n.r('POST', '/auth/completar', a.registro({ responsavel: false }))).status, 422);
+  assert.equal((await n.r('POST', '/auth/completar', a.registro({ papel: 'professor' }))).status, 200);
+  const eu = await n.r('GET', '/eu'); assert.equal(eu.dados.perfil.papel, 'professor'); assert.equal(eu.dados.perfil.idade, 16); assert.equal(eu.dados.usuario.email, 'google@example.com');
+  await n.r('POST', '/auth/sair');
+  const novamente = await iniciarGoogle(a, n); await novamente.voltar(); assert.equal((await n.r('GET', '/eu')).status, 200);
+  assert.equal(a.db.prepare('SELECT COUNT(*) n FROM usuarios').get().n, 1);
+});
+
+test('Google rejeita retorno sem cookie, outro PKCE, reuso, código duplicado e e-mail não verificado', async t => {
+  const a = await ambiente(t), n = a.navegador(), outro = a.navegador();
+  const g = await iniciarGoogle(a, n), g2 = await iniciarGoogle(a, outro, 'outra@example.com');
+  const semCookie = await a.navegador().r('GET', '/auth/google/retorno?code=' + g.codigo);
+  assert.match(semCookie.headers.get('location'), /google=erro/);
+  assert.match((await outro.r('GET', '/auth/google/retorno?code=' + g.codigo)).headers.get('location'), /google=erro/);
+  assert.equal((await outro.r('GET', '/eu')).status, 401);
+  assert.equal((await g.voltar()).headers.get('location'), '/app/#/entrar');
+  assert.match((await g.voltar()).headers.get('location'), /google=erro/);
+  const pendente = await n.r('GET', '/auth/fluxo'); assert.equal(pendente.dados.etapa, 'completar');
+  const inseguro = await iniciarGoogle(a, outro, 'sem-prova@example.com', false); await inseguro.voltar();
+  assert.equal((await outro.r('GET', '/auth/fluxo')).dados.etapa, null);
+  const duplicado = await iniciarGoogle(a, outro); const r = await outro.r('GET', '/auth/google/retorno?code=' + duplicado.codigo + '&code=' + g2.codigo);
+  assert.match(r.headers.get('location'), /google=erro/);
+  assert.equal(a.db.prepare('SELECT COUNT(*) n FROM usuarios').get().n, 0);
+});
+
+test('Google preserva conta antiga e turmas somente após confirmar sua senha, sem aceitar vínculo conflitante', async t => {
+  const a = await ambiente(t), n = a.navegador();
+  a.db.prepare('INSERT INTO usuarios (id,email,nome,senha_hash,criado_em,consentiu_em) VALUES (1,?,?,?,?,?)').run('antigo-google@example.com', 'Professor original', auth.hashSenha(SENHA), '2026-01-01', '2026-01-01');
+  a.db.prepare("INSERT INTO perfis (user_id,idade,papel,regiao) VALUES (1,40,'professor','sul')").run();
+  a.db.prepare("INSERT INTO turmas (professor_id,nome,codigo,criado_em) VALUES (1,'Turma preservada','GOO123','2026-01-01')").run();
+  const g = await iniciarGoogle(a, n, 'antigo-google@example.com'); await g.voltar();
+  assert.equal((await n.r('GET', '/auth/fluxo')).dados.etapa, 'vincular');
+  assert.equal((await n.r('GET', '/eu')).status, 401);
+  assert.equal((await n.r('POST', '/auth/google/vincular', { senha: 'incorreta' })).status, 401);
+  assert.equal((await n.r('POST', '/auth/completar', a.registro())).status, 401);
+  assert.equal((await n.r('POST', '/auth/google/vincular', { senha: SENHA })).status, 200);
+  assert.equal((await n.r('GET', '/eu')).dados.perfil.papel, 'professor');
+  assert.equal(a.db.prepare('SELECT professor_id FROM turmas').get().professor_id, 1);
+  assert.equal(a.db.prepare('SELECT COUNT(*) n FROM usuarios').get().n, 1);
+  await n.r('POST', '/auth/sair');
+  a.fake.usuarios.delete('antigo-google@example.com'); // outra identidade tentando tomar o mesmo e-mail
+  const conflito = await iniciarGoogle(a, n, 'antigo-google@example.com');
+  assert.match((await conflito.voltar()).headers.get('location'), /google=erro/);
+  assert.equal((await n.r('GET', '/eu')).status, 401);
+});
+
+test('Google cancela com segurança, expira, aceita apenas destino fixo e respeita CSRF e configuração', async t => {
+  const a = await ambiente(t), n = a.navegador();
+  assert.equal((await n.r('POST', '/auth/google', {}, { Origin: 'https://invasor.test' })).status, 403);
+  const inicio = await n.r('POST', '/auth/google', { redirectTo: 'https://invasor.test', user_id: 1 });
+  assert.equal(new URL(inicio.dados.url).searchParams.get('redirect_to'), a.fake.env.SITE_URL + '/api/v1/auth/google/retorno');
+  assert.match((await n.r('GET', '/auth/google/retorno?error=access_denied&error_description=segredo')).headers.get('location'), /^\/app\/#\/entrar\?google=erro$/);
+  await iniciarGoogle(a, n); a.db.prepare('UPDATE auth_fluxos SET expira_em=0').run();
+  assert.match((await n.r('GET', '/auth/google/retorno?code=qualquer')).headers.get('location'), /google=erro/);
+  const s = criarSupabase({ env: { ...a.fake.env, AUTH_GOOGLE_ENABLED: '0' }, clienteDe: a.fake.cliente });
+  assert.equal(s.google, false); await assert.rejects(s.iniciarGoogle(), e => e.status === 503);
+  const invalido = criarSupabase({ env: { ...a.fake.env, SITE_URL: 'https://invasor.test/app/?next=algo' }, clienteDe: a.fake.cliente });
+  assert.equal(invalido.google, false);
+});
+
+test('conta Google sem senha pode criar senha e excluir conta com código ligado à sessão e à ação', async t => {
+  const a = await ambiente(t), n = a.navegador(), outro = a.navegador();
+  const g = await iniciarGoogle(a, n); await g.voltar(); await n.r('POST', '/auth/completar', a.registro());
+  const g2 = await iniciarGoogle(a, outro); await g2.voltar();
+  assert.equal((await n.r('POST', '/auth/senha', { codigo: '123456', nova: NOVA })).status, 401);
+  assert.equal((await n.r('POST', '/auth/seguranca/codigo', { acao: 'senha' })).status, 200);
+  assert.equal((await outro.r('POST', '/auth/senha', { codigo: '123456', nova: NOVA })).status, 401);
+  assert.equal((await n.r('POST', '/conta/excluir', { codigo: '123456' })).status, 401);
+  assert.equal((await n.r('POST', '/auth/senha', { codigo: '000000', nova: NOVA })).status, 401);
+  assert.equal((await n.r('POST', '/auth/senha', { codigo: '123456', nova: NOVA })).status, 200);
+  assert.equal((await outro.r('GET', '/eu')).status, 401);
+  assert.equal((await n.r('POST', '/auth/senha', { codigo: '123456', nova: SENHA })).status, 401);
+  assert.equal((await n.r('POST', '/auth/seguranca/codigo', { acao: 'excluir' })).status, 200);
+  assert.equal((await n.r('POST', '/conta/excluir', { codigo: '123456' })).status, 200);
+  assert.equal(a.db.prepare('SELECT COUNT(*) n FROM usuarios').get().n, 0);
+});
+
+test('código de ação sensível expira e bloqueia após cinco erros', async t => {
+  const a = await ambiente(t), n = await a.cadastrar();
+  await n.r('POST', '/auth/seguranca/codigo', { acao: 'excluir' });
+  for (let i = 0; i < 5; i++) assert.equal((await n.r('POST', '/conta/excluir', { codigo: '999999' })).status, 401);
+  assert.equal((await n.r('POST', '/conta/excluir', { codigo: '123456' })).status, 429);
+  await n.r('POST', '/auth/seguranca/codigo', { acao: 'excluir' });
+  a.db.prepare("UPDATE auth_fluxos SET expira_em=0 WHERE finalidade='seguranca'").run();
+  assert.equal((await n.r('POST', '/conta/excluir', { codigo: '123456' })).status, 401);
+});
+
+test('SDK oficial mantém o verificador PKCE no servidor e troca somente o código autorizado', async () => {
+  const fake = criarFake(), u = fake.criar('sdk-google@example.com', null);
+  let verificador;
+  const s = criarSupabase({ env: fake.env, fetchImpl: async (input, opts) => {
+    const url = new URL(input), corpo = opts.body ? JSON.parse(opts.body) : null;
+    const usuario = { id: u.id, email: u.email, email_confirmed_at: '2026-10-22T00:00:00Z', identities: [{ provider: 'google', identity_data: { email: u.email, email_verified: true } }] };
+    const ok = d => new Response(JSON.stringify(d), { headers: { 'Content-Type': 'application/json' } });
+    if (url.pathname === '/auth/v1/token') {
+      assert.equal(url.searchParams.get('grant_type'), 'pkce'); assert.equal(corpo.auth_code, 'codigo-fixture'); verificador = corpo.code_verifier;
+      return ok({ access_token: 'token-sdk-fixture', refresh_token: 'refresh-sdk-fixture', token_type: 'bearer', expires_in: 3600, user: usuario });
+    }
+    if (url.pathname === '/auth/v1/user') return ok(usuario);
+    throw new Error('Requisição OAuth inesperada');
+  } });
+  const inicio = await s.iniciarGoogle(), destino = new URL(inicio.url);
+  assert.equal(destino.searchParams.get('provider'), 'google'); assert.equal(destino.searchParams.get('code_challenge_method'), 's256');
+  assert.equal(destino.searchParams.has('skip_http_redirect'), false);
+  const resultado = await s.concluirGoogle('codigo-fixture', inicio.memoria);
+  assert.equal(resultado.usuario.google, true);
+  assert.equal(require('node:crypto').createHash('sha256').update(verificador).digest('base64url'), destino.searchParams.get('code_challenge'));
+  assert.ok(!destino.href.includes(verificador));
+});
+
+test('cookies de confirmação em HTTPS impedem injeção por subdomínio com prefixo Host', async t => {
+  const a = await ambiente(t), n = a.navegador();
+  const r = await n.r('POST', '/auth/google', {}, { 'X-Forwarded-Proto': 'https' });
+  assert.equal(r.status, 200);
+  const cookie = r.headers.getSetCookie().findLast(c => c.startsWith('__Host-inglou_auth='));
+  assert.ok(cookie); assert.match(cookie, /; Path=\/; HttpOnly; SameSite=Lax; Max-Age=900; Secure$/); assert.doesNotMatch(cookie, /Domain=/i);
 });

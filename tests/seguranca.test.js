@@ -25,7 +25,7 @@ async function aluno(email, nome) {
 }
 
 before(async () => {
-  srv = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, '..', 'server.js')], { env: { ...process.env, PORT: PORTA, DATA_DIR: DIR, ANTHROPIC_API_KEY: '', PAGAMENTO_MODO: 'simulado' }, stdio: 'pipe' });
+  srv = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, '..', 'server.js')], { env: { ...process.env, AUTH_PROVIDER: 'local', PORT: PORTA, DATA_DIR: DIR, NODE_ENV: 'test', BACKUP_DESLIGADO: '1', ANTHROPIC_API_KEY: '', PAGAMENTO_MODO: 'simulado' }, stdio: 'pipe' });
   for (let i = 0; i < 60; i++) { try { await fetch(BASE + '/saude'); break; } catch { await new Promise(r => setTimeout(r, 100)); } }
   A = await aluno('ana@teste.com', 'Ana');
   B = await aluno('bia@teste.com', 'Bia');

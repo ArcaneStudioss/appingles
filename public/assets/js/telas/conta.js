@@ -85,14 +85,24 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
     if (r) { toast('Apagado.', { tipo: 'ok' }); if (r.refazerNivelamento) { await carregarEu(); ir('#/nivelamento'); } else render(); }
   }
   async function excluirConta() {
+    const porCodigo = eu.autenticacao?.provedor === 'supabase';
+    if (porCodigo && !await pedirCodigo('excluir')) return;
     const r = await formulario({ titulo: 'Excluir conta', enviar: 'Excluir minha conta', texto: 'Apaga a conta e todos os seus dados de estudo, de vez. Se quiser, exporte seus dados antes.',
-      campos: [{ nome: 'senha', rotulo: 'Confirme com sua senha', tipo: 'password', obrigatorio: true, autocomplete: 'current-password' }],
+      campos: [porCodigo ? campoCodigo() : { nome: 'senha', rotulo: 'Confirme com sua senha', tipo: 'password', obrigatorio: true, autocomplete: 'current-password' }],
       aoEnviar: v => api('/conta/excluir', { metodo: 'POST', corpo: v }) });
     if (r) { estado.eu = null; location.href = '/'; }
   }
+  const campoCodigo = () => ({ nome: 'codigo', rotulo: 'Código recebido no e-mail', tipo: 'text', inputmode: 'numeric', autocomplete: 'one-time-code', obrigatorio: true, max: 10, ajuda: 'Válido por cinco minutos e somente para esta confirmação.' });
+  async function pedirCodigo(acao) {
+    if (!await confirmar({ titulo: acao === 'excluir' ? 'Confirmar exclusão da conta' : 'Proteger sua conta', texto: `Vamos enviar um código para ${eu.usuario.email}. Você pode confirmar mesmo se entra com Google e não tem senha no Inglou.`, ok: 'Enviar código', cancelar: 'Voltar', perigo: acao === 'excluir' })) return false;
+    try { await api('/auth/seguranca/codigo', { metodo: 'POST', corpo: { acao } }); return true; }
+    catch (err) { toast(err.message); return false; }
+  }
   async function trocarSenha() {
-    const r = await formulario({ titulo: 'Alterar senha', campos: [
-      { nome: 'atual', rotulo: 'Senha atual', tipo: 'password', obrigatorio: true, autocomplete: 'current-password' },
+    const porCodigo = eu.autenticacao?.provedor === 'supabase';
+    if (porCodigo && !await pedirCodigo('senha')) return;
+    const r = await formulario({ titulo: porCodigo ? 'Criar ou alterar senha' : 'Alterar senha', campos: [
+      porCodigo ? campoCodigo() : { nome: 'atual', rotulo: 'Senha atual', tipo: 'password', obrigatorio: true, autocomplete: 'current-password' },
       { nome: 'nova', rotulo: 'Nova senha', tipo: 'password', obrigatorio: true, autocomplete: 'new-password', ajuda: 'Pelo menos 10 caracteres, sem seu nome ou e-mail.' }],
       aoEnviar: v => api('/auth/senha', { metodo: 'POST', corpo: v }) });
     if (r) toast('Senha alterada. Outras sessões foram encerradas.', { tipo: 'ok' });
@@ -156,7 +166,7 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
       h('a', { class: 'btn btn-sec btn-peq', href: '#/conversar' }, 'Conversas'), h('a', { class: 'btn btn-sec btn-peq', href: '#/material' }, 'Materiais'), h('a', { class: 'btn btn-sec btn-peq', href: '#/revisar' }, 'Cartões')),
     jaInstalado() ? null : cartao('seal-check', 'Instalar no celular', 'Ícone do Tuiuiú na tela inicial e abre em tela cheia, como um app.', h('button', { class: 'btn btn-sec btn-peq', on: { click: instalar } }, icone('download-simple'), 'Instalar')),
     cartao('gear', 'Preferências', 'Dia ou noite e velocidade do áudio neste aparelho.', h('button', { class: 'btn btn-sec btn-peq', on: { click: preferencias } }, 'Configurar')),
-    cartao('lock-key', 'Segurança', eu.autenticacao?.provedor === 'supabase' ? 'E-mail confirmado e acesso protegido. Sua senha pode ser recuperada pela tela de entrada.' : 'Senha da conta.', h('button', { class: 'btn btn-sec btn-peq', on: { click: trocarSenha } }, 'Alterar senha')),
+    cartao('lock-key', 'Segurança', eu.autenticacao?.provedor === 'supabase' ? 'E-mail confirmado. Crie ou altere sua senha com um código enviado para você, inclusive se entra com Google.' : 'Senha da conta.', h('button', { class: 'btn btn-sec btn-peq', on: { click: trocarSenha } }, eu.autenticacao?.provedor === 'supabase' ? 'Gerenciar senha' : 'Alterar senha')),
     h('div', { class: 'linha-acoes rodape-conta' },
       h('button', { class: 'btn btn-sec', on: { click: async () => { await api('/auth/sair', { metodo: 'POST' }); estado.eu = null; location.hash = '#/entrar'; } } }, icone('sign-out'), 'Sair'),
       h('button', { class: 'btn btn-perigo', on: { click: excluirConta } }, 'Excluir conta')),

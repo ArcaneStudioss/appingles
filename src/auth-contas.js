@@ -12,10 +12,11 @@ function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limpa
   const limiteIp = auth.limitadorBanco(db, 'auth-externo-ip', { janelaMs: 15 * 60e3, max: 30 });
   const limiteCredenciais = auth.limitadorBanco(db, 'auth-credenciais', { janelaMs: 15 * 60e3, max: 8 });
   const limiteEmail = auth.limitadorBanco(db, 'auth-email', { janelaMs: 60 * 60e3, max: 5 });
-  const nomeCookie = req => req.headers['x-forwarded-proto'] === 'https' || process.env.COOKIE_SEGURO === '1' ? '__Secure-inglou_auth' : 'inglou_auth';
+  const nomeCookie = req => req.headers['x-forwarded-proto'] === 'https' || process.env.COOKIE_SEGURO === '1' ? '__Host-inglou_auth' : 'inglou_auth';
   function cookie(ctx, token, idade = 900) {
-    const seguro = nomeCookie(ctx.req).startsWith('__Secure-');
-    ctx.res.appendHeader('Set-Cookie', `${nomeCookie(ctx.req)}=${token}; Path=/api/v1/auth; HttpOnly; SameSite=Lax; Max-Age=${idade}${seguro ? '; Secure' : ''}`);
+    const seguro = nomeCookie(ctx.req).startsWith('__Host-');
+    // __Host exige Path=/ e proíbe Domain: um subdomínio não consegue injetar este cookie.
+    ctx.res.appendHeader('Set-Cookie', `${nomeCookie(ctx.req)}=${token}; Path=${seguro ? '/' : '/api/v1/auth'}; HttpOnly; SameSite=Lax; Max-Age=${idade}${seguro ? '; Secure' : ''}`);
   }
   function limparFluxo(ctx) {
     const t = lerCookies(ctx.req)[nomeCookie(ctx.req)];
@@ -106,10 +107,59 @@ function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limpa
   rota('GET', '/auth/fluxo', ctx => {
     try {
       const f = fluxoDe(ctx);
-      return { etapa: f.conteudo.tokens ? f.finalidade === 'recuperar' ? 'nova-senha' : 'completar' : 'codigo', finalidade: f.finalidade, email: f.email };
+      return { etapa: f.finalidade === 'google' ? null : f.finalidade === 'google-vincular' ? 'vincular' : f.conteudo.tokens ? f.finalidade === 'recuperar' ? 'nova-senha' : 'completar' : 'codigo', finalidade: f.finalidade, email: f.email };
     } catch (e) { if (e.status === 401) return { etapa: null }; throw e; }
   }, { publica: true });
   rota('POST', '/auth/cancelar', ctx => { limparFluxo(ctx); return { ok: true }; }, { publica: true });
+
+  rota('POST', '/auth/google', async ctx => {
+    limitar(ctx, 'google');
+    const inicio = await provedor.iniciarGoogle();
+    novoFluxo(ctx, 'google', '', { memoria: inicio.memoria });
+    return { url: inicio.url };
+  }, { publica: true });
+  rota('GET', '/auth/google/retorno', async ctx => {
+    // O cookie do mesmo navegador e o verificador PKCE são indispensáveis.
+    // O destino é fixo: nem Host nem parâmetros de retorno controlam o redirecionamento.
+    let consumido = false;
+    try {
+      const f = fluxoDe(ctx, true);
+      if (f.finalidade !== 'google') { destravar(f); throw new ErroHttp(401, 'Recomece o acesso com Google.'); }
+      q('DELETE FROM auth_fluxos WHERE id_hash = ?').run(f.id_hash); consumido = true;
+      const params = new URL(ctx.req.url, 'http://localhost').searchParams;
+      const codigo = params.get('code');
+      if (params.has('error') || params.getAll('code').length !== 1 || !codigo || codigo.length > 4096) throw new ErroHttp(401, 'Acesso cancelado ou expirado.');
+      const resultado = await provedor.concluirGoogle(codigo, f.conteudo.memoria);
+      const vinculo = q("SELECT * FROM usuarios WHERE auth_provider = 'supabase' AND auth_subject = ?").get(resultado.usuario.id);
+      if (vinculo) entrarCom(ctx, vinculo.id, resultado);
+      else {
+        const u = q('SELECT * FROM usuarios WHERE email = ?').get(resultado.usuario.email);
+        if (u && u.auth_provider !== 'local') throw new ErroHttp(409, 'Essa conta já tem outro vínculo de acesso.');
+        // Um e-mail coincidente nunca basta para substituir uma conta antiga.
+        novoFluxo(ctx, u ? 'google-vincular' : 'completar', resultado.usuario.email, { tokens: resultado.tokens, usuario: resultado.usuario, ...(u ? { uid: u.id } : {}) });
+      }
+      ctx.res.statusCode = 303; ctx.res.setHeader('Location', '/app/#/entrar');
+    } catch {
+      if (consumido) limparFluxo(ctx);
+      ctx.res.statusCode = 303; ctx.res.setHeader('Location', '/app/#/entrar?google=erro');
+    }
+    ctx.res.setHeader('Cache-Control', 'no-store'); ctx.res.setHeader('Referrer-Policy', 'no-referrer'); ctx.res.end();
+  }, { publica: true });
+  rota('POST', '/auth/google/vincular', async ctx => {
+    const f = fluxoDe(ctx, true);
+    try {
+      if (f.finalidade !== 'google-vincular' || !f.conteudo.tokens) throw new ErroHttp(401, 'Entre novamente com Google.');
+      limitar(ctx, f.email);
+      if (!limiteCredenciais.tentar(f.email)) throw new ErroHttp(429, 'Muitas tentativas. Aguarde alguns minutos.');
+      const u = q('SELECT * FROM usuarios WHERE id = ?').get(f.conteudo.uid);
+      if (!u || u.auth_provider !== 'local' || u.email !== f.email || typeof ctx.corpo.senha !== 'string' || ctx.corpo.senha.length > 200 || !auth.conferirSenha(ctx.corpo.senha, u.senha_hash)) throw new ErroHttp(401, 'Senha atual incorreta. Você também pode voltar e recuperar sua senha.');
+      const remoto = await provedor.identidade(f.conteudo.tokens);
+      if (!remoto.google || remoto.id !== f.conteudo.usuario.id || remoto.email !== f.email) throw new ErroHttp(401, 'Confirme o Google novamente.');
+      const tokens = await provedor.alterarSenha(f.conteudo.tokens, ctx.corpo.senha, { permitirAtual: true });
+      limiteCredenciais.limpar(f.email);
+      return entrarCom(ctx, u.id, { tokens, usuario: remoto }, true);
+    } finally { destravar(f); }
+  }, { publica: true });
 
   rota('POST', '/auth/cadastro', async ctx => {
     provedor.conferir(); const b = ctx.corpo, email = V.email(b.email), perfil = validarPerfil(b);
@@ -160,7 +210,7 @@ function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limpa
   rota('POST', '/auth/reenviar', async ctx => {
     const f = fluxoDe(ctx, true);
     try {
-      if (f.conteudo.tokens) throw new ErroHttp(409, 'O código já foi confirmado. Continue a próxima etapa.');
+      if (f.conteudo.tokens || !['cadastro', 'migrar', 'recuperar', 'externo'].includes(f.finalidade)) throw new ErroHttp(409, 'Continue a etapa atual ou comece novamente.');
       limitar(ctx, f.email, true);
       if (f.finalidade === 'cadastro' && f.conteudo.tipo !== 'email') await provedor.reenviarCadastro(f.email);
       else await provedor.enviarCodigo(f.email, f.finalidade === 'migrar' || !!q('SELECT id FROM usuarios WHERE email = ?').get(f.email));
@@ -172,7 +222,7 @@ function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limpa
     const f = fluxoDe(ctx, true);
     try {
       limitar(ctx, f.email);
-      if (f.conteudo.tokens) throw new ErroHttp(409, 'O código já foi confirmado. Continue a próxima etapa.');
+      if (f.conteudo.tokens || !['cadastro', 'migrar', 'recuperar', 'externo'].includes(f.finalidade)) throw new ErroHttp(409, 'Continue a etapa atual ou comece novamente.');
       if (typeof ctx.corpo.codigo !== 'string' || !/^\d{6,10}$/.test(ctx.corpo.codigo)) throw new ErroHttp(422, 'Digite o código numérico recebido no e-mail.');
       if (f.tentativas >= 5) throw new ErroHttp(429, 'Muitos códigos incorretos. Comece novamente para pedir outro.');
       let antigo;
@@ -218,6 +268,7 @@ function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limpa
     try {
       if (!['completar', 'externo'].includes(f.finalidade) || !f.conteudo.tokens) throw new ErroHttp(401, 'Entre novamente.');
       const perfil = validarPerfil(ctx.corpo), remoto = await provedor.identidade(f.conteudo.tokens);
+      if (remoto.id !== f.conteudo.usuario?.id || f.conteudo.usuario?.google && !remoto.google) throw new ErroHttp(401, 'Confirme seu acesso novamente.');
       if (remoto.email !== f.email || q('SELECT id FROM usuarios WHERE email = ?').get(f.email)) throw new ErroHttp(409, 'Entre novamente para acessar essa conta.');
       return entrarCom(ctx, () => criarUsuario({ ...perfil, email: f.email, senha_hash: 'supabase' }), { tokens: f.conteudo.tokens, usuario: remoto });
     } finally { destravar(f); }
@@ -235,15 +286,47 @@ function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limpa
     return { ok: true };
   }, { publica: true });
 
+  // Código para ações sensíveis: cinco minutos, uso único, ligado à sessão e à ação.
+  // Assim quem entra só pelo Google também pode proteger ou excluir a própria conta.
+  rota('POST', '/auth/seguranca/codigo', async ctx => {
+    const u = ctx.u, acao = V.um(ctx.corpo.acao, ['senha', 'excluir'], 'Ação');
+    if (u.auth_provider !== 'supabase') throw new ErroHttp(409, 'Confirme seu acesso pela tela de entrada.');
+    limitar(ctx, u.email, true); await provedor.enviarCodigo(u.email, false);
+    const hash = 'acao:' + u.tokenHash;
+    q('INSERT INTO auth_fluxos (id_hash,finalidade,email,dados,expira_em) VALUES (?,?,?,?,?) ON CONFLICT(id_hash) DO UPDATE SET finalidade=excluded.finalidade,email=excluded.email,dados=excluded.dados,expira_em=excluded.expira_em,tentativas=0,ocupado_ate=0')
+      .run(hash, 'seguranca', u.email, provedor.selar({ uid: u.id, acao }, 'fluxo:' + hash), Date.now() + 300000);
+    return { ok: true, mensagem: 'Enviamos um código de confirmação para seu e-mail. Ele vale por cinco minutos.' };
+  });
+  async function reautenticar(ctx, u, acao, senha) {
+    limitar(ctx, u.email);
+    if (ctx.corpo.codigo !== undefined) {
+      const hash = 'acao:' + ctx.u.tokenHash;
+      const f = q('SELECT * FROM auth_fluxos WHERE id_hash = ? AND finalidade = ?').get(hash, 'seguranca');
+      if (!f || f.expira_em <= Date.now()) throw new ErroHttp(401, 'Peça um novo código de confirmação.');
+      const dados = provedor.abrir(f.dados, 'fluxo:' + hash);
+      if (dados.uid !== u.id || dados.acao !== acao || f.email !== u.email) throw new ErroHttp(401, 'Peça um código para esta ação.');
+      if (!q('UPDATE auth_fluxos SET ocupado_ate = ? WHERE id_hash = ? AND ocupado_ate < ? RETURNING id_hash').get(Date.now() + 60000, hash, Date.now())) throw new ErroHttp(409, 'Aguarde a confirmação atual.');
+      try {
+        if (f.tentativas >= 5) throw new ErroHttp(429, 'Muitas tentativas. Peça outro código.');
+        if (typeof ctx.corpo.codigo !== 'string' || !/^\d{6,10}$/.test(ctx.corpo.codigo)) throw new ErroHttp(422, 'Digite o código numérico do e-mail.');
+        q('UPDATE auth_fluxos SET tentativas=tentativas+1 WHERE id_hash=?').run(hash);
+        const resultado = await provedor.confirmar(u.email, ctx.corpo.codigo);
+        if (resultado.usuario.id !== u.auth_subject || resultado.usuario.email !== u.email) throw new ErroHttp(401, 'Esse código não corresponde à conta.');
+        q('DELETE FROM auth_fluxos WHERE id_hash=?').run(hash);
+        return resultado;
+      } finally { destravar(f); }
+    }
+    if (!limiteCredenciais.tentar(u.email)) throw new ErroHttp(429, 'Muitas tentativas. Aguarde alguns minutos.');
+    if (typeof senha !== 'string' || senha.length > 200) throw new ErroHttp(401, 'Confirme sua senha ou peça um código por e-mail.');
+    const resultado = await provedor.entrar(u.email, senha);
+    if (resultado.usuario.id !== u.auth_subject) throw new ErroHttp(401, 'Esse acesso não corresponde à conta.');
+    limiteCredenciais.limpar(u.email); return resultado;
+  }
   rota('POST', '/auth/senha', async ctx => {
     const u = q('SELECT * FROM usuarios WHERE id = ?').get(ctx.u.id);
     if (u.auth_provider !== 'supabase') throw new ErroHttp(409, 'Saia e entre novamente para confirmar seu e-mail antes de alterar a senha.');
-    validarSenha(ctx.corpo.nova, u); limitar(ctx, u.email);
-    if (!limiteCredenciais.tentar(u.email)) throw new ErroHttp(429, 'Muitas tentativas. Aguarde alguns minutos.');
-    if (typeof ctx.corpo.atual !== 'string' || ctx.corpo.atual.length > 200) throw new ErroHttp(401, 'Informe sua senha atual.');
-    const resultado = await provedor.entrar(u.email, ctx.corpo.atual);
-    if (resultado.usuario.id !== u.auth_subject) throw new ErroHttp(401, 'Senha atual incorreta.');
-    limiteCredenciais.limpar(u.email);
+    validarSenha(ctx.corpo.nova, u);
+    const resultado = await reautenticar(ctx, u, 'senha', ctx.corpo.atual);
     const tokens = await provedor.alterarSenha(resultado.tokens, ctx.corpo.nova);
     transacao(db, () => { salvarTokens(ctx.u.tokenHash, tokens); q('DELETE FROM sessoes WHERE user_id = ? AND id_hash <> ?').run(u.id, ctx.u.tokenHash); });
     return { ok: true };
@@ -251,13 +334,9 @@ function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limpa
 
   rota('POST', '/conta/excluir', async ctx => {
     const u = q('SELECT * FROM usuarios WHERE id = ?').get(ctx.u.id);
-    if (typeof ctx.corpo.senha !== 'string' || ctx.corpo.senha.length > 200) throw new ErroHttp(401, 'Senha incorreta.');
     if (u.auth_provider === 'supabase') {
-      limitar(ctx, u.email);
-      if (!limiteCredenciais.tentar(u.email)) throw new ErroHttp(429, 'Muitas tentativas. Aguarde alguns minutos.');
-      const resultado = await provedor.entrar(u.email, ctx.corpo.senha);
-      if (resultado.usuario.id !== u.auth_subject) throw new ErroHttp(401, 'Senha incorreta.');
-    } else if (!auth.conferirSenha(ctx.corpo.senha, u.senha_hash)) throw new ErroHttp(401, 'Senha incorreta.');
+      await reautenticar(ctx, u, 'excluir', ctx.corpo.senha);
+    } else if (typeof ctx.corpo.senha !== 'string' || ctx.corpo.senha.length > 200 || !auth.conferirSenha(ctx.corpo.senha, u.senha_hash)) throw new ErroHttp(401, 'Senha incorreta.');
     await limparVozes(u.id);
     if (u.auth_provider === 'supabase') await provedor.excluir(u.auth_subject);
     transacao(db, () => { q('DELETE FROM auth_fluxos WHERE email = ?').run(u.email); q('DELETE FROM usuarios WHERE id = ?').run(u.id); });
