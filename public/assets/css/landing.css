@@ -130,3 +130,5 @@ main section{max-width:1120px;margin:0 auto;padding:3.2rem 1rem}
 
 .plano-card{min-width:0}.plano-card .preco{font-size:2rem}.plano-card .btn{align-self:end}
 @media(min-width:600px) and (max-width:899px){.planos-lista{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Revelações animadas fora da tela não devem ampliar a largura da página. */
+.publico main{overflow-x:clip}
