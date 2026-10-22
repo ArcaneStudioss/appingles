@@ -47,6 +47,7 @@ function criarPagamento({db,grupos,hojeDe,env=process.env,cliente,agora=()=>Date
    if(!c){const customer=await stripe.customers.create({metadata:{app:'inglou',user_id:String(uid)}},{idempotencyKey:'inglou-customer-v1:'+uid});q('INSERT INTO stripe_contas(user_id,customer_id) VALUES(?,?)').run(uid,customer.id);c=conta(uid);}
    const existentes=await stripe.subscriptions.list({customer:c.customer_id,status:'all',limit:100});
    if(existentes.has_more||existentes.data.some(s=>COBRAVEIS.includes(s.status)))throw new ErroHttp(409,'Você já tem uma assinatura em andamento. Gerencie a cobrança antes de contratar outra.');
+   grupos.prepararContratacao(uid);
    let r=q('SELECT * FROM stripe_checkouts WHERE user_id=?').get(uid);
    if(r?.session_id){const s=await stripe.checkout.sessions.retrieve(r.session_id);if(s.status==='complete')throw new ErroHttp(409,'Seu pagamento está sendo confirmado. Atualize sua conta em instantes.');if(s.status==='open'){if(r.plano!==sku)throw new ErroHttp(409,'Você tem um checkout aberto para outro plano. Aguarde a expiração antes de trocar.');return{url:s.url};}q('DELETE FROM stripe_checkouts WHERE user_id=?').run(uid);r=null;}
    if(r&&r.expira_em*1000<=agora()){q('DELETE FROM stripe_checkouts WHERE user_id=?').run(uid);r=null;}

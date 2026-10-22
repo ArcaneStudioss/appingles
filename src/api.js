@@ -1449,6 +1449,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     const modo = process.env.PAGAMENTO_MODO || 'desligado';
     if(modo==='stripe')return pagamento.checkout(uid,plano);
     if (modo !== 'simulado') throw new ErroHttp(503, 'O pagamento on-line ainda não está ligado. Nenhuma cobrança foi feita.');
+    grupos.prepararContratacao(uid);
     const a = assinaturaDe(uid) || assin.novaAssinatura(h);
     const nova = assin.assinar(a, plano, h);
     salvarAssinatura(uid, nova);
