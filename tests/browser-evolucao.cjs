@@ -58,6 +58,14 @@ async function main(){
    await page.goto('/app/#/desafios');await page.getByRole('heading',{name:'Aprender fica melhor junto'}).waitFor();
    await page.goto('/app/#/loja');await page.getByRole('heading',{name:'Praça brasileira'}).waitFor();
    await page.goto('/app/#/admin');await page.getByRole('heading',{name:'Revisão de conteúdo e qualidade'}).waitFor();
+   await page.goto('/');await page.locator('#planos [data-plano="turma"]').waitFor();assert.equal(await page.locator('#planos [data-plano]').count(),5);
+   await page.screenshot({path:path.join(artefatos,`${nome}-${mobile?'celular':'desktop'}-planos.png`),fullPage:true});
+   const landingWidth=await page.evaluate(()=>({w:innerWidth,s:document.documentElement.scrollWidth}));assert.ok(landingWidth.s<=landingWidth.w+2);
+   await page.route('**/api/v1/assinatura',async route=>{const r=await route.fetch();const data=await r.json();delete data.catalogo;delete data.grupo;await route.fulfill({response:r,json:data});});
+   await page.goto('/app/#/conta');await page.getByRole('button',{name:'Atualizar planos',exact:true}).waitFor();await page.unroute('**/api/v1/assinatura');
+   await page.getByRole('button',{name:'Atualizar planos',exact:true}).click();await page.getByRole('button',{name:'Ver planos e uso',exact:true}).click();
+   assert.equal(await page.locator('dialog [data-plano]').count(),5);assert.equal(await page.getByRole('button',{name:'Contratação em breve',exact:true}).count(),4);
+   await page.getByRole('button',{name:'Fechar',exact:true}).click();
    await page.goto('/app/#/hoje');await page.locator('.sessao-convite').waitFor();
    const medidas=await page.evaluate(()=>({largura:innerWidth,conteudo:document.documentElement.scrollWidth,viewport:document.querySelector('meta[name=viewport]').content,fontes:[...document.querySelectorAll('input,select,textarea')].map(e=>parseFloat(getComputedStyle(e).fontSize))}));
    assert.ok(medidas.conteudo<=medidas.largura+2,JSON.stringify(medidas));assert.ok(!medidas.viewport.includes('user-scalable=no'));assert.ok(medidas.fontes.every(n=>n>=16));assert.deepEqual(erros,[]);

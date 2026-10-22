@@ -29,7 +29,7 @@ function pedidoValido(b = {}) {
   return { texto, emocao, velocidade, personagem: b.personagem, idioma: b.idioma, anterior: contexto('anterior'), seguinte: contexto('seguinte') };
 }
 const inteiro = (v, padrao) => Number.isSafeInteger(Number(v)) && Number(v) > 0 ? Number(v) : padrao;
-function criarVozes({ db, dir, env = process.env, fetchImpl = fetch, diaDe = () => new Date().toISOString().slice(0, 10), agora = Date.now }) {
+function criarVozes({ db, dir, orcamento, env = process.env, fetchImpl = fetch, diaDe = () => new Date().toISOString().slice(0, 10), agora = Date.now }) {
   const chave = env.ELEVENLABS_API_KEY || '', modeloCurto = env.ELEVENLABS_MODEL || 'eleven_flash_v2_5';
   const modeloTexto = env.ELEVENLABS_MODEL_TEXTO || 'eleven_v4';
   const vozes = Object.fromEntries(Object.entries(VOZES).map(([p, idiomas]) => [p, Object.fromEntries(Object.entries(idiomas).map(([idioma, id]) => [idioma, env[`ELEVENLABS_VOICE_${p === 'mia' ? 'MIA' : 'TUIUIU'}_${idioma.toUpperCase()}`] || id]))]));
@@ -71,6 +71,7 @@ function criarVozes({ db, dir, env = process.env, fetchImpl = fetch, diaDe = () 
     if (pendentes.size >= 4) throw new ErroHttp(429, 'Estamos preparando outros áudios. Tente ouvir de novo em instantes.');
     const versao = versoes.get(uid) || 0, dia = diaDe(uid);
     const trabalho = (async () => {
+      if(orcamento)orcamento.usar(uid,'voz',textoFalado.length);
       reservar(uid, dia, textoFalado.length);
       let temporario;
       try {

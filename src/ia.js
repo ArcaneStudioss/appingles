@@ -4,6 +4,7 @@
 // O texto do aluno é sempre tratado como DADO (tentativa de inglês), nunca como instrução.
 const { DIFICULDADES } = require('./conteudo/dificuldades');
 const { publicoDe } = require('./motor/publico');
+const {reservarIA,concluirIA}=require('./orcamento');
 
 let Anthropic = null;
 try { Anthropic = require('@anthropic-ai/sdk'); } catch { Anthropic = null; }
@@ -24,7 +25,7 @@ let cliente = null;
 const FAKE = process.env.IA_FAKE === '1' && process.env.NODE_ENV !== 'production';
 function ativo() { if (FAKE) return true; return !!(Anthropic && (process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN) && process.env.IA_DESLIGADA !== '1'); }
 function obterCliente() {
-  if (!cliente) cliente = new Anthropic({ timeout: 45_000, maxRetries: 1 });
+  if (!cliente) cliente = new Anthropic({ timeout: 45_000, maxRetries: 0 });
   return cliente;
 }
 
@@ -66,14 +67,9 @@ async function chamar({ tarefa, system, mensagens, schema, maxTokens = 2000, esf
     messages: mensagens,
     output_config: { effort: esforco, ...(schema ? { format: { type: 'json_schema', schema } } : {}) },
   };
-  let resp;
-  // recusa de segurança: tenta o modelo de reserva indicado pela própria API (beta "fallbacks"); se o modelo não aceitar, vai sem
-  try {
-    resp = await obterCliente().beta.messages.create({ ...params, betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' });
-  } catch (e) {
-    if (Anthropic && e instanceof Anthropic.BadRequestError) resp = await obterCliente().messages.create(params);
-    else throw e;
-  }
+  const reserva=reservarIA(params.model,params);
+  const resp=await obterCliente().messages.create(params);
+  concluirIA(reserva,resp);
   if (resp.stop_reason === 'refusal') { const err = new Error('recusa'); err.recusa = true; throw err; }
   if (resp.stop_reason === 'max_tokens') { const err = new Error('resposta cortada'); throw err; }
   const texto = resp.content.filter(b => b.type === 'text').map(b => b.text).join('');

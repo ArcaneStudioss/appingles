@@ -7,6 +7,9 @@ const { registrarAuth } = require('./auth-contas');
 const { json: lerJson, transacao } = require('./db');
 const ia = require('./ia');
 const assin = require('./assinatura');
+const catalogo=require('./catalogo-planos');
+const {criarGrupos}=require('./assinaturas-grupo');
+const {criarOrcamento}=require('./orcamento');
 const { OBJETIVOS, INTERESSES } = require('./conteudo/objetivos');
 const { POR_ID } = require('./conteudo/missoes');
 const { CENARIOS } = require('./conteudo/cenarios');
@@ -112,32 +115,34 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
   const salvarAssinatura = (uid, a) => q('INSERT INTO assinaturas (user_id, dados) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET dados = excluded.dados').run(uid, JSON.stringify(a));
   const fusoDe = p => (p?.fuso && /^[A-Za-z_]+\/[A-Za-z_]+$/.test(p.fuso) ? p.fuso : 'America/Sao_Paulo');
   const hojeDe = uid => { const p = q('SELECT fuso FROM perfis WHERE user_id = ?').get(uid); try { return hoje(fusoDe(p)); } catch { return hoje(); } };
-  const vozes = criarVozes({ db, dir: path.resolve(process.env.DATA_DIR || path.join(__dirname, '..', 'dados')), diaDe: hojeDe });
+  const grupos=criarGrupos({db,hojeDe});
+  const orcamento=criarOrcamento({db,contaDe:grupos.contaDe,hojeDe});
+  const vozes = criarVozes({ orcamento, db, dir: path.resolve(process.env.DATA_DIR || path.join(__dirname, '..', 'dados')), diaDe: hojeDe });
 
   function hipotesesDe(uid, h) {
     return modelo.hipoteses(tentativasDe(uid, 30), revisoesDe(uid), { descartadas: descartesDe(uid, h) });
   }
 
   function estadoAssinatura(uid, h) {
-    const a = assinaturaDe(uid);
-    const est = assin.estado(a, h);
+    const {est}=grupos.contaDe(uid);
     return { ...est, limites: assin.limitesDe(est) };
   }
   function usoMes(uid, h) {
     const mes = h.slice(0, 7);
-    return Object.fromEntries(q('SELECT tipo, qtd FROM uso_ia WHERE user_id = ? AND mes = ?').all(uid, mes).map(r => [r.tipo, r.qtd]));
+    return Object.fromEntries(q('SELECT tipo, SUM(qtd) qtd FROM uso_ia WHERE (user_id=? OR user_id IN (SELECT user_id FROM assinatura_membros WHERE owner_id=?)) AND mes=? GROUP BY tipo').all(grupos.contaDe(uid).owner,grupos.contaDe(uid).owner,mes).map(r => [r.tipo, r.qtd]));
   }
   // pode usar IA nesta tarefa? (chave configurada + plano com cota)
-  function podeIa(uid, tipo, h) {
+  function podeIa(uid, tipo, h, reservar=true) {
     if (!ia.ativo()) return { pode: false, motivo: 'sem_ia' };
     const est = estadoAssinatura(uid, h);
     const usado = usoMes(uid, h)[tipo] || 0;
     if (usado >= (est.limites[tipo] || 0)) return { pode: false, motivo: est.acesso === 'livre' ? 'plano_livre' : 'limite' };
     if (!limIa.tentar('u' + uid)) return { pode: false, motivo: 'ritmo' };
+    if(reservar){const reservado=transacao(db,()=>{if((usoMes(uid,h)[tipo]||0)>=(est.limites[tipo]||0))return false;q('INSERT INTO uso_ia(user_id,mes,tipo,qtd) VALUES(?,?,?,1) ON CONFLICT(user_id,mes,tipo) DO UPDATE SET qtd=qtd+1').run(uid,h.slice(0,7),tipo);return true;});if(!reservado)return{pode:false,motivo:'limite'};}
     return { pode: true };
   }
   function contarIa(uid, tipo, h, uso) {
-    q('INSERT INTO uso_ia (user_id, mes, tipo, qtd, tokens_entrada, tokens_saida) VALUES (?, ?, ?, 1, ?, ?) ON CONFLICT(user_id, mes, tipo) DO UPDATE SET qtd = qtd + 1, tokens_entrada = tokens_entrada + excluded.tokens_entrada, tokens_saida = tokens_saida + excluded.tokens_saida')
+    q('INSERT INTO uso_ia (user_id, mes, tipo, qtd, tokens_entrada, tokens_saida) VALUES (?, ?, ?, 0, ?, ?) ON CONFLICT(user_id, mes, tipo) DO UPDATE SET tokens_entrada = tokens_entrada + excluded.tokens_entrada, tokens_saida = tokens_saida + excluded.tokens_saida')
       .run(uid, h.slice(0, 7), tipo, uso?.entrada || 0, uso?.saida || 0);
   }
   const avisoIa = motivo => ({
@@ -741,7 +746,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     if(materialId !== null && !material)throw new ErroHttp(404,'Material não encontrado.');
     const perguntasMaterial = lerJson(material?.gerado, {})?.simulacao || [];
     const msgs = [{ papel: 'tutor', texto: perguntasMaterial[0] || CENARIOS[cen].abertura, em: agoraISO() }];
-    const r = q('INSERT INTO conversas (user_id, cenario, iniciada_em, mensagens, modo, material_id) VALUES (?, ?, ?, ?, ?, ?)').run(uid, cen, agoraISO(), JSON.stringify(msgs), podeIa(uid, 'conversa', h).pode ? 'ia' : 'roteiro', materialId);
+    const r = q('INSERT INTO conversas (user_id, cenario, iniciada_em, mensagens, modo, material_id) VALUES (?, ?, ?, ?, ?, ?)').run(uid, cen, agoraISO(), JSON.stringify(msgs), podeIa(uid, 'conversa', h, false).pode ? 'ia' : 'roteiro', materialId);
     return { id: Number(r.lastInsertRowid), mensagens: msgs, titulo: CENARIOS[cen].titulo, ajuda: CENARIOS[cen].ajuda };
   });
   rota('POST', '/conversas/:id/mensagem', async (ctx) => {
@@ -1420,14 +1425,23 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
   });
 
   // Assinatura
+  rota('GET','/planos',()=>({catalogo:catalogo.publico(),contratacao:false}),{publica:true});
+  rota('POST','/assinatura/convite',ctx=>grupos.convite(ctx.u.id));
+  rota('POST','/assinatura/entrar',ctx=>grupos.entrar(ctx.u.id,ctx.corpo.codigo));
+  rota('POST','/assinatura/sair',ctx=>grupos.sair(ctx.u.id));
+  rota('POST','/assinatura/remover',ctx=>grupos.remover(ctx.u.id,ctx.corpo.membro));
   rota('GET', '/assinatura', (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid);
     const a = assinaturaDe(uid);
-    return { estado: estadoAssinatura(uid, h), planos: assin.PLANOS, limites: assin.LIMITES, nomesUso: assin.NOMES_USO, inclui: assin.INCLUI, uso: usoMes(uid, h), historico: a?.historico || [], pagamento: process.env.PAGAMENTO_MODO || 'desligado', teste_ate: a?.teste_ate || null };
+    return { catalogo:catalogo.publico(),grupo:grupos.painel(uid),consumo:orcamento.uso(uid), estado: estadoAssinatura(uid, h), planos: assin.PLANOS, limites: assin.LIMITES, nomesUso: assin.NOMES_USO, inclui: assin.INCLUI, uso: usoMes(uid, h), historico: a?.historico || [], pagamento: process.env.PAGAMENTO_MODO || 'desligado', teste_ate: a?.teste_ate || null };
   });
   rota('POST', '/assinatura/assinar', (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid);
     const plano = V.um(ctx.corpo.plano, Object.keys(assin.PLANOS), 'Plano');
+    if(grupos.contaDe(uid).owner!==uid)throw new ErroHttp(409,'Saia do plano compartilhado antes de contratar um plano individual.');
+    const ocupadas=1+q('SELECT COUNT(*) n FROM assinatura_membros WHERE owner_id=?').get(uid).n;
+    const vagas=catalogo.POR_PLANO[assin.PLANOS[plano].categoria||'completo'].pessoas;
+    if(ocupadas>vagas)throw new ErroHttp(409,'Remova os participantes excedentes antes de mudar de plano.');
     const modo = process.env.PAGAMENTO_MODO || 'desligado';
     if (modo !== 'simulado') throw new ErroHttp(503, 'O pagamento on-line ainda não está ligado. Nenhuma cobrança foi feita.');
     const a = assinaturaDe(uid) || assin.novaAssinatura(h);
@@ -1541,7 +1555,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
       xp: q('SELECT COALESCE(MAX(id),0) n FROM xp_extrato WHERE user_id=?').get(ctx.u.id).n,
       figurinhas: q('SELECT COALESCE(MAX(id),0) n FROM colecao_figurinhas WHERE user_id=?').get(ctx.u.id).n,
     } : null;
-    const out = await achou.fn(ctx);
+    const out = ctx.u ? await orcamento.executar(ctx.u.id,()=>achou.fn(ctx)) : await achou.fn(ctx);
     if (marco && out && !out.repetida && !out.pratica) {
       const moedas = q('SELECT COALESCE(SUM(quantidade),0) n FROM moedas_extrato WHERE user_id=? AND id>? AND quantidade>0').get(ctx.u.id,marco.moedas).n;
       const xp = q('SELECT COALESCE(SUM(quantidade),0) n FROM xp_extrato WHERE user_id=? AND id>?').get(ctx.u.id,marco.xp).n;

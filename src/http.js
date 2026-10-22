@@ -102,7 +102,7 @@ function enviarTexto(res, abs, jaComStatus) {
   try {
     let txt = cacheTexto.get(abs);
     if (txt === undefined) {
-      txt = fs.readFileSync(abs, 'utf8').replaceAll('__V__', VERSAO);
+      txt = fs.readFileSync(abs, 'utf8').replaceAll('__V__', VERSAO).replace('__CATALOGO_PLANOS__',require('./catalogo-planos').htmlPlanos()).replace('__OFERTAS_PLANOS__',JSON.stringify(require('./catalogo-planos').CATALOGO.flatMap(p=>p.mensal?['mensal','anual'].map(periodo=>({'@type':'Offer',name:p.nome+' '+periodo,price:(p[periodo]/100).toFixed(2),priceCurrency:'BRL'})):[])));
       if (process.env.NODE_ENV === 'production') cacheTexto.set(abs, txt);
     }
     if (!jaComStatus) res.statusCode = 200;
