@@ -1287,3 +1287,14 @@ body[data-publico="adulto"] .capitulo-card__imagem{font-size:1.8rem}
 .sentido__ex{margin:.2rem 0 0;line-height:1.45}
 .sentido--aqui{border-left:4px solid var(--turquesa);padding-left:.6rem;margin-left:-.6rem}
 .sentido .chip{margin-left:.5rem}
+
+/* Acesso à conta: uma etapa por vez, mensagens claras e código fácil de preencher. */
+.auth-cartao{min-width:0;text-align:left}
+.auth-titulo{font-size:1.4rem;margin:0 0 1rem}
+.auth-cartao .abas{margin-bottom:1.2rem}
+.auth-email{font-weight:800;overflow-wrap:anywhere;margin:.7rem 0 1rem}
+.auth-codigo{font-size:1.5rem;letter-spacing:.18em;text-align:center;font-variant-numeric:tabular-nums}
+.auth-voltar{display:block;margin:.75rem auto 0;white-space:normal;text-align:center}
+.auth-cartao .erro-campo:empty{display:none}
+.auth-cartao form{display:grid;gap:1rem}
+.auth-cartao input{min-width:0}

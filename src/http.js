@@ -70,7 +70,7 @@ function lerCookies(req) {
   const out = {};
   for (const p of String(req.headers.cookie || '').split(';')) {
     const i = p.indexOf('=');
-    if (i > 0) out[p.slice(0, i).trim()] = decodeURIComponent(p.slice(i + 1).trim());
+    if (i > 0) { try { out[p.slice(0, i).trim()] = decodeURIComponent(p.slice(i + 1).trim()); } catch {} }
   }
   return out;
 }
@@ -78,10 +78,10 @@ const seguro = req => req.headers['x-forwarded-proto'] === 'https' || process.en
 const nomeCookie = req => (seguro(req) ? '__Host-inglou' : 'inglou_sessao');
 function definirSessao(req, res, token, dias) {
   const s = seguro(req);
-  res.setHeader('Set-Cookie', `${nomeCookie(req)}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${dias * 86400}${s ? '; Secure' : ''}`);
+  res.appendHeader('Set-Cookie', `${nomeCookie(req)}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${dias * 86400}${s ? '; Secure' : ''}`);
 }
 function limparSessao(req, res) {
-  res.setHeader('Set-Cookie', `${nomeCookie(req)}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${seguro(req) ? '; Secure' : ''}`);
+  res.appendHeader('Set-Cookie', `${nomeCookie(req)}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${seguro(req) ? '; Secure' : ''}`);
 }
 const tokenDaSessao = req => { const c = lerCookies(req); return c['__Host-inglou'] || c.inglou_sessao || null; };
 
@@ -148,4 +148,4 @@ function servir(req, res, url) {
   });
 }
 
-module.exports = { cabecalhos, json, erro, ErroHttp, lerCorpo, definirSessao, limparSessao, tokenDaSessao, ip, servir, naoAchou, VERSAO, seguro };
+module.exports = { lerCookies, cabecalhos, json, erro, ErroHttp, lerCorpo, definirSessao, limparSessao, tokenDaSessao, ip, servir, naoAchou, VERSAO, seguro };

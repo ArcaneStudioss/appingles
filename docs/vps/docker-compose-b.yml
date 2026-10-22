@@ -11,6 +11,11 @@ services:
     working_dir: /codigo
     environment:
       NODE_ENV: production
+      AUTH_PROVIDER: ${AUTH_PROVIDER:-local}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY:-}
+      SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY:-}
+      AUTH_SESSION_KEY: ${AUTH_SESSION_KEY:-}
       BACKUP_DESLIGADO: "1"
       PORT: "8080"
       DATA_DIR: /dados

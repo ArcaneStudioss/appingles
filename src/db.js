@@ -166,6 +166,20 @@ const MIGRACOES = [
      PRIMARY KEY(user_id, dia)
    );
    CREATE INDEX uso_voz_dia ON uso_voz(dia);`,
+  // 10: vínculo externo e tokens cifrados no servidor; IDs e progresso existentes não mudam.
+  `ALTER TABLE usuarios ADD COLUMN auth_provider TEXT NOT NULL DEFAULT 'local';
+   ALTER TABLE usuarios ADD COLUMN auth_subject TEXT;
+   CREATE UNIQUE INDEX usuarios_auth_subject ON usuarios(auth_provider, auth_subject) WHERE auth_subject IS NOT NULL;
+   CREATE TABLE auth_sessoes (
+     id_hash TEXT PRIMARY KEY REFERENCES sessoes(id_hash) ON DELETE CASCADE,
+     tokens TEXT NOT NULL
+   );
+   CREATE TABLE auth_fluxos (
+     id_hash TEXT PRIMARY KEY, finalidade TEXT NOT NULL, email TEXT NOT NULL,
+     dados TEXT NOT NULL, expira_em INTEGER NOT NULL,
+     tentativas INTEGER NOT NULL DEFAULT 0, ocupado_ate INTEGER NOT NULL DEFAULT 0
+   );
+   CREATE INDEX auth_fluxos_expira ON auth_fluxos(expira_em);`,
 ];
 
 function abrir(dir) {

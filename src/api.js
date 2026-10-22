@@ -2,6 +2,8 @@
 // API JSON em /api/v1. Toda rota de aluno filtra por user_id da sessão (nunca por id vindo do navegador).
 const { json, erro, ErroHttp, lerCorpo, definirSessao, limparSessao, tokenDaSessao, ip } = require('./http');
 const auth = require('./auth');
+const { criarSupabase } = require('./auth-supabase');
+const { registrarAuth } = require('./auth-contas');
 const { json: lerJson, transacao } = require('./db');
 const ia = require('./ia');
 const assin = require('./assinatura');
@@ -63,7 +65,8 @@ const limGeral = auth.limitador({ janelaMs: 60e3, max: 600 });
 const limIa = auth.limitador({ janelaMs: 60e3, max: 20 });
 const emAndamento = new Set();   // trava de clique duplo por usuário+ação
 
-function criar(db) {
+function criar(db, { supabase: supabaseInjetado } = {}) {
+  const supabase = supabaseInjetado || criarSupabase();
   const agoraISO = () => new Date().toISOString();
   const q = (sql) => db.prepare(sql);
   // limites de segurança (login e cadastro) valem para todas as cópias do app; o geral e o da IA são por cópia (só anti-sobrecarga)
@@ -75,9 +78,9 @@ function criar(db) {
   function usuarioDaSessao(req) {
     const t = tokenDaSessao(req);
     if (!t || t.length > 100) return null;
-    const s = q('SELECT s.user_id, s.expira_em, u.nome, u.email FROM sessoes s JOIN usuarios u ON u.id = s.user_id WHERE s.id_hash = ?').get(auth.hashToken(t));
+    const s = q('SELECT s.user_id, s.expira_em, u.nome, u.email, u.auth_provider, u.auth_subject FROM sessoes s JOIN usuarios u ON u.id = s.user_id WHERE s.id_hash = ?').get(auth.hashToken(t));
     if (!s || s.expira_em < Date.now()) return null;
-    return { id: s.user_id, nome: s.nome, email: s.email, tokenHash: auth.hashToken(t) };
+    return { id: s.user_id, nome: s.nome, email: s.email, auth_provider: s.auth_provider, auth_subject: s.auth_subject, tokenHash: auth.hashToken(t) };
   }
   function abrirSessao(req, res, uid) {
     const t = auth.novoToken();
@@ -87,6 +90,7 @@ function criar(db) {
     q('DELETE FROM sessoes WHERE user_id = ? AND id_hash NOT IN (SELECT id_hash FROM sessoes WHERE user_id = ? ORDER BY criado_em DESC LIMIT 9)').run(uid, uid);
     q('INSERT INTO sessoes (id_hash, user_id, criado_em, expira_em) VALUES (?, ?, ?, ?)').run(auth.hashToken(t), uid, agora, agora + auth.SESSAO_DIAS * 864e5);
     definirSessao(req, res, t, auth.SESSAO_DIAS);
+    return auth.hashToken(t);
   }
 
   // ---------- leitura do estado do aluno ----------
@@ -229,6 +233,15 @@ function criar(db) {
   const rotas = [];
   const rota = (metodo, padrao, fn, { publica = false } = {}) => rotas.push({ metodo, re: new RegExp('^' + padrao.replace(/:(\w+)/g, '(?<$1>[^/]+)') + '$'), fn, publica });
 
+  const contasAuth = registrarAuth({ db, provedor: supabase, rota, V, abrirSessao,
+    limparVozes: uid => vozes.limparUsuario(uid),
+    criarUsuario: b => {
+      const r = q('INSERT INTO usuarios (email,nome,senha_hash,criado_em,consentiu_em) VALUES (?,?,?,?,?)').run(b.email, b.nome, b.senha_hash, agoraISO(), agoraISO());
+      const uid = Number(r.lastInsertRowid);
+      q('INSERT INTO perfis (user_id,idade,papel,regiao,responsavel_em,atualizado_em) VALUES (?,?,?,?,?,?)').run(uid, b.idade, b.papel, b.regiao, b.idade < 18 ? agoraISO() : null, agoraISO());
+      salvarAssinatura(uid, assin.novaAssinatura(hoje())); return uid;
+    },
+  });
   // Auth
   rota('POST', '/vozes/sintetizar', async ctx => {
     const { audio, cache } = await vozes.sintetizar(ctx.u.id, ctx.corpo);
@@ -237,7 +250,7 @@ function criar(db) {
     ctx.res.setHeader('Cache-Control', 'private, no-store'); ctx.res.setHeader('X-Audio-Cache', cache ? 'hit' : 'miss');
     ctx.res.end(audio);
   });
-  rota('GET', '/auth/estado', (ctx) => ({ logado: !!ctx.u, usuario: ctx.u ? { nome: ctx.u.nome, email: ctx.u.email } : null, ia: ia.ativo() }), { publica: true });
+  rota('GET', '/auth/estado', (ctx) => ({ autenticacao: { provedor: supabase.ativo ? 'supabase' : 'local', disponivel: !supabase.ativo || supabase.disponivel, recuperacao: supabase.ativo && supabase.disponivel }, logado: !!ctx.u, usuario: ctx.u ? { nome: ctx.u.nome, email: ctx.u.email } : null, ia: ia.ativo() }), { publica: true });
 
   rota('POST', '/auth/cadastro', async (ctx) => {
     if (!limCadastro.tentar(ctx.ip)) throw new ErroHttp(429, 'Muitas tentativas. Tente de novo mais tarde.');
@@ -319,7 +332,7 @@ function criar(db) {
     const uid = ctx.u.id, h = hojeDe(uid);
     const p = perfilDe(uid), n = nivelamentoDe(uid), plano = planoDe(uid);
     const passo = !p?.objetivo ? 'perfil' : !n ? 'nivelamento' : !plano ? 'plano' : 'app';
-    return { usuario: { nome: ctx.u.nome, email: ctx.u.email }, perfil: p, publico: publicoDe(p), nivel: n?.nivel || null, passo, assinatura: estadoAssinatura(uid, h), ia: ia.ativo(), hoje: h };
+    return { autenticacao: { provedor: ctx.u.auth_provider }, usuario: { nome: ctx.u.nome, email: ctx.u.email }, perfil: p, publico: publicoDe(p), nivel: n?.nivel || null, passo, assinatura: estadoAssinatura(uid, h), ia: ia.ativo(), hoje: h };
   });
 
   rota('PUT', '/perfil/publico', (ctx) => {
@@ -1497,13 +1510,14 @@ function criar(db) {
       if (req.headers['content-length'] !== '0' && tipo && !tipo.startsWith('application/json')) return erro(res, 403, 'Requisição recusada.');
       ctx.corpo = await lerCorpo(req);
     }
-    ctx.u = usuarioDaSessao(req);
+    const usuario = usuarioDaSessao(req);
+    ctx.u = achou.publica && caminho !== '/auth/estado' ? usuario : await contasAuth.validarSessao(ctx, usuario);
     if (!achou.publica && !ctx.u) return erro(res, 401, 'Faça login para continuar.');
     const out = await achou.fn(ctx);
     if (out !== undefined && !res.writableEnded) json(res, 200, out);
   }
 
-  return { tratar, fechar: vozes.fechar };
+  return { tratar, fechar: () => { vozes.fechar(); contasAuth.fechar(); } };
 }
 
 module.exports = { criar };

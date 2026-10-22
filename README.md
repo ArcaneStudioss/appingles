@@ -101,3 +101,7 @@ Nível C (backend com login e dados pessoais). Verificado em 18/10/2026:
 
 ## Créditos de terceiros
 Ícones Phosphor (MIT), fontes Fredoka, Nunito e Caveat (SIL Open Font License), servidas pelo próprio app (sem Google Fonts, por privacidade).
+
+
+## Acesso à conta com Supabase Auth
+O servidor pode usar Supabase Auth para cadastro com confirmação por código, login por senha, recuperação por e-mail e migração das contas locais sem trocar seus IDs ou perder estudos e turmas. JWT e refresh token ficam cifrados no servidor; o navegador recebe apenas cookies HttpOnly. A interface apresenta uma etapa por vez, com mostrar senha, reenviar código e redefinição de senha. O provedor é ativado por configuração depois de preparar o projeto e o envio de e-mails; o modo local continua disponível para a transição. Configuração e limites em [docs/autenticacao-supabase.md](docs/autenticacao-supabase.md).
