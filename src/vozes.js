@@ -6,6 +6,7 @@ const { createHash, randomUUID } = require('node:crypto');
 const { ErroHttp } = require('./http');
 const { transacao } = require('./db');
 
+const EMOCOES = { contexto: '', feliz: '[happy]', triste: '[sad]', animado: '[excited]', calmo: '[calm]', acolhedor: '[warmly]', curioso: '[curious]' };
 const VOZES = {
   mia: { pt: 'MeTEa1BhTRHHItBKl2mJ', en: 'WshF5zVOQJVpRBKVUjvc' },
   tuiuiu: { pt: '5sXm87IvJC4SNxe0UIfp', en: '1TtJKrO3NEEEDoWRDALC' },
@@ -15,11 +16,21 @@ function pedidoValido(b = {}) {
   if (typeof b.texto !== 'string') throw new ErroHttp(422, 'Informe o texto para ouvir.');
   const texto = b.texto.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').trim();
   if (!texto || texto.length > 3000) throw new ErroHttp(422, 'Use de 1 a 3000 caracteres por trecho de áudio.');
-  return { texto, personagem: b.personagem, idioma: b.idioma };
+  const contexto = campo => {
+    if (b[campo] == null) return '';
+    if (typeof b[campo] !== 'string' || b[campo].length > 500) throw new ErroHttp(422, 'O contexto do áudio deve ter até 500 caracteres.');
+    return b[campo].replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
+  };
+  const emocao = b.emocao ?? 'contexto';
+  if (!Object.hasOwn(EMOCOES, emocao)) throw new ErroHttp(422, 'Escolha um tom de voz válido.');
+  const velocidade = b.velocidade ?? 1;
+  if (typeof velocidade !== 'number' || !Number.isFinite(velocidade) || velocidade < .5 || velocidade > 1.6) throw new ErroHttp(422, 'Velocidade de fala inválida.');
+  return { texto, emocao, velocidade, personagem: b.personagem, idioma: b.idioma, anterior: contexto('anterior'), seguinte: contexto('seguinte') };
 }
 const inteiro = (v, padrao) => Number.isSafeInteger(Number(v)) && Number(v) > 0 ? Number(v) : padrao;
 function criarVozes({ db, dir, env = process.env, fetchImpl = fetch, diaDe = () => new Date().toISOString().slice(0, 10), agora = Date.now }) {
-  const chave = env.ELEVENLABS_API_KEY || '', modelo = env.ELEVENLABS_MODEL || 'eleven_flash_v2_5';
+  const chave = env.ELEVENLABS_API_KEY || '', modeloCurto = env.ELEVENLABS_MODEL || 'eleven_flash_v2_5';
+  const modeloTexto = env.ELEVENLABS_MODEL_TEXTO || 'eleven_v4';
   const vozes = Object.fromEntries(Object.entries(VOZES).map(([p, idiomas]) => [p, Object.fromEntries(Object.entries(idiomas).map(([idioma, id]) => [idioma, env[`ELEVENLABS_VOICE_${p === 'mia' ? 'MIA' : 'TUIUIU'}_${idioma.toUpperCase()}`] || id]))]));
   const raiz = path.join(dir, 'vozes'), pendentes = new Map(), versoes = new Map();
   const diasCache = inteiro(env.VOZ_CACHE_DIAS, 30), porPessoa = inteiro(env.VOZ_CARACTERES_DIA, 60000), totalDia = inteiro(env.VOZ_CARACTERES_TOTAL_DIA, 300000);
@@ -36,8 +47,15 @@ function criarVozes({ db, dir, env = process.env, fetchImpl = fetch, diaDe = () 
     const pedido = pedidoValido(entrada);
     if (!Number.isSafeInteger(uid) || uid < 1) throw new ErroHttp(401, 'Faça login para ouvir.');
     const voz = vozes[pedido.personagem][pedido.idioma];
+    const leitura = pedido.texto.length >= 160 || !!pedido.anterior || !!pedido.seguinte || /\n/.test(pedido.texto);
+    const modelo = leitura || pedido.emocao !== 'contexto' || /\s/.test(pedido.texto) ? modeloTexto : modeloCurto;
+    const expressivo = /^eleven_v[34](?:_|$)/.test(modelo);
+    const ajustes = expressivo ? { stability: .5, similarity_boost: .75 }
+      : { stability: .38, similarity_boost: .75, style: .2, use_speaker_boost: true, speed: Math.max(.7, Math.min(1.2, pedido.velocidade)) };
+    const direcao = expressivo ? [EMOCOES[pedido.emocao], pedido.velocidade <= .9 ? '[slowly]' : pedido.velocidade >= 1.15 ? '[speaking quickly]' : ''].filter(Boolean).join(' ') : '';
+    const textoFalado = direcao ? direcao + ' ' + pedido.texto : pedido.texto;
     if (!/^[A-Za-z0-9]{20,64}$/.test(voz)) throw new ErroHttp(503, 'A voz deste personagem ainda não está configurada.');
-    const hash = createHash('sha256').update(JSON.stringify([uid, voz, modelo, 'v1', pedido.idioma, pedido.texto])).digest('hex');
+    const hash = createHash('sha256').update(JSON.stringify([uid, voz, modelo, 'expressiva-v3', pedido.emocao, pedido.velocidade, ajustes, pedido.idioma, pedido.texto, pedido.anterior, pedido.seguinte])).digest('hex');
     const arquivo = path.join(pasta(uid), hash + '.mp3');
     try {
       const stat = await fs.stat(arquivo);
@@ -50,13 +68,13 @@ function criarVozes({ db, dir, env = process.env, fetchImpl = fetch, diaDe = () 
     if (pendentes.size >= 4) throw new ErroHttp(429, 'Estamos preparando outros áudios. Tente ouvir de novo em instantes.');
     const versao = versoes.get(uid) || 0, dia = diaDe(uid);
     const trabalho = (async () => {
-      reservar(uid, dia, pedido.texto.length);
+      reservar(uid, dia, textoFalado.length);
       let temporario;
       try {
         const resposta = await fetchImpl('https://api.elevenlabs.io/v1/text-to-speech/' + voz + '?output_format=mp3_44100_128', {
           method: 'POST', headers: { 'xi-api-key': chave, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
-          body: JSON.stringify({ text: pedido.texto, model_id: modelo, ...(modelo === 'eleven_multilingual_v2' ? {} : { language_code: pedido.idioma }), voice_settings: { stability: .5, similarity_boost: .75, speed: 1 } }),
-          signal: AbortSignal.timeout(30000),
+          body: JSON.stringify({ text: textoFalado, model_id: modelo, ...(modelo === 'eleven_multilingual_v2' ? {} : { language_code: pedido.idioma }), voice_settings: ajustes, ...(pedido.anterior ? { previous_text: pedido.anterior } : {}), ...(pedido.seguinte ? { next_text: pedido.seguinte } : {}) }),
+          signal: AbortSignal.timeout(45000),
         });
         if (!resposta.ok || !/^audio\/(mpeg|mp3)(?:;|$)/i.test(resposta.headers.get('content-type') || '')) throw new Error('sintese_indisponivel');
         const partes = []; let bytes = 0;
@@ -73,7 +91,7 @@ function criarVozes({ db, dir, env = process.env, fetchImpl = fetch, diaDe = () 
         return { audio, cache: false };
       } catch {
         // Não registra texto, chave ou resposta do provedor em logs ou mensagens ao navegador.
-        q('UPDATE uso_voz SET caracteres = MAX(0, caracteres - ?) WHERE user_id = ? AND dia = ?').run(pedido.texto.length, uid, dia);
+        q('UPDATE uso_voz SET caracteres = MAX(0, caracteres - ?) WHERE user_id = ? AND dia = ?').run(textoFalado.length, uid, dia);
         throw new ErroHttp(503, 'Não consegui preparar esta fala agora. Tente novamente; a voz do personagem será mantida.');
       } finally { if (temporario) await fs.rm(temporario, { force: true }).catch(() => {}); }
     })();

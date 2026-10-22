@@ -75,3 +75,32 @@ test('apagar dados durante a síntese impede que o cache reapareça depois', asy
   await servico.limparUsuario(1); terminar(); await geracao;
   assert.ok(!fs.existsSync(path.join(dir, 'vozes', '1')));
 });
+
+
+test('as quatro vozes leem com o modelo expressivo e direção de emoção sem trocar palavras', async t => {
+  const { servico, chamadas } = ambiente(t);
+  for (const personagem of ['mia', 'tuiuiu']) for (const idioma of ['pt', 'en']) for (const [emocao, tag] of [['feliz', '[happy]'], ['triste', '[sad]'], ['animado', '[excited]']]) {
+    const texto = idioma === 'pt' ? 'Hoje vamos contar uma história e descobrir como os personagens se sentem.' : 'Today we will tell a story and discover how the characters feel.';
+    await servico.sintetizar(1, { texto, personagem, idioma, emocao, anterior: 'Earlier in the story.', seguinte: 'The story continues.' });
+    const req = chamadas.at(-1), corpo = JSON.parse(req.opts.body);
+    assert.ok(req.url.includes('/' + VOZES[personagem][idioma] + '?'));
+    assert.equal(corpo.model_id, 'eleven_v4'); assert.equal(corpo.text, tag + ' ' + texto);
+    assert.deepEqual(corpo.voice_settings, { stability: .5, similarity_boost: .75 });
+    assert.equal(corpo.previous_text, 'Earlier in the story.'); assert.equal(corpo.next_text, 'The story continues.');
+  }
+});
+
+test('contexto natural não força alegria e cache distingue emoção, velocidade, modelo e contexto', async t => {
+  const { servico, chamadas, db, dir } = ambiente(t);
+  const p = { ...pedido, texto: 'I miss my old friend. We used to walk together.' };
+  await servico.sintetizar(1, p); assert.equal(JSON.parse(chamadas.at(-1).opts.body).text, p.texto);
+  assert.equal((await servico.sintetizar(1, p)).cache, true);
+  for (const extra of [{ emocao: 'triste' }, { velocidade: .8 }, { anterior: 'A quiet evening.' }]) await servico.sintetizar(1, { ...p, ...extra });
+  assert.equal(chamadas.length, 4);
+  const corpo = JSON.parse(chamadas[2].opts.body); assert.ok(corpo.text.startsWith('[slowly] ')); assert.ok(!('speed' in corpo.voice_settings));
+  const outro = criarVozes({ db, dir, env: { ELEVENLABS_API_KEY: 'sk_fixture_sem_valor', ELEVENLABS_MODEL_TEXTO: 'eleven_multilingual_v2' }, fetchImpl: async (url, opts) => { chamadas.push({ url, opts }); return new Response(MP3, { headers: { 'Content-Type': 'audio/mpeg' } }); } });
+  t.after(outro.fechar); await outro.sintetizar(1, { ...p, emocao: 'triste' });
+  const legado = JSON.parse(chamadas.at(-1).opts.body); assert.equal(legado.text, p.texto); assert.equal(legado.model_id, 'eleven_multilingual_v2');
+  assert.ok(!('language_code' in legado));
+  for (const extra of [{ emocao: '[laughs]' }, { anterior: 'x'.repeat(501) }, { seguinte: 1 }, { velocidade: 3 }]) await assert.rejects(servico.sintetizar(1, { ...p, ...extra }), e => e.status === 422);
+});

@@ -140,13 +140,13 @@ export function ocupado(btn, sim) {
 
 // ---------- áudio: somente as vozes oficiais da Mia e do Tuiuiú ----------
 export { pararVoz, temVoz } from './voz.js?v=__V__';
-export function falar(texto, { velocidade = 1, personagem, vozFem = false, aoFim } = {}) {
+export function falar(texto, { velocidade = 1, personagem, vozFem = false, aoFim, emocao = 'contexto' } = {}) {
   const voz = personagem || (vozFem ? 'mia' : null) || (localStorageGet('personagem-en') === 'tuiuiu' ? 'tuiuiu' : 'mia');
-  return tocarVoz(texto, { personagem: voz, idioma: 'en', velocidade: velocidade * (Number(localStorageGet('velocidade')) || 1), aoFim, aoCancelar: aoFim, aoErro: mensagem => { toast(mensagem, { tipo: 'erro' }); aoFim?.(); } });
+  return tocarVoz(texto, { personagem: voz, idioma: 'en', emocao, velocidade: velocidade * (Number(localStorageGet('velocidade')) || 1), aoFim, aoCancelar: aoFim, aoErro: mensagem => { toast(mensagem, { tipo: 'erro' }); aoFim?.(); } });
 }
-export function falarPt(texto, aoFim, { personagem } = {}) {
+export function falarPt(texto, aoFim, { personagem, emocao = 'contexto' } = {}) {
   const voz = personagem || (localStorageGet('personagem-pt') === 'mia' ? 'mia' : 'tuiuiu');
-  return tocarVoz(texto, { personagem: voz, idioma: 'pt', velocidade: Number(localStorageGet('velocidade')) || 1,
+  return tocarVoz(texto, { personagem: voz, idioma: 'pt', emocao, velocidade: Number(localStorageGet('velocidade')) || 1,
     aoFim, aoCancelar: aoFim, aoErro: mensagem => { toast(mensagem, { tipo: 'erro' }); aoFim?.(); } });
 }
 export function botaoOuvir(texto, { velocidade = 1, rotulo = 'Ouvir' } = {}) {

@@ -6,21 +6,27 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 function player(fetchImpl) {
-  const urls = new Map(), reproducoes = [], eventos = {}, chamadas = [];
-  let indice = 0, sintetizadasPeloAparelho = 0;
-  class Audio {
-    pause() {} removeAttribute() {} load() {}
-    async play() { const blob = urls.get(this.src); if (blob?.type === 'audio/mpeg') { reproducoes.push(this.src); setTimeout(() => this.onended?.(), 0); } }
+  const urls = new Map(), reproducoes = [], eventos = {}, chamadas = [], fontes = [];
+  let sintetizadasPeloAparelho = 0, estados = [];
+  class AudioContext {
+    constructor() { this.state = 'suspended'; this.destination = {}; }
+    async resume() { this.state = 'running'; estados.push(this.state); }
+    async suspend() { this.state = 'suspended'; estados.push(this.state); }
+    async decodeAudioData(dados) { return { dados }; }
+    createBufferSource() {
+      const fonte = { connect() {}, disconnect() {}, stop() { this.parou = true; }, start() { reproducoes.push(this.buffer); setTimeout(() => this.onended?.(), 0); } };
+      fontes.push(fonte); return fonte;
+    }
   }
-  const contexto = vm.createContext({ Audio, Blob, Uint8Array, DataView, AbortController, DOMException, setTimeout,
-    URL: { createObjectURL: b => { const id = 'blob:' + indice++; urls.set(id, b); return id; }, revokeObjectURL: id => urls.delete(id) },
+  const documento = { hidden: false, addEventListener: (nome, fn) => { eventos[nome] = fn; } };
+  const contexto = vm.createContext({ AudioContext, document: documento, Audio: class { constructor() { throw new Error('reprodutor de mídia não deve ser criado'); } }, AbortController, DOMException, setTimeout,
     addEventListener: (nome, fn) => { eventos[nome] = fn; },
     speechSynthesis: { speak: () => { sintetizadasPeloAparelho++; throw new Error('voz não autorizada'); } },
     fetch: async (url, opts) => { chamadas.push({ url, ...JSON.parse(opts.body) }); return fetchImpl(url, opts); },
   });
   const fonte = fs.readFileSync(path.join(__dirname, '../public/assets/js/voz.js'), 'utf8').replace(/^export /gm, '');
   vm.runInContext(fonte, contexto);
-  return { contexto, reproducoes, chamadas, urls, eventos, sintetizadas: () => sintetizadasPeloAparelho };
+  return { contexto, reproducoes, chamadas, urls, eventos, fontes, estados, documento, sintetizadas: () => sintetizadasPeloAparelho };
 }
 const mp3 = () => new Response(Buffer.from('ID3audio'), { headers: { 'Content-Type': 'audio/mpeg' } });
 
@@ -43,7 +49,40 @@ test('se o serviço falha, informa o erro sem tentar voz do navegador ou gravaç
 test('sair da tela durante a preparação impede reprodução tardia', async () => {
   let responder;
   const p = player(() => new Promise(resolve => { responder = resolve; }));
-  p.contexto.tocarVoz('Hello!'); p.eventos.hashchange(); responder(mp3());
+  p.contexto.tocarVoz('Hello!'); await new Promise(resolve => setTimeout(resolve, 0)); p.eventos.hashchange(); responder(mp3());
   await new Promise(resolve => setTimeout(resolve, 20));
   assert.equal(p.reproducoes.length, 0); assert.equal(p.urls.size, 0); assert.equal(p.sintetizadas(), 0);
+});
+
+
+test('une parágrafos e corta leituras no fim da frase, enviando contexto e tom sem descartar texto', async () => {
+  const p = player(async () => mp3());
+  const paragrafos = ['She was happy to see her friends. '.repeat(50).trim(), 'They celebrated the end of the journey. '.repeat(40).trim()];
+  await new Promise((resolve, reject) => p.contexto.tocarVoz(paragrafos, { emocao: 'feliz', velocidade: .8, aoFim: resolve, aoErro: reject }));
+  assert.equal(p.chamadas.map(c => c.texto).join(' ').replace(/\s+/g, ' '), paragrafos.join(' ').replace(/\s+/g, ' '));
+  assert.ok(p.chamadas.slice(0, -1).every(c => /[.!?]$/.test(c.texto)));
+  assert.equal(p.chamadas[0].anterior, ''); assert.ok(p.chamadas[0].seguinte.length > 0);
+  assert.equal(p.chamadas[1].anterior, p.chamadas[0].texto.slice(-500));
+  assert.ok(p.chamadas.every(c => c.emocao === 'feliz' && c.velocidade === .8 && c.anterior.length <= 500 && c.seguinte.length <= 500));
+  assert.equal(p.estados.at(-1), 'suspended');
+});
+
+test('prepara o próximo trecho enquanto o atual toca e cancela ao esconder o app', async () => {
+  let pedidos = 0, liberarSegundo;
+  const p = player(async () => ++pedidos === 1 ? mp3() : new Promise(resolve => { liberarSegundo = resolve; }));
+  p.contexto.tocarVoz('A complete sentence. '.repeat(200));
+  await new Promise(resolve => setTimeout(resolve, 10));
+  assert.equal(pedidos, 2); assert.equal(p.reproducoes.length, 1);
+  p.documento.hidden = true; p.eventos.visibilitychange(); liberarSegundo(mp3());
+  await new Promise(resolve => setTimeout(resolve, 10));
+  assert.equal(p.reproducoes.length, 1); assert.equal(p.estados.at(-1), 'suspended');
+});
+
+test('sair da página para a reprodução e uma nova fala não retoma a anterior', async () => {
+  const p = player(async () => mp3());
+  p.contexto.tocarVoz('First phrase.'); await new Promise(resolve => setTimeout(resolve, 0));
+  p.eventos.pagehide();
+  assert.ok(p.fontes.every(f => f.parou || !f.onended));
+  await new Promise((resolve, reject) => p.contexto.tocarVoz('New phrase.', { aoFim: resolve, aoErro: reject }));
+  assert.equal(p.estados.at(-1), 'suspended'); assert.equal(p.sintetizadas(), 0);
 });

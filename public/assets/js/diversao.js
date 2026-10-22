@@ -156,10 +156,10 @@ export function louFala(humor, ...conteudo) {
   ouvir.append(svg, document.createTextNode('Ouvir'));
   ouvir.addEventListener('click', () => {
     if (ouvir.getAttribute('aria-pressed') === 'true') { pararVoz(); ouvir.setAttribute('aria-pressed', 'false'); return; }
-    // Um trecho por parágrafo/item, sempre na voz oficial do Tuiuiú.
+    // Reúne parágrafos e itens da mensagem, sempre na voz oficial do Tuiuiú.
     const texto = [...b.querySelectorAll('p,li')].map(x => x.textContent.trim()).filter(Boolean);
     if (!texto.length) texto.push(b.textContent.replace(/Ouvir$/, '').trim());
-    if (falarPt(texto, () => ouvir.setAttribute('aria-pressed', 'false'), { personagem: 'tuiuiu' })) ouvir.setAttribute('aria-pressed', 'true');
+    if (falarPt(texto, () => ouvir.setAttribute('aria-pressed', 'false'), { personagem: 'tuiuiu', emocao: ({ feliz: 'feliz', festa: 'animado', pensando: 'curioso', ops: 'acolhedor', oi: 'acolhedor' })[humor] || 'contexto' })) ouvir.setAttribute('aria-pressed', 'true');
   });
   b.append(ouvir);
   d.append(lou(humor, { tamanho: 72 }), b);
