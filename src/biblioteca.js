@@ -20,7 +20,7 @@ function registrar({ rota, q, V, lerJson, perfilDe, exigirAcessoCompleto, hojeDe
     const p = perfilDe(ctx.u.id), publico = publicoDe(p), professor = ['professor', 'ambos'].includes(p.papel);
     return { publico, regioes: cultura.REGIOES, categorias: cultura.CATEGORIAS, contextos: cultura.CONTEXTOS, revisadoEm: cultura.revisadoEm,
       expressoes: cultura.EXPRESSOES.filter(e => professor || e.faixas.includes(publico.id)).map(e => require('./editorial').culturaRevisada(db,e)),
-      capitulos: UNIDADES.filter(u => u.colecao === 'brasil-mundo' && (professor || u.faixa === publico.id)).map(u => ({ id: u.id, titulo: u.titulo, faixa: u.faixa, nivel: u.nivel, cultura: u.cultura })) };
+      capitulos: UNIDADES.filter(u => ['brasil-mundo', 'ingles-real'].includes(u.colecao) && (professor || u.faixa === publico.id)).map(u => ({ id: u.id, titulo: u.titulo, faixa: u.faixa, nivel: u.nivel, cultura: u.cultura })) };
   });
   rota('GET', '/biblioteca', ctx => {
     const uid = ctx.u.id, p = perfilDe(uid), publico = publicoDe(p);

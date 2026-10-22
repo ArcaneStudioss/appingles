@@ -106,7 +106,7 @@ test('erro explica; repetição corrige sem alterar o primeiro resultado nem con
 test('biblioteca seleciona público no servidor; leitura e vocabulário têm explicação e respeitam assinatura', async () => {
   for (const quem of ['crianca', 'adolescente', 'adulto']) {
     const d = await R(quem, 'GET', '/biblioteca');
-    assert.equal(d.unidades.length, 7); assert.ok(d.unidades.every(u => u.faixa === quem));
+    assert.equal(d.unidades.length, { crianca: 7, adolescente: 8, adulto: 9 }[quem]); assert.ok(d.unidades.every(u => u.faixa === quem));
   }
   assert.equal((await R('crianca', 'GET', '/biblioteca/adulto-viagem')).status, 404);
   const cenarios = (await R('crianca', 'GET', '/conversas/cenarios')).cenarios;
@@ -132,7 +132,7 @@ test('equivalências brasileiras distinguem contexto, nomes regionais e gírias;
   const teen = await R('adolescente', 'GET', '/brasil-mundo');
   assert.ok(crianca.expressoes.some(e => e.id === 'bergamota'));
   assert.ok(!crianca.expressoes.some(e => e.categoria === 'internet'));
-  assert.equal(teen.expressoes.length, 54);
+  assert.equal(teen.expressoes.length, 58);
   assert.ok(teen.expressoes.some(e => e.id === 'papo-reto' && e.registro.includes('Informal')));
   assert.equal(Object.keys(teen.regioes).length, 5);
   const fruta = teen.expressoes.find(e => e.id === 'bergamota');
@@ -279,5 +279,46 @@ test('todas as questões do catálogo explicam acertos e erros, e os modelos nov
   for (const u of UNIDADES) {
     const m = MISSOES.find(m => m.id === u.id);
     assert.ok(avaliarProducao(m.tarefa, m.tarefa.modelo).demonstrado, u.id);
+  }
+});
+
+test('expressões em inglês preservam contexto, alternativas e acesso adequado ao público', async () => {
+  const adulto = await R('adulto', 'GET', '/brasil-mundo');
+  const teen = await R('adolescente', 'GET', '/brasil-mundo');
+  const crianca = await R('crianca', 'GET', '/brasil-mundo');
+  const expressoes = adulto.expressoes.filter(e => e.categoria === 'ingles-real');
+  assert.equal(expressoes.length, 5);
+  assert.equal(teen.expressoes.filter(e => e.categoria === 'ingles-real').length, 4);
+  assert.equal(crianca.expressoes.filter(e => e.categoria === 'ingles-real').length, 0);
+  assert.ok(expressoes.every(e => e.alternativaNeutra && e.fontes.length && e.revisadoEm));
+  const ficha = id => expressoes.find(e => e.id === id);
+  assert.match(ficha('whats-your-20').brasil, /10-20/);
+  assert.match(ficha('whats-the-411').cuidado, /retrô/);
+  assert.match(ficha('catch-22').brasil, /condições que se bloqueiam/);
+  assert.match(ficha('shes-a-ten').cuidado, /objetificante/);
+  const dic = await R(null, 'GET', '/dicionario');
+  assert.equal(dic.expressoes["What's your 20?"], 'Onde você está?');
+  assert.equal(dic.expressoes['back to square one'], 'de volta à estaca zero');
+  assert.ok(adulto.capitulos.some(u => u.cultura.includes('catch-22')));
+});
+
+test('aulas de expressões entram no banco, corrigem no servidor e protegem conteúdo adulto', async () => {
+  const { UNIDADES_INGLES } = require('../src/conteudo/biblioteca-ingles-real');
+  const banco = await R('prof', 'GET', '/professor/banco');
+  for (const u of UNIDADES_INGLES) {
+    const aula = await R(u.faixa, 'GET', '/biblioteca/' + u.id);
+    assert.equal(aula.status, 200);
+    assert.equal(aula.itens.length, 5);
+    assert.doesNotMatch(JSON.stringify(aula.itens), /"(?:resposta|aceitas)":/);
+    assert.ok(banco.missoes.some(m => m.id === u.id && m.exercicios.length === 5));
+    const ex = aula.itens.find(e => e.tipo === 'leitura');
+    const erro = await R(u.faixa, 'POST', '/biblioteca/' + u.id + '/responder', { itemId: ex.id, resposta: 'tradução literal fora do contexto' });
+    assert.equal(erro.correto, false);
+    assert.ok(erro.esperado && erro.explica);
+    const acerto = await R(u.faixa, 'POST', '/biblioteca/' + u.id + '/responder', { itemId: ex.id, resposta: erro.esperado, treinar: true });
+    assert.equal(acerto.correto, true);
+    assert.equal(acerto.pratica, true);
+    assert.equal((await R('crianca', 'GET', '/biblioteca/' + u.id)).status, 404);
+    if (u.id === 'adulto-ingles-aparencia') assert.equal((await R('adolescente', 'GET', '/biblioteca/' + u.id)).status, 404);
   }
 });

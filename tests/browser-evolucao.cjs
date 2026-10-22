@@ -49,6 +49,12 @@ async function main(){
     document.body.append(el);const valores=['I am happy','I am',''].map(t=>{destacarReconhecidas(el,t);return el.querySelectorAll('.fala-reconhecida').length;});el.remove();return valores;
    });assert.deepEqual(fala,[2,1,0]);
    await page.goto('/app/#/passaporte');await page.getByRole('heading',{name:'Passaporte Do Brasil pro mundo'}).waitFor();assert.equal(await page.getByRole('link',{name:'Começar missão',exact:true}).count(),4);
+   await page.goto('/app/#/brasil/catch-22');await page.getByRole('heading',{name:'Catch-22: um impasse circular',exact:true}).waitFor();
+   await page.getByLabel('Tipo de expressão',{exact:true}).selectOption('ingles-real');assert.equal(await page.locator('.cultura-ficha').count(),5);
+   await page.getByLabel('Buscar expressão do Brasil ou do inglês').fill('catch-22');assert.equal(await page.locator('.cultura-ficha').count(),1);
+   await page.getByRole('link',{name:'Praticar este tema',exact:true}).click();await page.getByRole('heading',{name:'Catch-22 ou estaca zero?',exact:true}).waitFor();
+   await page.goto('/app/#/biblioteca?colecao=ingles-real');await page.getByLabel('Coleção da biblioteca',{exact:true}).waitFor();
+   assert.equal(await page.locator('.capitulo-card').count(),3);
    await page.goto('/app/#/desafios');await page.getByRole('heading',{name:'Aprender fica melhor junto'}).waitFor();
    await page.goto('/app/#/loja');await page.getByRole('heading',{name:'Praça brasileira'}).waitFor();
    await page.goto('/app/#/admin');await page.getByRole('heading',{name:'Revisão de conteúdo e qualidade'}).waitFor();

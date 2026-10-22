@@ -110,6 +110,7 @@ const UNIDADES = [
     lacuna: { frase: 'We need to agree on the highest ___.', resposta: ['priority'], explica: 'Priority é prioridade: o que precisa vir primeiro.' },
   },
   ...require('./biblioteca-brasil').UNIDADES_BRASIL,
+  ...require('./biblioteca-ingles-real').UNIDADES_INGLES,
 ];
 
 for (const u of UNIDADES) {

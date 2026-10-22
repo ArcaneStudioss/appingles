@@ -54,3 +54,7 @@ Pagamentos reais, preços institucionais, acessórios para personagens, cadastro
 - O ambiente precisou de bibliotecas locais para iniciar WebKit; o navegador executou as páginas de verdade. Não foi usado iPhone físico.
 - `npm run vozes:preparar`: somente dimensionamento do lote, sem chamadas pagas.
 - `git diff --check`: sem erros de whitespace.
+
+### Expressões em inglês (22/10/2026)
+
+A biblioteca passou a ter a coleção `ingles-real`, disponível no filtro “Expressões em inglês”. São três capítulos com 15 questões, integrados ao banco docente e às regras existentes de correção/progresso. O catálogo “Do Brasil pro mundo” também permite filtrar as cinco fichas novas: What’s your 20?, What’s the 411?, She’s a ten, Catch-22 e back to square one. Há contexto, alternativa neutra, fontes e exemplos originais. Quatro das cinco fichas também aparecem para adolescentes; a ficha e a aula sobre avaliação de aparência ficam para adultos e professores. O passaporte mantém seus quatro capítulos culturais por público. Critérios e pesquisa em [linguagem-brasileira-pesquisa.md](linguagem-brasileira-pesquisa.md).

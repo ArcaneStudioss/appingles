@@ -11,8 +11,8 @@ export async function telaBiblioteca(el, { estado }) {
   const professor = ['professor','ambos'].includes(estado.eu?.perfil?.papel);
   const busca = h('input', { type: 'search', placeholder: 'Tema ou palavra: música, bergamota, gírias...', 'aria-label': 'Buscar tema na biblioteca' });
   const nivel = h('select', { 'aria-label': 'Filtrar por nível' }, h('option', { value: '' }, 'Todos os níveis'), ['A1', 'A2', 'B1'].map(n => h('option', { value: n }, n)));
-  const colecao = h('select', { 'aria-label': 'Coleção da biblioteca' }, h('option', { value: '' }, 'Todas as coleções'), h('option', { value: 'brasil-mundo' }, 'Do Brasil pro mundo'));
-  colecao.value = new URLSearchParams(location.hash.split('?')[1] || '').get('colecao') === 'brasil-mundo' ? 'brasil-mundo' : '';
+  const colecao = h('select', { 'aria-label': 'Coleção da biblioteca' }, h('option', { value: '' }, 'Todas as coleções'), h('option', { value: 'brasil-mundo' }, 'Do Brasil pro mundo'), h('option', { value: 'ingles-real' }, 'Expressões em inglês'));
+  colecao.value = ['brasil-mundo', 'ingles-real'].find(id => id === new URLSearchParams(location.hash.split('?')[1] || '').get('colecao')) || '';
   const faixa = professor ? h('select', { 'aria-label': 'Público da biblioteca' }, h('option', { value: '' }, 'Todos os públicos'), Object.entries(NOMES_PUBLICO).map(([id, nome]) => h('option', { value: id }, nome))) : null;
   const lista = h('div', { class: 'biblioteca-grade' });
   const desenhar = () => {
@@ -27,7 +27,7 @@ export async function telaBiblioteca(el, { estado }) {
   };
   busca.addEventListener('input', desenhar); nivel.addEventListener('change', desenhar); colecao.addEventListener('change', desenhar); faixa?.addEventListener('change', desenhar);
   el.append(h('header', { class: 'cabeca c-azul' }, h('span', { class: 'bolha' }, icone('book-open-text')), h('div', {}, h('h1', {}, publico.id === 'crianca' && !professor ? 'Histórias e palavras' : 'Biblioteca de inglês'), h('p', { class: 'ajuda' }, professor ? 'Explore capítulos por público, nível e conteúdo. Use as questões para montar suas aulas.' : `${publico.nome}: temas para sua fase da vida, com dificuldade indicada em cada capítulo.`))),
-    h('a', { class: 'brasil-convite c-turquesa', href: '#/brasil' }, h('span', { class: 'bolha' }, icone('chats')), h('span', {}, h('strong', {}, 'Do Brasil pro mundo'), h('small', {}, publico.id === 'crianca' && !professor ? 'Nomes da sua região e histórias para contar em inglês' : 'Gírias, ditados e jeitos regionais com equivalentes em inglês')), icone('caret-right')),
+    h('a', { class: 'brasil-convite c-turquesa', href: '#/brasil' }, h('span', { class: 'bolha' }, icone('chats')), h('span', {}, h('strong', {}, 'Do Brasil pro mundo'), h('small', {}, publico.id === 'crianca' && !professor ? 'Nomes da sua região e histórias para contar em inglês' : 'Expressões em inglês, gírias, ditados e jeitos do Brasil')), icone('caret-right')),
     h('div', { class: 'biblioteca-filtros' }, busca, nivel, colecao, faixa), lista,
     professor ? h('a', { class: 'btn btn-sec', href: '#/professor' }, 'Montar uma aula para minha turma') : null);
   desenhar();
