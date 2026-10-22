@@ -1,5 +1,5 @@
 // Player único: nenhuma síntese do navegador nem gravação antiga substitui os personagens.
-let geracao = 0, atual = null, contextoAudio = null, sessaoAnterior = null;
+let geracao = 0, atual = null, contextoAudio = null, sessaoAnterior = null, suspensaoAudio = Promise.resolve();
 function avisar(fase, personagem) {
   if (typeof dispatchEvent === 'function' && typeof CustomEvent === 'function') dispatchEvent(new CustomEvent('inglou:voz', { detail: { fase, personagem } }));
 }
@@ -22,6 +22,7 @@ function restaurarSessaoAudio() {
 }
 function silenciarContexto() {
   const pausa = contextoAudio?.state === 'running' || contextoAudio?.state === 'interrupted' ? contextoAudio.suspend().catch(() => {}) : Promise.resolve();
+  suspensaoAudio = Promise.all([suspensaoAudio, pausa]);
   // Uma pausa antiga não pode rebaixar a sessão da próxima fala que já começou.
   pausa.then(() => { if (!atual) restaurarSessaoAudio(); });
 }
@@ -51,6 +52,7 @@ export function tocarVoz(texto, { personagem = 'mia', idioma = 'en', velocidade 
   const trechos = trechosDe(texto);
   if (!trechos.length || !temVoz()) { aoErro?.('O áudio não está disponível neste navegador.'); return false; }
   pararVoz();
+  const pausaAnterior = suspensaoAudio;
   const minha = geracao, controle = new AbortController();
   let desbloquear;
   try {
@@ -64,6 +66,7 @@ export function tocarVoz(texto, { personagem = 'mia', idioma = 'en', velocidade 
   (async () => {
     try {
       await desbloquear;
+      await pausaAnterior;
       if (!ativa()) return;
       const preparar = async i => {
         const r = await fetch('/api/v1/vozes/sintetizar', {
@@ -80,6 +83,10 @@ export function tocarVoz(texto, { personagem = 'mia', idioma = 'en', velocidade 
       let proximo = preparar(0);
       for (let i = 0; i < trechos.length; i++) {
         const blob = await proximo;
+        if (!ativa()) return;
+        // Uma suspensão da fala anterior pode terminar depois do primeiro resume
+        // (Safari). Retoma o contexto antes de iniciar a fonte para não tocar em silêncio.
+        if (contextoAudio.state !== 'running') await contextoAudio.resume();
         if (!ativa()) return;
         // Prepara somente o próximo trecho enquanto o atual toca, evitando esperar pela rede entre frases.
         proximo = i + 1 < trechos.length ? preparar(i + 1) : null;

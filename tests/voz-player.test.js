@@ -109,3 +109,19 @@ test('trocar de fala durante preparação mantém playback e cancelar ou falhar 
   await new Promise(resolve => setTimeout(resolve, 0));
   assert.equal(falha.audioSession.type, 'auto');
 });
+
+test('uma suspensão tardia da fala anterior não deixa a próxima fonte tocar em silêncio', async () => {
+  let liberarPausa, preparar;
+  const p = player(() => new Promise(resolve => { preparar = resolve; }));
+  p.contexto.AudioContext.prototype.suspend = function () { return new Promise(resolve => { liberarPausa = () => { this.state = 'suspended'; resolve(); }; }); };
+  const inicio = p.contexto.AudioContext.prototype.createBufferSource;
+  p.contexto.AudioContext.prototype.createBufferSource = function () {
+    const contexto = this, fonte = inicio.call(this), start = fonte.start;
+    fonte.start = function () { assert.equal(contexto.state, 'running', 'A fonte precisa de contexto ativo'); start.call(this); }; return fonte;
+  };
+  p.contexto.tocarVoz('Primeira frase.'); await new Promise(r => setTimeout(r, 0));
+  const fim = new Promise((resolve, reject) => p.contexto.tocarVoz('Segunda frase.', { aoFim: resolve, aoErro: reject }));
+  await new Promise(r => setTimeout(r, 0)); liberarPausa();
+  await new Promise(r => setTimeout(r, 0)); preparar(mp3());
+  await fim; assert.equal(p.reproducoes.length, 1);
+});

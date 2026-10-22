@@ -32,3 +32,15 @@ O azul, os personagens, a reprodução com as vozes oficiais e o progresso foram
 Executar `npm test`, `npm run test:browser` e `npm run test:mobile`. A auditoria móvel grava `report.json` e capturas em `/tmp/inglou-mobile-artifacts`, com caminho configurável por `AUDIT_OUT`. Ela falha ao encontrar cortes, palavras divididas entre linhas, falhas de renderização ou controles de diálogo fora da tela. `AUDIT_ENGINES=chromium` ou `webkit` permite conferir um navegador por vez.
 
 Esses testes não representam uso em um iPhone físico. Teclado do sistema, ajustes próprios de tamanho de texto e comportamento de aparelhos específicos ainda exigem verificação no dispositivo.
+
+## Correção do painel de resposta e do áudio — 22/10/2026
+
+- O retorno de acerto/erro usa uma reação curta de Mia e Tuiuiú em linha. Resposta, explicação, recompensa real e controles de ouvir continuam acessíveis. Os controles preservam área de toque de 44 px.
+- Telas em foco reservam rodapé adicional somente quando existe uma barra fixa. A sessão comum não deixa uma reserva de 13 rem sem controles; avançar uma questão volta ao topo.
+- Consultar uma palavra mostra imediatamente seu sentido geral quando ele existe no catálogo local. “Ver outros sentidos nesta frase” consulta a IA sob demanda; palavras ausentes consultam automaticamente. Há cache por palavra e contexto, compartilhamento de consultas simultâneas, tempo limite e nova tentativa. Sentido geral não é apresentado como tradução contextual garantida.
+- Botões de fala indicam preparação. O player espera suspensões anteriores e retoma o contexto de áudio antes da reprodução, evitando uma fonte iniciada em contexto suspenso ao trocar de fala no Safari. Falha na geração devolve a franquia mensal de áudio, além da reserva diária.
+- Reações curtas são conteúdo fixo elegível para cache compartilhado; materiais pessoais continuam separados.
+
+Validação: `npm run test:feedback` cobre acerto/erro com recompensas, rodapé comum/fixo, avanço de sessão, dicionário com rede lenta, cache, consultas simultâneas e controles de áudio. Usa Chromium e WebKit em 320, 390 e 430 px. `npm run test:browser` cobre os fluxos pedagógicos em desktop e celular. A auditoria `test:mobile` também foi executada nas larguras de 320 e 390 px. Não houve teste em iPhone físico.
+
+Em produção, as quatro combinações oficiais de personagem e idioma responderam com MP3 válido à chamada de síntese. Franquias de novos áudios continuam se aplicando; cache existente não consome uma nova geração.

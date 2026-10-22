@@ -33,6 +33,8 @@ function novaAssinatura(hojeISO) {
 // Estado efetivo hoje (sem gravar): resolve vencimentos.
 function estado(a, hojeISO) {
   if (!a) return { status: 'livre', acesso: 'livre', diasRestantes: 0 };
+  // Concessão administrativa registrada no servidor; nunca representa uma cobrança.
+  if (a.cortesia?.categoria === 'completo') return { status: 'cortesia', acesso: 'completo', categoria: 'completo', renovaAuto: false };
   if (a.status === 'teste') {
     const restam = Math.round((new Date(a.teste_ate) - new Date(hojeISO)) / 864e5);
     if (restam >= 0) return { status: 'teste', acesso: 'completo', diasRestantes: restam, ate: a.teste_ate };

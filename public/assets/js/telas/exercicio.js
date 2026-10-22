@@ -150,7 +150,10 @@ export function exercicio(ex, config) {
     if (!silencioso && r.recompensa) corpo.push(h('p', { class: 'exercicio-recompensa' }, r.recompensa.xp ? `+${r.recompensa.xp} XP` : null, r.recompensa.moedas ? ` · +${r.recompensa.moedas} moeda${r.recompensa.moedas === 1 ? '' : 's'}` : null, r.recompensa.figurinhas ? ' · Nova figurinha na coleção!' : null));
     // Resultados vêm do servidor. Revelar a resposta é estudo, nunca uma comemoração de acerto.
     const combo = r.correto && !r.ajuda && !pratica && [3, 5, 8, 10].includes(r.sequencia);
-    companhia.reagir(r.ajuda ? 'aprender' : r.quase ? 'quase' : r.correto ? pratica ? 'superacao' : combo ? 'combo' : 'acerto' : 'apoio', { silencioso });
+    companhia.elemento.classList.add('companheiros--compactos');
+    companhia.reagir(r.ajuda ? 'aprender' : r.quase ? 'quase' : r.correto ? pratica ? 'superacao' : combo ? 'combo' : 'acerto' : 'apoio', {
+      silencioso, texto: r.ajuda ? 'Vamos aprender juntos.' : r.quase ? 'Falta só um ajuste!' : r.correto ? pratica ? 'Você tentou e conseguiu!' : combo ? 'Boa sequência!' : 'Boa! Você conseguiu!' : 'Vamos entender juntos.',
+    });
     if (combo && !silencioso) som('combo');
     if(config.relatar!==false)corpo.push(relatar);
     folha.replaceChildren(companhia.elemento, h('div', { class: 'folha-resposta__texto' }, corpo));
