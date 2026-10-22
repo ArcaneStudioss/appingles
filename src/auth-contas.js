@@ -4,7 +4,7 @@ const auth = require('./auth');
 const { ErroHttp, lerCookies, limparSessao } = require('./http');
 const { transacao } = require('./db');
 
-function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limparVozes }) {
+function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limparVozes, conferirExclusao=async()=>{} }) {
   const q = sql => db.prepare(sql), renovacoes = new Map();
   const limpeza = setInterval(() => { try { q('DELETE FROM auth_fluxos WHERE expira_em <= ?').run(Date.now()); } catch {} }, 60000);
   limpeza.unref();
@@ -337,9 +337,13 @@ function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limpa
     if (u.auth_provider === 'supabase') {
       await reautenticar(ctx, u, 'excluir', ctx.corpo.senha);
     } else if (typeof ctx.corpo.senha !== 'string' || ctx.corpo.senha.length > 200 || !auth.conferirSenha(ctx.corpo.senha, u.senha_hash)) throw new ErroHttp(401, 'Senha incorreta.');
-    await limparVozes(u.id);
-    if (u.auth_provider === 'supabase') await provedor.excluir(u.auth_subject);
-    transacao(db, () => { q('DELETE FROM auth_fluxos WHERE email = ?').run(u.email); q('DELETE FROM usuarios WHERE id = ?').run(u.id); });
+    q('UPDATE usuarios SET excluindo_em=? WHERE id=?').run(new Date().toISOString(),u.id);
+    try {
+      await conferirExclusao(u.id);
+      await limparVozes(u.id);
+      if (u.auth_provider === 'supabase') await provedor.excluir(u.auth_subject);
+      transacao(db, () => { q('DELETE FROM auth_fluxos WHERE email = ?').run(u.email); q('DELETE FROM usuarios WHERE id = ?').run(u.id); });
+    } catch(e) { q('UPDATE usuarios SET excluindo_em=NULL WHERE id=?').run(u.id); throw e; }
     limparSessao(ctx.req, ctx.res); return { ok: true };
   });
   return { validarSessao, fechar };

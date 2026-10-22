@@ -106,7 +106,7 @@ test('migração preserva conquistas antigas, cria cópias e XP histórico uma v
 test('duas réplicas podem aplicar migrações ao mesmo arquivo sem duplicar nem falhar',async t=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'inglou-migracao-concorrente-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
  const run=()=>new Promise((resolve,reject)=>{let erro='';const p=spawn(process.execPath,['--disable-warning=ExperimentalWarning','-e',`const db=require('./src/db').abrir(process.argv[1]);db.close()`,dir],{cwd:path.join(__dirname,'..')});p.stderr.on('data',b=>erro+=b);p.on('error',reject);p.on('exit',code=>code?reject(Error(erro)):resolve());});
- await Promise.all([run(),run()]);const db=abrir(dir);assert.equal(db.prepare('SELECT v FROM _versao').get().v,13);db.close();
+ await Promise.all([run(),run()]);const db=abrir(dir);assert.equal(db.prepare('SELECT v FROM _versao').get().v,14);db.close();
 });
 
 test('excluir a conta durante um duelo libera a reserva da outra pessoa por cascata',t=>{

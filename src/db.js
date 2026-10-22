@@ -383,6 +383,23 @@ END;
     PRIMARY KEY(owner_id,mes,tipo)
   );
   CREATE TABLE consumo_global (mes TEXT NOT NULL,tipo TEXT NOT NULL,qtd INTEGER NOT NULL DEFAULT 0 CHECK(qtd>=0),PRIMARY KEY(mes,tipo));`,
+  // 14: cobrança: vínculos por ID, idempotência persistente e exclusão mútua entre réplicas.
+  `ALTER TABLE usuarios ADD COLUMN excluindo_em TEXT;
+  CREATE TABLE stripe_contas (
+    user_id INTEGER PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
+    customer_id TEXT NOT NULL UNIQUE, subscription_id TEXT UNIQUE,
+    estado TEXT, plano TEXT, pago_ate INTEGER NOT NULL DEFAULT 0, atualizado_em TEXT
+  );
+  CREATE TABLE stripe_checkouts (
+    user_id INTEGER PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
+    tentativa TEXT NOT NULL UNIQUE, plano TEXT NOT NULL, parametros TEXT NOT NULL,
+    session_id TEXT UNIQUE, criado_em INTEGER NOT NULL, expira_em INTEGER NOT NULL
+  );
+  CREATE TABLE stripe_eventos (id TEXT PRIMARY KEY,tipo TEXT NOT NULL,processado_em TEXT NOT NULL);
+  CREATE TABLE stripe_travas (
+    user_id INTEGER PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
+    token TEXT NOT NULL, ate INTEGER NOT NULL
+  );`,
 ];
 
 function abrir(dir) {
