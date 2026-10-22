@@ -142,13 +142,23 @@ function preparar(alvo) {
       if (!/[A-Za-z]/.test(no.textContent)) continue;
       const frasePt = no.parentElement.closest('[data-traducao]')?.dataset.traducao;
       const frag = document.createDocumentFragment();
-      for (const trecho of no.textContent.split(partes)) {
+      const trechos = no.textContent.split(partes);
+      for (let i = 0; i < trechos.length; i++) {
+        const trecho = trechos[i];
         if (!/[A-Za-zÀ-ÿ]/.test(trecho)) { frag.append(document.createTextNode(trecho)); continue; }
         const botao = document.createElement('button');
         botao.type = 'button'; botao.className = 'palavra-traduzivel'; botao.textContent = trecho;
         botao.setAttribute('aria-label', 'Ver tradução de ' + trecho); botao.setAttribute('aria-expanded', 'false');
         botao.addEventListener('click', e => { e.stopPropagation(); abrir(botao, trecho, frasePt); });
-        frag.append(botao);
+        // A palavra e a pontuação final ocupam a mesma linha, como no texto original.
+        const pontuacao = trechos[i + 1]?.match(/^[.,!?;:…\)\]\}”’»"']+/)?.[0];
+        if (pontuacao) {
+          const unidade = document.createElement('span');
+          unidade.className = 'palavra-pontuada';
+          unidade.append(botao, document.createTextNode(pontuacao));
+          frag.append(unidade);
+          trechos[i + 1] = trechos[i + 1].slice(pontuacao.length);
+        } else frag.append(botao);
       }
       no.replaceWith(frag);
     }

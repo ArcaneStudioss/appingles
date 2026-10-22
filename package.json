@@ -14,6 +14,7 @@
     "backup": "node --disable-warning=ExperimentalWarning scripts/backup.js",
     "restaurar": "node --disable-warning=ExperimentalWarning scripts/restaurar.js",
     "test:browser": "node tests/browser-evolucao.cjs",
+    "test:mobile": "node tests/browser-mobile.cjs",
     "vozes:preparar": "node scripts/preparar-vozes.js"
   },
   "dependencies": {
