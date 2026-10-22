@@ -1,6 +1,6 @@
-# Planos, cotas e conexão futura com o Stripe
+# Planos, cotas e Stripe Checkout
 
-Preços e capacidade confirmados pelo proprietário em 22/10/2026. O catálogo em `src/catalogo-planos.js` é a fonte da página pública, metadados e tela da conta. A cobrança permanece desligada. Nenhum produto do Stripe foi criado, alterado ou cobrado nesta entrega.
+Preços e capacidade confirmados pelo proprietário em 22/10/2026. O catálogo em `src/catalogo-planos.js` é a fonte da página pública, metadados e tela da conta. Checkout e webhook estão implementados. A cobrança só fica disponível com `PAGAMENTO_MODO=stripe` e as credenciais privadas configuradas nas duas réplicas. Os oito preços existentes foram conferidos por API: ativos, recorrentes, BRL e produção. Não foram criados nem reajustados produtos ou preços. Família permanece R$ 27,90/mês ou R$ 249,90/ano.
 
 | Plano | Mensal | Anual | Pessoas no total | Gerações de IA/mês | Novos caracteres de voz/mês |
 |---|---:|---:|---:|---:|---:|
@@ -29,25 +29,55 @@ Fontes consultadas em 22/10/2026:
 
 Usando dólar de planejamento a R$ 7 (hipótese de segurança, não cotação atual), cartão nacional e anual pago em uma transação, os tetos mensais de IA + voz são aproximadamente R$ 0,56 no Basic, R$ 4,55 no Completo, R$ 6,79 no Família e R$ 20,72 no Turma. Depois de tarifas de 4,69% e amortização de R$ 0,39/ano, sobram aproximadamente R$ 5,75, R$ 7,32, R$ 13,03 e R$ 50,72 por mês, respectivamente, antes de hospedagem, impostos, suporte, reembolsos, disputas, franquias mínimas e demais custos fixos. Não é possível garantir ausência de prejuízo sem conhecer esses custos e o volume de assinantes.
 
-## O que falta do Stripe
+## Integração Stripe
 
-Reaproveitar os quatro produtos já existentes e seus oito preços recorrentes, em BRL, sem recriá-los. Precisamos dos identificadores `price_...` correspondentes a:
+`src/stripe-precos.js` contém os oito IDs recebidos; variáveis `STRIPE_PRICE_<CATEGORIA>_<MENSAL|ANUAL>` permitem escolher os preços de outro ambiente. São IDs não secretos. Cada checkout confere valor em centavos, BRL, produto ativo, recorrência, ambiente e quantidade. Família e Turma usam **quantity=1**: uma assinatura com contas individuais, e não cinco ou vinte cobranças. O responsável ocupa uma das vagas. IA e novos áudios têm franquias compartilhadas; as lições e revisões mantêm progresso individual. O preço por pessoa é menor por ser uma contratação em grupo, sem prometer cinco franquias individuais de IA.
 
-```env
-STRIPE_PRICE_BASIC_MENSAL=price_...
-STRIPE_PRICE_BASIC_ANUAL=price_...
-STRIPE_PRICE_COMPLETO_MENSAL=price_...
-STRIPE_PRICE_COMPLETO_ANUAL=price_...
-STRIPE_PRICE_FAMILIA_MENSAL=price_...
-STRIPE_PRICE_FAMILIA_ANUAL=price_...
-STRIPE_PRICE_TURMA_MENSAL=price_...
-STRIPE_PRICE_TURMA_ANUAL=price_...
+### Variáveis privadas
+
+- `STRIPE_SECRET_KEY`: chave restrita ou secreta do mesmo ambiente dos preços.
+- `STRIPE_WEBHOOK_SECRET`: segredo do endpoint, não uma chave da API.
+- `STRIPE_PORTAL_CONFIGURATION`: configuração própria do portal, com faturas, atualização de cartão e cancelamento ao fim do período; troca de plano desabilitada.
+- `PAGAMENTO_MODO=stripe` e `SITE_URL=https://inglou.arcanestudios.io`.
+
+Nenhuma chave Stripe publicável é necessária: o navegador é redirecionado ao checkout hospedado. Nunca salvar chaves em arquivos públicos, commits ou logs. Substituir credenciais expostas no chat por novas credenciais nas variáveis privadas. Atualizar A, aguardar saúde, depois B. O Compose precisa encaminhar as variáveis; preencher apenas o painel sem recriar o serviço não modifica o processo Node.
+
+A chave restrita precisa de: leitura de Prices e Products; criação/leitura de Customers e Checkout Sessions; leitura/atualização de Subscriptions; leitura de Invoices, Invoice Payments, PaymentIntents, Charges e Disputes; criação de sessões do Billing Portal. A configuração administrativa inicial exige escrita em configurações do portal e no webhook, permissões que podem ser removidas depois. Não é necessário permitir criação de cobranças ou reembolsos pela API do aplicativo.
+
+### Webhook
+
+Endpoint: `POST https://inglou.arcanestudios.io/api/v1/stripe/webhook`. No Stripe Workbench, selecionar a própria conta, ambiente correspondente e formato **Snapshot**. A versão usada pelo SDK é `2026-09-30.endive` (Stripe Node 23.0.1). Assinar estes eventos:
+
+```text
+checkout.session.completed
+customer.subscription.created
+customer.subscription.updated
+customer.subscription.deleted
+invoice.paid
+invoice.payment_failed
+charge.refunded
+charge.dispute.created
+charge.dispute.closed
 ```
 
-Também será necessária `STRIPE_SECRET_KEY`, salva somente nas variáveis privadas da Hostinger. Começar no modo de teste; depois usar produtos, preços e chaves do mesmo ambiente de produção. O Grátis não precisa de preço recorrente no Stripe. Família e Turma usam o preço total da assinatura com quantidade 1; não multiplicar o preço por 5 ou 20 participantes. Para checkout hospedado no servidor, não é necessário fornecer uma chave publicável do Stripe nesta fase.
+O endpoint usa corpo bruto com limite de 256 KiB, tolerância padrão de assinatura do SDK e verificação do ambiente. É a única exceção ao CSRF de navegador. Não depende da sessão do aluno. O segredo informado é configurado somente no servidor. A entrega real de um evento pelo Stripe confirma também que o segredo pertence ao destino correto; uma requisição assinada por nós verifica o código, mas não prova essa correspondência.
 
-A integração Stripe Checkout/Billing ainda precisa ser implementada e validada: preços conferidos no servidor, checkout idempotente, vinculação ao usuário autenticado, webhook assinado, eventos duplicados e fora de ordem, renovação, inadimplência, cancelamento, reembolso/disputa e portal do cliente. A assinatura não pode ser liberada apenas porque o navegador abriu a página de sucesso. A conta Stripe deve estar habilitada para receber pagamentos e ter dados de repasse preenchidos.
+### Segurança e ciclo da cobrança
 
-Depois de existir o endpoint de webhook, cadastrar no Stripe e salvar `STRIPE_WEBHOOK_SECRET=whsec_...` no servidor. Não cadastrar uma URL de webhook ainda: não há endpoint Stripe operacional nesta entrega. Os eventos exatos e a URL serão fornecidos junto da integração. Não enviar `sk_...` ou `whsec_...` no chat. As variáveis acima documentam o contrato da próxima integração; preenchê-las agora, isoladamente, não habilita pagamentos.
+A migração 14 acrescenta vínculos por IDs, tentativas de checkout, eventos processados e travas entre réplicas. Nunca há vinculação por coincidência de e-mail. Um checkout tem cliente vinculado à conta autenticada e metadata da assinatura; somente maiores de idade podem contratar. Menores podem entrar em um grupo pago pelo responsável. Código de grupo não compartilha textos, materiais ou conversas privadas.
 
-Referências: [Checkout para assinaturas](https://docs.stripe.com/payments/checkout/build-subscriptions) e [webhooks assinados](https://docs.stripe.com/webhooks).
+Cliques repetidos reutilizam o checkout aberto e sua chave idempotente, persistida antes da chamada externa. Se a resposta se perde, a repetição usa os mesmos parâmetros. Uma tentativa aberta para outro plano precisa expirar antes de uma nova seleção, evitando duas assinaturas. Uma assinatura ativa, em teste com cartão ou com cobrança pendente também bloqueia segunda contratação. Falhas do SDK retornam mensagem neutra; mensagens originais de autenticação podem conter segredos e não são propagadas.
+
+Abrir a página de sucesso **não libera acesso**. Os eventos consultam o estado atual da assinatura e da fatura no Stripe, protegidos por uma trava persistente. Eventos antigos não reaplicam snapshots antigos; duplicatas têm ID único. Falhas transitórias retornam erro para o Stripe repetir. A fatura paga e os pagamentos associados são verificados antes de estender o acesso. Inadimplência não estende o período quitado. Cancelar mantém o acesso até o fim do período; o cancelamento é feito também no Stripe.
+
+Na compra durante o teste sem cartão, o restante do teste é mantido com `trial_end` no Stripe; quando faltam menos de 48 horas, concede-se uma pequena extensão para atender ao mínimo da plataforma. O cartão só é coletado ao escolher contratar. A assinatura contratada passa a ter os benefícios do plano durante esse restante do teste, com cobrança posterior informada no Checkout.
+
+Reembolso integral da fatura atual ou disputa ainda não ganha pausa o acesso pago. Reembolso parcial conserva o acesso. Uma disputa ganha ou uma renovação posterior quitada é reavaliada pela situação atual da fatura. O aplicativo não executa reembolsos nem contesta disputas: essas ações continuam no painel Stripe. Excluir uma conta com cobrança em andamento fica bloqueado até seu encerramento; um checkout aberto é expirado antes da exclusão. Isso evita apagar o vínculo enquanto ainda há renovação no Stripe.
+
+### Limitações e validação
+
+Testes locais cobrem assinaturas inválidas, ambiente, corpo bruto, CSRF, preços divergentes, menores, duplicatas, ordem dos eventos, indisponibilidade, idempotência, disputa, reembolso, vagas e privacidade. A interface é verificada em Chromium e WebKit. Esses testes usam fixtures, não pagamento real nem iPhone físico.
+
+Ainda é necessário acompanhar uma compra real autorizada e sua renovação no Stripe; não foi usado cartão real nesta implementação. Trocas entre planos pagos durante uma assinatura existente não estão disponíveis: cancelar e aguardar o fim do período antes de contratar outra. O portal não permite alterar produtos ou quantidade, evitando contornar limites de vagas. Checkout inicialmente aceita cartão; Pix recorrente, parcelamento, cupons e prorrata não foram implementados. Preços de teste devem ser configurados com chave e webhook de teste; IDs de produção são recusados com chave de teste.
+
+Referências: [Checkout para assinaturas](https://docs.stripe.com/payments/checkout/build-subscriptions), [webhooks assinados](https://docs.stripe.com/webhooks), [objeto Subscription](https://docs.stripe.com/api/subscriptions/object), [Invoice Payments](https://docs.stripe.com/api/invoice-payment).

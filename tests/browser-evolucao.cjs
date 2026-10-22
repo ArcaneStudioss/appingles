@@ -69,6 +69,14 @@ async function main(){
    await page.getByRole('button',{name:'Atualizar planos',exact:true}).click();await page.getByRole('button',{name:'Ver planos e uso',exact:true}).click();
    assert.equal(await page.locator('dialog [data-plano]').count(),5);assert.equal(await page.getByRole('button',{name:'Contratação em breve',exact:true}).count(),4);
    await page.getByRole('button',{name:'Fechar',exact:true}).click();
+   // Stripe ativo sem chamada real: seleção exata do SKU e recuperação de erro.
+   await page.route('**/api/v1/assinatura',async route=>{const r=await route.fetch();const data=await r.json();data.pagamento='stripe';data.stripe={disponivel:true,planos:['basic','completo','familia','turma'].flatMap(p=>[p+'_mensal',p+'_anual'])};await route.fulfill({response:r,json:data});});
+   await page.reload();await page.getByRole('button',{name:'Ver planos e uso',exact:true}).click();
+   assert.equal(await page.getByRole('button',{name:'Assinar mensal',exact:true}).count(),4);assert.equal(await page.getByRole('button',{name:'Assinar anual',exact:true}).count(),4);
+   let selecionado;await page.route('**/api/v1/assinatura/assinar',async route=>{selecionado=route.request().postDataJSON();await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({erro:'Pagamento indisponível no teste'})});});
+   const familia=page.locator('dialog [data-plano="familia"]');await familia.getByRole('button',{name:'Assinar mensal',exact:true}).click();await page.getByText('Pagamento indisponível no teste',{exact:true}).waitFor();assert.deepEqual(selecionado,{plano:'familia_mensal'});assert.equal(await familia.getByRole('button',{name:'Assinar mensal',exact:true}).isEnabled(),true);
+   const planosWidth=await page.evaluate(()=>({w:innerWidth,s:document.documentElement.scrollWidth}));assert.ok(planosWidth.s<=planosWidth.w+2);
+   await page.unroute('**/api/v1/assinatura');await page.unroute('**/api/v1/assinatura/assinar');await page.getByRole('button',{name:'Fechar',exact:true}).click();
    await page.goto('/app/#/hoje');await page.locator('.sessao-convite').waitFor();
    const medidas=await page.evaluate(()=>({largura:innerWidth,conteudo:document.documentElement.scrollWidth,viewport:document.querySelector('meta[name=viewport]').content,fontes:[...document.querySelectorAll('input,select,textarea')].map(e=>parseFloat(getComputedStyle(e).fontSize))}));
    assert.ok(medidas.conteudo<=medidas.largura+2,JSON.stringify(medidas));assert.ok(!medidas.viewport.includes('user-scalable=no'));assert.ok(medidas.fontes.every(n=>n>=16));assert.deepEqual(erros,[]);

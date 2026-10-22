@@ -10,6 +10,7 @@ const assin = require('./assinatura');
 const catalogo=require('./catalogo-planos');
 const {criarGrupos}=require('./assinaturas-grupo');
 const {criarOrcamento}=require('./orcamento');
+const {criarPagamento,lerWebhook}=require('./pagamento-stripe');
 const { OBJETIVOS, INTERESSES } = require('./conteudo/objetivos');
 const { POR_ID } = require('./conteudo/missoes');
 const { CENARIOS } = require('./conteudo/cenarios');
@@ -116,6 +117,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
   const fusoDe = p => (p?.fuso && /^[A-Za-z_]+\/[A-Za-z_]+$/.test(p.fuso) ? p.fuso : 'America/Sao_Paulo');
   const hojeDe = uid => { const p = q('SELECT fuso FROM perfis WHERE user_id = ?').get(uid); try { return hoje(fusoDe(p)); } catch { return hoje(); } };
   const grupos=criarGrupos({db,hojeDe});
+  const pagamento=criarPagamento({db,grupos,hojeDe});
   const orcamento=criarOrcamento({db,contaDe:grupos.contaDe,hojeDe});
   const vozes = criarVozes({ orcamento, db, dir: path.resolve(process.env.DATA_DIR || path.join(__dirname, '..', 'dados')), diaDe: hojeDe });
 
@@ -240,6 +242,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
   const rota = (metodo, padrao, fn, { publica = false } = {}) => rotas.push({ metodo, re: new RegExp('^' + padrao.replace(/:(\w+)/g, '(?<$1>[^/]+)') + '$'), fn, publica });
 
   const contasAuth = registrarAuth({ db, provedor: supabase, rota, V, abrirSessao,
+    conferirExclusao: uid => pagamento.conferirExclusao(uid),
     limparVozes: uid => vozes.limparUsuario(uid),
     criarUsuario: b => {
       const r = q('INSERT INTO usuarios (email,nome,senha_hash,criado_em,consentiu_em) VALUES (?,?,?,?,?)').run(b.email, b.nome, b.senha_hash, agoraISO(), agoraISO());
@@ -1425,7 +1428,8 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
   });
 
   // Assinatura
-  rota('GET','/planos',()=>({catalogo:catalogo.publico(),contratacao:false}),{publica:true});
+  rota('GET','/planos',()=>({catalogo:catalogo.publico(),contratacao:pagamento.ativo()}),{publica:true});
+  rota('POST','/assinatura/portal',ctx=>pagamento.portal(ctx.u.id));
   rota('POST','/assinatura/convite',ctx=>grupos.convite(ctx.u.id));
   rota('POST','/assinatura/entrar',ctx=>grupos.entrar(ctx.u.id,ctx.corpo.codigo));
   rota('POST','/assinatura/sair',ctx=>grupos.sair(ctx.u.id));
@@ -1433,7 +1437,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
   rota('GET', '/assinatura', (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid);
     const a = assinaturaDe(uid);
-    return { catalogo:catalogo.publico(),grupo:grupos.painel(uid),consumo:orcamento.uso(uid), estado: estadoAssinatura(uid, h), planos: assin.PLANOS, limites: assin.LIMITES, nomesUso: assin.NOMES_USO, inclui: assin.INCLUI, uso: usoMes(uid, h), historico: a?.historico || [], pagamento: process.env.PAGAMENTO_MODO || 'desligado', teste_ate: a?.teste_ate || null };
+    return { catalogo:catalogo.publico(),grupo:grupos.painel(uid),consumo:orcamento.uso(uid), estado: estadoAssinatura(uid, h), planos: assin.PLANOS, limites: assin.LIMITES, nomesUso: assin.NOMES_USO, inclui: assin.INCLUI, uso: usoMes(uid, h), historico: a?.historico || [], pagamento: process.env.PAGAMENTO_MODO || 'desligado', stripe:pagamento.painel(uid), teste_ate: a?.teste_ate || null };
   });
   rota('POST', '/assinatura/assinar', (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid);
@@ -1443,14 +1447,16 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     const vagas=catalogo.POR_PLANO[assin.PLANOS[plano].categoria||'completo'].pessoas;
     if(ocupadas>vagas)throw new ErroHttp(409,'Remova os participantes excedentes antes de mudar de plano.');
     const modo = process.env.PAGAMENTO_MODO || 'desligado';
+    if(modo==='stripe')return pagamento.checkout(uid,plano);
     if (modo !== 'simulado') throw new ErroHttp(503, 'O pagamento on-line ainda não está ligado. Nenhuma cobrança foi feita.');
     const a = assinaturaDe(uid) || assin.novaAssinatura(h);
     const nova = assin.assinar(a, plano, h);
     salvarAssinatura(uid, nova);
     return { ok: true, estado: estadoAssinatura(uid, h), simulado: true };
   });
-  rota('POST', '/assinatura/cancelar', (ctx) => {
+  rota('POST', '/assinatura/cancelar', async (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid);
+    if(await pagamento.cancelar(uid))return{ok:true,estado:estadoAssinatura(uid,h)};
     const a = assinaturaDe(uid);
     if (!a || a.status !== 'ativa') throw new ErroHttp(409, 'Não há assinatura ativa para cancelar.');
     salvarAssinatura(uid, assin.cancelar(a, h));
@@ -1524,6 +1530,11 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
   // ---------- despachante ----------
   async function tratar(req, res, url) {
     const caminho = url.pathname.slice('/api/v1'.length) || '/';
+    // Exceção exclusiva do webhook: corpo bruto e assinatura Stripe, sem sessão ou CSRF de navegador.
+    if(caminho==='/stripe/webhook'){
+      if(req.method!=='POST')return erro(res,405,'Método não permitido.');
+      return json(res,200,await pagamento.webhook(await lerWebhook(req),req.headers['stripe-signature']));
+    }
     const ctx = { req, res, ip: ip(req), params: {}, corpo: {} };
     if (!limGeral.tentar(ctx.ip)) return erro(res, 429, 'Muitas requisições. Aguarde um instante.');
     if (req.method === 'OPTIONS') { res.statusCode = 204; return res.end(); }   // sem CORS: só mesma origem

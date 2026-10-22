@@ -36,25 +36,27 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
     const moeda = n => (n / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const planoCard = pl => {
       const comprar = periodo => {
-        const b=h('button',{type:'button',class:'btn btn-sec btn-bloco',disabled:ass.pagamento!=='simulado',on:{click:async()=>{
-          ocupado(b,true);try{await api('/assinatura/assinar',{metodo:'POST',corpo:{plano:pl.id+'_'+periodo}});j.fechar();toast('Assinatura simulada, sem cobrança.');render();}catch(err){toast(err.message);}finally{ocupado(b,false);}
-        }}},ass.pagamento==='simulado'?'Simular '+periodo:'Contratação em breve');return b;
+        const b=h('button',{type:'button',class:'btn btn-sec btn-bloco',disabled:ass.pagamento!=='simulado'&&!ass.stripe?.planos?.includes(pl.id+'_'+periodo),on:{click:async()=>{
+          ocupado(b,true);try{const r=await api('/assinatura/assinar',{metodo:'POST',corpo:{plano:pl.id+'_'+periodo}});if(r.url){const u=new URL(r.url);if(u.origin!=='https://checkout.stripe.com')throw new Error('Endereço de pagamento inválido.');location.assign(u.href);return;}j.fechar();toast('Assinatura simulada, sem cobrança.');render();}catch(err){toast(err.message);}finally{ocupado(b,false);}
+        }}},ass.pagamento==='simulado'?'Simular '+periodo:ass.stripe?.planos?.includes(pl.id+'_'+periodo)?'Assinar '+periodo:'Contratação em breve');return b;
       };
-      return h('section',{class:'plano'+(pl.id==='completo'?' plano--destaque':''),'data-plano':pl.id},h('h3',{},pl.nome),h('p',{},pl.descricao),h('p',{class:'preco'},moeda(pl.mensal),pl.mensal?' / mês':''),pl.anual?h('p',{class:'ajuda'},moeda(pl.anual)+' por ano, cobrado anualmente'):h('p',{},'Sem mensalidade'),h('ul',{},pl.recursos.map(r=>h('li',{},r))),pl.mensal?h('div',{},comprar('mensal'),ass.pagamento==='simulado'?comprar('anual'):null):null);
+      return h('section',{class:'plano'+(pl.id==='completo'?' plano--destaque':''),'data-plano':pl.id},h('h3',{},pl.nome),h('p',{},pl.descricao),h('p',{class:'preco'},moeda(pl.mensal),pl.mensal?' / mês':''),pl.anual?h('p',{class:'ajuda'},moeda(pl.anual)+' por ano, cobrado anualmente'):h('p',{},'Sem mensalidade'),h('ul',{},pl.recursos.map(r=>h('li',{},r))),pl.mensal?h('div',{},comprar('mensal'),ass.pagamento==='simulado'||ass.stripe?.disponivel?comprar('anual'):null):null);
     };
     const j = janela({ titulo: 'Planos', larga: true, corpo: h('div', {},
       h('p', {}, 'Escolha entre Grátis, Basic, Completo, Família e Turma. Cada plano pago tem opção mensal e anual.'),
       h('div', { class: 'planos' }, ass.catalogo.map(planoCard)),
-      h('p',{class:'ajuda'},'As cotas de Família e Turma são compartilhadas por todos os participantes. O responsável ocupa uma vaga. Ninguém acessa conversas ou materiais privados de outra pessoa.'),
+      h('p',{class:'ajuda'},'Família e Turma têm contas individuais, com franquias compartilhadas de IA e novos áudios. O responsável ocupa uma vaga. Ninguém acessa conversas ou materiais privados de outra pessoa.'),
       h('p',{class:'ajuda'},'Os limites renovam por mês e não acumulam, inclusive no anual. As gerações compartilham uma cota de processamento; pedidos longos e materiais consomem mais. Áudios já preparados não consomem novas gerações. Ao esgotar a IA, os planos pagos continuam com prática sem IA.'),
       h('h3',{},'Seu consumo de geração neste mês'),h('p',{},`${ass.consumo.geracoes||0} gerações com IA e ${ass.consumo.voz||0} caracteres de novos áudios.`),
       h('h3', {}, 'Seu uso neste mês'), h('ul', {}, usoLinhas),
+      ass.stripe?.cobranca==='past_due'?h('p',{class:'aviso-suave'},'Há uma cobrança pendente. Atualize o cartão em Gerenciar cobrança.'):null,
+      ass.stripe?.cobranca==='pagamento_em_revisao'?h('p',{class:'aviso-suave'},'O pagamento está em revisão. Suas revisões e seus dados continuam disponíveis.'):null,
       h('h3', {}, 'Condições'), h('ul', {},
         h('li', {}, 'Teste de 30 dias sem cartão. Se não assinar, a conta passa para o acesso livre e seus dados ficam guardados.'),
         h('li', {}, 'Se assinar durante o teste, o período pago só começa quando o teste acaba.'),
         h('li', {}, 'Cancele quando quiser, aqui mesmo. Sem multa. Você usa até o fim do período pago.'),
         h('li', {}, 'Sem cobrança surpresa: o valor é o da tabela e avisamos antes de qualquer mudança de preço.')),
-      ass.pagamento !== 'simulado' ? h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, 'O pagamento on-line ainda não está ligado neste servidor. Nenhuma cobrança será feita.')) : h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, 'Ambiente de teste: a assinatura é simulada, sem pagamento real.'))) });
+      ass.pagamento !== 'simulado'&&!ass.stripe?.disponivel ? h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, 'O pagamento on-line ainda não está ligado neste servidor. Nenhuma cobrança será feita.')) : h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, ass.stripe?.disponivel?'Você será levado ao checkout seguro do Stripe. O acesso é atualizado após a confirmação no servidor.':'Ambiente de teste: a assinatura é simulada, sem pagamento real.'))) });
   }
 
   async function cancelar() {
@@ -64,7 +66,7 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
 
   async function gerenciarGrupo() {
     const g=ass.grupo;
-    const entrar=()=>formulario({titulo:'Entrar em um plano compartilhado',texto:'O responsável paga o plano. Suas conversas, respostas e materiais continuam privados. A cota de IA e novos áudios é compartilhada.',campos:[{nome:'codigo',rotulo:'Código do plano',obrigatorio:true,max:24}],aoEnviar:v=>api('/assinatura/entrar',{metodo:'POST',corpo:v})}).then(r=>{if(r)render();});
+    const entrar=()=>formulario({titulo:'Entrar em um plano compartilhado',texto:'O responsável paga o plano. Suas conversas, respostas e materiais continuam privados. As contas são individuais; a franquia de IA e novos áudios é compartilhada.',campos:[{nome:'codigo',rotulo:'Código do plano',obrigatorio:true,max:24}],aoEnviar:v=>api('/assinatura/entrar',{metodo:'POST',corpo:v})}).then(r=>{if(r)render();});
     if(!g.compartilhado)return entrar();
     janela({titulo:'Seu plano compartilhado',corpo:h('div',{},h('p',{},`${g.ocupadas} de ${g.pessoas} vagas ocupadas, incluindo o responsável.`),g.responsavel?h('div',{},g.membros.map(m=>h('p',{},m.nome,' ',h('button',{class:'btn btn-texto btn-peq',on:{click:async()=>{if(await confirmar({titulo:'Remover participante?',texto:'A pessoa perde o acesso compartilhado, mas mantém seus dados.',ok:'Remover'})){await api('/assinatura/remover',{metodo:'POST',corpo:{membro:m.id}});render();}}}},'Remover do plano'))),h('button',{class:'btn',on:{click:async()=>{const r=await api('/assinatura/convite',{metodo:'POST'});await formulario({titulo:'Convite do plano',texto:'Compartilhe apenas com quem deve entrar. Gerar outro código invalida o anterior.',campos:[{nome:'codigo',rotulo:'Código para compartilhar',valor:r.codigo}],ok:'Fechar',aoEnviar:async()=>true});}}},'Gerar ou renovar código')):h('button',{class:'btn btn-sec',on:{click:async()=>{if(await confirmar({titulo:'Sair do plano?',texto:'Você perde o acesso compartilhado. Seus dados pessoais continuam na sua conta.',ok:'Sair do plano'})){await api('/assinatura/sair',{metodo:'POST'});render();}}}},'Sair do plano'))});
   }
@@ -165,6 +167,7 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
       lem.ativo ? h('a', { class: 'btn btn-texto btn-peq', href: '/api/v1/lembrete.ics' }, icone('calendar-plus'), 'Baixar de novo') : null),
     cartao('seal-check', 'Assinatura', estadoAss,
       h('button', { class: 'btn btn-sec btn-peq', on: { click: verPlanos } }, 'Ver planos e uso'),
+      ass.stripe?.portal&&ass.grupo.responsavel?h('button',{class:'btn btn-sec btn-peq',on:{click:async()=>{try{const r=await api('/assinatura/portal',{metodo:'POST'});const u=new URL(r.url);if(u.origin!=='https://billing.stripe.com')throw new Error('Endereço de cobrança inválido.');location.assign(u.href);}catch(err){toast(err.message);}}}},'Gerenciar cobrança'):null,
       e.status === 'ativa' && ass.grupo.responsavel ? h('button', { class: 'btn btn-texto btn-peq', on: { click: cancelar } }, 'Cancelar assinatura') : null),
     cartao('shield-check', 'Seus dados', 'Veja o que usamos para personalizar, baixe uma cópia ou apague.',
       h('button', { class: 'btn btn-sec btn-peq', on: { click: verDados } }, icone('eye'), 'O que usamos'),
