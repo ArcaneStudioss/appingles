@@ -44,7 +44,7 @@ STRIPE_PRICE_TURMA_MENSAL=price_...
 STRIPE_PRICE_TURMA_ANUAL=price_...
 ```
 
-Também será necessária `STRIPE_SECRET_KEY`, salva somente nas variáveis privadas da Hostinger. Começar no modo de teste; depois usar produtos, preços e chaves do mesmo ambiente de produção. O Grátis não precisa de preço recorrente no Stripe. Para checkout hospedado no servidor, não é necessário fornecer uma chave publicável do Stripe nesta fase.
+Também será necessária `STRIPE_SECRET_KEY`, salva somente nas variáveis privadas da Hostinger. Começar no modo de teste; depois usar produtos, preços e chaves do mesmo ambiente de produção. O Grátis não precisa de preço recorrente no Stripe. Família e Turma usam o preço total da assinatura com quantidade 1; não multiplicar o preço por 5 ou 20 participantes. Para checkout hospedado no servidor, não é necessário fornecer uma chave publicável do Stripe nesta fase.
 
 A integração Stripe Checkout/Billing ainda precisa ser implementada e validada: preços conferidos no servidor, checkout idempotente, vinculação ao usuário autenticado, webhook assinado, eventos duplicados e fora de ordem, renovação, inadimplência, cancelamento, reembolso/disputa e portal do cliente. A assinatura não pode ser liberada apenas porque o navegador abriu a página de sucesso. A conta Stripe deve estar habilitada para receber pagamentos e ter dados de repasse preenchidos.
 

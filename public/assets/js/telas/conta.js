@@ -15,6 +15,7 @@ const EXPLICA_DADOS = [
 
 export async function telaConta(el, { estado, ir, carregarEu }) {
   const [eu, ass, dados] = await Promise.all([carregarEu(), api('/assinatura'), api('/dados')]);
+  if(!ass.catalogo||!ass.grupo){el.append(h('section',{class:'folha'},h('p',{},'Estamos atualizando os planos. Tente novamente em instantes.'),h('button',{class:'btn',on:{click:()=>ir('#/conta')}},'Atualizar planos')));return;}
   const p = eu.perfil;
   const lem = p.lembrete || {};
   const e = ass.estado;
