@@ -152,29 +152,21 @@ export function falarPt(texto, aoFim, { personagem, emocao = 'contexto' } = {}) 
 export function botaoOuvir(texto, { velocidade = 1, rotulo = 'Ouvir' } = {}) {
   return h('button', { type: 'button', class: 'btn btn-sec btn-ouvir', on: { click: () => falar(texto, { velocidade }) } }, icone('speaker-high'), rotulo);
 }
-let avisoAudio, gatilhoAudio, dialogoAudio;
-// Guarda o botão também no Safari, que nem sempre o torna activeElement ao tocar.
-document.addEventListener('click', e => { gatilhoAudio = e.target.closest?.('button'); }, true);
+let dialogoAudio;
+// Fechar uma janela também interrompe sua fala, sem criar avisos sobre a atividade.
 addEventListener('inglou:voz', e => {
-  const { fase, personagem } = e.detail;
-  if (!avisoAudio) avisoAudio = h('span', { class: 'audio-status', hidden: true }, h('span', { role: 'status', 'aria-live': 'polite' }), h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: pararAudio } }, 'Parar'));
+  const { fase } = e.detail;
   if (fase === 'preparando') {
     const dialogo = document.querySelector('dialog[open]');
-    const origem = gatilhoAudio?.isConnected ? gatilhoAudio : document.activeElement;
-    if (origem?.matches('button') && !avisoAudio.contains(origem) && (!dialogo || dialogo.contains(origem))) origem.after(avisoAudio);
-    else (dialogo?.querySelector('.janela__in') || dialogo || document.querySelector('main') || document.body).prepend(avisoAudio);
     if (dialogoAudio !== dialogo) {
       dialogoAudio?.removeEventListener('close', pararAudio);
       dialogoAudio = dialogo;
       dialogoAudio?.addEventListener('close', pararAudio);
     }
   }
-  avisoAudio.hidden = fase === 'parado';
-  if (fase !== 'parado') {
-    const nome = personagem === 'mia' ? 'Mia' : 'Tuiuiú';
-    avisoAudio.dataset.fase = fase;
-    avisoAudio.querySelector('span').textContent = fase === 'preparando' ? 'Preparando a voz de ' + nome + '…' : nome + ' está falando';
-    avisoAudio.querySelector('button').textContent = fase === 'preparando' ? 'Cancelar' : 'Parar';
+  if (fase === 'parado') {
+    dialogoAudio?.removeEventListener('close', pararAudio);
+    dialogoAudio = null;
   }
 });
 

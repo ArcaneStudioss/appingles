@@ -1222,9 +1222,6 @@ body[data-publico="adulto"] .capitulo-card__imagem{font-size:1.8rem}
 .cultura-pratica{margin-top:1.3rem}
 .cultura-pratica li{padding:.4rem 0}
 .cultura-consulta summary{cursor:pointer;font-weight:800}
-.audio-status{display:inline-flex;position:static;align-items:center;gap:.4rem;max-width:100%;width:fit-content;margin:.35rem .45rem;padding:.15rem .45rem;background:var(--cartao-2);color:var(--tinta-2);border:1px solid var(--borda);border-radius:var(--raio-p);font-size:.8rem;font-weight:600;vertical-align:middle;white-space:normal;box-sizing:border-box}
-.audio-status>span{min-width:0;overflow-wrap:anywhere}
-.audio-status .btn{min-height:44px;flex-shrink:0;box-shadow:none;padding:.35rem .5rem;font-size:.8rem}
 
 
 /* ---- diversão: combo, caça ao erro e oponente do debate ---- */
