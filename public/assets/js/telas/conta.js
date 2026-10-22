@@ -26,7 +26,8 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
     h('div', { class: 'linha-acoes' }, botoes));
 
   // --- assinatura
-  const estadoAss = e.status === 'teste' ? `Teste grátis até ${dataBR(e.ate)} (${e.diasRestantes} dias). Sem cartão cadastrado: nada é cobrado sozinho.`
+  const estadoAss = e.status === 'cortesia' ? 'Plano Completo de cortesia. Sem cobrança ou renovação automática.'
+    : e.status === 'teste' ? `Teste grátis até ${dataBR(e.ate)} (${e.diasRestantes} dias). Sem cartão cadastrado: nada é cobrado sozinho.`
     : e.status === 'ativa' ? `Plano ${ass.planos[e.plano]?.nome} ativo até ${dataBR(e.ate)}, com renovação.`
       : e.status === 'cancelada' ? `Cancelado. Você continua com tudo até ${dataBR(e.ate)}. Depois, acesso livre.`
         : 'Acesso livre: flashcards, progresso e seus dados. Lições, conversas e IA pausadas.';

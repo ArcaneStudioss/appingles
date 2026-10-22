@@ -74,6 +74,11 @@ let balao = null, palavraAberta = null, posicaoAberta = null;
 const EXPRESSOES = {};
 const chaveDe = texto => texto.toLowerCase().replaceAll('’', "'").replace(/\s+/g, ' ').trim();
 const expressaoDe = texto => EXPRESSOES[chaveDe(texto)] || EXPRESSOES[chaveDe(texto).replace(/[.,!?;:]+$/, '')];
+// Consulta imediata ao mesmo catálogo usado nos balões; não depende da IA.
+export function significadoLocal(texto) {
+  const chave = chaveDe(texto);
+  return expressaoDe(texto) || PALAVRAS[chave] || null;
+}
 let partes = /([A-Za-zÀ-ÿ]+(?:['’][A-Za-zÀ-ÿ]+)*)/g;
 export function registrarExpressoes(novas) {
   let mudou = false;

@@ -15,7 +15,8 @@
     "restaurar": "node --disable-warning=ExperimentalWarning scripts/restaurar.js",
     "test:browser": "node tests/browser-evolucao.cjs",
     "test:mobile": "node tests/browser-mobile.cjs",
-    "vozes:preparar": "node scripts/preparar-vozes.js"
+    "vozes:preparar": "node scripts/preparar-vozes.js",
+    "test:feedback": "node tests/browser-feedback.cjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.135.0",

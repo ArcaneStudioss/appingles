@@ -71,8 +71,9 @@ function criarVozes({ db, dir, orcamento, env = process.env, fetchImpl = fetch, 
     if (pendentes.size >= 4) throw new ErroHttp(429, 'Estamos preparando outros áudios. Tente ouvir de novo em instantes.');
     const versao = versoes.get(uid) || 0, dia = diaDe(uid);
     const trabalho = (async () => {
-      if(orcamento)orcamento.usar(uid,'voz',textoFalado.length);
-      reservar(uid, dia, textoFalado.length);
+      const reservaPlano = orcamento?.usar(uid, 'voz', textoFalado.length);
+      try { reservar(uid, dia, textoFalado.length); }
+      catch (e) { if (reservaPlano) orcamento.concluir(reservaPlano, 0); throw e; }
       let temporario;
       try {
         const resposta = await fetchImpl('https://api.elevenlabs.io/v1/text-to-speech/' + voz + '?output_format=mp3_44100_128', {
@@ -96,6 +97,7 @@ function criarVozes({ db, dir, orcamento, env = process.env, fetchImpl = fetch, 
       } catch {
         // Não registra texto, chave ou resposta do provedor em logs ou mensagens ao navegador.
         q('UPDATE uso_voz SET caracteres = MAX(0, caracteres - ?) WHERE user_id = ? AND dia = ?').run(textoFalado.length, uid, dia);
+        if (reservaPlano) orcamento.concluir(reservaPlano, 0);
         throw new ErroHttp(503, 'Não consegui preparar esta fala agora. Tente novamente; a voz do personagem será mantida.');
       } finally { if (temporario) await fs.rm(temporario, { force: true }).catch(() => {}); }
     })();

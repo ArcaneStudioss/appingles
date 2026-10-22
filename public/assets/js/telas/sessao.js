@@ -11,7 +11,7 @@ export async function telaSessao(el, { ir }) {
   el.append(h('a', { class: 'btn btn-texto', href: '#/hoje' }, icone('caret-left'), 'Sair e continuar depois'), progresso, palco);
   const novo = s.itens.findIndex(e => !s.respondidos[e.id]);
   let passo = s.concluida ? s.itens.length + 1 : novo > 0 ? novo + 1 : 0;
-  const avancar = () => { pararVoz(); passo++; desenhar(); };
+  const avancar = () => { pararVoz(); passo++; desenhar(); const titulo = palco.querySelector('h1'); titulo?.setAttribute('tabindex', '-1'); titulo?.focus({ preventScroll: true }); scrollTo({ top: 0, behavior: 'instant' }); };
   const botao = (texto, acao) => h('button', { class: 'btn btn-bloco', type: 'button', on: { click: acao } }, texto);
   function desenhar() {
     palco.replaceChildren(); progresso.textContent = `Sessão de até ${s.minutos} minutos · ${Math.min(passo, s.itens.length)} de ${s.itens.length} atividades`;

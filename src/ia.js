@@ -68,7 +68,7 @@ async function chamar({ tarefa, system, mensagens, schema, maxTokens = 2000, esf
     output_config: { effort: esforco, ...(schema ? { format: { type: 'json_schema', schema } } : {}) },
   };
   const reserva=reservarIA(params.model,params);
-  const resp=await obterCliente().messages.create(params);
+  const resp=await obterCliente().messages.create(params, tarefa === 'palavra' ? { timeout: 10000 } : {});
   concluirIA(reserva,resp);
   if (resp.stop_reason === 'refusal') { const err = new Error('recusa'); err.recusa = true; throw err; }
   if (resp.stop_reason === 'max_tokens') { const err = new Error('resposta cortada'); throw err; }

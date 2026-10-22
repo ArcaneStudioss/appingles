@@ -1,5 +1,6 @@
 import { tocarVoz, pararVoz as pararAudio } from './voz.js?v=__V__';
 import { destacarReconhecidas } from './fala-acompanhada.js?v=__V__';
+import { significadoLocal } from './traducao.js?v=__V__';
 // Interface: construtor de elementos SEGURO (só textContent, nunca HTML com dado do usuário),
 // ícones, janela (modal), confirmação e aviso no lugar de alert/confirm/prompt, áudio e microfone.
 
@@ -155,11 +156,14 @@ export function falarPt(texto, aoFim, { personagem, emocao = 'contexto' } = {}) 
 export function botaoOuvir(texto, { velocidade = 1, rotulo = 'Ouvir' } = {}) {
   return h('button', { type: 'button', class: 'btn btn-sec btn-ouvir', on: { click: () => falar(texto, { velocidade }) } }, icone('speaker-high'), rotulo);
 }
-let dialogoAudio;
+let dialogoAudio, ultimoBotao, botaoPreparando;
+document.addEventListener('click', e => { ultimoBotao = e.target.closest('button'); }, true);
 // Fechar uma janela também interrompe sua fala, sem criar avisos sobre a atividade.
 addEventListener('inglou:voz', e => {
   const { fase } = e.detail;
+  if (botaoPreparando) { botaoPreparando.removeAttribute('aria-busy'); botaoPreparando.classList.remove('voz-preparando'); botaoPreparando = null; }
   if (fase === 'preparando') {
+    if (ultimoBotao?.isConnected) { botaoPreparando = ultimoBotao; botaoPreparando.setAttribute('aria-busy', 'true'); botaoPreparando.classList.add('voz-preparando'); }
     const dialogo = document.querySelector('dialog[open]');
     if (dialogoAudio !== dialogo) {
       dialogoAudio?.removeEventListener('close', pararAudio);
@@ -238,13 +242,18 @@ export function acompanharFala(texto) {
   return { elemento, atualizar: transcricao => destacarReconhecidas(elemento, transcricao) };
 }
 const cacheSentidos = new Map();
+const sentidosPendentes = new Map();
 export function abrirPalavra(palavra, frase) {
   const limpa = palavra.replace(/[’]/g, "'").replace(/^[-']+|[-']+$/g, '');
-  const corpo = h('div', { class: 'palavra-sentidos', 'aria-live': 'polite' }, h('p', { class: 'ajuda' }, 'Buscando os sentidos...'));
+  const local = significadoLocal(limpa);
+  const resumo = local ? h('div', {}, h('p', {}, h('strong', {}, local)), h('p', { class: 'ajuda' }, 'Sentido geral. A tradução pode mudar conforme a frase.')) : null;
+  const detalhes = h('div', { 'aria-live': 'polite' });
+  const corpo = h('div', { class: 'palavra-sentidos' }, resumo, detalhes);
   const { dlg } = janela({ titulo: limpa, corpo, acoes: [h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => falar(limpa, { velocidade: 0.9 }) } }, icone('speaker-high'), 'Ouvir')] });
   dlg.setAttribute('lang', 'pt-BR');
   const mostrar = r => {
-    if (!r.sentidos?.length) { corpo.replaceChildren(h('p', {}, r.aviso || 'Não encontrei sentidos para esta palavra.')); return; }
+    if (!dlg.isConnected) return;
+    if (!r.sentidos?.length) { detalhes.replaceChildren(h('p', {}, r.aviso || 'Não encontrei outros sentidos para esta palavra.'), consultar); ocupado(consultar, false); return; }
     corpo.replaceChildren(
       r.forma_base && r.forma_base.toLowerCase() !== limpa.toLowerCase() ? h('p', { class: 'ajuda' }, 'Forma base: ', h('strong', { lang: 'en' }, r.forma_base)) : null,
       h('ol', { class: 'sentidos' }, r.sentidos.map(s => h('li', { class: s.no_contexto ? 'sentido sentido--aqui' : 'sentido' },
@@ -253,9 +262,19 @@ export function abrirPalavra(palavra, frase) {
   };
   const chave = limpa.toLowerCase() + '|' + String(frase).slice(0, 300).toLowerCase();
   if (cacheSentidos.has(chave)) return mostrar(cacheSentidos.get(chave));
-  import('./api.js?v=__V__').then(({ api }) => api('/palavra', { metodo: 'POST', corpo: { palavra: limpa, frase: String(frase).slice(0, 300) } }))
-    .then(r => { if (r.sentidos?.length) cacheSentidos.set(chave, r); mostrar(r); })
-    .catch(e => corpo.replaceChildren(h('p', {}, e.message)));
+  const consultar = h('button', { type: 'button', class: 'btn btn-sec', on: { click: buscar } }, local ? 'Ver outros sentidos nesta frase' : 'Tentar novamente');
+  function buscar() {
+    ocupado(consultar, true);
+    detalhes.replaceChildren(h('p', { class: 'ajuda' }, 'Consultando os sentidos desta frase…'), consultar);
+    if (!sentidosPendentes.has(chave)) {
+      const pedido = import('./api.js?v=__V__').then(({ api }) => api('/palavra', { metodo: 'POST', corpo: { palavra: limpa, frase: String(frase).slice(0, 300) }, signal: AbortSignal.timeout(12000) }))
+        .then(r => { if (r.sentidos?.length) { if (cacheSentidos.size >= 200) cacheSentidos.delete(cacheSentidos.keys().next().value); cacheSentidos.set(chave, r); } return r; })
+        .finally(() => sentidosPendentes.delete(chave));
+      sentidosPendentes.set(chave, pedido);
+    }
+    sentidosPendentes.get(chave).then(mostrar).catch(e => { if (dlg.isConnected) { detalhes.replaceChildren(h('p', {}, e.message), consultar); ocupado(consultar, false); } });
+  }
+  if (local) detalhes.append(consultar); else buscar();
 }
 
 // preferências deste aparelho (não são dados de estudo)
