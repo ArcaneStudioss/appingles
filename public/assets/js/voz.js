@@ -1,5 +1,5 @@
 // Player único: nenhuma síntese do navegador nem gravação antiga substitui os personagens.
-let geracao = 0, atual = null, contextoAudio = null;
+let geracao = 0, atual = null, contextoAudio = null, sessaoAnterior = null;
 function avisar(fase, personagem) {
   if (typeof dispatchEvent === 'function' && typeof CustomEvent === 'function') dispatchEvent(new CustomEvent('inglou:voz', { detail: { fase, personagem } }));
 }
@@ -7,7 +7,24 @@ function liberar(estado) {
   if (!estado) return;
   if (estado.fonte) { estado.fonte.onended = null; try { estado.fonte.stop(); } catch {} estado.fonte.disconnect(); estado.fonte = null; }
 }
-function silenciarContexto() { if (contextoAudio?.state === 'running') contextoAudio.suspend().catch(() => {}); }
+function ativarSessaoDeFala() {
+  // No Safari, transient/ambient respeitam o botão silencioso do iPhone.
+  // Playback permite ouvir a aula no silencioso sem criar elemento de mídia nem controles de música.
+  try {
+    const sessao = globalThis.navigator?.audioSession;
+    if (sessao) { if (sessaoAnterior === null) sessaoAnterior = sessao.type; sessao.type = 'playback'; }
+  } catch {}
+}
+function restaurarSessaoAudio() {
+  if (sessaoAnterior === null) return;
+  try { globalThis.navigator.audioSession.type = sessaoAnterior; } catch {}
+  sessaoAnterior = null;
+}
+function silenciarContexto() {
+  const pausa = contextoAudio?.state === 'running' || contextoAudio?.state === 'interrupted' ? contextoAudio.suspend().catch(() => {}) : Promise.resolve();
+  // Uma pausa antiga não pode rebaixar a sessão da próxima fala que já começou.
+  pausa.then(() => { if (!atual) restaurarSessaoAudio(); });
+}
 export function pararVoz() {
   geracao++;
   const anterior = atual; atual = null;
@@ -37,11 +54,10 @@ export function tocarVoz(texto, { personagem = 'mia', idioma = 'en', velocidade 
   const minha = geracao, controle = new AbortController();
   let desbloquear;
   try {
+    ativarSessaoDeFala();
     contextoAudio ||= new (classeAudio())({ latencyHint: 'interactive' });
-    // Fala pontual da atividade, sem elemento de mídia nem sessão de música.
-    try { if (globalThis.navigator?.audioSession) navigator.audioSession.type = 'transient'; } catch {}
     desbloquear = contextoAudio.resume();
-  } catch { aoErro?.('Não consegui iniciar o áudio. Toque em ouvir novamente.'); return false; }
+  } catch { restaurarSessaoAudio(); aoErro?.('Não consegui iniciar o áudio. Toque em ouvir novamente.'); return false; }
   const estado = { controle, fonte: null, aoCancelar }; atual = estado;
   avisar('preparando', personagem);
   const ativa = () => atual === estado && minha === geracao && !controle.signal.aborted;

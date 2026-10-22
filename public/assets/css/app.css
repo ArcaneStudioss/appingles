@@ -88,7 +88,7 @@
 
 /* ---------- base ---------- */
 *,*::before,*::after{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;text-size-adjust:100%;-webkit-tap-highlight-color:transparent;scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--tinta) 28%,transparent) transparent}
+html{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;text-size-adjust:100%;-webkit-tap-highlight-color:transparent;scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--tinta) 28%,transparent) transparent}
 body{margin:0;background:var(--ceu),var(--fundo);background-attachment:fixed;color:var(--tinta);font-family:var(--f-texto);font-size:1.0625rem;line-height:1.55;font-weight:600;min-height:100dvh;text-rendering:optimizeLegibility;transition:background-color .4s}
 h1,h2,h3,h4{font-family:var(--f-titulo);line-height:1.15;margin:0 0 .4em;font-weight:600;letter-spacing:-.005em;text-wrap:balance}
 h1{font-size:clamp(1.8rem,7vw,2.5rem)} h2{font-size:clamp(1.3rem,5vw,1.7rem)} h3{font-size:1.12rem}

@@ -28,6 +28,9 @@ import { telaBiblioteca, telaUnidade } from './telas/biblioteca.js?v=__V__';
 import { telaBrasil } from './telas/brasil.js?v=__V__';
 
 const palco = document.getElementById('conteudo');
+// Mantém a escala da área de estudo; a rolagem continua livre no celular.
+// O Safari pode ignorar user-scalable=no, por isso bloqueamos também seus gestos de zoom.
+for (const evento of ['gesturestart', 'gesturechange']) document.addEventListener(evento, e => e.preventDefault(), { passive: false });
 const nav = document.querySelector('.nav');
 export const estado = { eu: null };
 
