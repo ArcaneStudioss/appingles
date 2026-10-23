@@ -10,7 +10,7 @@ export async function telaSessao(el, { ir }) {
   const progresso = h('p', { class: 'chip', role: 'status' });
   el.append(h('a', { class: 'btn btn-texto', href: '#/hoje' }, icone('caret-left'), 'Sair e continuar depois'), progresso, palco);
   const novo = s.itens.findIndex(e => !s.respondidos[e.id]);
-  let passo = s.concluida ? s.itens.length + 1 : novo > 0 ? novo + 1 : 0;
+  let passo = s.concluida || novo === -1 ? s.itens.length + 1 : novo > 0 ? novo + 1 : 0;
   const avancar = () => { pararVoz(); passo++; desenhar(); const titulo = palco.querySelector('h1'); titulo?.setAttribute('tabindex', '-1'); titulo?.focus({ preventScroll: true }); scrollTo({ top: 0, behavior: 'instant' }); };
   const botao = (texto, acao) => h('button', { class: 'btn btn-bloco', type: 'button', on: { click: acao } }, texto);
   function desenhar() {
@@ -26,14 +26,18 @@ export async function telaSessao(el, { ir }) {
     if (passo <= s.itens.length) {
       const ex = s.itens[passo - 1];
       let apoioPendente = Promise.resolve();
+      let pediuApoio = false;
       const apoio = h('section', { class: 'folha', hidden: true, role: 'status' });
       const marcar = () => {
-        apoioPendente = apoioPendente.then(() => api('/sessao/ajuda', { metodo: 'POST', corpo: { itemId: ex.id } }));
+        pediuApoio = true;
+        // Uma falha anterior não impede nova tentativa. A resposta também leva
+        // a marca de apoio, mesmo se o serviço de ajuda estiver indisponível.
+        apoioPendente = apoioPendente.catch(() => {}).then(() => api('/sessao/ajuda', { metodo: 'POST', corpo: { itemId: ex.id } }));
         return apoioPendente;
       };
       const caixa = exercicio(ex, {
         ja: s.respondidos[ex.id], permitirTreino: true,
-        responder: async (resposta, extra = {}) => { await apoioPendente; const r = await api('/sessao/responder', { metodo: 'POST', corpo: { itemId: ex.id, resposta, ...extra } }); if(!r.pratica)s.respondidos[ex.id] = r; return r; },
+        responder: async (resposta, extra = {}) => { await apoioPendente.catch(() => {}); const r = await api('/sessao/responder', { metodo: 'POST', corpo: { itemId: ex.id, resposta, ...extra, dica: extra.dica || pediuApoio } }); if(!r.pratica)s.respondidos[ex.id] = r; return r; },
         aoProximo: avancar,
       });
       caixa.addEventListener('inglou:traducao', () => { marcar().catch(e => toast(e.message)); });

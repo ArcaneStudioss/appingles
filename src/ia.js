@@ -4,7 +4,7 @@
 // O texto do aluno é sempre tratado como DADO (tentativa de inglês), nunca como instrução.
 const { DIFICULDADES } = require('./conteudo/dificuldades');
 const { publicoDe } = require('./motor/publico');
-const {reservarIA,concluirIA}=require('./orcamento');
+const {reservarIA,concluirIA,falharIA}=require('./orcamento');
 
 let Anthropic = null;
 try { Anthropic = require('@anthropic-ai/sdk'); } catch { Anthropic = null; }
@@ -68,14 +68,18 @@ async function chamar({ tarefa, system, mensagens, schema, maxTokens = 2000, esf
     output_config: { effort: esforco, ...(schema ? { format: { type: 'json_schema', schema } } : {}) },
   };
   const reserva=reservarIA(params.model,params);
-  const resp=await obterCliente().messages.create(params, tarefa === 'palavra' ? { timeout: 10000 } : {});
-  concluirIA(reserva,resp);
-  if (resp.stop_reason === 'refusal') { const err = new Error('recusa'); err.recusa = true; throw err; }
-  if (resp.stop_reason === 'max_tokens') { const err = new Error('resposta cortada'); throw err; }
-  const texto = resp.content.filter(b => b.type === 'text').map(b => b.text).join('');
-  const uso = { entrada: resp.usage?.input_tokens || 0, saida: resp.usage?.output_tokens || 0, cache: resp.usage?.cache_read_input_tokens || 0, modelo: resp.model };
-  if (!schema) return { texto, uso };
-  try { return { dados: JSON.parse(texto), uso }; } catch { throw new Error('json inválido da IA'); }
+  let resp;
+  try {
+    resp=await obterCliente().messages.create(params, tarefa === 'palavra' ? { timeout: 10000 } : {});
+    if (resp.stop_reason === 'refusal') { const err = new Error('recusa'); err.recusa = true; throw err; }
+    if (resp.stop_reason === 'max_tokens') { const err = new Error('resposta cortada'); throw err; }
+    const texto = resp.content.filter(b => b.type === 'text').map(b => b.text).join('');
+    const uso = { entrada: resp.usage?.input_tokens || 0, saida: resp.usage?.output_tokens || 0, cache: resp.usage?.cache_read_input_tokens || 0, modelo: resp.model };
+    let dados;
+    if(schema){try{dados=JSON.parse(texto);}catch{throw new Error('json inválido da IA');}}
+    concluirIA(reserva,resp);
+    return schema ? {dados,uso} : {texto,uso};
+  } catch(e) { falharIA(reserva,e,resp); throw e; }
 }
 
 const contexto = (perfil, nivel) => { const publico = publicoDe(perfil); return `Student profile: audience ${publico.id}. Audience instructions: ${publico.orientacao} Contexts: ${publico.contexto}. ${publico.regiao ? `Regional reference declared by the learner: ${publico.regiao.nome}. Use relevant examples without assuming an accent, vocabulary or identity; explain other regions too. ` : ''}Estimated level ${nivel || 'A2'} (an estimate, may be wrong). Goal: ${perfil.objetivo_nome || perfil.objetivo}. ${perfil.objetivo_detalhe ? 'In their words: "' + String(perfil.objetivo_detalhe).slice(0, 200) + '". ' : ''}${perfil.area ? 'Work/study area: ' + String(perfil.area).slice(0, 80) + '. ' : ''}Interests: ${(perfil.interesses || []).join(', ') || 'not informed'}.`; };

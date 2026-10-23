@@ -23,7 +23,31 @@ for(const width of [320,390,430]){
  }
 }
 await page.setViewportSize({width:390,height:844});await page.goto('/app/?sessao-real#/sessao',{waitUntil:'networkidle'});await page.getByRole('button',{name:'Praticar',exact:true}).click();
-for(let i=0;i<2;i++){await page.getByRole('button',{name:'Ver resposta e aprender',exact:true}).click();await page.locator('.retorno-exercicio:visible').waitFor();await page.getByRole('button',{name:'Continuar',exact:true}).click();await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>scrollY),0,'A próxima questão começa no topo');}
+for(let i=0;i<1;i++){await page.getByRole('button',{name:'Ver resposta e aprender',exact:true}).click();await page.locator('.retorno-exercicio:visible').waitFor();await page.getByRole('button',{name:'Continuar',exact:true}).click();await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>scrollY),0,'A próxima questão começa no topo');}
+// Uma queda de rede no apoio não pode impedir conferir ou pedir ajuda de novo.
+let apoios=0;
+await page.route('**/api/v1/sessao/ajuda',route=>++apoios===1?route.abort('failed'):route.continue());
+await page.getByRole('button',{name:'Não entendi: mostrar outro apoio',exact:true}).click();
+await page.getByText('Sem conexão. Confira sua internet e tente de novo.',{exact:true}).last().waitFor();
+const respostaComApoio=page.waitForResponse(r=>r.url().endsWith('/api/v1/sessao/responder'));await page.locator('.opcao').first().click();await page.getByRole('button',{name:'Conferir',exact:true}).click();await page.locator('.retorno-exercicio:visible').waitFor();assert.equal(apoios,1,'Conferir não depende da recuperação do serviço de ajuda');assert.equal((await (await respostaComApoio).json()).dica,true,'O servidor preserva a marca de apoio');
+await page.getByRole('button',{name:'Continuar',exact:true}).click();
+await page.unroute('**/api/v1/sessao/ajuda');apoios=0;
+await page.route('**/api/v1/sessao/ajuda',route=>++apoios===1?route.abort('failed'):route.continue());
+await page.getByRole('button',{name:'Não entendi: mostrar outro apoio',exact:true}).click();
+await page.getByText('Sem conexão. Confira sua internet e tente de novo.',{exact:true}).last().waitFor();
+await page.getByRole('button',{name:'Não entendi: mostrar outro apoio',exact:true}).click();
+await page.getByText('Este apoio fica registrado como prática com ajuda.',{exact:true}).waitFor();assert.equal(apoios,2);
+await page.unroute('**/api/v1/sessao/ajuda');
+// Todos os itens respondidos sem clicar em salvar: recarregar deve abrir a conclusão.
+for(let i=0;i<20;i++){
+ if(await page.getByRole('button',{name:'Salvar conclusão',exact:true}).count())break;
+ await page.getByRole('button',{name:'Ver resposta e aprender',exact:true}).click();await page.locator('.retorno-exercicio:visible').waitFor();await page.getByRole('button',{name:'Continuar',exact:true}).click();
+}
+await page.getByRole('button',{name:'Salvar conclusão',exact:true}).waitFor();
+const antes=(await R('GET','/sessao')).sessao;assert.equal(antes.concluida,false);assert.ok(antes.itens.every(e=>antes.respondidos[e.id]));
+await page.reload({waitUntil:'networkidle'});await page.getByRole('heading',{name:'Sessão concluída',exact:true}).waitFor();await page.getByRole('button',{name:'Salvar conclusão',exact:true}).click();
+await page.getByRole('link',{name:'Ver meu progresso',exact:true}).waitFor();assert.equal((await R('GET','/sessao')).sessao.concluida,true);
+const depois=(await R('GET','/sessao')).sessao;assert.deepEqual(Object.keys(depois.respondidos),Object.keys(antes.respondidos));
 // Dicionário: resposta local imediata; enriquecimento explícito e uma só chamada em andamento.
 let chamadas=0;await page.route('**/api/v1/palavra',async route=>{chamadas++;await new Promise(r=>setTimeout(r,800));await route.fulfill({json:{forma_base:'song',sentidos:[{classe:'substantivo',pt:'canção',ex_en:'This song is beautiful.',ex_pt:'Esta canção é bonita.',no_contexto:true}]}});});
 await page.evaluate(async()=>{const{abrirPalavra}=await import('/assets/js/ui.js');const{registrarExpressoes}=await import('/assets/js/traducao.js');registrarExpressoes({song:'canção ou música'});abrirPalavra('song','This song is beautiful.');});
@@ -35,7 +59,7 @@ await page.getByRole('button',{name:'Fechar',exact:true}).click();
 let vozes=0;await page.route('**/api/v1/vozes/sintetizar',async route=>{vozes++;await new Promise(r=>setTimeout(r,150));await route.fulfill({status:503,json:{erro:'Áudio de teste indisponível.'}});});
 await page.evaluate(async()=>{const{exercicio}=await import('/assets/js/telas/exercicio.js');document.querySelector('#conteudo .tela').replaceChildren(exercicio({id:'audio',tipo:'escolha',opcoes:['Hello','Goodbye'],enunciado:'Escolha'},{ja:{correto:true,esperado:'Hello',audioResposta:'Hello',explica:'Hello quer dizer olá.'},responder:async()=>({}),aoProximo:()=>{},permitirTreino:true}));});
 for(const name of ['Ouvir Tuiuiú ler esta mensagem','Ouvir resposta','Ler explicação']){const antes=vozes;await page.getByRole('button',{name,exact:true}).click();await page.locator('.voz-preparando[aria-busy=true]').waitFor();await page.getByText('Áudio de teste indisponível.',{exact:true}).last().waitFor();await page.waitForTimeout(200);assert.equal(vozes,antes+1);assert.equal(await page.locator('.voz-preparando').count(),0);}
-assert.deepEqual(errors,[]);console.log(motor+': feedback compacto, rodapé, avanço, dicionário imediato/cache e controles de áudio OK');await c.close();
+assert.deepEqual(errors,[]);console.log(motor+': feedback compacto, rodapé, avanço, dicionário imediato/cache, controles de áudio e retomada/apoio após falha OK');await c.close();
 }finally{await browser.close();}}
 }
 main().catch(e=>{console.error(e.stack);process.exitCode=1;}).finally(()=>{srv.kill();setTimeout(()=>fs.rmSync(dir,{recursive:true,force:true}),500).unref();});
