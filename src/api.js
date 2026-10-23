@@ -141,7 +141,12 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     if (usado >= (est.limites[tipo] || 0)) return { pode: false, motivo: est.acesso === 'livre' ? 'plano_livre' : 'limite' };
     if (!limIa.tentar('u' + uid)) return { pode: false, motivo: 'ritmo' };
     if(reservar){const reservado=transacao(db,()=>{if((usoMes(uid,h)[tipo]||0)>=(est.limites[tipo]||0))return false;q('INSERT INTO uso_ia(user_id,mes,tipo,qtd) VALUES(?,?,?,1) ON CONFLICT(user_id,mes,tipo) DO UPDATE SET qtd=qtd+1').run(uid,h.slice(0,7),tipo);return true;});if(!reservado)return{pode:false,motivo:'limite'};}
-    return { pode: true };
+    let reservada = reservar;
+    return { pode: true, desfazer: () => {
+      if (!reservada) return;
+      q('UPDATE uso_ia SET qtd=MAX(0,qtd-1) WHERE user_id=? AND mes=? AND tipo=?').run(uid,h.slice(0,7),tipo);
+      reservada = false;
+    } };
   }
   function contarIa(uid, tipo, h, uso) {
     q('INSERT INTO uso_ia (user_id, mes, tipo, qtd, tokens_entrada, tokens_saida) VALUES (?, ?, ?, 0, ?, ?) ON CONFLICT(user_id, mes, tipo) DO UPDATE SET tokens_entrada = tokens_entrada + excluded.tokens_entrada, tokens_saida = tokens_saida + excluded.tokens_saida')
@@ -153,7 +158,9 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     limite: 'Você usou a cota de IA deste mês. Até o mês virar, seguimos no modo de prática com correção básica, sem custo extra.',
     ritmo: 'Muitas mensagens em pouco tempo. Respire um pouco e tente de novo em instantes.',
     erro: 'O tutor de IA não respondeu agora. Usamos a correção básica nesta vez.',
+    limite_global: 'A geração com IA está temporariamente indisponível no Inglou. Isso não significa que sua franquia acabou. Continue com o conteúdo e a prática sem IA.',
   }[motivo] || null);
+  const avisoFalhaIa = erro => avisoIa(erro?.motivo || 'erro');
 
   function exigirAcessoCompleto(uid, h) {
     const est = estadoAssinatura(uid, h);
@@ -509,7 +516,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     const perm = podeIa(uid, 'licao', h);
     if (!perm.pode) return marcar({ ...lic.dados, personalizada: false });
     const chave = 'pers' + uid;
-    if (emAndamento.has(chave)) return lic;
+    if (emAndamento.has(chave)) { perm.desfazer(); return lic; }
     emAndamento.add(chave);
     try {
       const def = POR_ID[lic.dados.missao.id];
@@ -524,7 +531,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
       dados.blocos.splice(pos >= 0 ? pos + 1 : dados.blocos.length, 0, { tipo: 'exercicios', titulo: 'Feitos para a sua situação', exercicios: exs, personalizado: true });
       dados.porque = [...dados.porque, `Incluímos ${exs.length} exercícios escritos com a sua situação${p.area ? ` (${p.area})` : ''}${p.objetivo_detalhe ? ': “' + p.objetivo_detalhe.slice(0, 90) + (p.objetivo_detalhe.length > 90 ? '...' : '') + '”' : ''}.`];
       return marcar(dados);
-    } catch (e) { console.error('[ia] exercícios personalizados falharam:', e.message); return marcar({ ...lic.dados, personalizada: false }); }
+    } catch (e) { perm.desfazer(); console.error('[ia] exercícios personalizados falharam:', e.message); return marcar({ ...lic.dados, personalizada: false }); }
     finally { emAndamento.delete(chave); }
   }
 
@@ -601,7 +608,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
           av = { nota: Math.max(0, Math.min(100, r.nota | 0)), palavras: palavras(texto), elementos: regras.elementos.map(e => ({ ...e, ok: !r.elementos_faltando.some(f => normalizar(f).includes(normalizar(e.nome).split(' ')[0])) })),
             achados: r.correcoes, demonstrado: !usouAjuda && r.cumpre_tarefa && r.erros_graves === 0 && minimo, comentario: r.comentario, versaoMelhorada: r.versao_melhorada, modo: 'ia' };
           if (usouAjuda) av.comentario += ' Como você usou as dicas, isto conta como prática.';
-        } catch (e) { aviso = avisoIa('erro'); console.error('[ia] avaliação falhou:', e.message); }
+        } catch (e) { perm.desfazer(); aviso = avisoFalhaIa(e); console.error('[ia] avaliação falhou:', e.message); }
       } else aviso = avisoIa(perm.motivo);
 
       const res = transacao(db, () => {
@@ -773,7 +780,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
         try {
           turno = await ia.conversar({ cenario: cen, perfil: perfilDe(uid), nivel: nivelamentoDe(uid)?.nivel, historico: msgs, texto, material });
           contarIa(uid, 'conversa', h, turno.uso);
-        } catch (e) { console.error('[ia] conversa falhou:', e.message); aviso = avisoIa('erro'); }
+        } catch (e) { perm.desfazer(); console.error('[ia] conversa falhou:', e.message); aviso = avisoFalhaIa(e); }
       } else aviso = avisoIa(perm.motivo);
       if (!turno) { turno = turnoOffline(c.cenario, msgs, texto); const perguntas=lerJson(material?.gerado,{})?.simulacao||[]; if(perguntas.length){const n=msgs.filter(m=>m.papel==='aluno').length+1;turno.resposta=perguntas[n]||'Thank you for sharing. Is there anything else you would like to add?';turno.encerrar=n>=perguntas.length;} }
       const usouAjuda = ctx.corpo.ajuda === true;
@@ -824,13 +831,13 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
         const r = await ia.tutor({ pergunta, perfil: perfilDe(uid), nivel: nivelamentoDe(uid)?.nivel, historico: hist });
         contarIa(uid, 'tutor', h, r.uso);
         return { resposta: r.resposta, modo: 'ia' };
-      } catch (e) { console.error('[ia] tutor falhou:', e.message); }
+      } catch (e) { perm.desfazer(); perm.erro=e; console.error('[ia] tutor falhou:', e.message); }
     }
     // sem IA: procura no catálogo de dificuldades
     const termos = normalizar(pergunta).split(' ').filter(t => t.length >= 3);
     const pontua = d => { const alvo = normalizar([d.nome, d.regra, d.tag.replace(/-/g, ' '), d.contraste.pt, d.contraste.en, ...d.abordagens.exemplos].join(' ')); return termos.filter(t => alvo.includes(t)).length; };
     const melhor = DIFICULDADES.map(d => [d, pontua(d)]).sort((a, b) => b[1] - a[1])[0];
-    const aviso = avisoIa(perm.pode ? 'erro' : perm.motivo);
+    const aviso = perm.pode ? avisoFalhaIa(perm.erro) : avisoIa(perm.motivo);
     if (melhor && melhor[1] >= 1) {
       const d = melhor[0];
       return { modo: 'catalogo', aviso, resposta: `${d.nome}\n\n${d.regra}\n\nPortuguês: ${d.contraste.pt}\nInglês: ${d.contraste.en}\n${d.contraste.nota}\n\nExemplos:\n${d.abordagens.exemplos.slice(0, 3).map(e => '• ' + e).join('\n')}\n\nNão tenho certeza de que era exatamente isso que você perguntou. Sem o tutor de IA, eu respondo só sobre os pontos mais comuns.` };
@@ -853,7 +860,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
       if (cachePalavra.size > 2000) cachePalavra.delete(cachePalavra.keys().next().value);
       cachePalavra.set(chave, r);
       return r;
-    } catch (e) { console.error('[ia] palavra falhou:', e.message); return { aviso: 'Não consegui consultar agora. Tente de novo em instantes.', sentidos: [] }; }
+    } catch (e) { console.error('[ia] palavra falhou:', e.message); return { aviso: avisoFalhaIa(e), sentidos: [] }; }
   });
 
   // ---------- Perfil de aprendizagem e treino focado nas dificuldades ----------
@@ -919,6 +926,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
           } catch (e) { console.error('[ia] treino falhou:', e.message); }
         }));
       }
+      if (perm.pode && !Object.keys(bancoIa).length) perm.desfazer();
       const quantos = (p.minutos_dia || 15) <= 10 ? 6 : (p.minutos_dia || 15) >= 20 ? 10 : 8;
       const m = APR.montarTreino({ tags, pessoais: d.pessoais, pesos: d.pesos, quantos, bancoIa, vistos: d.vistos, semente: `${uid}:${h}:${versao}` });
       if (m.itens.length < 3) throw new ErroHttp(422, 'Ainda tenho pouco material para o seu treino. Faça a aula de hoje e volte.');
@@ -1033,7 +1041,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
           contarIa(uid, 'estudo', h, r.uso);
           const ok = (r.assuntos || []).filter(a => a && typeof a.nome === 'string' && a.nome.trim().length >= 2).slice(0, estudoMotor.MAX_ASSUNTOS).map(a => ({ nome: a.nome.trim(), porque: typeof a.porque === 'string' ? a.porque.trim() : null }));
           if (ok.length >= 2) { lista = ok; modo = 'ia'; }
-        } catch (e) { console.error('[ia] plano de estudo falhou:', e.message); aviso = avisoIa('erro'); }
+        } catch (e) { perm.desfazer(); console.error('[ia] plano de estudo falhou:', e.message); aviso = avisoFalhaIa(e); }
       } else aviso = avisoIa(perm.motivo);
       if (!lista) lista = estudoMotor.dividirAssuntos(descricao);
       if (!lista.length) throw new ErroHttp(422, 'Não consegui separar assuntos. Escreva o que cai, um por linha ou separado por vírgula.');
@@ -1092,7 +1100,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
             const r = await ia.estudarAssunto({ assunto: a.nome, porque: a.porque, estudo: e, material: e.material, perfil: perfilDe(uid), nivel });
             contarIa(uid, 'estudo', h, r.uso);
             c = estudoMotor.conteudoDaIa(r, a, validarExerciciosIa);
-          } catch (err) { console.error('[ia] assunto falhou:', err.message); aviso = avisoIa('erro'); }
+          } catch (err) { perm.desfazer(); console.error('[ia] assunto falhou:', err.message); aviso = avisoFalhaIa(err); }
         } else aviso = avisoIa(perm.motivo);
         if (!c) c = estudoMotor.conteudoOffline(a, e.material, nivel);
         e = estudoDe(uid, id); a = assuntoDe(e, a.id);     // recarrega: outra aba pode ter mexido
@@ -1244,7 +1252,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
             const r = await ia.podcast({ tropecos, perfil: perfilDe(uid), nivel: nivelamentoDe(uid)?.nivel, nome });
             contarIa(uid, 'podcast', h, r.uso);
             falasIa = radio.validarFalasIa(r.falas);
-          } catch (e) { console.error('[ia] podcast falhou:', e.message); }
+          } catch (e) { perm.desfazer(); aviso=avisoFalhaIa(e); console.error('[ia] podcast falhou:', e.message); }
         } else if (perm.motivo !== 'sem_ia') aviso = avisoIa(perm.motivo);
       }
       const ep = radio.montarEpisodio({ tropecos, missao, nome, falasIa });
@@ -1320,7 +1328,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
             exercicios: r.exercicios.slice(0, 6).filter(e => e.frase.includes('___')).map((e, i) => ({ id: 'mat:' + i, tipo: 'lacuna', frase: e.frase, resposta: [e.resposta], dica: e.dica })),
             compreensao: r.compreensao.slice(0, 4).filter(c => c.opcoes.length >= 2 && c.correta >= 0 && c.correta < c.opcoes.length).map((c, i) => ({ id: 'comp:' + i, pergunta: c.pergunta, opcoes: embaralhar(c.opcoes, `${uid}:${i}:${titulo}`), resposta: c.opcoes[c.correta] })),
           };
-        } catch (e) { console.error('[ia] material falhou:', e.message); aviso = avisoIa('erro'); }
+        } catch (e) { perm.desfazer(); console.error('[ia] material falhou:', e.message); aviso = avisoFalhaIa(e); }
       } else aviso = avisoIa(perm.motivo);
       if (!gerado) gerado = processarOffline(titulo, texto, { nivel: n?.nivel });
       const r = q('INSERT INTO materiais (user_id, titulo, texto, gerado, criado_em) VALUES (?, ?, ?, ?, ?)').run(uid, titulo, texto, JSON.stringify(gerado), agoraISO());
