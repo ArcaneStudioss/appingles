@@ -91,7 +91,6 @@ export async function telaHoje(el, { ir, estado }) {
   const principal = h('div', { class: 'hoje__col' });
   principal.append(
     h('header', { class: 'saudacao' },
-      lou(feita ? 'feliz' : 'oi', { tamanho: 64 }),
       h('h1', {}, `${saud}, ${d.nome}!`),
       h('button', { type: 'button', class: 'status__item status__item--seq c-coral' + (d.sequencia.estudouHoje ? ' acesa' : ''), 'aria-label': `Sequência: ${d.sequencia.atual} dias seguidos. Ver detalhes`, on: { click: () => verSequencia(d.sequencia, d.diasNoMes) } },
         icone('flame'), h('strong', {}, String(d.sequencia.atual)))));
