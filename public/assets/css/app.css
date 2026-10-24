@@ -1020,7 +1020,15 @@ a.turma-item:hover,a.turma-item:focus-visible{border-color:var(--c-forte)}
 .abertura__voo{position:relative}
 .abertura__arco{transform-origin:50% 100%}
 .abertura__arco .lou{display:block;width:min(240px,72vw);height:auto;overflow:visible}
-.abertura .asa{transform-origin:120px 76px}
+.lou--voando .asa{transform-origin:120px 76px}
+.abertura__voo--foi{visibility:hidden}
+.ave-voo{position:fixed;left:0;top:0;z-index:1001;pointer-events:none;transform-origin:50% 50%;will-change:transform}
+.ave-voo .lou--voando{display:block;width:min(240px,72vw);height:auto;overflow:visible}
+/* poleiro: o Tuiuiú pousa no canto superior direito */
+.pouso{position:fixed;top:max(.35rem,env(safe-area-inset-top));right:6.4rem;z-index:60;width:48px;height:48px;pointer-events:none}
+.pouso--espera{visibility:hidden}
+body.foco-total .pouso{display:none}
+@media (min-width:960px){.pouso{right:1.4rem;top:.6rem}}
 .abertura__vento{position:absolute;right:92%;top:30%;display:grid;gap:12px;opacity:0}
 .abertura__vento i{display:block;height:5px;border-radius:99px;background:var(--azul-fundo);width:56px}
 .abertura__vento i:nth-child(2){width:84px;margin-left:-28px}
@@ -1032,9 +1040,9 @@ a.turma-item:hover,a.turma-item:focus-visible{border-color:var(--c-forte)}
   .abertura--sai{transform:scale(1.04)}
   .abertura__voo{animation:ab-voo-x 1.15s cubic-bezier(.16,.7,.3,1) both}
   .abertura__arco{animation:ab-voo-y 1.15s ease-in-out both}
-  .abertura__arco .lou{animation:ab-paira 1.5s ease-in-out 1.15s infinite alternate}
-  .abertura .asa--d{animation:ab-asa-d .19s ease-in-out 6 alternate,ab-asa-d .7s ease-in-out 1.14s infinite alternate}
-  .abertura .asa--e{animation:ab-asa-e .19s ease-in-out 6 alternate,ab-asa-e .7s ease-in-out 1.14s infinite alternate}
+  .abertura__arco .lou--voando{animation:ab-paira 1.5s ease-in-out 1.15s infinite alternate}
+  .lou--voando .asa--d{animation:ab-asa-d .19s ease-in-out 6 alternate,ab-asa-d .7s ease-in-out 1.14s infinite alternate}
+  .lou--voando .asa--e{animation:ab-asa-e .19s ease-in-out 6 alternate,ab-asa-e .7s ease-in-out 1.14s infinite alternate}
   .abertura__vento{animation:ab-vento 1.15s ease-out both}
   .abertura__texto>*{animation:entra .6s var(--mola) both}
   .abertura__texto h1{animation-delay:.95s}
@@ -1046,6 +1054,13 @@ a.turma-item:hover,a.turma-item:focus-visible{border-color:var(--c-forte)}
 @keyframes ab-asa-e{from{transform:rotate(26deg)}to{transform:rotate(-24deg)}}
 @keyframes ab-paira{to{transform:translateY(-10px)}}
 @keyframes ab-vento{0%{opacity:0;transform:scaleX(.3)}25%{opacity:1;transform:none}80%{opacity:.9}100%{opacity:0;transform:translateX(-24px)}}
+@media (prefers-reduced-motion:no-preference){
+  .lou--voando.lou--rapido .asa--d{animation:ab-asa-d .17s ease-in-out infinite alternate}
+  .lou--voando.lou--rapido .asa--e{animation:ab-asa-e .17s ease-in-out infinite alternate}
+  .ave-voo .lou--voando{animation:none}
+  .pouso--chegou .lou{animation:ab-pouso .7s var(--mola) both}
+}
+@keyframes ab-pouso{0%{transform:translateY(-10px) scale(.85)}45%{transform:translateY(2px) scale(1.12,.88)}100%{transform:none}}
 @media (prefers-reduced-motion:reduce){
   .abertura{transition:none}
   .abertura__texto{animation:entra-op .5s ease both}
