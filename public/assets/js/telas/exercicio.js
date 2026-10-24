@@ -75,13 +75,14 @@ export function exercicio(ex, { responder, contestar, ja, devagar = false, aoPro
         resposta && !/^erros:/.test(resposta) && ex.tipo !== 'fala' ? h('span', { class: 'riscado', lang: 'en' }, resposta) : null,
         h('span', { class: 'nova', lang: 'en' }, r.esperado)));
       else corpo.push(h('p', {}, 'Esses pares voltam na revisão para fixar.'));
-      if (r.explica) corpo.push(h('p', { class: 'explica' }, r.explica));
+
       for (const a of (r.achados || []).filter(a => a.explicacao !== r.explica)) corpo.push(h('p', { class: 'explica' }, icone('lightbulb'), ` ${a.nome}: ${a.explicacao}`));
       if (contestar && ['lacuna', 'traduzir', 'ditado', 'ordenar'].includes(ex.tipo) && resposta) {
         const b = h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: async () => { ocupado(b, true); try { const m = await contestar(); b.replaceWith(h('p', { class: 'ajuda' }, m)); } catch (e) { toast(e.message); ocupado(b, false); } } } }, 'Acho que a minha também está certa');
         corpo.push(b);
       }
     }
+    if (r.explica) corpo.push(h('p', { class: 'explica' }, r.explica));
     if (r.textoAudio) {
       const ver = h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => ver.replaceWith(h('p', { class: 'transcricao', lang: 'en' }, r.textoAudio)) } }, icone('eye'), 'Ver o texto do áudio');
       corpo.push(ver);

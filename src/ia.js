@@ -141,7 +141,7 @@ async function processarMaterial({ titulo, texto, perfil, nivel }) {
 
 // Exercícios feitos com a situação real do aluno (área + o que ele escreveu no objetivo).
 async function gerarExercicios({ missao, perfil, nivel, tags }) {
-  const system = `${BASE}\n\nYou write short practice exercises for ONE mission of the student's plan. Every sentence must be about the student's real situation (their area, their goal, their own words), so it feels written for them. Natural, correct English at their level. Exactly one correct answer per item. Portuguese for instructions and for "pt".\n${contexto(perfil, nivel)}`;
+  const system = `${BASE}\n\nYou write short practice exercises for ONE mission of the student's plan. Every sentence must be about the student's real situation (their area, their goal, their own words), so it feels written for them. Natural, correct English at their level. For multiple choice, exactly one correct option, with distinct meanings and plausible distractors. For translation, include common natural alternatives, contractions and British/American variants. Use only vocabulary and structures already supplied in the mission; personalize the situation without introducing a new grammar topic. Start with recognition, then guided recall, then translation. Each explanation must say why the answer fits, in plain Portuguese. Portuguese for instructions and for "pt".\n${contexto(perfil, nivel)}`;
   const schema = {
     type: 'object',
     properties: { exercicios: { type: 'array', items: { type: 'object', properties: {
@@ -156,7 +156,7 @@ async function gerarExercicios({ missao, perfil, nivel, tags }) {
     }, required: ['tipo', 'enunciado', 'frase', 'pt', 'opcoes', 'correta', 'respostas_aceitas', 'explicacao'], additionalProperties: false } } },
     required: ['exercicios'], additionalProperties: false,
   };
-  const mensagens = [{ role: 'user', content: `Mission: "${missao.titulo}". Can-do: "${missao.podeFazer}". Grammar focus: ${tags.join(', ') || 'none'}. Structure the student is learning: ${missao.explicacao.estrutura.join(' | ')}.\nWrite 3 exercises: 1 escolha, 1 lacuna, 1 traduzir.` }];
+  const mensagens = [{ role: 'user', content: `Mission: "${missao.titulo}". Can-do: "${missao.podeFazer}". Grammar focus: ${tags.join(', ') || 'none'}. Taught vocabulary: ${missao.vocab.map(v => v.en).join(' | ')}. Examples: ${missao.exemplos.map(e => e.en).join(' | ')}. Structure the student is learning: ${missao.explicacao.estrutura.join(' | ')}.\nWrite 3 exercises: 1 escolha, 1 lacuna, 1 traduzir.` }];
   const { dados, uso } = await chamar({ tarefa: 'material', system, mensagens, schema, maxTokens: 3000, esforco: 'low' });
   return { exercicios: dados.exercicios || [], uso };
 }

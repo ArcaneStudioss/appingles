@@ -7,6 +7,8 @@ const { NIVEIS } = require('../conteudo/nivelamento');
 const { somarDias, diasEntre } = require('./util');
 
 function licoesPorMissao(missao, nivelAluno) {
+  // Duas aulas curtas para cada par de palavras, depois entender, praticar e usar.
+  if (nivelAluno === 'A1') return Math.ceil(missao.vocab.length / 2) * 2 + 3;
   const diff = NIVEIS.indexOf(nivelAluno) - NIVEIS.indexOf(missao.nivel);
   if (diff >= 2) return 1;      // bem abaixo do nível do aluno: revisão rápida
   if (diff >= 1) return 2;
@@ -24,7 +26,7 @@ function montarPlano(perfil, nivel, hojeISO) {
   const custo = id => licoesPorMissao(POR_ID[id], nivel) + 1;       // +1 = reteste em outra situação
   let total = ids.reduce((s, id) => s + custo(id), 0);
   let cortadas = [];
-  if (total > sessoesDisponiveis) {
+  if (total > sessoesDisponiveis && (nivel !== 'A1' || perfil.prazo)) {
     // primeiro mantém as essenciais (na ordem da trilha), depois completa com o que couber
     const essenciais = ids.filter(id => obj.essenciais.includes(id));
     const resto = ids.filter(id => !obj.essenciais.includes(id));

@@ -6,18 +6,32 @@ const { detectar, POR_TAG } = require('../conteudo/dificuldades');
 const { MISSOES } = require('../conteudo/missoes');
 
 // frase em inglês -> tradução, tirada dos exemplos das missões (usada para explicar exercícios de escuta e ditado)
-const TRADUCAO = new Map(MISSOES.flatMap(m => m.exemplos.map(e => [normalizar(e.en), e.pt])));
+const TRADUCAO = new Map(MISSOES.flatMap(m => [...m.exemplos, ...m.vocab].map(e => [normalizar(e.en), e.pt])));
+const MISSAO_DO_ITEM = new Map(MISSOES.flatMap(m => m.exercicios.map(e => [e.id, m])));
+
+function completarLacunas(ex) {
+  const n = ex.frase.split('___').length - 1;
+  const respostas = n > 1 ? ex.resposta[0].split(/[,\s]+/).filter(Boolean) : [ex.resposta[0]];
+  if (respostas.length !== n) return null;
+  let i = 0;
+  return ex.frase.replace(/___(?: \([^)]*\))?/g, () => respostas[i++]);
+}
 
 // Explicação padrão quando o exercício não traz a própria: mostra a frase completa, a tradução e as formas aceitas.
 function explicacaoPadrao(ex) {
   const pt = en => { const t = TRADUCAO.get(normalizar(en)); return t ? ` (${t})` : ''; };
   switch (ex.tipo) {
     case 'escuta': case 'ditado': return ex.audio ? `Você ouviu: "${ex.audio}"${pt(ex.audio)}.` : null;
-    case 'lacuna': return ex.frase && ex.frase.includes('___') ? `A frase completa é: "${ex.frase.replace('___', ex.resposta[0])}".` : null;
+    case 'lacuna': { const frase = completarLacunas(ex); return frase ? `A frase completa é: "${frase}".` : `Complete as lacunas nesta ordem: ${ex.resposta[0]}.`; }
     case 'ordenar': return `A frase na ordem certa: "${ex.resposta}${ex.sufixo || ''}".`;
-    case 'traduzir': { const outras = ex.aceitas.slice(1, 3); return outras.length ? `Também vale: ${outras.map(o => `"${o}"`).join(' ou ')}.` : null; }
+    case 'traduzir': { const outras = [...new Map(ex.aceitas.map(a => [normalizar(a), a])).values()].slice(1, 3); return `"${ex.aceitas[0]}" significa "${ex.pt}".` + (outras.length ? ` Também vale: ${outras.map(o => `"${o}"`).join(' ou ')}.` : ''); }
     case 'fala': return `Para treinar: "${ex.frase}"${pt(ex.frase)}. Ouça o Tuiuiú e fale de novo.`;
-    case 'leitura': return ex.texto && ex.opcoes ? `A resposta está no texto: "${ex.opcoes[ex.resposta]}".` : null;
+    case 'leitura': return `No texto, procure a informação pedida em "${ex.pergunta}". A resposta é "${ex.opcoes[ex.resposta]}".`;
+    case 'escolha': {
+      const missao = MISSAO_DO_ITEM.get(ex.id);
+      const nota = ex.tag && POR_TAG[ex.tag] ? POR_TAG[ex.tag].regra : missao?.guia?.nota;
+      return `Nesta situação, use "${ex.opcoes[ex.resposta]}".${nota ? ' ' + nota : ''}`;
+    }
     default: return null;
   }
 }
@@ -61,7 +75,7 @@ function corrigirExercicio(ex, resposta) {
   if (!r.correto && ['lacuna', 'traduzir', 'ditado', 'corrigir'].includes(ex.tipo) && typeof resposta === 'string') {
     out.achados = detectar(resposta).filter(a => a.confianca !== 'baixa');
   }
-  if (!r.correto && ex.tag && POR_TAG[ex.tag] && !ex.explica) out.explica = POR_TAG[ex.tag].regra;
+  if (ex.tag && POR_TAG[ex.tag] && !ex.explica && ex.tipo !== 'escolha') out.explica = [out.explica, POR_TAG[ex.tag].regra].filter(Boolean).join(' ');
   return out;
 }
 
