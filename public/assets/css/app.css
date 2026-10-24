@@ -1013,3 +1013,36 @@ a.turma-item:hover,a.turma-item:focus-visible{border-color:var(--c-forte)}
 .banco-item input{margin-top:.25rem}
 .campo-copiar{width:100%}
 
+
+/* ---------- abertura: o Tuiuiú chega voando com a saudação do horário ---------- */
+.abertura{position:fixed;inset:0;z-index:1000;display:grid;place-content:center;justify-items:center;gap:.4rem;padding:1.5rem;background:var(--ceu),var(--fundo);background-attachment:fixed;text-align:center;overflow:hidden;cursor:pointer;transition:opacity .45s var(--ease),transform .45s var(--ease)}
+.abertura--sai{opacity:0;pointer-events:none}
+.abertura__voo{position:relative}
+.abertura__arco{transform-origin:50% 100%}
+.abertura__arco .lou{display:block}
+.abertura__vento{position:absolute;right:92%;top:30%;display:grid;gap:12px;opacity:0}
+.abertura__vento i{display:block;height:5px;border-radius:99px;background:var(--azul-fundo);width:56px}
+.abertura__vento i:nth-child(2){width:84px;margin-left:-28px}
+.abertura__vento i:nth-child(3){width:40px;margin-left:12px}
+.abertura__texto{margin-top:.6rem;display:grid;gap:.2rem}
+.abertura__texto h1{margin:0;font-family:var(--f-titulo);font-weight:700;font-size:clamp(2.1rem,9vw,3rem);line-height:1.1;color:var(--tinta)}
+.abertura__texto p{margin:0;font-family:var(--f-titulo);font-weight:500;font-size:clamp(1.2rem,5vw,1.6rem);color:var(--azul-forte)}
+@media (prefers-reduced-motion:no-preference){
+  .abertura--sai{transform:scale(1.04)}
+  .abertura__voo{animation:ab-voo-x 1.15s cubic-bezier(.16,.7,.3,1) both}
+  .abertura__arco{animation:ab-voo-y 1.15s ease-in-out both}
+  .abertura__arco .lou{animation:ab-bate .13s ease-in-out 8 alternate both;transform-origin:50% 70%}
+  .abertura__arco .lou .lou__corpo{animation:none}
+  .abertura__vento{animation:ab-vento 1.15s ease-out both}
+  .abertura__texto>*{animation:entra .6s var(--mola) both}
+  .abertura__texto h1{animation-delay:.95s}
+  .abertura__texto p{animation-delay:1.15s}
+}
+@keyframes ab-voo-x{from{transform:translateX(-85vw)}}
+@keyframes ab-voo-y{0%{transform:translateY(22vh) rotate(-16deg)}45%{transform:translateY(-9vh) rotate(-6deg)}75%{transform:translateY(3vh) rotate(5deg)}90%{transform:translateY(-1vh) rotate(-1deg)}100%{transform:none}}
+@keyframes ab-bate{from{transform:scale(1,1) rotate(-3deg)}to{transform:scale(1.04,.93) rotate(3deg)}}
+@keyframes ab-vento{0%{opacity:0;transform:scaleX(.3)}25%{opacity:1;transform:none}80%{opacity:.9}100%{opacity:0;transform:translateX(-24px)}}
+@media (prefers-reduced-motion:reduce){
+  .abertura{transition:none}
+  .abertura__texto{animation:entra-op .5s ease both}
+}

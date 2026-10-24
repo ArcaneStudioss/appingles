@@ -1,4 +1,5 @@
 // Inglou · casca do app: rotas por hash, estado do aluno e navegação.
+import './abertura.js?v=__V__';
 import { api } from './api.js?v=__V__';
 import { h, limpar, toast, icone, janela, localStorageGet, localStorageSet } from './ui.js?v=__V__';
 import { som, lou } from './diversao.js?v=__V__';
