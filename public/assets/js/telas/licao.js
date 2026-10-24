@@ -72,6 +72,10 @@ export async function telaLicao(el, { ir }) {
       }));
     } else if (p.tipo === 'producao') desenharProducao(tela, p.b, p.bi);
     else desenharFim(tela);
+    if (p.tipo === 'bloco' && p.b.guia) {
+      const g = p.b.guia;
+      tela.append(h('section', { class: 'folha' }, h('h3', {}, g.foco), exemplos([g.exemplo]), h('p', {}, g.nota)));
+    }
     tela.querySelector('h1,h2')?.setAttribute('tabindex', '-1');
     if (p.tipo !== 'ex') tela.querySelector('h1,h2')?.focus({ preventScroll: true });
     scrollTo(0, 0);
@@ -129,7 +133,7 @@ export async function telaLicao(el, { ir }) {
     t.addEventListener('input', () => { const n = (t.value.match(/[A-Za-z']+/g) || []).length; cont.textContent = `${n} ${n === 1 ? 'palavra' : 'palavras'} (mínimo ${b.tarefa.minPalavras})`; });
     const retorno = h('div', { class: 'retorno-producao', 'aria-live': 'polite' });
     const btn = h('button', { type: 'submit', class: 'btn' }, 'Enviar para correção');
-    const dicas = b.tarefa.dicas?.length ? h('details', { class: 'dicas', on: { toggle: e => { if (e.target.open) usouAjuda = true; } } }, h('summary', {}, icone('lightbulb'), ' Ver dicas (conta como prática com ajuda)'), h('ul', {}, b.tarefa.dicas.map(d => h('li', { lang: 'en' }, d)))) : null;
+    const dicas = b.tarefa.dicas?.length ? h('details', { class: 'dicas', on: { toggle: e => { if (e.target.open) usouAjuda = true; } } }, h('summary', {}, icone('lightbulb'), ' Ver dicas (conta como prática com ajuda)'), h('ul', {}, b.tarefa.dicas.map(d => h('li', { lang: 'en' }, d))), b.tarefa.modelo ? h('div', {}, h('p', {}, 'Exemplo completo: leia, feche as dicas e adapte à sua situação.'), h('blockquote', { lang: 'en' }, b.tarefa.modelo)) : null) : null;
     let mic = null;
     if (temMicrofone()) {
       let rec = null, base = '';
@@ -162,6 +166,7 @@ export async function telaLicao(el, { ir }) {
       h('h2', {}, b.titulo),
       h('div', { class: 'folha com-margem situacao' }, h('p', {}, b.situacao), b.area ? h('p', { class: 'ajuda' }, `Se puder, use exemplos da sua área (${b.area}).`) : null,
         b.tarefa.elementos?.length ? h('p', { class: 'ajuda' }, 'Inclua: ' + b.tarefa.elementos.join(' · ')) : null),
+      b.tarefa.roteiro?.length ? h('div', { class: 'folha' }, h('h3', {}, 'Planeje uma frase de cada vez'), h('ol', {}, b.tarefa.roteiro.map(item => h('li', {}, item))), h('p', { class: 'ajuda' }, 'Depois, releia e confira se incluiu cada ponto.')) : null,
       b.semDicas ? h('p', { class: 'ajuda' }, 'Sem dicas desta vez: é para ver o que você já consegue sozinho. Tudo bem errar.') : dicas,
       form, retorno, h('button', { type: 'button', class: 'btn btn-texto', on: { click: avancar } }, 'Pular esta tarefa por hoje'));
   }

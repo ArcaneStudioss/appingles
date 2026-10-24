@@ -12,7 +12,7 @@ const { DIFICULDADES, POR_TAG } = require('./conteudo/dificuldades');
 const nivelamentoConteudo = require('./conteudo/nivelamento');
 const { corrigir: corrigirNivelamento } = require('./motor/nivelamento');
 const { montarPlano, licoesPorMissao } = require('./motor/plano');
-const { montarLicao, paraCliente, acharExercicio, missaoAtual, validarExerciciosIa } = require('./motor/licao');
+const { montarLicao, paraCliente, acharExercicio, missaoAtual, validarExerciciosIa, limitarQuestoes } = require('./motor/licao');
 const { corrigirExercicio, avaliarProducao } = require('./motor/correcao');
 const modelo = require('./motor/modelo');
 const { agendar } = require('./motor/srs');
@@ -448,7 +448,9 @@ function criar(db) {
       // entra depois da primeira prática da missão (ou no fim, se não houver)
       const pos = dados.blocos.findIndex(b => b.tipo === 'exercicios' && b.exercicios?.some(e => e.missao === def.id && e.tipo !== 'pares'));
       dados.blocos.splice(pos >= 0 ? pos + 1 : dados.blocos.length, 0, { tipo: 'exercicios', titulo: 'Feitos para a sua situação', exercicios: exs, personalizado: true });
-      dados.porque = [...dados.porque, `Incluímos ${exs.length} exercícios escritos com a sua situação${p.area ? ` (${p.area})` : ''}${p.objetivo_detalhe ? ': “' + p.objetivo_detalhe.slice(0, 90) + (p.objetivo_detalhe.length > 90 ? '...' : '') + '”' : ''}.`];
+      limitarQuestoes(dados.blocos);
+      const incluidos = dados.blocos.filter(b => b.personalizado).flatMap(b => b.exercicios || []).length;
+      dados.porque = [...dados.porque, `Incluímos ${incluidos} exercícios escritos com a sua situação${p.area ? ` (${p.area})` : ''}${p.objetivo_detalhe ? ': “' + p.objetivo_detalhe.slice(0, 90) + (p.objetivo_detalhe.length > 90 ? '...' : '') + '”' : ''}.`];
       return marcar(dados);
     } catch (e) { console.error('[ia] exercícios personalizados falharam:', e.message); return marcar({ ...lic.dados, personalizada: false }); }
     finally { emAndamento.delete(chave); }
@@ -475,17 +477,17 @@ function criar(db) {
     const ex = acharExercicio(lic.dados, itemId);
     if (!ex) throw new ErroHttp(404, 'Exercício não encontrado.');
     const r = corrigirExercicio(ex, resposta);
+    const textoAudio = ['escuta', 'ditado'].includes(ex.tipo) ? ex.audio : null;
     const formato = ['escolha', 'escuta', 'leitura'].includes(ex.tipo) ? 'reconhecimento' : 'producao';
     transacao(db, () => {
       const atual = lerJson(q('SELECT respondidos FROM licoes WHERE id = ? AND user_id = ?').get(lic.id, uid).respondidos, {});
       if (atual[itemId]) return;   // clique duplo
-      atual[itemId] = { correto: r.correto, quase: r.quase, esperado: r.esperado, explica: r.explica, achados: r.achados, resposta };
+      atual[itemId] = { correto: r.correto, quase: r.quase, esperado: r.esperado, explica: r.explica, achados: r.achados, resposta, textoAudio };
       q('UPDATE licoes SET respondidos = ? WHERE id = ? AND user_id = ?').run(JSON.stringify(atual), lic.id, uid);
       registrarTentativa(uid, { item_id: itemId, missao: ex.missao || null, habilidade: ex.habilidade, tag: ex.tag, formato, modalidade: ['escuta', 'ditado', 'fala'].includes(ex.tipo) ? 'audio' : 'texto', correto: r.correto, tempo_ms: b.tempoMs, dica: b.dica === true, origem: 'licao', contexto: ex.missao || (ex.tag ? 'foco' : 'licao'), resposta });
       if (!r.correto && ex.tipo === 'traduzir') criarCartao(uid, { frente: ex.pt, verso: r.esperado, tipo: 'erro', origem: 'licao', tag: ex.tag, nota_origem: r.explica }, h);
       if (!r.correto && ex.tipo === 'lacuna' && !ex.multi) criarCartao(uid, { frente: ex.frase, verso: ex.frase.replace('___', ex.resposta[0]), tipo: 'erro', origem: 'licao', tag: ex.tag, nota_origem: r.explica }, h);
     });
-    const textoAudio = ['escuta', 'ditado'].includes(ex.tipo) ? ex.audio : null;
     return { correto: r.correto, quase: r.quase, esperado: r.esperado, explica: r.explica, achados: r.achados, textoAudio };
   });
 

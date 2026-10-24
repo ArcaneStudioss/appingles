@@ -47,6 +47,8 @@ test('objetivo de entrevista monta a trilha de entrevista e a lição traz exerc
   const pers = licao.blocos.find(b => b.personalizado);
   assert.ok(pers, 'bloco feito para a situação do aluno');
   assert.equal(pers.exercicios.length, 3, 'o item inválido da IA foi descartado');
+  const { limiteDaLicao } = require('../src/motor/licao');
+  assert.ok(licao.blocos.flatMap(b => b.exercicios || []).length <= limiteDaLicao(licao.blocos));
   assert.ok(licao.porque.some(t => /enfermagem/.test(t) && /Canadá/.test(t)));
   assert.ok(!JSON.stringify(licao).includes('respostas_aceitas'));
   const r = await R('POST', '/licao/responder', { itemId: pers.exercicios[2].id, resposta: 'I work in the ER' });
@@ -215,6 +217,11 @@ test('base A1 repete no próximo dia, corrige no servidor e não recebe conteúd
   const ex = licao.blocos[1].exercicios[0];
   assert.equal(ex.resposta, undefined);
   assert.ok((await R('POST', '/licao/responder', { itemId: ex.id, resposta: vocab[0].pt })).correto);
+  const ouvido = licao.blocos.find(b => b.tipo === 'escuta').exercicios[0];
+  const correcao = await R('POST', '/licao/responder', { itemId: ouvido.id, resposta: vocab[0].pt });
+  assert.equal(correcao.textoAudio, ouvido.audio);
+  const retomada = await R('GET', '/licao');
+  assert.equal(retomada.respondidos[ouvido.id].textoAudio, ouvido.audio);
   await responderTudo(licao);
   await R('POST', '/licao/concluir');
   novoDia();
