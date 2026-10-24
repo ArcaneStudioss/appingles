@@ -1,7 +1,7 @@
 // Teste de nivelamento: uma pergunta por tela, "não sei" sem culpa, escrita e fala opcionais, resultado com incerteza.
 import { api } from '../api.js?v=__V__';
 import { h, ocupado, icone, falar, pararVoz, temVoz, temMicrofone, ouvirMicrofone, toast, confirmar, reduzirMovimento, palavrasToque, acompanharFala } from '../ui.js?v=__V__';
-import { lou, louFala, som, confete, botaoSom, vibrar } from '../diversao.js?v=__V__';
+import { lou, louFala, som, confete, botaoSom, vibrar, voarComemorando } from '../diversao.js?v=__V__';
 import { caixaEscuta } from './exercicio.js?v=__V__';
 
 const NOMES = { gramatica: 'Gramática', vocabulario: 'Vocabulário', leitura: 'Leitura', escuta: 'Escuta', escrita: 'Escrita', fala: 'Fala' };
@@ -163,7 +163,7 @@ export async function telaNivelamento(el, { estado, ir, carregarEu }) {
   }
 
   function resultado(r, plano) {
-    som('fim'); confete();
+    som('fim'); confete(); voarComemorando({ jeito: 'pirueta', confetes: false });
     const hab = Object.entries(r.porHabilidade);
     mostrar(
       louFala('feliz', h('p', {}, 'Pronto! Aqui está o retrato de hoje.')),

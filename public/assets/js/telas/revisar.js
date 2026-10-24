@@ -2,7 +2,7 @@
 import { api } from '../api.js?v=__V__';
 import { h, icone, falar, toast, formulario, confirmar, plural } from '../ui.js?v=__V__';
 import { nomeConquista } from './hoje.js?v=__V__';
-import { lou, louFala } from '../diversao.js?v=__V__';
+import { lou, louFala, voarComemorando } from '../diversao.js?v=__V__';
 
 
 const TIPO = { expressao: 'Expressão', erro: 'Do seu erro', palavra: 'Palavra' };
@@ -19,6 +19,7 @@ export async function telaRevisar(el) {
   }
 
   function vazio() {
+    if (feitos) voarComemorando({ jeito: 'cruza' });
     caixa.replaceChildren(
       h('header', { class: 'cabeca c-sol' }, h('span', { class: 'bolha' }, icone('cards')), h('div', {}, h('h1', {}, 'Revisar'))),
       louFala(feitos ? 'festa' : 'feliz', h('p', {}, feitos ? `${plural(feitos, 'cartão revisado', 'cartões revisados')}. Até a próxima!` : 'Nada para revisar agora. Você está em dia!')),

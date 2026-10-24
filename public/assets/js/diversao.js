@@ -148,6 +148,52 @@ export function lou(humor = 'oi', { tamanho = 96, rotulo = 'Tuiuiú, a arara-azu
   return s;
 }
 
+// Tuiuiú de frente, livre no ar, de asas abertas (abertura, transições e passeios). As asas têm penas largas de ponta redonda,
+// em camadas (primárias, secundárias, coberteiras) e um braço cheio na frente, para a asa ler como uma peça só e não como um leque de espetos.
+// Cada asa é um grupo .asa--e / .asa--d que gira no ombro (transform-origin definido no CSS).
+export function louVoando() {
+  const C = { corpo: 'var(--arara-1,#2447D0)', sombra: 'var(--arara-2,#1A33A0)', luz: 'var(--arara-3,#6C8DFF)' };
+  const traco = (d, cor, larg, op = 1) => el('path', { d, stroke: cor, 'stroke-width': larg, 'stroke-linecap': 'round', fill: 'none', opacity: op });
+  // pena larga de ponta redonda: base em (bx,by), aponta no ângulo, com comprimento e meia-largura; haste fina no meio
+  const pena = (bx, by, ang, comp, larg, cor, haste = true) => {
+    const L = comp, w = larg, g = el('g', { transform: `translate(${bx} ${by}) rotate(${ang})` });
+    g.append(el('path', { d: `M0 0 C${L * .18} ${-w * .9} ${L * .6} ${-w} ${L * .93} ${-w * .55} Q${L * 1.03} 0 ${L * .93} ${w * .55} C${L * .6} ${w} ${L * .18} ${w * .9} 0 0 Z`, fill: cor }));
+    if (haste) g.append(traco(`M${L * .1} 0 L${L * .88} 0`, C.luz, 1.2, .5));
+    return g;
+  };
+  const asa = lado => {
+    const g = el('g', { class: 'asa asa--' + lado });
+    const f = el('g', lado === 'e' ? { transform: 'translate(240 0) scale(-1 1)' } : {});
+    // primárias: as longas, na ponta da asa, de quase em pé até abertas para o lado
+    [[-78, 76], [-64, 82], [-50, 84], [-36, 82], [-22, 78], [-9, 72]].forEach(([a, c], i) => f.append(pena(160, 62, a, c, 12.5, i % 2 ? C.corpo : C.sombra)));
+    // secundárias: mais curtas, saem do antebraço e fecham a borda de baixo
+    [[0, 60], [11, 56], [22, 52], [33, 46]].forEach(([a, c], i) => f.append(pena(150 - i * 4, 76 + i * 5, a, c, 11, i % 2 ? C.sombra : C.corpo)));
+    // braço cheio por cima das bases das penas: do ombro ao pulso
+    f.append(el('path', { d: 'M126 96 C122 72 136 50 160 40 C174 35 184 44 178 58 C170 76 156 94 138 104 C132 106 127 102 126 96 Z', fill: C.corpo }));
+    // coberteiras: duas fileiras de escamas redondas, da base para a ponta
+    for (let i = 0; i < 5; i++) f.append(el('ellipse', { cx: 170 - i * 9.5, cy: 54 + i * 9, rx: 8.5, ry: 6.2, fill: i % 2 ? C.sombra : C.corpo, opacity: '.95', transform: `rotate(${-36 - i * 4} ${170 - i * 9.5} ${54 + i * 9})` }));
+    for (let i = 0; i < 4; i++) f.append(el('ellipse', { cx: 164 - i * 9.5, cy: 49 + i * 8.5, rx: 7, ry: 5, fill: C.luz, opacity: '.55', transform: `rotate(${-38 - i * 4} ${164 - i * 9.5} ${49 + i * 8.5})` }));
+    f.append(traco('M130 90 C130 70 142 52 162 43', C.luz, 3, .8));
+    g.append(f); return g;
+  };
+  const s = el('svg', { viewBox: '0 -8 240 184', class: 'lou lou--voando', 'aria-hidden': 'true', focusable: 'false' });
+  s.append(
+    el('path', { d: 'M108 118 L96 172 L120 162 L144 172 L132 118 Z', fill: C.sombra }),
+    el('path', { d: 'M114 118 L112 160 L120 154 L128 160 L126 118 Z', fill: C.corpo }),
+    asa('e'), asa('d'),
+    el('ellipse', { cx: 120, cy: 88, rx: 27, ry: 37, fill: C.corpo }),
+    el('ellipse', { cx: 120, cy: 94, rx: 14, ry: 26, fill: C.luz, opacity: '.28' }),
+    traco('M110 120 Q108 128 102 130', '#5B6275', 3), traco('M130 120 Q132 128 138 130', '#5B6275', 3),
+    el('circle', { cx: 120, cy: 46, r: 23, fill: C.corpo }), traco('M104 34 Q110 26 120 25', '#fff', 3, .3),
+    el('ellipse', { cx: 105, cy: 55, rx: 6, ry: 4, fill: '#FFC83D' }), el('ellipse', { cx: 135, cy: 55, rx: 6, ry: 4, fill: '#FFC83D' }),
+    el('circle', { cx: 108, cy: 44, r: 8, fill: '#FFC83D' }), el('circle', { cx: 132, cy: 44, r: 8, fill: '#FFC83D' }),
+    traco('M102 46 Q108 37 114 46', '#16224A', 3.4), traco('M126 46 Q132 37 138 46', '#16224A', 3.4),
+    el('path', { d: 'M120 46 Q106 52 110 66 Q114 80 120 82 Q126 80 130 66 Q134 52 120 46 Z', fill: '#3A4254' }),
+    traco('M115 55 Q113 62 116 70', '#7A849B', 2.5, .75),
+    traco('M113 74 Q120 79 127 74', C.sombra, 2, .5));
+  return s;
+}
+
 // Tuiuiú falando: mascote + balão com o texto
 export function louFala(humor, ...conteudo) {
   const d = document.createElement('div'); d.className = 'lou-fala';
@@ -291,6 +337,60 @@ export function celebrar(frase, { humor = 'festa', nivel = 1 } = {}) {
   if (nivel >= 2) confete(document.body, 30 + nivel * 10);
   setTimeout(() => camada.classList.add('is-out'), reduzirMovimento() ? 1100 : 1250);
   setTimeout(() => camada.remove(), reduzirMovimento() ? 1250 : 1550);
+}
+
+// ---------- voo de comemoração: o Tuiuiú cruza a tela batendo as asas (acerto, entre uma questão e outra) ----------
+// Camada por cima de tudo, sem pegar toque nem segurar a navegação. "Menos movimento": não voa (a frase e o som já comemoram).
+// Três jeitos, sorteados para não cansar: cruza (arco de um lado ao outro), pirueta (entra por cima, gira e sai) e sobe (da base, com confete).
+const JEITOS_VOO = ['cruza', 'pirueta', 'sobe'];
+let ultimoJeito = '';
+export function voarComemorando({ jeito, tamanho, confetes = true } = {}) {
+  if (reduzirMovimento() || document.hidden) return null;
+  document.querySelector('.voo-festa')?.remove();
+  const outros = JEITOS_VOO.filter(j => j !== ultimoJeito);
+  const j = jeito || outros[Math.floor(Math.random() * outros.length)];
+  ultimoJeito = j;
+  const vw = innerWidth, vh = innerHeight, W = tamanho || Math.round(Math.min(150, Math.max(104, vw * .3))), H = W * 184 / 240;
+  const camada = document.createElement('div'); camada.className = 'voo-festa'; camada.setAttribute('aria-hidden', 'true');
+  const ave = louVoando(); ave.classList.add('lou--rapido');
+  const caixa = document.createElement('div'); caixa.className = 'voo-festa__ave'; caixa.style.cssText = `width:${W}px;height:${H}px`;
+  caixa.append(ave); camada.append(caixa); document.body.append(camada);
+  const sentido = Math.random() < .5 ? 1 : -1;
+  const T = (x, y, e = 1, r = 0) => `translate(${(x - W / 2).toFixed(0)}px,${(y - H / 2).toFixed(0)}px) scale(${e}) rotate(${r}deg)`;
+  const xa = sentido > 0 ? -W : vw + W, xb = sentido > 0 ? vw + W : -W, mx = vw / 2;
+  const quadros = j === 'cruza' ? [
+    { transform: T(xa, vh * .5, .8, 10 * sentido), offset: 0, easing: 'cubic-bezier(.3,.6,.4,1)' },
+    { transform: T(vw * (sentido > 0 ? .3 : .7), vh * .3, 1, -6 * sentido), offset: .35 },
+    { transform: T(mx, vh * .22, 1.12, 0), offset: .55 },
+    { transform: T(xb, vh * .12, .8, -10 * sentido), offset: 1 },
+  ] : j === 'pirueta' ? [
+    { transform: T(mx, -H, .7, 0), offset: 0, easing: 'cubic-bezier(.2,.7,.3,1)' },
+    { transform: T(mx, vh * .36, 1.25, 0), offset: .38 },
+    { transform: T(mx, vh * .36, 1.25, 360 * sentido), offset: .68, easing: 'cubic-bezier(.6,0,.4,1)' },
+    { transform: T(mx + sentido * vw * .1, -H, .8, 360 * sentido), offset: 1 },
+  ] : [
+    { transform: T(mx, vh + H, .7, 0), offset: 0, easing: 'cubic-bezier(.2,.8,.3,1)' },
+    { transform: T(mx, vh * .45, 1.3, -8 * sentido), offset: .45 },
+    { transform: T(mx, vh * .4, 1.34, 8 * sentido), offset: .62 },
+    { transform: T(mx + sentido * vw * .25, -H, .9, 14 * sentido), offset: 1 },
+  ];
+  const ms = j === 'cruza' ? 1500 : 1700;
+  const anim = caixa.animate(quadros, { duration: ms, fill: 'forwards' });
+  const fim = () => camada.remove();
+  anim.onfinish = fim; anim.oncancel = fim; setTimeout(fim, ms + 400);
+  if (confetes && !document.body.matches('[data-publico="adulto"]')) setTimeout(() => confete(document.body, 18), ms * (j === 'cruza' ? .5 : .4));
+  return camada;
+}
+
+// passeio ocasional: sem confete e menor, só para a tela ter vida. No máximo um a cada 90 s e nunca em cima de uma aula.
+const TELAS_QUIETAS = new Set(['licao', 'sessao', 'nivelamento', 'simulado', 'treino', 'atividade', 'conversar', 'conversa', 'podcast', 'entrar', 'publico', 'perfil']);
+export function passearVoando(rota = '') {
+  if (reduzirMovimento() || TELAS_QUIETAS.has(rota) || document.body.classList.contains('foco-total')) return;
+  if (document.body.matches('[data-publico="adulto"]') || document.querySelector('.abertura, .celebra, .voo-festa')) return;
+  const agora = Date.now(), ultimo = Number(localStorageGet('passeio') || 0);
+  if (agora - ultimo < 90000 || Math.random() > .35) return;
+  localStorageSet('passeio', String(agora));
+  setTimeout(() => voarComemorando({ jeito: 'cruza', tamanho: 84, confetes: false }), 900 + Math.random() * 2500);
 }
 
 // "+10" que sobe de um elemento e some (acerto)

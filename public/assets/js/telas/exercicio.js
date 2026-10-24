@@ -3,7 +3,7 @@ import { api } from '../api.js?v=__V__';
 // e uma folha de resposta sobe de baixo (azul quando acerta, coral suave quando é "quase").
 // Teclado: 1 a 9 escolhem alternativas, Enter confere e continua. A correção vem do servidor.
 import { h, icone, falar, falarPt, pararVoz, toast, ocupado, ouvirMicrofone, palavrasToque, acompanharFala } from '../ui.js?v=__V__';
-import { lou, som, brilho, vibrar } from '../diversao.js?v=__V__';
+import { lou, som, brilho, vibrar, voarComemorando } from '../diversao.js?v=__V__';
 import { companheirosAula } from '../companheiros.js?v=__V__';
 import { fraseConhecida } from '../traducao.js?v=__V__';
 
@@ -160,7 +160,9 @@ export function exercicio(ex, config) {
     btnConferir.hidden = false;
     btnConferir.textContent = rotuloProximo;
     btnConferir.disabled = false;
-    btnConferir.onclick = () => aoProximo?.();
+    // acertou de verdade (sem dica, sem revelar a resposta): o Tuiuiú comemora voando por cima da próxima questão
+    const festejar = r.correto && !r.ajuda && !pratica && !silencioso;
+    btnConferir.onclick = () => { if (festejar && aoProximo) voarComemorando(); aoProximo?.(); };
     btnConferir.removeEventListener('click', aoConferir);
     if (!silencioso) requestAnimationFrame(() => { folha.focus({ preventScroll: true }); folha.scrollIntoView({ block: 'start', behavior: 'instant' }); });
   }

@@ -3,7 +3,7 @@ import { api } from '../api.js?v=__V__';
 import { h, icone, falar, falarPt, botaoOuvir, ocupado, toast, confirmar, temMicrofone, ouvirMicrofone, janela } from '../ui.js?v=__V__';
 import { exercicio } from './exercicio.js?v=__V__';
 import { nomeConquista } from './hoje.js?v=__V__';
-import { lou, louFala, som, confete, botaoSom, pontosFlutuantes, contar, vibrar } from '../diversao.js?v=__V__';
+import { lou, louFala, som, confete, botaoSom, pontosFlutuantes, contar, vibrar, voarComemorando } from '../diversao.js?v=__V__';
 import { companheirosAula } from '../companheiros.js?v=__V__';
 
 // cada tipo de passo tem cor e ícone fixos: a pessoa enxerga a estrutura da aula (entender, praticar, ouvir, sua vez)
@@ -238,7 +238,7 @@ export async function telaLicao(el, { ir }) {
       licao.guiada ? null : h('p', { class: 'ajuda' }, 'Lição concluída é prática. Aprendizado demonstrado é usar sozinho numa tarefa ou conversa.'),
       h('div', { class: 'barra-acao barra-acao--fixa' }, h('div', { class: 'barra-acao__in' }, btn)));
     for (const n of tela.querySelectorAll('[data-conta]')) contar(n, Number(n.dataset.conta), { sufixo: n.dataset.sufixo || '' });
-    if (status !== 'concluida') { som('fim'); vibrar([30, 40, 30, 40, 60]); confete(); setTimeout(() => confete(document.body, 30), 450); }
+    if (status !== 'concluida') { som('fim'); vibrar([30, 40, 30, 40, 60]); confete(); setTimeout(() => confete(document.body, 30), 450); voarComemorando({ jeito: 'sobe', confetes: false }); }
   }
 
   desenhar();

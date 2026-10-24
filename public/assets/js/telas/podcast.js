@@ -4,7 +4,7 @@
 // No fim, um treino rápido com o mesmo assunto (o gabarito é conferido no servidor).
 import { api } from '../api.js?v=__V__';
 import { h, icone, toast, localStorageGet, localStorageSet } from '../ui.js?v=__V__';
-import { lou, som, confete } from '../diversao.js?v=__V__';
+import { lou, som, confete, voarComemorando } from '../diversao.js?v=__V__';
 import { exercicio } from './exercicio.js?v=__V__';
 import { nomeConquista } from './hoje.js?v=__V__';
 import { tocarVoz, pararVoz, temVoz } from '../voz.js?v=__V__';
@@ -87,7 +87,7 @@ export async function telaPodcast(el) {
     pausar(); i = falas.length; marcar(); i = 0;
     try {
       const r = await api('/podcast/ouvido', { metodo: 'POST' });
-      if (r.conquistas?.length) { som('fim'); confete(); for (const c of r.conquistas) toast('Nova figurinha: ' + nomeConquista(c), { tipo: 'ok' }); }
+      if (r.conquistas?.length) { som('fim'); confete(); voarComemorando({ jeito: 'cruza', confetes: false }); for (const c of r.conquistas) toast('Nova figurinha: ' + nomeConquista(c), { tipo: 'ok' }); }
       else toast('Episódio ouvido! Agora o treino aqui embaixo.', { tipo: 'ok' });
     } catch (e) { toast(e.message, { tipo: 'erro' }); }
     treinoSec.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });

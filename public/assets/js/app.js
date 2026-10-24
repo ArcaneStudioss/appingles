@@ -5,7 +5,7 @@ import { telaSessao } from './telas/sessao.js?v=__V__';
 import './abertura.js?v=__V__';
 import { api } from './api.js?v=__V__';
 import { h, limpar, toast, icone, janela, localStorageGet, localStorageSet } from './ui.js?v=__V__';
-import { som, lou } from './diversao.js?v=__V__';
+import { som, lou, passearVoando } from './diversao.js?v=__V__';
 import './instalar.js?v=__V__';
 import { telaEntrar } from './telas/entrar.js?v=__V__';
 import { telaPerfil } from './telas/perfil.js?v=__V__';
@@ -167,7 +167,7 @@ async function render() {
     if (meu !== renderizando) return;
     limpar(alvo).append(h('div', { class: 'folha vazio' }, lou('ops', { tamanho: 96 }), h('h1', {}, 'Algo não carregou'), h('p', {}, e.message || 'Tente de novo em instantes.'), h('button', { class: 'btn', on: { click: render } }, 'Tentar de novo')));
   }
-  if (meu === renderizando) { palco.focus({ preventScroll: true }); scrollTo(0, 0); }
+  if (meu === renderizando) { palco.focus({ preventScroll: true }); scrollTo(0, 0); passearVoando(rota); }
 }
 
 addEventListener('inglou:lembrete', e => agendarAviso(e.detail));

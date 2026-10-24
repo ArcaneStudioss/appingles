@@ -1,57 +1,10 @@
 // Inglou · tela de abertura: o Tuiuiú chega voando e dá a saudação do horário.
 // Aparece uma vez por sessão do aparelho; toque, tecla ou o tempo encerram. Com "menos movimento" não voa, só aparece.
 import { h } from './ui.js?v=__V__';
+import { louVoando } from './diversao.js?v=__V__';
 
 const NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs = {}, ...filhos) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); e.append(...filhos); return e; };
-
-// Tuiuiú de frente, livre no ar, com as asas abertas (cores do mascote: acompanham Dia e Noite)
-function louVoando() {
-  const C = { corpo: 'var(--arara-1,#2447D0)', sombra: 'var(--arara-2,#1A33A0)', luz: 'var(--arara-3,#6C8DFF)' };
-  const traco = (d, cor, larg, op = 1) => el('path', { d, stroke: cor, 'stroke-width': larg, 'stroke-linecap': 'round', fill: 'none', opacity: op });
-  // pena: sai da base (bx,by), aponta no ângulo (graus) e tem comprimento e largura; com a haste no meio
-  const pena = (bx, by, ang, comp, larg, cor, haste = true) => {
-    const a = ang * Math.PI / 180, dx = Math.cos(a), dy = Math.sin(a), nx = -dy, ny = dx;
-    const P = (t, l) => `${(bx + dx * comp * t + nx * larg * l).toFixed(1)} ${(by + dy * comp * t + ny * larg * l).toFixed(1)}`;
-    const g = el('g');
-    g.append(el('path', { d: `M${P(0, 0)} C${P(.25, 1)} ${P(.75, 1.05)} ${P(1, 0)} C${P(.75, -.8)} ${P(.25, -1)} ${P(0, 0)} Z`, fill: cor }));
-    if (haste) g.append(traco(`M${P(.05, 0)} L${P(.92, 0)}`, C.luz, 1.3, .55));
-    return g;
-  };
-  const asa = lado => {
-    const g = el('g', { class: 'asa asa--' + lado });
-    const f = el('g', lado === 'e' ? { transform: 'translate(240 0) scale(-1 1)' } : {});
-    // da ponta para o ombro: primárias (as longas), secundárias, e as fileiras de coberteiras por cima
-    for (let i = 0; i < 7; i++) f.append(pena(172 + i * 1.5, 56 + i * 2, -58 + i * 9.5, 70 - i * 2.5, 9.5, i % 2 ? C.sombra : C.corpo));
-    for (let i = 0; i < 6; i++) f.append(pena(138 + i * 7, 90 - i * 4.5, 8 - i * 5, 56 - i * 3, 11, i % 2 ? C.corpo : C.sombra));
-    f.append(el('path', { d: 'M122 70 C140 52 160 46 178 52 C170 66 158 82 140 94 C132 98 126 96 122 90 Z', fill: C.corpo }));
-    for (let i = 0; i < 5; i++) f.append(el('ellipse', { cx: 168 - i * 9, cy: 62 + i * 6, rx: 9.5, ry: 6.5, fill: i % 2 ? C.corpo : C.sombra, opacity: '.9', transform: `rotate(${-24 - i * 3} ${168 - i * 9} ${62 + i * 6})` }));
-    for (let i = 0; i < 4; i++) f.append(el('ellipse', { cx: 160 - i * 10, cy: 56 + i * 5.5, rx: 8, ry: 5.5, fill: C.luz, opacity: '.8', transform: `rotate(${-28 - i * 3} ${160 - i * 10} ${56 + i * 5.5})` }));
-    f.append(traco('M124 70 C142 50 164 44 184 50', C.luz, 3.2, .85));
-    g.append(f); return g;
-  };
-  const s = el('svg', { viewBox: '0 0 240 176', class: 'lou lou--voando', 'aria-hidden': 'true', focusable: 'false' });
-  s.append(
-    // cauda longa
-    el('path', { d: 'M108 118 L96 172 L120 162 L144 172 L132 118 Z', fill: C.sombra }),
-    el('path', { d: 'M114 118 L112 160 L120 154 L128 160 L126 118 Z', fill: C.corpo }),
-    asa('e'), asa('d'),
-    // corpo e barriga
-    el('ellipse', { cx: 120, cy: 88, rx: 27, ry: 37, fill: C.corpo }),
-    el('ellipse', { cx: 120, cy: 94, rx: 14, ry: 26, fill: C.luz, opacity: '.28' }),
-    traco('M110 120 Q108 128 102 130', '#5B6275', 3), traco('M130 120 Q132 128 138 130', '#5B6275', 3),
-    // cabeça
-    el('circle', { cx: 120, cy: 46, r: 23, fill: C.corpo }), traco('M104 34 Q110 26 120 25', '#fff', 3, .3),
-    // manchas amarelas e olhos felizes
-    el('ellipse', { cx: 105, cy: 55, rx: 6, ry: 4, fill: '#FFC83D' }), el('ellipse', { cx: 135, cy: 55, rx: 6, ry: 4, fill: '#FFC83D' }),
-    el('circle', { cx: 108, cy: 44, r: 8, fill: '#FFC83D' }), el('circle', { cx: 132, cy: 44, r: 8, fill: '#FFC83D' }),
-    traco('M102 46 Q108 37 114 46', '#16224A', 3.4), traco('M126 46 Q132 37 138 46', '#16224A', 3.4),
-    // bico grosso e curvo, de frente
-    el('path', { d: 'M120 46 Q106 52 110 66 Q114 80 120 82 Q126 80 130 66 Q134 52 120 46 Z', fill: '#3A4254' }),
-    traco('M115 55 Q113 62 116 70', '#7A849B', 2.5, .75),
-    traco('M113 74 Q120 79 127 74', C.sombra, 2, .5));
-  return s;
-}
 
 export function saudacao(hora = new Date().getHours()) {
   return hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
@@ -158,4 +111,15 @@ function abrir() {
   document.body.append(tela);
 }
 
+// de vez em quando o Tuiuiú do canto dá um pulinho de alegria (só com a aba à vista e sem "menos movimento")
+function pulinhos() {
+  const calmo = matchMedia('(prefers-reduced-motion:reduce)');
+  setInterval(() => {
+    const p = document.querySelector('.pouso:not(.pouso--espera)');
+    if (!p || calmo.matches || document.hidden || Math.random() > .5) return;
+    p.classList.remove('pouso--pula'); void p.offsetWidth; p.classList.add('pouso--pula');
+  }, 18000);
+}
+
 abrir();
+pulinhos();
