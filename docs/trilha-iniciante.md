@@ -47,3 +47,21 @@ Cada missão terá: 6 a 8 palavras ou frases novas com áudio, 1 explicação cu
 - Escrever as 12 missões com exercícios: é a maior parte (cerca de 100 exercícios e 80 frases com áudio).
 - Gravar as frases novas com a voz do Tuiuiú: em lote, algumas horas de processamento, sem custo.
 - Testes automáticos do conteúdo (ids únicos, gabaritos válidos) já existem e cobrem as missões novas.
+
+## Ritmo guiado do A1
+
+Cada missão começa com duas expressões por aula. Cada expressão aparece três
+vezes: reconhecimento, escuta lenta e nova prática. A aula seguinte repete o
+mesmo par, com montagem guiada. A partir do segundo par, uma pergunta retoma a
+aula anterior. São no máximo sete perguntas, sem produção livre nem acréscimos
+da IA nessa fase. Os cartões usam apenas as expressões apresentadas.
+
+Depois da base, há três aulas para entender a estrutura, praticar e realizar a
+tarefa da missão. Tradução e ditado ficam para a última; não entram exercícios
+extras do catálogo de gramática no A1. A tarefa final mantém sua rubrica: concluir
+a base não equivale a demonstrar a competência inteira.
+
+A duração é duas aulas por par de vocabulário, mais três aulas de aplicação.
+Sem prazo informado, o plano A1 mantém todas as missões e aumenta as semanas
+previstas. Missões já demonstradas permanecem concluídas. Lições já salvas
+continuam iguais; a nova sequência passa a valer nas próximas lições geradas.

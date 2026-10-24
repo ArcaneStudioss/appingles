@@ -428,6 +428,8 @@ function criar(db) {
   // Lição
   // Na primeira abertura da lição, com IA ligada: 3 exercícios escritos com a situação real do aluno.
   async function personalizarLicao(uid, h, lic) {
+    // A base guiada repete apenas o conteúdo apresentado; a IA não acrescenta temas novos.
+    if (lic.dados.inicianteGuiado) return lic;
     if (lic.iniciada_em || Object.keys(lic.respondidos).length || !lic.dados.missao || lic.dados.personalizada !== undefined) return lic;
     const marcar = (dados) => { q('UPDATE licoes SET dados = ? WHERE id = ? AND user_id = ?').run(JSON.stringify(dados), lic.id, uid); return { ...lic, dados }; };
     const perm = podeIa(uid, 'licao', h);

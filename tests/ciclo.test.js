@@ -38,6 +38,11 @@ test('objetivo de entrevista monta a trilha de entrevista e a lição traz exerc
   const { plano } = await R('POST', '/nivelamento', { respostas: Object.fromEntries(itens.map(i => [i.id, { resposta: i.opcoes[0], tempoMs: 3000 }])), escrita: '', fala: '' });
   assert.equal(plano.objetivo, 'entrevista');
   assert.ok(plano.missoes.some(m => m.id === 'perguntas-entrevista'));
+  // Este cenário cobre personalização e produção após a base iniciante.
+  // Fixar A2 evita depender da ordem das alternativas do nivelamento.
+  const n = db.prepare('SELECT id, resultado FROM nivelamentos WHERE user_id = ? ORDER BY id DESC LIMIT 1').get(uid);
+  db.prepare('UPDATE nivelamentos SET resultado = ? WHERE id = ?').run(JSON.stringify({ ...JSON.parse(n.resultado), nivel: 'A2' }), n.id);
+  novoDia();
   const { licao } = await R('GET', '/licao');
   const pers = licao.blocos.find(b => b.personalizado);
   assert.ok(pers, 'bloco feito para a situação do aluno');
@@ -198,4 +203,23 @@ test('"começar do zero": pula o teste, vai para o A1 e a primeira lição é a 
   assert.equal(licao.missao.id, 'zero-sons');
   const n = licao.blocos.reduce((s, b) => s + (b.exercicios ? b.exercicios.length : 0), 0);
   assert.ok(n > 0 && n <= 10, 'questões: ' + n);
+});
+
+
+test('base A1 repete no próximo dia, corrige no servidor e não recebe conteúdo extra da IA', async () => {
+  const { licao } = await R('GET', '/licao');
+  assert.equal(licao.inicianteGuiado, true);
+  assert.ok(!licao.blocos.some(b => b.personalizado));
+  const vocab = licao.blocos[0].vocab;
+  assert.equal(vocab.length, 2);
+  const ex = licao.blocos[1].exercicios[0];
+  assert.equal(ex.resposta, undefined);
+  assert.ok((await R('POST', '/licao/responder', { itemId: ex.id, resposta: vocab[0].pt })).correto);
+  await responderTudo(licao);
+  await R('POST', '/licao/concluir');
+  novoDia();
+  const proxima = (await R('GET', '/licao')).licao;
+  assert.equal(proxima.missao.parte, 2);
+  assert.deepEqual(proxima.blocos[0].vocab, vocab);
+  assert.ok(!proxima.blocos.some(b => b.tipo === 'producao' || b.personalizado));
 });

@@ -9,6 +9,7 @@ const { CENARIOS } = require('../conteudo/cenarios');
 const { embaralhar, diasEntre } = require('./util');
 const { dificuldadeAlvo } = require('./modelo');
 const { licoesPorMissao } = require('./plano');
+const { montarBaseIniciante } = require('./licao-iniciante');
 
 const MIN = { explicacao: 2, exercicio: 0.6, escuta: 0.8, producao: 3, foco: 1.5 };
 const ABORDAGENS = ['regra', 'contraste', 'exemplos', 'escuta'];
@@ -83,6 +84,8 @@ function limitarQuestoes(blocos) {
 
 function montarLicao(ctx) {
   const { perfil, plano, nivel, tentativas = [], competencias = {}, focos = [], hipoteses = [], hojeISO, cartoesPendentes = 0 } = ctx;
+  const baseIniciante = montarBaseIniciante(ctx, missaoAtual(plano, competencias));
+  if (baseIniciante) return baseIniciante;
   const orcamento = Math.max(10, Math.min(20, perfil.minutos_dia | 0 || 15));
   let gasto = 0;
   const porque = [], blocos = [];
@@ -143,7 +146,7 @@ function montarLicao(ctx) {
     const parte = Math.min(total, feitas + 1);
     missaoInfo = { id: def.id, titulo: def.titulo, podeFazer: def.podeFazer, parte, total };
     const resta = Math.max(4, orcamento - gasto);
-    const primeira = parte === 1;
+    const primeira = nivel === 'A1' ? parte === total - 2 : parte === 1;
     const ultima = parte === total;
     porque.push(`${primeira ? "Começamos" : "Seguimos com"} a missão “${def.titulo}” (parte ${parte} de ${total}), um passo do seu objetivo: ${plano.objetivoNome.toLowerCase()}.`);
 
@@ -162,8 +165,9 @@ function montarLicao(ctx) {
     const custoExp = primeira ? MIN.explicacao : 0.5;
     const reservaProducao = ultima && !temProducao ? MIN.producao : 0;
     const vagas = Math.max(2, Math.floor((resta - custoExp - reservaProducao) / MIN.exercicio));
-    const naoEscuta = def.exercicios.filter(e => e.tipo !== 'escuta' && e.tipo !== 'ditado' && e.tipo !== 'fala');
-    const escuta = def.exercicios.filter(e => e.tipo === 'escuta' || e.tipo === 'ditado');
+    const permitidos = def.exercicios.filter(e => nivel !== 'A1' || ((e.dif || 1) <= (ultima ? 2 : 1) && (ultima || !['traduzir', 'ditado'].includes(e.tipo))));
+    const naoEscuta = permitidos.filter(e => e.tipo !== 'escuta' && e.tipo !== 'ditado' && e.tipo !== 'fala');
+    const escuta = permitidos.filter(e => e.tipo === 'escuta' || e.tipo === 'ditado');
     const nEscuta = Math.min(escuta.length, hip.has('escuta-x-leitura') ? 3 : primeira ? 1 : 2);
     // cada parte usa sua fatia dos exercícios da missão (senão a parte 1 gasta tudo)
     const fatia = Math.ceil(naoEscuta.length / total) + (primeira ? 0 : 1);
@@ -180,7 +184,7 @@ function montarLicao(ctx) {
     gasto += custoExp + exs.length * MIN.exercicio + esc.length * MIN.escuta;
     // sobrou tempo? treino extra dos pontos de gramática da missão (catálogo de dificuldades)
     const sobra = Math.floor((orcamento - gasto - (ultima && !temProducao ? MIN.producao : 0) - 1) / MIN.exercicio);
-    if (sobra >= 2) {
+    if (sobra >= 2 && nivel !== 'A1') {
       const extra = escolherExercicios(def.tags.flatMap(exerciciosDaTag), { quantos: Math.min(4, sobra), alvo, vistos, preferirProducao, excluir: usados });
       extra.forEach(e => usados.add(e.id));
       if (extra.length) { blocos.push({ tipo: 'exercicios', titulo: 'Treino extra', exercicios: extra }); gasto += extra.length * MIN.exercicio; }
