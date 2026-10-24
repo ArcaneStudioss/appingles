@@ -1,0 +1,16 @@
+'use strict';
+// Preços confirmados pelo proprietário em 22/10/2026.
+// Família e Turma: contas individuais, franquias pagas compartilhadas por assinatura.
+const CATALOGO = [
+  { id:'gratis', nome:'Grátis', mensal:0, anual:0, pessoas:1, descricao:'Para manter suas revisões e acompanhar seu progresso.', ia:0, voz:0, orcamentoIA:0, recursos:['Revisão dos seus flashcards','Histórico e painel de progresso','Exportação e exclusão dos seus dados','Áudios já preparados, sem novas gerações'] },
+  { id:'basic', nome:'Basic', mensal:990, anual:7990, pessoas:1, descricao:'Para estudar com conteúdo e prática guiada.', ia:0, voz:1000, orcamentoIA:0, recursos:['Lições, biblioteca e revisão espaçada','Correção automática básica e conversas por roteiro','Sem geração de conteúdo com IA paga','Até 1.000 caracteres de novos áudios por mês'] },
+  { id:'completo', nome:'Completo', mensal:1990, anual:14990, pessoas:1, descricao:'Para acrescentar IA ao seu estudo individual.', ia:60, voz:2500, orcamentoIA:450000, recursos:['Conteúdo e prática do Basic','Até 60 gerações com IA por mês','Até 2 materiais processados com IA por mês','Até 2.500 caracteres de novos áudios por mês'] },
+  { id:'familia', nome:'Família', mensal:2790, anual:24990, pessoas:5, descricao:'Uma assinatura para até 5 contas individuais, incluindo quem paga.', ia:120, voz:4000, orcamentoIA:650000, recursos:['Lições e revisões para cada pessoa, com progresso separado','Até 120 gerações com IA por mês para o grupo','Até 4 materiais processados com IA por mês para o grupo','Até 4.000 caracteres de novos áudios por mês para o grupo','Uma cobrança mensal ou anual pelo grupo'] },
+  { id:'turma', nome:'Turma', mensal:9990, anual:89990, pessoas:20, descricao:'Até 20 pessoas no total, incluindo o responsável.', ia:400, voz:12000, orcamentoIA:2000000, recursos:['Contas individuais e ferramentas de turmas','Até 400 gerações com IA por mês para o grupo','Até 12 materiais processados com IA por mês para o grupo','Até 12.000 caracteres de novos áudios por mês para o grupo'] },
+];
+const POR_PLANO=Object.fromEntries(CATALOGO.map(p=>[p.id,p]));
+const TESTE={id:'teste',nome:'Teste',pessoas:1,ia:15,voz:500,orcamentoIA:80000};
+const brl=c=>(c/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+function publico(){return CATALOGO.map(({orcamentoIA,...p})=>p);}
+function htmlPlanos(){const contratar=process.env.PAGAMENTO_MODO==='stripe'&&process.env.STRIPE_SECRET_KEY&&process.env.STRIPE_WEBHOOK_SECRET;return publico().map(p=>`<article class="plano-card${p.id==='completo'?' plano-card--destaque':''}" data-plano="${p.id}"><h3>${p.nome}</h3><p class="ajuda">${p.descricao}</p><p class="preco">${brl(p.mensal)}<small>${p.mensal?'/mês':''}</small></p><p class="ajuda">${p.anual?`${brl(p.anual)} por ano, cobrado anualmente`:'Sem mensalidade'}</p><ul class="lista-check">${p.recursos.map(r=>`<li>${r}</li>`).join('')}</ul>${p.id==='gratis'?'<a class="btn btn-sec btn-bloco" href="/app/#/entrar?modo=cadastro">Criar conta grátis</a>':contratar?'<a class="btn btn-sec btn-bloco" href="/app/#/conta">Escolher plano</a>':'<p class="ajuda">Contratação ainda indisponível.</p>'}</article>`).join('');}
+module.exports={CATALOGO,POR_PLANO,TESTE,publico,htmlPlanos,brl};

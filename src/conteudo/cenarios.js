@@ -164,6 +164,48 @@ const CENARIOS = {
     roteiro: ['Nice to meet you! Where are you from?', 'How old are you?', 'Do you like music?', 'What do you do every day?', 'Great! See you tomorrow!'],
     ajuda: ['My name is ...', 'I am from ...', 'I am ... years old.', 'I like ...', 'Bye!'],
   },
+  'debate-opiniao': {
+    titulo: 'Debate: sua opinião em 3 frases',
+    papel: 'a curious, friendly debate-club host called Dana who asks for opinions on everyday topics and always asks "why?" and "can you give an example?"',
+    abertura: "Welcome to debate club! Warm-up question: is it better to live in a big city or a small town? Give me your opinion and one reason.",
+    roteiro: ['Interesting! Why do you think that?', 'Can you give me an example?', 'Some people would say the opposite. What would you tell them?', 'Last one: who benefits most from your point of view?'],
+    ajuda: ['In my opinion, ...', 'The main reason is that ...', 'For example, ...', 'That is why I believe ...'],
+  },
+  'debate-discordar': {
+    titulo: 'Debate: discordar com educação',
+    papel: 'a confident colleague called Marcus who disagrees with the student on purpose, politely but firmly, to practise polite disagreement',
+    abertura: "Honestly, I think meetings are a waste of time. Everything could be an email. Don't you agree?",
+    roteiro: ["Come on, emails are faster. What's wrong with that?", 'But people never read long emails, right?', "Fair enough, but meetings cost a lot of money. What's your answer?", 'Hmm, you have a point. So, can we agree on something?'],
+    ajuda: ['I see your point, but ...', "I'm not convinced, because ...", 'That is fair. However, ...', 'We could agree that ...'],
+  },
+  'debate-argumento': {
+    titulo: 'Debate: argumento completo',
+    papel: 'a debate coach called Nora who asks for a full argument (claim, reason, example, counterpoint) and reacts to each part',
+    abertura: "Let's build an argument. Topic: should students use AI tools for homework? State your position in one sentence.",
+    roteiro: ['Good. What is your first reason?', 'Give me a concrete example.', 'Now the other side: what is the strongest argument against you?', 'How do you answer that? Finish with a conclusion.'],
+    ajuda: ['I believe that ...', 'To begin with, ...', 'For instance, ...', 'That said, ... / In conclusion, ...'],
+  },
+  'debate-palavras': {
+    titulo: 'Debate: as palavras certas',
+    papel: 'a witty linguist called Theo who loves precise words and gently points out when a word does not fit; he asks the student to use words like drawback, trade-off, outweigh, undermine',
+    abertura: "Let's talk about electric cars. What do you see as the biggest advantage, and the biggest drawback?",
+    roteiro: ['Do the benefits outweigh the drawbacks, in your view?', 'Is there a trade-off between price and quality?', 'Can anything undermine the idea that they are better for the planet?', 'Finally: is it a controversial topic where you live?'],
+    ajuda: ['The main drawback is ...', 'The benefits outweigh ...', "There's a trade-off between ... and ...", 'It can undermine ...'],
+  },
+  'debate-mediar': {
+    titulo: 'Debate: mediar e resumir',
+    papel: 'two strong-willed colleagues, Lena and Raj, arguing about a deadline; the student is the mediator who must interrupt politely, summarise and find common ground',
+    abertura: "Lena: We can't move the deadline. Raj: But the team is exhausted! We need two more weeks. Student, you're the mediator. Please step in.",
+    roteiro: ["Lena: I won't change my mind. Raj: Neither will I. What do you say?", "Raj: So you're saying I'm wrong? Please summarise what each of us wants.", "Lena: Fine, but what is the compromise?", 'Raj: Okay. Can you close the discussion?'],
+    ajuda: ['If I may interrupt, ...', "So what you're saying is ...", 'It sounds like we agree on ...', "Let's find a middle ground."],
+  },
+  'debate-final': {
+    titulo: 'Debate: defender e rebater',
+    papel: 'a sharp but fair debate opponent called Ellis who defends the opposite side on controversial topics (remote work, social media, four-day week) and expects hedged, well-structured answers and rebuttals',
+    abertura: "Today's motion: 'The four-day work week should be mandatory.' I'll argue for it. You'll argue against. Opening statement, please.",
+    roteiro: ['Your point is noted, but studies show productivity went up. How do you respond?', "Isn't it unfair that only some industries could benefit? Concede what's fair, then rebut.", 'What evidence would change your mind?', 'Closing statement: two sentences.'],
+    ajuda: ['While it is true that ..., ...', 'Arguably, ...', 'To a certain extent, ...', "I'd concede that ..., but ..."],
+  },
   'fim-de-semana': {
     titulo: 'Papo de segunda-feira',
     papel: 'a relaxed coworker called Ben chatting at the coffee machine on a Monday morning',
@@ -173,4 +215,12 @@ const CENARIOS = {
   },
 };
 
+const { UNIDADES } = require('./biblioteca');
+for (const u of UNIDADES) CENARIOS['livro-' + u.id] = {
+  titulo: u.titulo, faixa: u.faixa,
+  papel: `a friendly English conversation partner discussing the learning topic with a ${u.faixa === 'crianca' ? 'child, using simple concrete questions about play and discoveries' : u.faixa === 'adolescente' ? 'teenager, using respectful language about school, friends and interests' : 'adult, using practical everyday language'}`,
+  abertura: 'Hi! Let’s practice a new word: ' + u.vocab[0].en + '. Can you use it in a short sentence?',
+  roteiro: ['Which word from this topic do you like?', 'Can you use another new word in a sentence?', 'What did you understand from the story?', 'What would you like to learn next?'],
+  ajuda: ['I learned the word ...', 'It means ...', 'I think ...', 'I would like to learn ...'],
+};
 module.exports = { CENARIOS };

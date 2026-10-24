@@ -4,15 +4,26 @@
   "private": true,
   "description": "Plataforma de inglês com plano personalizado pelo objetivo do aluno (MVP).",
   "main": "server.js",
-  "engines": { "node": ">=22.13" },
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
     "start": "node --disable-warning=ExperimentalWarning server.js",
     "dev": "PAGAMENTO_MODO=simulado node --disable-warning=ExperimentalWarning server.js",
     "test": "node --disable-warning=ExperimentalWarning --test tests/*.test.js",
     "backup": "node --disable-warning=ExperimentalWarning scripts/backup.js",
-    "restaurar": "node --disable-warning=ExperimentalWarning scripts/restaurar.js"
+    "restaurar": "node --disable-warning=ExperimentalWarning scripts/restaurar.js",
+    "test:browser": "node tests/browser-evolucao.cjs",
+    "test:mobile": "node tests/browser-mobile.cjs",
+    "vozes:preparar": "node scripts/preparar-vozes.js",
+    "test:feedback": "node tests/browser-feedback.cjs"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "0.135.0"
+    "@anthropic-ai/sdk": "0.135.0",
+    "@supabase/supabase-js": "2.118.0",
+    "stripe": "23.0.1"
+  },
+  "devDependencies": {
+    "playwright": "1.64.1"
   }
 }

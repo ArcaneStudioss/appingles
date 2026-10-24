@@ -22,7 +22,7 @@ async function responderTudo(licao) {
 }
 
 before(async () => {
-  srv = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, '..', 'server.js')], { env: { ...process.env, PORT: PORTA, DATA_DIR: DIR, IA_FAKE: '1', NODE_ENV: 'test', ANTHROPIC_API_KEY: '' }, stdio: 'pipe' });
+  srv = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, '..', 'server.js')], { env: { ...process.env, AUTH_PROVIDER: 'local', PORT: PORTA, DATA_DIR: DIR, IA_FAKE: '1', NODE_ENV: 'test', ANTHROPIC_API_KEY: '' }, stdio: 'pipe' });
   for (let i = 0; i < 60; i++) { try { await fetch(BASE + '/saude'); break; } catch { await new Promise(r => setTimeout(r, 100)); } }
   const r = await fetch(BASE + '/api/v1/auth/cadastro', { method: 'POST', headers: { 'X-Inglou': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: 'Bruno', email: 'bruno@ciclo.com', senha: 'enfermeiro no canada 2027', consentimento: true }) });
   H = { Cookie: (r.headers.get('set-cookie') || '').split(';')[0] };
@@ -35,7 +35,10 @@ test('objetivo de entrevista monta a trilha de entrevista e a lição traz exerc
   await R('PUT', '/perfil', { objetivo: 'entrevista', objetivo_detalhe: 'Entrevista para enfermeiro num hospital no Canadá', prazo: null, minutos_dia: 15, dias_semana: 5, area: 'enfermagem', interesses: ['saúde'] });
   const { itens } = await R('GET', '/nivelamento');
   assert.equal(itens.length, 15, 'o teste de entrada tem 15 perguntas');
-  const { plano } = await R('POST', '/nivelamento', { respostas: Object.fromEntries(itens.map(i => [i.id, { resposta: i.opcoes[0], tempoMs: 3000 }])), escrita: '', fala: '' });
+  // Este ciclo exercita o curso profissional A2; o caminho A1 agora começa pela base guiada.
+  const banco = require('../src/conteudo/nivelamento').ITENS;
+  const { plano, resultado } = await R('POST', '/nivelamento', { respostas: Object.fromEntries(itens.map(i => { const original = banco.find(b => b.id === i.id); return [i.id, { resposta: ['A1', 'A2'].includes(original.nivel) ? original.opcoes[original.resposta] : '', naoSei: !['A1', 'A2'].includes(original.nivel), tempoMs: 3000 }]; })), escrita: '', fala: '' });
+  assert.equal(resultado.nivel, 'A2');
   assert.equal(plano.objetivo, 'entrevista');
   assert.ok(plano.missoes.some(m => m.id === 'perguntas-entrevista'));
   const { licao } = await R('GET', '/licao');
@@ -198,4 +201,11 @@ test('"começar do zero": pula o teste, vai para o A1 e a primeira lição é a 
   assert.equal(licao.missao.id, 'zero-sons');
   const n = licao.blocos.reduce((s, b) => s + (b.exercicios ? b.exercicios.length : 0), 0);
   assert.ok(n > 0 && n <= 10, 'questões: ' + n);
+});
+
+test('toque numa palavra devolve alguns sentidos e rejeita o que não é palavra', async () => {
+  const r = await R('POST', '/palavra', { palavra: 'Office', frase: 'I go to the office on Tuesdays.' });
+  assert.ok(r.sentidos.length >= 1 && r.sentidos.filter(s => s.no_contexto).length === 1);
+  assert.ok(!('uso' in r));
+  await assert.rejects(R('POST', '/palavra', { palavra: '<img src=x>', frase: '' }));
 });

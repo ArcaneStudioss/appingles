@@ -9,6 +9,8 @@ const { CENARIOS } = require('../conteudo/cenarios');
 const { embaralhar, diasEntre } = require('./util');
 const { dificuldadeAlvo } = require('./modelo');
 const { licoesPorMissao } = require('./plano');
+const { montarGuiada } = require('./licao-guiada');
+const { apoioDoExercicio } = require('./apoio');
 
 const MIN = { explicacao: 2, exercicio: 0.6, escuta: 0.8, producao: 3, foco: 1.5 };
 const ABORDAGENS = ['regra', 'contraste', 'exemplos', 'escuta'];
@@ -20,6 +22,8 @@ const PRODUCAO = ['lacuna', 'ordenar', 'traduzir', 'ditado'];
 function missaoAtual(plano, competencias) {
   for (const m of plano.missoes) {
     const c = competencias[m.id];
+    // A criança pode seguir depois de praticar com ajuda. O selo de domínio continua exigindo uso independente.
+    if (m.id.startsWith('zero-') && c?.partes >= (m.licoes || 3)) continue;
     if (!c || c.status === 'nao_iniciada' || c.status === 'praticando') return m;
   }
   return null;    // trilha concluída: entra o modo "manter e ampliar"
@@ -81,8 +85,18 @@ function limitarQuestoes(blocos) {
   return antes - conta();
 }
 
+// Depois do primeiro reteste, verificar novamente após 7, 14 e 30 dias.
+function retesteVencido(c, hojeISO) {
+  if (!c || !['demonstrado', 'retido'].includes(c.status)) return false;
+  const base = c.status === 'retido' ? c.retido_em : c.demonstrado_em;
+  const intervalo = c.status === 'demonstrado' ? 3 : [7, 14, 30][Math.min(2, Math.max(0, (c.retestes || 1) - 1))];
+  return !!base && diasEntre(base.slice(0, 10), hojeISO) >= intervalo;
+}
+
 function montarLicao(ctx) {
   const { perfil, plano, nivel, tentativas = [], competencias = {}, focos = [], hipoteses = [], hojeISO, cartoesPendentes = 0 } = ctx;
+  const proxima = missaoAtual(plano, competencias);
+  if (proxima?.id.startsWith('zero-') && !plano.missoes.some(m => retesteVencido(competencias[m.id], hojeISO))) return montarGuiada(ctx, proxima);
   const orcamento = Math.max(10, Math.min(20, perfil.minutos_dia | 0 || 15));
   let gasto = 0;
   const porque = [], blocos = [];
@@ -114,7 +128,7 @@ function montarLicao(ctx) {
 
   // 2) Teste em outra situação: foco já praticado que venceu, ou missão demonstrada há 3+ dias
   const focoReteste = focos.find(f => f.status === 'praticando' && f.retestar_em && f.retestar_em <= hojeISO && POR_TAG[f.tag]);
-  const missaoReteste = plano.missoes.map(m => [m, competencias[m.id]]).find(([, c]) => c && c.status === 'demonstrado' && c.demonstrado_em && diasEntre(c.demonstrado_em.slice(0, 10), hojeISO) >= 3);
+  const missaoReteste = plano.missoes.map(m => [m, competencias[m.id]]).find(([, c]) => retesteVencido(c, hojeISO));
   let temProducao = false;
   if (missaoReteste) {
     const [m] = missaoReteste; const def = POR_ID[m.id];
@@ -231,7 +245,7 @@ function montarLicao(ctx) {
 // Remove gabaritos antes de mandar ao navegador e embaralha as opções.
 function paraCliente(licao, semente) {
   const limpar = (e, i) => {
-    const base = { id: e.id, tipo: e.tipo, habilidade: e.habilidade, tag: e.tag || null, dif: e.dif || 1, enunciado: e.enunciado || null };
+    const base = { id: e.id, tipo: e.tipo, habilidade: e.habilidade, tag: e.tag || null, dif: e.dif || 1, enunciado: e.enunciado || null, ...apoioDoExercicio(e) };
     if (e.opcoes) base.opcoes = embaralhar(e.opcoes, `${semente}:${e.id}:${i}`);
     if (e.frase) base.frase = e.frase;
     if (e.pt) base.pt = e.pt;
@@ -240,10 +254,15 @@ function paraCliente(licao, semente) {
     if (e.audio) base.audio = e.audio;
     if (e.errado) base.errado = e.errado;
     if (e.palavras) base.palavras = embaralhar(e.palavras, `${semente}:${e.id}:p`);
-    if (e.dica) base.dica = e.dica;
+    if (e.guiado) base.guiado = true;
+    if (e.publico) base.publico = e.publico;
+    if (e.bancoPalavras) base.bancoPalavras = embaralhar(e.bancoPalavras, `${semente}:${e.id}:banco`);
     if (e.sufixo) base.sufixo = e.sufixo;
     if (e.multi) base.multi = true;
     if (e.personalizado) base.personalizado = true;
+    if (e.imagem) base.imagem = e.imagem;
+    if (e.tokens) base.tokens = e.tokens;   // caça ao erro: só as palavras; o índice do erro fica no servidor
+    if (e.oponente) base.oponente = e.oponente;
     if (e.pares) base.pares = e.pares;   // nos pares a tradução já foi mostrada na explicação: não é gabarito escondido
     return base;
   };
@@ -252,7 +271,7 @@ function paraCliente(licao, semente) {
     blocos: licao.blocos.map(b => {
       const c = { ...b };
       if (b.exercicios) c.exercicios = b.exercicios.map(limpar);
-      if (b.tarefa) c.tarefa = { enunciado: b.tarefa.enunciado, minPalavras: b.tarefa.minPalavras, dicas: b.semDicas ? [] : (b.tarefa.dicas || []), modelo: null, elementos: (b.tarefa.elementos || []).map(e => e.nome) };
+      if (b.tarefa) c.tarefa = { enunciado: b.tarefa.enunciado, minPalavras: b.tarefa.minPalavras, dicas: b.semDicas ? [] : (b.tarefa.dicas || []), modelo: b.guiada && !b.semDicas ? b.tarefa.modelo : null, elementos: (b.tarefa.elementos || []).map(e => e.nome) };
       return c;
     }),
   };
@@ -281,4 +300,4 @@ function validarExerciciosIa(lista, missaoId, tag, max = 3) {
   return ok;
 }
 
-module.exports = { limitarQuestoes, limiteDaLicao, MAX_QUESTOES, MAX_COM_AUDIO, montarLicao, paraCliente, acharExercicio, exerciciosDaTag, missaoAtual, validarExerciciosIa };
+module.exports = { retesteVencido, limitarQuestoes, limiteDaLicao, MAX_QUESTOES, MAX_COM_AUDIO, montarLicao, paraCliente, acharExercicio, exerciciosDaTag, missaoAtual, validarExerciciosIa };

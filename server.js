@@ -3,6 +3,10 @@
 // Variáveis: PORT, DATA_DIR, ANTHROPIC_API_KEY (opcional), IA_MODELO*, PAGAMENTO_MODO, SITE_URL, COOKIE_SEGURO.
 const http = require('node:http');
 const path = require('node:path');
+// .env é local e ignorado pelo Git; variáveis do ambiente continuam tendo prioridade.
+if (process.env.NODE_ENV !== 'test') {
+  try { process.loadEnvFile(path.join(__dirname, '.env')); } catch (e) { if (e.code !== 'ENOENT') throw e; }
+}
 const { cabecalhos, erro, servir, ErroHttp, VERSAO } = require('./src/http');
 const { abrir } = require('./src/db');
 const { criar } = require('./src/api');
@@ -38,5 +42,5 @@ servidor.headersTimeout = 20e3; servidor.requestTimeout = 90e3; servidor.maxHead
 servidor.on('error', e => { console.error('[inglou] não consegui abrir a porta:', e.message); process.exit(1); });
 servidor.listen(PORTA, '0.0.0.0', () => console.log(`[inglou] no ar na porta ${PORTA} (versão dos arquivos ${VERSAO})`));
 
-const fechar = () => { servidor.close(() => { try { db.close(); } catch {} process.exit(0); }); setTimeout(() => process.exit(0), 5000).unref(); };
+const fechar = () => { servidor.close(() => { try { api.fechar(); db.close(); } catch {} process.exit(0); }); setTimeout(() => process.exit(0), 5000).unref(); };
 process.on('SIGTERM', fechar); process.on('SIGINT', fechar);

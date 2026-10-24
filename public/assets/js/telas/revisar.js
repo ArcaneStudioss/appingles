@@ -56,14 +56,13 @@ export async function telaRevisar(el) {
     const textoIngles = c.tipo === 'erro' ? c.verso : c.frente;
     const cartao = h('div', { class: 'flashcard', tabindex: '-1' },
       h('div', { class: 'flashcard__face flashcard__frente' },
-        h('p', { class: 'chip chip-neutro' }, TIPO[c.tipo] || 'Cartão', producao ? ' · diga em inglês' : ''),
+        producao ? h('p', { class: 'ajuda' }, 'Diga em inglês') : null,
         h('p', { class: 'flashcard__texto', lang: producao ? null : 'en' }, frente),
         producao ? null : h('button', { type: 'button', class: 'btn btn-sec btn-peq', on: { click: e => { e.stopPropagation(); falar(textoIngles); } } }, icone('speaker-high'), 'Ouvir')),
       h('div', { class: 'flashcard__face flashcard__verso' },
         h('p', { class: 'flashcard__texto', lang: producao ? 'en' : null }, verso),
         c.exemplo ? h('p', { class: 'exemplo', lang: 'en' }, c.exemplo) : null,
-        c.nota ? h('p', { class: 'ajuda' }, c.nota) : null,
-        h('button', { type: 'button', class: 'btn btn-sec btn-peq', on: { click: e => { e.stopPropagation(); falar(c.exemplo || textoIngles); } } }, icone('speaker-high'), 'Ouvir')));
+        c.nota ? h('p', { class: 'ajuda' }, c.nota) : null));
     // carinhas: dizer como foi é mais fácil do que dar nota (e a carinha decide quando o cartão volta)
     const notas = h('div', { class: 'notas', hidden: true, role: 'group', 'aria-label': 'Como foi lembrar?' },
       [[0, 'Esqueci', 'smiley-x-eyes', 'coral'], [3, 'Difícil', 'smiley-nervous', 'sol'], [4, 'Lembrei', 'smiley', 'azul'], [5, 'Fácil', 'smiley-wink', 'menta']].map(([n, r, ic, cor]) =>
@@ -81,10 +80,8 @@ export async function telaRevisar(el) {
     }
     const n = feitos + fila.length + 1;
     caixa.replaceChildren(
-      h('header', { class: 'cabeca c-sol' }, h('span', { class: 'bolha' }, icone('cards')), h('div', {}, h('h1', {}, 'Revisar'), h('p', { class: 'ajuda' }, `Cartão ${feitos + 1} de ${n}${total > 30 ? ` (de ${total} no total)` : ''}`))),
-      n <= 40 ? h('div', { class: 'revisar__fila', 'aria-hidden': 'true' }, Array.from({ length: n }, (_, k) => h('span', { class: k < feitos ? 'feito' : k === feitos ? 'agora' : '' }))) : null,
-      cartao, virar, notas,
-      h('p', { class: 'ajuda centro' }, 'Seja sincero: a carinha decide quando o cartão volta.'));
+      h('header', { class: 'cabeca c-sol' }, h('span', { class: 'bolha' }, icone('cards')), h('div', {}, h('h1', {}, 'Revisar'), h('p', { class: 'ajuda' }, `${feitos + 1} de ${n}`))),
+      cartao, virar, notas);
     cartao.focus({ preventScroll: true });
   }
 

@@ -2,9 +2,15 @@
 // API JSON em /api/v1. Toda rota de aluno filtra por user_id da sessão (nunca por id vindo do navegador).
 const { json, erro, ErroHttp, lerCorpo, definirSessao, limparSessao, tokenDaSessao, ip } = require('./http');
 const auth = require('./auth');
+const { criarSupabase } = require('./auth-supabase');
+const { registrarAuth } = require('./auth-contas');
 const { json: lerJson, transacao } = require('./db');
 const ia = require('./ia');
 const assin = require('./assinatura');
+const catalogo=require('./catalogo-planos');
+const {criarGrupos}=require('./assinaturas-grupo');
+const {criarOrcamento}=require('./orcamento');
+const {criarPagamento,lerWebhook}=require('./pagamento-stripe');
 const { OBJETIVOS, INTERESSES } = require('./conteudo/objetivos');
 const { POR_ID } = require('./conteudo/missoes');
 const { CENARIOS } = require('./conteudo/cenarios');
@@ -24,6 +30,10 @@ const radio = require('./motor/podcast');
 const estudoMotor = require('./motor/estudo');
 const APR = require('./motor/aprendizagem');
 const { respostaCerta: respostaDe } = require('./motor/correcao');
+const { publicoDe } = require('./motor/publico');
+const { REGIOES } = require('./conteudo/brasil-mundo');
+const { criarVozes } = require('./vozes');
+const path = require('node:path');
 
 // ---------- validação ----------
 const V = {
@@ -59,9 +69,11 @@ const limGeral = auth.limitador({ janelaMs: 60e3, max: 600 });
 const limIa = auth.limitador({ janelaMs: 60e3, max: 20 });
 const emAndamento = new Set();   // trava de clique duplo por usuário+ação
 
-function criar(db) {
+function criar(db, { supabase: supabaseInjetado } = {}) {
+  const supabase = supabaseInjetado || criarSupabase();
   const agoraISO = () => new Date().toISOString();
   const q = (sql) => db.prepare(sql);
+  const social = require('./social').criarSocial(db);
   // limites de segurança (login e cadastro) valem para todas as cópias do app; o geral e o da IA são por cópia (só anti-sobrecarga)
   const limLoginIp = auth.limitadorBanco(db, 'login-ip', { janelaMs: 15 * 60e3, max: 20 });
   const limLoginConta = auth.limitadorBanco(db, 'login-conta', { janelaMs: 15 * 60e3, max: 8 });
@@ -71,9 +83,9 @@ function criar(db) {
   function usuarioDaSessao(req) {
     const t = tokenDaSessao(req);
     if (!t || t.length > 100) return null;
-    const s = q('SELECT s.user_id, s.expira_em, u.nome, u.email FROM sessoes s JOIN usuarios u ON u.id = s.user_id WHERE s.id_hash = ?').get(auth.hashToken(t));
+    const s = q('SELECT s.user_id, s.expira_em, u.nome, u.email, u.auth_provider, u.auth_subject FROM sessoes s JOIN usuarios u ON u.id = s.user_id WHERE s.id_hash = ?').get(auth.hashToken(t));
     if (!s || s.expira_em < Date.now()) return null;
-    return { id: s.user_id, nome: s.nome, email: s.email, tokenHash: auth.hashToken(t) };
+    return { id: s.user_id, nome: s.nome, email: s.email, auth_provider: s.auth_provider, auth_subject: s.auth_subject, tokenHash: auth.hashToken(t) };
   }
   function abrirSessao(req, res, uid) {
     const t = auth.novoToken();
@@ -83,6 +95,7 @@ function criar(db) {
     q('DELETE FROM sessoes WHERE user_id = ? AND id_hash NOT IN (SELECT id_hash FROM sessoes WHERE user_id = ? ORDER BY criado_em DESC LIMIT 9)').run(uid, uid);
     q('INSERT INTO sessoes (id_hash, user_id, criado_em, expira_em) VALUES (?, ?, ?, ?)').run(auth.hashToken(t), uid, agora, agora + auth.SESSAO_DIAS * 864e5);
     definirSessao(req, res, t, auth.SESSAO_DIAS);
+    return auth.hashToken(t);
   }
 
   // ---------- leitura do estado do aluno ----------
@@ -103,31 +116,40 @@ function criar(db) {
   const salvarAssinatura = (uid, a) => q('INSERT INTO assinaturas (user_id, dados) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET dados = excluded.dados').run(uid, JSON.stringify(a));
   const fusoDe = p => (p?.fuso && /^[A-Za-z_]+\/[A-Za-z_]+$/.test(p.fuso) ? p.fuso : 'America/Sao_Paulo');
   const hojeDe = uid => { const p = q('SELECT fuso FROM perfis WHERE user_id = ?').get(uid); try { return hoje(fusoDe(p)); } catch { return hoje(); } };
+  const grupos=criarGrupos({db,hojeDe});
+  const pagamento=criarPagamento({db,grupos,hojeDe});
+  const orcamento=criarOrcamento({db,contaDe:grupos.contaDe,hojeDe});
+  const vozes = criarVozes({ orcamento, db, dir: path.resolve(process.env.DATA_DIR || path.join(__dirname, '..', 'dados')), diaDe: hojeDe });
 
   function hipotesesDe(uid, h) {
     return modelo.hipoteses(tentativasDe(uid, 30), revisoesDe(uid), { descartadas: descartesDe(uid, h) });
   }
 
   function estadoAssinatura(uid, h) {
-    const a = assinaturaDe(uid);
-    const est = assin.estado(a, h);
+    const {est}=grupos.contaDe(uid);
     return { ...est, limites: assin.limitesDe(est) };
   }
   function usoMes(uid, h) {
     const mes = h.slice(0, 7);
-    return Object.fromEntries(q('SELECT tipo, qtd FROM uso_ia WHERE user_id = ? AND mes = ?').all(uid, mes).map(r => [r.tipo, r.qtd]));
+    return Object.fromEntries(q('SELECT tipo, SUM(qtd) qtd FROM uso_ia WHERE (user_id=? OR user_id IN (SELECT user_id FROM assinatura_membros WHERE owner_id=?)) AND mes=? GROUP BY tipo').all(grupos.contaDe(uid).owner,grupos.contaDe(uid).owner,mes).map(r => [r.tipo, r.qtd]));
   }
   // pode usar IA nesta tarefa? (chave configurada + plano com cota)
-  function podeIa(uid, tipo, h) {
+  function podeIa(uid, tipo, h, reservar=true) {
     if (!ia.ativo()) return { pode: false, motivo: 'sem_ia' };
     const est = estadoAssinatura(uid, h);
     const usado = usoMes(uid, h)[tipo] || 0;
     if (usado >= (est.limites[tipo] || 0)) return { pode: false, motivo: est.acesso === 'livre' ? 'plano_livre' : 'limite' };
     if (!limIa.tentar('u' + uid)) return { pode: false, motivo: 'ritmo' };
-    return { pode: true };
+    if(reservar){const reservado=transacao(db,()=>{if((usoMes(uid,h)[tipo]||0)>=(est.limites[tipo]||0))return false;q('INSERT INTO uso_ia(user_id,mes,tipo,qtd) VALUES(?,?,?,1) ON CONFLICT(user_id,mes,tipo) DO UPDATE SET qtd=qtd+1').run(uid,h.slice(0,7),tipo);return true;});if(!reservado)return{pode:false,motivo:'limite'};}
+    let reservada = reservar;
+    return { pode: true, desfazer: () => {
+      if (!reservada) return;
+      q('UPDATE uso_ia SET qtd=MAX(0,qtd-1) WHERE user_id=? AND mes=? AND tipo=?').run(uid,h.slice(0,7),tipo);
+      reservada = false;
+    } };
   }
   function contarIa(uid, tipo, h, uso) {
-    q('INSERT INTO uso_ia (user_id, mes, tipo, qtd, tokens_entrada, tokens_saida) VALUES (?, ?, ?, 1, ?, ?) ON CONFLICT(user_id, mes, tipo) DO UPDATE SET qtd = qtd + 1, tokens_entrada = tokens_entrada + excluded.tokens_entrada, tokens_saida = tokens_saida + excluded.tokens_saida')
+    q('INSERT INTO uso_ia (user_id, mes, tipo, qtd, tokens_entrada, tokens_saida) VALUES (?, ?, ?, 0, ?, ?) ON CONFLICT(user_id, mes, tipo) DO UPDATE SET tokens_entrada = tokens_entrada + excluded.tokens_entrada, tokens_saida = tokens_saida + excluded.tokens_saida')
       .run(uid, h.slice(0, 7), tipo, uso?.entrada || 0, uso?.saida || 0);
   }
   const avisoIa = motivo => ({
@@ -136,7 +158,9 @@ function criar(db) {
     limite: 'Você usou a cota de IA deste mês. Até o mês virar, seguimos no modo de prática com correção básica, sem custo extra.',
     ritmo: 'Muitas mensagens em pouco tempo. Respire um pouco e tente de novo em instantes.',
     erro: 'O tutor de IA não respondeu agora. Usamos a correção básica nesta vez.',
+    limite_global: 'A geração com IA está temporariamente indisponível no Inglou. Isso não significa que sua franquia acabou. Continue com o conteúdo e a prática sem IA.',
   }[motivo] || null);
+  const avisoFalhaIa = erro => avisoIa(erro?.motivo || 'erro');
 
   function exigirAcessoCompleto(uid, h) {
     const est = estadoAssinatura(uid, h);
@@ -224,13 +248,39 @@ function criar(db) {
   const rotas = [];
   const rota = (metodo, padrao, fn, { publica = false } = {}) => rotas.push({ metodo, re: new RegExp('^' + padrao.replace(/:(\w+)/g, '(?<$1>[^/]+)') + '$'), fn, publica });
 
+  const contasAuth = registrarAuth({ db, provedor: supabase, rota, V, abrirSessao,
+    conferirExclusao: uid => pagamento.conferirExclusao(uid),
+    limparVozes: uid => vozes.limparUsuario(uid),
+    criarUsuario: b => {
+      const r = q('INSERT INTO usuarios (email,nome,senha_hash,criado_em,consentiu_em) VALUES (?,?,?,?,?)').run(b.email, b.nome, b.senha_hash, agoraISO(), agoraISO());
+      const uid = Number(r.lastInsertRowid);
+      q('INSERT INTO perfis (user_id,idade,papel,regiao,responsavel_em,atualizado_em) VALUES (?,?,?,?,?,?)').run(uid, b.idade, b.papel, b.regiao, b.idade < 18 ? agoraISO() : null, agoraISO());
+      salvarAssinatura(uid, assin.novaAssinatura(hoje())); return uid;
+    },
+  });
   // Auth
-  rota('GET', '/auth/estado', (ctx) => ({ logado: !!ctx.u, usuario: ctx.u ? { nome: ctx.u.nome, email: ctx.u.email } : null, ia: ia.ativo() }), { publica: true });
+  rota('POST', '/vozes/sintetizar', async ctx => {
+    const inicioVoz = Date.now();
+    let resultadoVoz;
+    try { resultadoVoz = await vozes.sintetizar(ctx.u.id, ctx.corpo); } catch(e) { q('INSERT INTO diagnosticos(tipo,codigo,duracao_ms,em) VALUES(?,?,?,?)').run('voz', 'falha', Date.now()-inicioVoz, agoraISO()); throw e; }
+    const { audio, cache } = resultadoVoz;
+    q('INSERT INTO diagnosticos(tipo,codigo,duracao_ms,em) VALUES(?,?,?,?)').run('voz', cache ? 'cache' : 'gerado', Date.now()-inicioVoz, agoraISO());
+    q("DELETE FROM diagnosticos WHERE em < datetime('now','-30 days')").run();
+    if (ctx.res.destroyed) return;
+    ctx.res.setHeader('Content-Type', 'audio/mpeg'); ctx.res.setHeader('Content-Length', audio.length);
+    ctx.res.setHeader('Cache-Control', 'private, no-store'); ctx.res.setHeader('X-Audio-Cache', cache ? 'hit' : 'miss');
+    ctx.res.end(audio);
+  });
+  rota('GET', '/auth/estado', (ctx) => ({ autenticacao: { provedor: supabase.ativo ? 'supabase' : 'local', disponivel: !supabase.ativo || supabase.disponivel, recuperacao: supabase.ativo && supabase.disponivel, google: supabase.google === true }, logado: !!ctx.u, usuario: ctx.u ? { nome: ctx.u.nome, email: ctx.u.email } : null, ia: ia.ativo() }), { publica: true });
 
   rota('POST', '/auth/cadastro', async (ctx) => {
     if (!limCadastro.tentar(ctx.ip)) throw new ErroHttp(429, 'Muitas tentativas. Tente de novo mais tarde.');
     const b = ctx.corpo;
     const nome = V.str(b.nome, 80, { min: 2, campo: 'Nome' });
+    const idade = b.idade == null ? null : V.int(b.idade, 1, 120, 'Idade');
+    const papel = b.papel == null ? 'aluno' : V.um(b.papel, ['aluno', 'professor', 'ambos'], 'Perfil de uso');
+    const regiao = b.regiao == null || b.regiao === '' ? null : V.um(b.regiao, [...Object.keys(REGIOES), 'fora'], 'Região do Brasil');
+    if (idade !== null && idade < 18 && b.responsavel !== true) throw new ErroHttp(422, 'Para menores de 18 anos, confirme a autorização do responsável.');
     const email = V.email(b.email);
     if (typeof b.senha !== 'string') throw new ErroHttp(422, 'Senha inválida.');
     const fraca = auth.senhaFraca(b.senha, { nome, email });
@@ -243,7 +293,7 @@ function criar(db) {
       uid = transacao(db, () => {
         const r = q('INSERT INTO usuarios (email, nome, senha_hash, criado_em, consentiu_em) VALUES (?, ?, ?, ?, ?)').run(email, nome, hash, agoraISO(), agoraISO());
         const id = Number(r.lastInsertRowid);
-        q('INSERT INTO perfis (user_id, atualizado_em) VALUES (?, ?)').run(id, agoraISO());
+        q('INSERT INTO perfis (user_id, idade, papel, regiao, responsavel_em, atualizado_em) VALUES (?, ?, ?, ?, ?, ?)').run(id, idade, papel, regiao, idade !== null && idade < 18 ? agoraISO() : null, agoraISO());
         salvarAssinatura(id, assin.novaAssinatura(h));
         return id;
       });
@@ -287,14 +337,44 @@ function criar(db) {
   });
 
   // Conteúdo estático do onboarding
-  rota('GET', '/objetivos', () => ({ objetivos: Object.entries(OBJETIVOS).map(([id, o]) => ({ id, nome: o.nome, frase: o.frase, aviso: o.aviso || null })), interesses: INTERESSES }), { publica: true });
+  rota('GET', '/objetivos', ctx => {
+    const publico = publicoDe(ctx.u ? perfilDe(ctx.u.id) : {});
+    const permitidos = ['zero', 'estudar', 'conversa', ...(publico.id === 'adolescente' ? ['viagem'] : [])];
+    return {
+      objetivos: Object.entries(OBJETIVOS).filter(([id]) => publico.id === 'adulto' || permitidos.includes(id)).map(([id, o]) => ({ id,
+        nome: publico.id === 'crianca' && id === 'estudar' ? 'Inglês para a escola' : o.nome,
+        frase: publico.id !== 'adulto' && id === 'estudar' ? 'Aprender com leituras, palavras novas e projetos para sua idade.' : o.frase, aviso: o.aviso || null })),
+      interesses: publico.id === 'crianca' ? ['animais', 'jogos', 'histórias', 'natureza', 'música', 'esportes'] : publico.id === 'adolescente' ? ['música', 'games', 'tecnologia', 'esportes', 'cinema e séries', 'natureza', 'viagens'] : INTERESSES,
+    };
+  }, { publica: true });
 
   // Quem sou eu + em que passo estou
   rota('GET', '/eu', (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid);
     const p = perfilDe(uid), n = nivelamentoDe(uid), plano = planoDe(uid);
     const passo = !p?.objetivo ? 'perfil' : !n ? 'nivelamento' : !plano ? 'plano' : 'app';
-    return { usuario: { nome: ctx.u.nome, email: ctx.u.email }, perfil: p, nivel: n?.nivel || null, passo, assinatura: estadoAssinatura(uid, h), ia: ia.ativo(), hoje: h };
+    return { admin: require('./editorial').ehAdmin(uid), cenario: q('SELECT cenario FROM social_perfis WHERE user_id=?').get(uid)?.cenario || 'padrao', autenticacao: { provedor: ctx.u.auth_provider }, usuario: { nome: ctx.u.nome, email: ctx.u.email }, perfil: p, publico: publicoDe(p), nivel: n?.nivel || null, passo, assinatura: estadoAssinatura(uid, h), ia: ia.ativo(), hoje: h };
+  });
+
+  rota('PUT', '/perfil/publico', (ctx) => {
+    const uid = ctx.u.id, b = ctx.corpo;
+    const antes = perfilDe(uid);
+    const idade = V.int(b.idade, 1, 120, 'Idade');
+    const papel = V.um(b.papel || 'aluno', ['aluno', 'professor', 'ambos'], 'Perfil de uso');
+    const regiao = !Object.hasOwn(b, 'regiao') ? antes.regiao : b.regiao == null || b.regiao === '' ? null : V.um(b.regiao, [...Object.keys(REGIOES), 'fora'], 'Região do Brasil');
+    if (idade < 18 && b.responsavel !== true && !perfilDe(uid).responsavel_em) throw new ErroHttp(422, 'Confirme a autorização do responsável.');
+    q('UPDATE perfis SET idade = ?, papel = ?, regiao = ?, responsavel_em = COALESCE(responsavel_em, ?), atualizado_em = ? WHERE user_id = ?').run(idade, papel, regiao ?? null, idade < 18 ? agoraISO() : null, agoraISO(), uid);
+    // Apenas aulas sem respostas são refeitas; o histórico e as assinaturas são preservados.
+    q("DELETE FROM licoes WHERE user_id = ? AND status = 'aberta' AND respondidos = '{}'").run(uid);
+    if (antes.objetivo && nivelamentoDe(uid) && publicoDe(antes).id !== publicoDe({ idade }).id) gerarPlano(uid, hojeDe(uid));
+    return { ok: true, publico: publicoDe({ idade, regiao }) };
+  });
+
+  rota('PUT', '/perfil/regiao', ctx => {
+    if (!Object.hasOwn(ctx.corpo, 'regiao')) throw new ErroHttp(422, 'Informe uma região ou escolha não informar.');
+    const regiao = ctx.corpo.regiao == null || ctx.corpo.regiao === '' ? null : V.um(ctx.corpo.regiao, [...Object.keys(REGIOES), 'fora'], 'Região do Brasil');
+    q('UPDATE perfis SET regiao = ?, atualizado_em = ? WHERE user_id = ?').run(regiao, agoraISO(), ctx.u.id);
+    return { ok: true, publico: publicoDe(perfilDe(ctx.u.id)) };
   });
 
   rota('PUT', '/perfil', (ctx) => {
@@ -330,15 +410,17 @@ function criar(db) {
 
   // Nivelamento
   rota('GET', '/nivelamento', (ctx) => {
-    const itens = nivelamentoConteudo.ITENS.map(i => ({
+    const conteudo = nivelamentoConteudo.paraPublico(publicoDe(perfilDe(ctx.u.id)).id);
+    const itens = conteudo.itens.map(i => ({
       id: i.id, habilidade: i.habilidade, nivel: i.nivel, tipo: i.tipo, enunciado: i.enunciado || null, texto: i.texto || null, pergunta: i.pergunta || null,
       audio: i.audio || null, velocidade: i.velocidade || 1, opcoes: embaralhar(i.opcoes, `${ctx.u.id}:${i.id}`),
     }));
-    return { itens, abertas: nivelamentoConteudo.ABERTAS, anterior: nivelamentoDe(ctx.u.id) };
+    return { itens, abertas: conteudo.abertas, anterior: nivelamentoDe(ctx.u.id) };
   });
 
   rota('POST', '/nivelamento', async (ctx) => {
     const uid = ctx.u.id, b = ctx.corpo, h = hojeDe(uid);
+    const conteudo = nivelamentoConteudo.paraPublico(publicoDe(perfilDe(uid)).id);
     const chave = 'niv' + uid;
     if (emAndamento.has(chave)) throw new ErroHttp(409, 'Já estamos corrigindo seu teste.');
     emAndamento.add(chave);
@@ -346,7 +428,7 @@ function criar(db) {
       const nunca = b.nunca === true;       // "nunca estudei inglês": começa no A1 sem fazer o teste
       if (!nunca && (!b.respostas || typeof b.respostas !== 'object' || Array.isArray(b.respostas))) throw new ErroHttp(422, 'Respostas inválidas.');
       const respostas = {};
-      for (const item of nivelamentoConteudo.ITENS) {
+      for (const item of conteudo.itens) {
         const r = nunca ? null : b.respostas[item.id];
         if (!r || typeof r !== 'object') continue;
         respostas[item.id] = { resposta: V.str(r.resposta ?? '', 300, { campo: 'Resposta' }), tempoMs: Math.max(0, Math.min(600000, Number(r.tempoMs) | 0)), naoSei: r.naoSei === true };
@@ -356,15 +438,15 @@ function criar(db) {
       const fala = V.str(b.fala, 500, { campo: 'Fala' });
       const resultado = nunca
         ? { nivel: 'A1', porHabilidade: {}, fortes: [], atencao: [], pistas: [], resumo: ['Você disse que está começando do zero. Vamos do primeiro dia, bem devagar, com muito áudio.'], confianca: 'baixa', totalRespondido: 0, nuncaEstudou: true, aviso: 'Sem teste: começamos no nível mais básico. Se for fácil demais, o app ajusta conforme você responde.' }
-        : corrigirNivelamento({ respostas, escrita, fala });
+        : corrigirNivelamento({ respostas, escrita, fala, itens: conteudo.itens, alvoFala: conteudo.abertas.fala.alvo });
       transacao(db, () => {
         q('INSERT INTO nivelamentos (user_id, feito_em, resultado) VALUES (?, ?, ?)').run(uid, agoraISO(), JSON.stringify(resultado));
-        for (const item of nivelamentoConteudo.ITENS) {
+        for (const item of conteudo.itens) {
           const r = respostas[item.id]; if (!r) continue;
           registrarTentativa(uid, { item_id: item.id, habilidade: item.habilidade, tag: item.tag, formato: 'reconhecimento', modalidade: item.tipo === 'escuta' ? 'audio' : 'texto', correto: normalizar(r.resposta) === normalizar(item.opcoes[item.resposta]), tempo_ms: r.tempoMs, origem: 'nivelamento', contexto: 'nivelamento' });
         }
         if (escrita) {
-          q('INSERT INTO amostras (user_id, em, tipo, tarefa, texto, avaliacao) VALUES (?, ?, ?, ?, ?, ?)').run(uid, agoraISO(), 'escrita', nivelamentoConteudo.ABERTAS.escrita.enunciado, escrita, JSON.stringify(resultado.porHabilidade.escrita?.detalhe || null));
+          q('INSERT INTO amostras (user_id, em, tipo, tarefa, texto, avaliacao) VALUES (?, ?, ?, ?, ?, ?)').run(uid, agoraISO(), 'escrita', conteudo.abertas.escrita.enunciado, escrita, JSON.stringify(resultado.porHabilidade.escrita?.detalhe || null));
           registrarAchados(uid, (resultado.porHabilidade.escrita?.detalhe?.achados || []), { origem: 'nivelamento' }, h);
         }
       });
@@ -414,8 +496,8 @@ function criar(db) {
     const diasNoMes = q('SELECT COUNT(*) n FROM dias_estudo WHERE user_id = ? AND data LIKE ?').get(uid, h.slice(0, 7) + '%').n;
     const novasConquistas = q('SELECT codigo FROM conquistas WHERE user_id = ? AND em >= ?').all(uid, new Date(Date.now() - 864e5).toISOString()).map(r => r.codigo);
     return {
-      nome: ctx.u.nome.split(' ')[0], hoje: h,
-      licao: lic ? { status: lic.status, minutos: lic.dados.minutos, missao: lic.dados.missao, porque: lic.dados.porque, iniciada: !!lic.iniciada_em } : null,
+      nome: ctx.u.nome.split(' ')[0], hoje: h, economia: { xp: social.xp(uid), moedas: social.saldo(uid) },
+      licao: lic ? { status: lic.status, minutos: lic.dados.minutos, missao: lic.dados.missao, porque: lic.dados.porque, guiada: !!lic.dados.guiada, iniciada: !!lic.iniciada_em } : null,
       revisoesPendentes: pend, proximo,
       meta: { minutos: p.meta_diaria || 15, feitos: Math.round(minutosHoje) },
       foco: focoNovo ? { nome: POR_TAG[focoNovo.tag]?.nome, origem: focoNovo.origem } : null,
@@ -428,12 +510,13 @@ function criar(db) {
   // Lição
   // Na primeira abertura da lição, com IA ligada: 3 exercícios escritos com a situação real do aluno.
   async function personalizarLicao(uid, h, lic) {
+    if (lic.dados.guiada) return lic; // Preserva a sequência inicial curta, inclusive quando a IA está ligada.
     if (lic.iniciada_em || Object.keys(lic.respondidos).length || !lic.dados.missao || lic.dados.personalizada !== undefined) return lic;
     const marcar = (dados) => { q('UPDATE licoes SET dados = ? WHERE id = ? AND user_id = ?').run(JSON.stringify(dados), lic.id, uid); return { ...lic, dados }; };
     const perm = podeIa(uid, 'licao', h);
     if (!perm.pode) return marcar({ ...lic.dados, personalizada: false });
     const chave = 'pers' + uid;
-    if (emAndamento.has(chave)) return lic;
+    if (emAndamento.has(chave)) { perm.desfazer(); return lic; }
     emAndamento.add(chave);
     try {
       const def = POR_ID[lic.dados.missao.id];
@@ -448,7 +531,7 @@ function criar(db) {
       dados.blocos.splice(pos >= 0 ? pos + 1 : dados.blocos.length, 0, { tipo: 'exercicios', titulo: 'Feitos para a sua situação', exercicios: exs, personalizado: true });
       dados.porque = [...dados.porque, `Incluímos ${exs.length} exercícios escritos com a sua situação${p.area ? ` (${p.area})` : ''}${p.objetivo_detalhe ? ': “' + p.objetivo_detalhe.slice(0, 90) + (p.objetivo_detalhe.length > 90 ? '...' : '') + '”' : ''}.`];
       return marcar(dados);
-    } catch (e) { console.error('[ia] exercícios personalizados falharam:', e.message); return marcar({ ...lic.dados, personalizada: false }); }
+    } catch (e) { perm.desfazer(); console.error('[ia] exercícios personalizados falharam:', e.message); return marcar({ ...lic.dados, personalizada: false }); }
     finally { emAndamento.delete(chave); }
   }
 
@@ -466,31 +549,37 @@ function criar(db) {
     const uid = ctx.u.id, h = hojeDe(uid), b = ctx.corpo;
     exigirAcessoCompleto(uid, h);
     const itemId = V.str(b.itemId, 80, { min: 1, campo: 'Item' });
-    const resposta = V.str(b.resposta, 500, { campo: 'Resposta' });
+    const resposta = b.revelar === true ? '' : V.str(b.resposta, 500, { campo: 'Resposta' });
     const lic = licaoDeHoje(uid, h, { criar: false });
     if (!lic) throw new ErroHttp(404, 'Lição não encontrada.');
-    if (lic.respondidos[itemId]) return { ...lic.respondidos[itemId], repetida: true };
     const ex = acharExercicio(lic.dados, itemId);
     if (!ex) throw new ErroHttp(404, 'Exercício não encontrado.');
+    if (lic.respondidos[itemId]) {
+      // Repetição pedagógica: corrige todas as variantes aceitas sem recontar pontos, erros ou progresso.
+      if (b.treinar === true) return { ...corrigirExercicio(ex, resposta), pratica: true, textoAudio: ['escuta', 'ditado'].includes(ex.tipo) ? ex.audio : null };
+      return { ...lic.respondidos[itemId], repetida: true };
+    }
     const r = corrigirExercicio(ex, resposta);
-    const formato = ['escolha', 'escuta', 'leitura'].includes(ex.tipo) ? 'reconhecimento' : 'producao';
+    if (b.revelar === true) r.ajuda = true;
+    const formato = ['escolha', 'escuta', 'leitura', 'detetive'].includes(ex.tipo) ? 'reconhecimento' : 'producao';
     transacao(db, () => {
       const atual = lerJson(q('SELECT respondidos FROM licoes WHERE id = ? AND user_id = ?').get(lic.id, uid).respondidos, {});
       if (atual[itemId]) return;   // clique duplo
-      atual[itemId] = { correto: r.correto, quase: r.quase, esperado: r.esperado, explica: r.explica, achados: r.achados, resposta };
+      atual[itemId] = { ...r, textoAudio: ['escuta', 'ditado'].includes(ex.tipo) ? ex.audio : null, resposta };
       q('UPDATE licoes SET respondidos = ? WHERE id = ? AND user_id = ?').run(JSON.stringify(atual), lic.id, uid);
-      registrarTentativa(uid, { item_id: itemId, missao: ex.missao || null, habilidade: ex.habilidade, tag: ex.tag, formato, modalidade: ['escuta', 'ditado', 'fala'].includes(ex.tipo) ? 'audio' : 'texto', correto: r.correto, tempo_ms: b.tempoMs, dica: b.dica === true, origem: 'licao', contexto: ex.missao || (ex.tag ? 'foco' : 'licao'), resposta });
+      registrarTentativa(uid, { item_id: itemId, missao: ex.missao || null, habilidade: ex.habilidade, tag: ex.tag, formato, modalidade: ['escuta', 'ditado', 'fala'].includes(ex.tipo) ? 'audio' : 'texto', correto: r.correto, tempo_ms: b.tempoMs, dica: b.dica === true || b.revelar === true, origem: 'licao', contexto: ex.missao || (ex.tag ? 'foco' : 'licao'), resposta });
       if (!r.correto && ex.tipo === 'traduzir') criarCartao(uid, { frente: ex.pt, verso: r.esperado, tipo: 'erro', origem: 'licao', tag: ex.tag, nota_origem: r.explica }, h);
       if (!r.correto && ex.tipo === 'lacuna' && !ex.multi) criarCartao(uid, { frente: ex.frase, verso: ex.frase.replace('___', ex.resposta[0]), tipo: 'erro', origem: 'licao', tag: ex.tag, nota_origem: r.explica }, h);
     });
     const textoAudio = ['escuta', 'ditado'].includes(ex.tipo) ? ex.audio : null;
-    return { correto: r.correto, quase: r.quase, esperado: r.esperado, explica: r.explica, achados: r.achados, textoAudio };
+    return { ...r, textoAudio };
   });
 
   rota('POST', '/licao/contestar', (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid);
     const itemId = V.str(ctx.corpo.itemId, 80, { min: 1, campo: 'Item' });
     const r = q("UPDATE tentativas SET contestada = 1 WHERE id = (SELECT id FROM tentativas WHERE user_id = ? AND item_id = ? AND origem = 'licao' AND em >= ? ORDER BY id DESC LIMIT 1) AND user_id = ?").run(uid, itemId, h, uid);
+    if(r.changes) q('INSERT INTO relatos_conteudo(user_id,tipo,referencia,motivo,criado_em) VALUES(?,?,?,?,?)').run(uid,'questao',itemId,'Aluno contestou a correção. Conferir as formas aceitas.',agoraISO());
     return { ok: r.changes > 0, mensagem: 'Anotado. Essa resposta não vai contar como erro no seu progresso. Se ela estiver certa de outro jeito, ótimo: inglês tem mais de uma forma de dizer as coisas.' };
   });
 
@@ -519,7 +608,7 @@ function criar(db) {
           av = { nota: Math.max(0, Math.min(100, r.nota | 0)), palavras: palavras(texto), elementos: regras.elementos.map(e => ({ ...e, ok: !r.elementos_faltando.some(f => normalizar(f).includes(normalizar(e.nome).split(' ')[0])) })),
             achados: r.correcoes, demonstrado: !usouAjuda && r.cumpre_tarefa && r.erros_graves === 0 && minimo, comentario: r.comentario, versaoMelhorada: r.versao_melhorada, modo: 'ia' };
           if (usouAjuda) av.comentario += ' Como você usou as dicas, isto conta como prática.';
-        } catch (e) { aviso = avisoIa('erro'); console.error('[ia] avaliação falhou:', e.message); }
+        } catch (e) { perm.desfazer(); aviso = avisoFalhaIa(e); console.error('[ia] avaliação falhou:', e.message); }
       } else aviso = avisoIa(perm.motivo);
 
       const res = transacao(db, () => {
@@ -638,12 +727,16 @@ function criar(db) {
   });
 
   // Conversas
+  const cenariosDoPublico = uid => {
+    const publico = publicoDe(perfilDe(uid)).id;
+    return Object.keys(CENARIOS).filter(id => publico === 'adulto' ? !CENARIOS[id].faixa || CENARIOS[id].faixa === 'adulto' : CENARIOS[id].faixa === publico || id.startsWith('zero-'));
+  };
   rota('GET', '/conversas/cenarios', (ctx) => {
     const uid = ctx.u.id;
     const plano = planoDe(uid);
     const atual = plano ? missaoAtual(plano, competenciasDe(uid)) : null;
     const recomendado = POR_ID[atual?.id]?.conversa || 'apresentacao';
-    const ordem = Object.keys(CENARIOS).sort((a, b) => (a === recomendado ? -1 : b === recomendado ? 1 : 0));
+    const ordem = cenariosDoPublico(uid).sort((a, b) => (a === recomendado ? -1 : b === recomendado ? 1 : 0));
     return { cenarios: ordem.map(id => ({ id, titulo: CENARIOS[id].titulo, recomendado: id === recomendado })), ia: ia.ativo() };
   });
   rota('GET', '/conversas', (ctx) => ({ conversas: q('SELECT id, cenario, iniciada_em, terminada_em, modo FROM conversas WHERE user_id = ? ORDER BY id DESC LIMIT 100').all(ctx.u.id).map(c => ({ ...c, titulo: CENARIOS[c.cenario]?.titulo || c.cenario })) }));
@@ -655,11 +748,15 @@ function criar(db) {
   rota('POST', '/conversas', (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid);
     exigirAcessoCompleto(uid, h);
-    const cen = V.um(ctx.corpo.cenario, Object.keys(CENARIOS), 'Cenário');
+    const cen = V.um(ctx.corpo.cenario, cenariosDoPublico(uid), 'Cenário para seu perfil');
     const abertas = q('SELECT COUNT(*) n FROM conversas WHERE user_id = ? AND iniciada_em >= ?').get(uid, new Date(Date.now() - 864e5).toISOString()).n;
     if (abertas >= 30) throw new ErroHttp(429, 'Muitas conversas hoje. Que tal revisar o que já praticou?');
-    const msgs = [{ papel: 'tutor', texto: CENARIOS[cen].abertura, em: agoraISO() }];
-    const r = q('INSERT INTO conversas (user_id, cenario, iniciada_em, mensagens, modo) VALUES (?, ?, ?, ?, ?)').run(uid, cen, agoraISO(), JSON.stringify(msgs), podeIa(uid, 'conversa', h).pode ? 'ia' : 'roteiro');
+    const materialId = ctx.corpo.materialId == null ? null : V.id(ctx.corpo.materialId);
+    const material = materialId === null ? null : q('SELECT * FROM materiais WHERE id=? AND user_id=?').get(materialId,uid);
+    if(materialId !== null && !material)throw new ErroHttp(404,'Material não encontrado.');
+    const perguntasMaterial = lerJson(material?.gerado, {})?.simulacao || [];
+    const msgs = [{ papel: 'tutor', texto: perguntasMaterial[0] || CENARIOS[cen].abertura, em: agoraISO() }];
+    const r = q('INSERT INTO conversas (user_id, cenario, iniciada_em, mensagens, modo, material_id) VALUES (?, ?, ?, ?, ?, ?)').run(uid, cen, agoraISO(), JSON.stringify(msgs), podeIa(uid, 'conversa', h, false).pode ? 'ia' : 'roteiro', materialId);
     return { id: Number(r.lastInsertRowid), mensagens: msgs, titulo: CENARIOS[cen].titulo, ajuda: CENARIOS[cen].ajuda };
   });
   rota('POST', '/conversas/:id/mensagem', async (ctx) => {
@@ -676,15 +773,16 @@ function criar(db) {
       const msgs = lerJson(c.mensagens, []);
       if (msgs.length >= 60) throw new ErroHttp(409, 'Conversa longa demais. Encerre e comece outra.');
       const cen = CENARIOS[c.cenario];
+      const material = c.material_id ? q('SELECT titulo,texto,gerado FROM materiais WHERE id=? AND user_id=?').get(c.material_id,uid) : null;
       let turno, aviso = null;
       const perm = podeIa(uid, 'conversa', h);
       if (perm.pode) {
         try {
-          turno = await ia.conversar({ cenario: cen, perfil: perfilDe(uid), nivel: nivelamentoDe(uid)?.nivel, historico: msgs, texto });
+          turno = await ia.conversar({ cenario: cen, perfil: perfilDe(uid), nivel: nivelamentoDe(uid)?.nivel, historico: msgs, texto, material });
           contarIa(uid, 'conversa', h, turno.uso);
-        } catch (e) { console.error('[ia] conversa falhou:', e.message); aviso = avisoIa('erro'); }
+        } catch (e) { perm.desfazer(); console.error('[ia] conversa falhou:', e.message); aviso = avisoFalhaIa(e); }
       } else aviso = avisoIa(perm.motivo);
-      if (!turno) turno = turnoOffline(c.cenario, msgs, texto);
+      if (!turno) { turno = turnoOffline(c.cenario, msgs, texto); const perguntas=lerJson(material?.gerado,{})?.simulacao||[]; if(perguntas.length){const n=msgs.filter(m=>m.papel==='aluno').length+1;turno.resposta=perguntas[n]||'Thank you for sharing. Is there anything else you would like to add?';turno.encerrar=n>=perguntas.length;} }
       const usouAjuda = ctx.corpo.ajuda === true;
       msgs.push({ papel: 'aluno', texto, em: agoraISO(), ajuda: usouAjuda });
       msgs.push({ papel: 'tutor', texto: turno.resposta, correcoes: turno.correcoes, em: agoraISO(), modo: turno.modo });
@@ -733,18 +831,36 @@ function criar(db) {
         const r = await ia.tutor({ pergunta, perfil: perfilDe(uid), nivel: nivelamentoDe(uid)?.nivel, historico: hist });
         contarIa(uid, 'tutor', h, r.uso);
         return { resposta: r.resposta, modo: 'ia' };
-      } catch (e) { console.error('[ia] tutor falhou:', e.message); }
+      } catch (e) { perm.desfazer(); perm.erro=e; console.error('[ia] tutor falhou:', e.message); }
     }
     // sem IA: procura no catálogo de dificuldades
     const termos = normalizar(pergunta).split(' ').filter(t => t.length >= 3);
     const pontua = d => { const alvo = normalizar([d.nome, d.regra, d.tag.replace(/-/g, ' '), d.contraste.pt, d.contraste.en, ...d.abordagens.exemplos].join(' ')); return termos.filter(t => alvo.includes(t)).length; };
     const melhor = DIFICULDADES.map(d => [d, pontua(d)]).sort((a, b) => b[1] - a[1])[0];
-    const aviso = avisoIa(perm.pode ? 'erro' : perm.motivo);
+    const aviso = perm.pode ? avisoFalhaIa(perm.erro) : avisoIa(perm.motivo);
     if (melhor && melhor[1] >= 1) {
       const d = melhor[0];
       return { modo: 'catalogo', aviso, resposta: `${d.nome}\n\n${d.regra}\n\nPortuguês: ${d.contraste.pt}\nInglês: ${d.contraste.en}\n${d.contraste.nota}\n\nExemplos:\n${d.abordagens.exemplos.slice(0, 3).map(e => '• ' + e).join('\n')}\n\nNão tenho certeza de que era exatamente isso que você perguntou. Sem o tutor de IA, eu respondo só sobre os pontos mais comuns.` };
     }
     return { modo: 'catalogo', aviso, resposta: `Sem o tutor de IA ativo, consigo explicar estes pontos comuns: ${DIFICULDADES.map(d => d.nome.toLowerCase()).join('; ')}. Tente perguntar usando uma dessas palavras.` };
+  });
+
+  // ---------- Toque numa palavra: alguns sentidos (cache por palavra+frase, limite de ritmo por pessoa) ----------
+  const cachePalavra = new Map();
+  rota('POST', '/palavra', async (ctx) => {
+    const w = V.str(ctx.corpo.palavra, 40, { min: 1, campo: 'Palavra' }).toLowerCase();
+    if (!/^[a-z][a-z'’-]*$/.test(w)) throw new ErroHttp(422, 'Toque em uma palavra em inglês.');
+    const frase = typeof ctx.corpo.frase === 'string' ? ctx.corpo.frase.slice(0, 300) : '';
+    const chave = w + '|' + frase.toLowerCase();
+    if (cachePalavra.has(chave)) return cachePalavra.get(chave);
+    if (!ia.ativo()) return { aviso: 'O dicionário usa a IA, que não está ligada neste servidor.', sentidos: [] };
+    if (!limIa.tentar('u' + ctx.u.id)) return { aviso: avisoIa('ritmo'), sentidos: [] };
+    try {
+      const { uso, ...r } = await ia.palavra({ palavra: w, frase });
+      if (cachePalavra.size > 2000) cachePalavra.delete(cachePalavra.keys().next().value);
+      cachePalavra.set(chave, r);
+      return r;
+    } catch (e) { console.error('[ia] palavra falhou:', e.message); return { aviso: avisoFalhaIa(e), sentidos: [] }; }
   });
 
   // ---------- Perfil de aprendizagem e treino focado nas dificuldades ----------
@@ -810,6 +926,7 @@ function criar(db) {
           } catch (e) { console.error('[ia] treino falhou:', e.message); }
         }));
       }
+      if (perm.pode && !Object.keys(bancoIa).length) perm.desfazer();
       const quantos = (p.minutos_dia || 15) <= 10 ? 6 : (p.minutos_dia || 15) >= 20 ? 10 : 8;
       const m = APR.montarTreino({ tags, pessoais: d.pessoais, pesos: d.pesos, quantos, bancoIa, vistos: d.vistos, semente: `${uid}:${h}:${versao}` });
       if (m.itens.length < 3) throw new ErroHttp(422, 'Ainda tenho pouco material para o seu treino. Faça a aula de hoje e volte.');
@@ -924,7 +1041,7 @@ function criar(db) {
           contarIa(uid, 'estudo', h, r.uso);
           const ok = (r.assuntos || []).filter(a => a && typeof a.nome === 'string' && a.nome.trim().length >= 2).slice(0, estudoMotor.MAX_ASSUNTOS).map(a => ({ nome: a.nome.trim(), porque: typeof a.porque === 'string' ? a.porque.trim() : null }));
           if (ok.length >= 2) { lista = ok; modo = 'ia'; }
-        } catch (e) { console.error('[ia] plano de estudo falhou:', e.message); aviso = avisoIa('erro'); }
+        } catch (e) { perm.desfazer(); console.error('[ia] plano de estudo falhou:', e.message); aviso = avisoFalhaIa(e); }
       } else aviso = avisoIa(perm.motivo);
       if (!lista) lista = estudoMotor.dividirAssuntos(descricao);
       if (!lista.length) throw new ErroHttp(422, 'Não consegui separar assuntos. Escreva o que cai, um por linha ou separado por vírgula.');
@@ -983,7 +1100,7 @@ function criar(db) {
             const r = await ia.estudarAssunto({ assunto: a.nome, porque: a.porque, estudo: e, material: e.material, perfil: perfilDe(uid), nivel });
             contarIa(uid, 'estudo', h, r.uso);
             c = estudoMotor.conteudoDaIa(r, a, validarExerciciosIa);
-          } catch (err) { console.error('[ia] assunto falhou:', err.message); aviso = avisoIa('erro'); }
+          } catch (err) { perm.desfazer(); console.error('[ia] assunto falhou:', err.message); aviso = avisoFalhaIa(err); }
         } else aviso = avisoIa(perm.motivo);
         if (!c) c = estudoMotor.conteudoOffline(a, e.material, nivel);
         e = estudoDe(uid, id); a = assuntoDe(e, a.id);     // recarrega: outra aba pode ter mexido
@@ -1028,6 +1145,7 @@ function criar(db) {
     if (!a.concluido_em) {
       a.concluido_em = agoraISO();
       salvarEstudo(uid, e);
+      if (Object.keys(a.respondidos || {}).length) social.creditoXp(uid, 25, `assunto:${id}:${a.id}`, 'Aula sob medida concluída');
       conq.push(...somarMinutos(uid, h, 6 + Math.min(10, Object.keys(a.respondidos).length)));
       if (conquistar(uid, 'estudo-1')) conq.push('estudo-1');
       if (e.assuntos.every(x => x.concluido_em) && conquistar(uid, 'estudo-completo')) conq.push('estudo-completo');
@@ -1134,7 +1252,7 @@ function criar(db) {
             const r = await ia.podcast({ tropecos, perfil: perfilDe(uid), nivel: nivelamentoDe(uid)?.nivel, nome });
             contarIa(uid, 'podcast', h, r.uso);
             falasIa = radio.validarFalasIa(r.falas);
-          } catch (e) { console.error('[ia] podcast falhou:', e.message); }
+          } catch (e) { perm.desfazer(); aviso=avisoFalhaIa(e); console.error('[ia] podcast falhou:', e.message); }
         } else if (perm.motivo !== 'sem_ia') aviso = avisoIa(perm.motivo);
       }
       const ep = radio.montarEpisodio({ tropecos, missao, nome, falasIa });
@@ -1210,7 +1328,7 @@ function criar(db) {
             exercicios: r.exercicios.slice(0, 6).filter(e => e.frase.includes('___')).map((e, i) => ({ id: 'mat:' + i, tipo: 'lacuna', frase: e.frase, resposta: [e.resposta], dica: e.dica })),
             compreensao: r.compreensao.slice(0, 4).filter(c => c.opcoes.length >= 2 && c.correta >= 0 && c.correta < c.opcoes.length).map((c, i) => ({ id: 'comp:' + i, pergunta: c.pergunta, opcoes: embaralhar(c.opcoes, `${uid}:${i}:${titulo}`), resposta: c.opcoes[c.correta] })),
           };
-        } catch (e) { console.error('[ia] material falhou:', e.message); aviso = avisoIa('erro'); }
+        } catch (e) { perm.desfazer(); console.error('[ia] material falhou:', e.message); aviso = avisoFalhaIa(e); }
       } else aviso = avisoIa(perm.motivo);
       if (!gerado) gerado = processarOffline(titulo, texto, { nivel: n?.nivel });
       const r = q('INSERT INTO materiais (user_id, titulo, texto, gerado, criado_em) VALUES (?, ?, ?, ?, ?)').run(uid, titulo, texto, JSON.stringify(gerado), agoraISO());
@@ -1269,7 +1387,11 @@ function criar(db) {
     const firmes = Object.entries(dom).filter(([t, d]) => POR_TAG[t] && d.total >= 4 && d.dominio >= 0.8).map(([t]) => POR_TAG[t].nome);
     const superados = q("SELECT tag, resolvido_em FROM focos WHERE user_id = ? AND status = 'superado' ORDER BY resolvido_em DESC LIMIT 10").all(uid).map(f => ({ nome: POR_TAG[f.tag]?.nome || f.tag, em: f.resolvido_em }));
     const amostras = q("SELECT id, em, missao, tarefa, texto, avaliacao, demonstrado, reteste FROM amostras WHERE user_id = ? AND tipo = 'escrita' ORDER BY em").all(uid).map(a => ({ ...a, avaliacao: lerJson(a.avaliacao, null) }));
-    const comparacao = amostras.length >= 2 ? { primeira: amostras[0], ultima: amostras[amostras.length - 1] } : null;
+    const comparacoes = [...new Set(amostras.map(a => a.missao).filter(Boolean))].map(missao => {
+      const grupo = amostras.filter(a => a.missao === missao);
+      return { missao, titulo: POR_ID[missao]?.titulo || missao, primeira: grupo[0], ultima: grupo[grupo.length - 1], total: grupo.length };
+    }).filter(g => g.total >= 2);
+    const comparacao = comparacoes.length ? comparacoes[comparacoes.length - 1] : null;
     const mes = h.slice(0, 7);
     const dias = q('SELECT data, minutos FROM dias_estudo WHERE user_id = ? ORDER BY data DESC LIMIT 60').all(uid);
     const revisoes = revisoesDe(uid);
@@ -1279,6 +1401,7 @@ function criar(db) {
       habilidades: hab,
       concluido: {
         licoes: q("SELECT COUNT(*) n FROM licoes WHERE user_id = ? AND status = 'concluida'").get(uid).n,
+        sessoes: q('SELECT COUNT(*) n FROM sessoes_guiadas WHERE user_id=? AND concluida_em IS NOT NULL').get(uid).n,
         minutos: Math.round(q('SELECT COALESCE(SUM(minutos),0) s FROM dias_estudo WHERE user_id = ?').get(uid).s),
         diasNoMes: dias.filter(d => d.data.startsWith(mes)).length,
         revisoes: q('SELECT COUNT(*) n FROM revisoes WHERE user_id = ?').get(uid).n,
@@ -1291,7 +1414,7 @@ function criar(db) {
         superados, firmes,
         retencao: longas.length >= 5 ? Math.round(100 * longas.filter(r => r.nota >= 3).length / longas.length) : null,
       },
-      missoes, melhorar, hipoteses, comparacao,
+      missoes, melhorar, hipoteses, comparacao, comparacoes,
       proximas: missoes.filter(m => !['demonstrado', 'retido'].includes(m.status)).slice(0, 3),
       conquistas: q('SELECT codigo, em FROM conquistas WHERE user_id = ? ORDER BY em DESC').all(uid),
       dias: dias.slice(0, 35),
@@ -1313,23 +1436,36 @@ function criar(db) {
   });
 
   // Assinatura
+  rota('GET','/planos',()=>({catalogo:catalogo.publico(),contratacao:pagamento.ativo()}),{publica:true});
+  rota('POST','/assinatura/portal',ctx=>pagamento.portal(ctx.u.id));
+  rota('POST','/assinatura/convite',ctx=>grupos.convite(ctx.u.id));
+  rota('POST','/assinatura/entrar',ctx=>grupos.entrar(ctx.u.id,ctx.corpo.codigo));
+  rota('POST','/assinatura/sair',ctx=>grupos.sair(ctx.u.id));
+  rota('POST','/assinatura/remover',ctx=>grupos.remover(ctx.u.id,ctx.corpo.membro));
   rota('GET', '/assinatura', (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid);
     const a = assinaturaDe(uid);
-    return { estado: estadoAssinatura(uid, h), planos: assin.PLANOS, limites: assin.LIMITES, nomesUso: assin.NOMES_USO, inclui: assin.INCLUI, uso: usoMes(uid, h), historico: a?.historico || [], pagamento: process.env.PAGAMENTO_MODO || 'desligado', teste_ate: a?.teste_ate || null };
+    return { catalogo:catalogo.publico(),grupo:grupos.painel(uid),consumo:orcamento.uso(uid), estado: estadoAssinatura(uid, h), planos: assin.PLANOS, limites: assin.LIMITES, nomesUso: assin.NOMES_USO, inclui: assin.INCLUI, uso: usoMes(uid, h), historico: a?.historico || [], pagamento: process.env.PAGAMENTO_MODO || 'desligado', stripe:pagamento.painel(uid), teste_ate: a?.teste_ate || null };
   });
   rota('POST', '/assinatura/assinar', (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid);
     const plano = V.um(ctx.corpo.plano, Object.keys(assin.PLANOS), 'Plano');
+    if(grupos.contaDe(uid).owner!==uid)throw new ErroHttp(409,'Saia do plano compartilhado antes de contratar um plano individual.');
+    const ocupadas=1+q('SELECT COUNT(*) n FROM assinatura_membros WHERE owner_id=?').get(uid).n;
+    const vagas=catalogo.POR_PLANO[assin.PLANOS[plano].categoria||'completo'].pessoas;
+    if(ocupadas>vagas)throw new ErroHttp(409,'Remova os participantes excedentes antes de mudar de plano.');
     const modo = process.env.PAGAMENTO_MODO || 'desligado';
+    if(modo==='stripe')return pagamento.checkout(uid,plano);
     if (modo !== 'simulado') throw new ErroHttp(503, 'O pagamento on-line ainda não está ligado. Nenhuma cobrança foi feita.');
+    grupos.prepararContratacao(uid);
     const a = assinaturaDe(uid) || assin.novaAssinatura(h);
     const nova = assin.assinar(a, plano, h);
     salvarAssinatura(uid, nova);
     return { ok: true, estado: estadoAssinatura(uid, h), simulado: true };
   });
-  rota('POST', '/assinatura/cancelar', (ctx) => {
+  rota('POST', '/assinatura/cancelar', async (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid);
+    if(await pagamento.cancelar(uid))return{ok:true,estado:estadoAssinatura(uid,h)};
     const a = assinaturaDe(uid);
     if (!a || a.status !== 'ativa') throw new ErroHttp(409, 'Não há assinatura ativa para cancelar.');
     salvarAssinatura(uid, assin.cancelar(a, h));
@@ -1340,34 +1476,36 @@ function criar(db) {
   rota('GET', '/dados', (ctx) => {
     const uid = ctx.u.id;
     const conta = t => q(`SELECT COUNT(*) n FROM ${t} WHERE user_id = ?`).get(uid).n;
-    return { contagem: { tentativas: conta('tentativas'), licoes: conta('licoes'), cartoes: conta('cartoes'), revisoes: conta('revisoes'), conversas: conta('conversas'), amostras: conta('amostras'), materiais: conta('materiais'), nivelamentos: conta('nivelamentos'), focos: conta('focos'), podcasts: conta('podcasts'), estudos: conta('estudos'), treinos: conta('treinos') }, ia: ia.ativo() };
+    return { contagem: { tentativas: conta('tentativas'), licoes: conta('licoes'), cartoes: conta('cartoes'), revisoes: conta('revisoes'), conversas: conta('conversas'), amostras: conta('amostras'), materiais: conta('materiais'), nivelamentos: conta('nivelamentos'), focos: conta('focos'), podcasts: conta('podcasts'), estudos: conta('estudos'), treinos: conta('treinos'), biblioteca: conta('biblioteca_progressos') }, ia: ia.ativo() };
   });
   rota('GET', '/dados/exportar', (ctx) => {
     const uid = ctx.u.id;
     const tudo = t => q(`SELECT * FROM ${t} WHERE user_id = ?`).all(uid);
     const u = q('SELECT nome, email, criado_em, consentiu_em FROM usuarios WHERE id = ?').get(uid);
     ctx.res.setHeader('Content-Disposition', `attachment; filename="inglou-meus-dados-${hojeDe(uid)}.json"`);
-    return { exportadoEm: agoraISO(), turmas: { comoProfessor: q('SELECT id, nome, codigo, criado_em FROM turmas WHERE professor_id = ?').all(uid), comoAluno: q('SELECT turma_id, entrou_em FROM turma_alunos WHERE user_id = ?').all(uid), minhasRespostas: q('SELECT atividade_id, item_id, correto, tempo_ms, em, resposta FROM atividade_respostas WHERE user_id = ?').all(uid) }, conta: u, perfil: perfilDe(uid), assinatura: assinaturaDe(uid), nivelamentos: tudo('nivelamentos'), planos: tudo('planos'), licoes: tudo('licoes'), tentativas: tudo('tentativas'), cartoes: tudo('cartoes'), revisoes: tudo('revisoes'), conversas: tudo('conversas'), focos: tudo('focos'), amostras: tudo('amostras'), competencias: tudo('competencias'), materiais: tudo('materiais'), conquistas: tudo('conquistas'), uso_ia: tudo('uso_ia'), dias_estudo: tudo('dias_estudo'), podcasts: tudo('podcasts'), estudos: tudo('estudos'), treinos: tudo('treinos') };
+    return { exportadoEm: agoraISO(), social: social.exportar(uid), turmas: { comoProfessor: q('SELECT id, nome, codigo, criado_em FROM turmas WHERE professor_id = ?').all(uid), comoAluno: q('SELECT turma_id, entrou_em FROM turma_alunos WHERE user_id = ?').all(uid), minhasRespostas: q('SELECT atividade_id, item_id, correto, tempo_ms, em, resposta FROM atividade_respostas WHERE user_id = ?').all(uid) }, conta: u, perfil: perfilDe(uid), assinatura: assinaturaDe(uid), nivelamentos: tudo('nivelamentos'), planos: tudo('planos'), licoes: tudo('licoes'), tentativas: tudo('tentativas'), cartoes: tudo('cartoes'), revisoes: tudo('revisoes'), conversas: tudo('conversas'), focos: tudo('focos'), amostras: tudo('amostras'), competencias: tudo('competencias'), materiais: tudo('materiais'), conquistas: tudo('conquistas'), uso_ia: tudo('uso_ia'), dias_estudo: tudo('dias_estudo'), podcasts: tudo('podcasts'), estudos: tudo('estudos'), treinos: tudo('treinos'), biblioteca: tudo('biblioteca_progressos'), uso_voz: tudo('uso_voz'), sessoes: tudo('sessoes_guiadas'), relatos: tudo('relatos_conteudo') };
   });
   const ESCOPOS = {
-    respostas: ['tentativas', 'revisoes', 'focos', 'descartes', 'podcasts', 'treinos'],
+    respostas: ['sessoes_guiadas', 'tentativas', 'revisoes', 'focos', 'descartes', 'podcasts', 'treinos', 'biblioteca_progressos'],
     conversas: ['conversas'],
     amostras: ['amostras'],
     cartoes: ['cartoes', 'revisoes'],
     materiais: ['materiais'],
     estudos: ['estudos'],
-    tudo: ['tentativas', 'revisoes', 'focos', 'descartes', 'conversas', 'amostras', 'cartoes', 'materiais', 'licoes', 'competencias', 'conquistas', 'dias_estudo', 'nivelamentos', 'planos', 'podcasts', 'estudos', 'treinos', 'atividade_respostas'],
+    tudo: ['sessoes_guiadas', 'relatos_conteudo', 'tentativas', 'revisoes', 'focos', 'descartes', 'conversas', 'amostras', 'cartoes', 'materiais', 'licoes', 'competencias', 'conquistas', 'dias_estudo', 'nivelamentos', 'planos', 'podcasts', 'estudos', 'treinos', 'atividade_respostas', 'biblioteca_progressos', 'uso_voz'],
   };
-  rota('POST', '/dados/apagar', (ctx) => {
+  rota('POST', '/dados/apagar', async (ctx) => {
     const uid = ctx.u.id;
     const escopo = V.um(ctx.corpo.escopo, Object.keys(ESCOPOS), 'O que apagar');
-    transacao(db, () => { for (const t of ESCOPOS[escopo]) q(`DELETE FROM ${t} WHERE user_id = ?`).run(uid); });
+    transacao(db, () => { if (escopo === 'tudo') social.apagar(uid); for (const t of ESCOPOS[escopo]) q(`DELETE FROM ${t} WHERE user_id = ?`).run(uid); });
+    await vozes.limparUsuario(uid);
     return { ok: true, refazerNivelamento: escopo === 'tudo' };
   });
-  rota('POST', '/conta/excluir', (ctx) => {
+  rota('POST', '/conta/excluir', async (ctx) => {
     const uid = ctx.u.id;
     const u = q('SELECT senha_hash FROM usuarios WHERE id = ?').get(uid);
     if (typeof ctx.corpo.senha !== 'string' || !auth.conferirSenha(ctx.corpo.senha, u.senha_hash)) throw new ErroHttp(401, 'Senha incorreta.');
+    await vozes.limparUsuario(uid);
     q('DELETE FROM usuarios WHERE id = ?').run(uid);   // ON DELETE CASCADE apaga todo o resto
     limparSessao(ctx.req, ctx.res);
     return { ok: true };
@@ -1390,12 +1528,22 @@ function criar(db) {
     return undefined;
   });
 
+  require('./social').registrar({ db, rota, V, social });
+  require('./editorial').registrar({ db, rota, q, V, agoraISO, lerJson, perfilDe, conquistar, transacao });
+  require('./sessoes').registrar({ db, rota, q, V, lerJson, perfilDe, planoDe, nivelamentoDe, competenciasDe, tentativasDe, hojeDe, agoraISO, exigirAcessoCompleto, registrarTentativa, somarMinutos, social, transacao, conquistar });
+
   // ---------- turmas (professor e aluno) ----------
   const turmasMod = require('./turmas').registrar({ db, rota, q, V, lerJson, transacao, agoraISO, hojeDe, registrarTentativa, somarMinutos });
+  require('./biblioteca').registrar({ db, rota, q, V, lerJson, perfilDe, exigirAcessoCompleto, hojeDe, agoraISO, registrarTentativa, criarCartao, somarMinutos, transacao });
 
   // ---------- despachante ----------
   async function tratar(req, res, url) {
     const caminho = url.pathname.slice('/api/v1'.length) || '/';
+    // Exceção exclusiva do webhook: corpo bruto e assinatura Stripe, sem sessão ou CSRF de navegador.
+    if(caminho==='/stripe/webhook'){
+      if(req.method!=='POST')return erro(res,405,'Método não permitido.');
+      return json(res,200,await pagamento.webhook(await lerWebhook(req),req.headers['stripe-signature']));
+    }
     const ctx = { req, res, ip: ip(req), params: {}, corpo: {} };
     if (!limGeral.tentar(ctx.ip)) return erro(res, 429, 'Muitas requisições. Aguarde um instante.');
     if (req.method === 'OPTIONS') { res.statusCode = 204; return res.end(); }   // sem CORS: só mesma origem
@@ -1418,13 +1566,26 @@ function criar(db) {
       if (req.headers['content-length'] !== '0' && tipo && !tipo.startsWith('application/json')) return erro(res, 403, 'Requisição recusada.');
       ctx.corpo = await lerCorpo(req);
     }
-    ctx.u = usuarioDaSessao(req);
+    const usuario = usuarioDaSessao(req);
+    ctx.u = achou.publica && caminho !== '/auth/estado' ? usuario : await contasAuth.validarSessao(ctx, usuario);
     if (!achou.publica && !ctx.u) return erro(res, 401, 'Faça login para continuar.');
-    const out = await achou.fn(ctx);
+    const premiavel = ctx.u && metodo === 'POST' && /\/(responder|concluir)$/.test(caminho);
+    const marco = premiavel ? {
+      moedas: q('SELECT COALESCE(MAX(id),0) n FROM moedas_extrato WHERE user_id=?').get(ctx.u.id).n,
+      xp: q('SELECT COALESCE(MAX(id),0) n FROM xp_extrato WHERE user_id=?').get(ctx.u.id).n,
+      figurinhas: q('SELECT COALESCE(MAX(id),0) n FROM colecao_figurinhas WHERE user_id=?').get(ctx.u.id).n,
+    } : null;
+    const out = ctx.u ? await orcamento.executar(ctx.u.id,()=>achou.fn(ctx)) : await achou.fn(ctx);
+    if (marco && out && !out.repetida && !out.pratica) {
+      const moedas = q('SELECT COALESCE(SUM(quantidade),0) n FROM moedas_extrato WHERE user_id=? AND id>? AND quantidade>0').get(ctx.u.id,marco.moedas).n;
+      const xp = q('SELECT COALESCE(SUM(quantidade),0) n FROM xp_extrato WHERE user_id=? AND id>?').get(ctx.u.id,marco.xp).n;
+      const figurinhas = q('SELECT COUNT(*) n FROM colecao_figurinhas WHERE user_id=? AND id>?').get(ctx.u.id,marco.figurinhas).n;
+      if (moedas || xp || figurinhas) out.recompensa = { moedas, xp, figurinhas, saldo: social.saldo(ctx.u.id), xpTotal: social.xp(ctx.u.id) };
+    }
     if (out !== undefined && !res.writableEnded) json(res, 200, out);
   }
 
-  return { tratar };
+  return { tratar, fechar: () => { vozes.fechar(); contasAuth.fechar(); } };
 }
 
 module.exports = { criar };

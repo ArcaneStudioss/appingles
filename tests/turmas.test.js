@@ -21,7 +21,7 @@ const cadastrar = async (quem, nome) => {
   U[quem] = (r.headers.get('set-cookie') || '').split(';')[0];
 };
 before(async () => {
-  srv = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, '..', 'server.js')], { env: { ...process.env, PORT: PORTA, DATA_DIR: DIR, NODE_ENV: 'test', ANTHROPIC_API_KEY: '' }, stdio: 'ignore' });
+  srv = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, '..', 'server.js')], { env: { ...process.env, AUTH_PROVIDER: 'local', PORT: PORTA, DATA_DIR: DIR, NODE_ENV: 'test', ANTHROPIC_API_KEY: '' }, stdio: 'ignore' });
   for (let i = 0; i < 60; i++) { try { await fetch(BASE + '/saude'); break; } catch { await new Promise(r => setTimeout(r, 100)); } }
   await cadastrar('prof', 'Profa Clara'); await cadastrar('ana', 'Ana Souza'); await cadastrar('beto', 'Beto Lima'); await cadastrar('fora', 'Pessoa de Fora');
 });

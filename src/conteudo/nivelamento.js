@@ -49,4 +49,27 @@ const ABERTAS = {
   fala: { id: 'n-fala', habilidade: 'fala', enunciado: 'Leia em voz alta: "I usually work from home, but I go to the office on Tuesdays."', alvo: 'I usually work from home, but I go to the office on Tuesdays' },
 };
 
-module.exports = { NIVEIS, ITENS, RESERVA, ABERTAS };
+function paraPublico(faixa = 'adulto') {
+  if (faixa === 'adulto') return { itens: ITENS, abertas: ABERTAS };
+  const { POR_UNIDADE } = require('./biblioteca');
+  const a2 = POR_UNIDADE[faixa === 'crianca' ? 'crianca-brincadeiras' : 'adolescente-projeto'];
+  const b1 = POR_UNIDADE[faixa === 'crianca' ? 'crianca-natureza' : 'adolescente-tecnologia'];
+  const b2 = faixa === 'crianca'
+    ? { texto: 'The school library introduced a quiet reading corner, expecting students to borrow more books. Although book borrowing did increase, the librarian noticed something else: students began recommending stories to one another and discussing characters during breaks. She concluded that the corner was useful not only because it provided a calm space, but because it gave students a reason to share their ideas.', pergunta: 'O que a bibliotecária percebeu além do aumento nos empréstimos?', opcoes: ['Os alunos passaram a compartilhar e discutir histórias', 'Os alunos deixaram de conversar', 'A biblioteca passou a emprestar menos livros'] }
+    : { texto: 'A student council proposed banning phones throughout the school day to improve concentration. While some students welcomed the idea, others pointed out that phones were also used for research and accessibility. The council eventually recommended clear rules for specific situations instead of a complete ban. Its report argued that understanding when and why a tool is useful can be more effective than simply removing it.', pergunta: 'Por que o conselho preferiu regras por situação?', opcoes: ['Os celulares também têm usos úteis, como pesquisa e acessibilidade', 'Queria liberar os celulares em toda aula', 'Nenhum aluno tinha dificuldade para se concentrar'] };
+  const ajustes = {
+    'n-g1': { enunciado: 'She ___ my friend.' },
+    'n-g3': { enunciado: 'Yesterday I ___ to the park.' },
+    'n-g5': { enunciado: "I've studied English ___ 2023." },
+    'n-g7': { enunciado: 'By the time we arrived, the game ___.' },
+    'n-g9': { enunciado: 'Not only ___ the puzzle, but she also helped her friends.', opcoes: ['did she solve', 'she solved', 'she did solve', 'solved she'] },
+    'n-v6': { enunciado: 'We need to ___ a decision about our school project.' },
+    'n-l1': { texto: a2.texto, pergunta: a2.perguntas[0][0], opcoes: a2.perguntas[0][1] },
+    'n-l3': { texto: b1.texto, pergunta: b1.perguntas[1][0], opcoes: b1.perguntas[1][1] },
+    'n-l4': b2,
+    'n-e4': { audio: "If we'd known about the rain earlier, we could have moved the school event indoors and avoided most of the problems.", pergunta: 'O que a pessoa quer dizer?', opcoes: ['Se soubessem da chuva antes, teriam levado o evento para dentro', 'O evento aconteceu sem problemas', 'Não choveu durante o evento', 'Vão cancelar todos os eventos da escola'] },
+  };
+  const alvo = faixa === 'crianca' ? 'I like stories and I read with my friends' : 'I like music and I study with my friends after school';
+  return { itens: ITENS.map(i => ({ ...i, ...ajustes[i.id] })), abertas: { escrita: { ...ABERTAS.escrita, enunciado: 'Escreva algumas frases sobre você: seus interesses, algo de que gosta e o que quer aprender.' }, fala: { ...ABERTAS.fala, alvo, enunciado: `Leia em voz alta: "${alvo}."` } } };
+}
+module.exports = { NIVEIS, ITENS, RESERVA, ABERTAS, paraPublico };
