@@ -24,12 +24,15 @@ function tutora(humor, { tamanho, rotulo }) {
   const feliz = humor === 'feliz' || humor === 'festa';
 
   // pernas de jeans (coxa larga, tornozelo fino) e tênis brancos
-  corpo.append(el('path', { d: 'M44 126 L59 126 L58 174 L55 220 L47 220 L45 174 Z', fill: JEANS }), el('path', { d: 'M61 126 L76 126 L75 174 L73 220 L65 220 L62 174 Z', fill: JEANS }),
-    traco('M51 140 L51 172', '#3C4770', 1.2, { opacity: '.6' }), traco('M69 140 L69 172', '#3C4770', 1.2, { opacity: '.6' }),
-    traco('M47 218 H55', '#1B2038', 2), traco('M65 218 H73', '#1B2038', 2),
-    el('path', { d: 'M46 220 H56 L57 227 Q58 231 54 233 H43 Q39 233 40 229 Z', fill: '#FFF8E6', stroke: '#BFA986', 'stroke-width': 1 }),
-    el('path', { d: 'M74 220 H64 L63 227 Q62 231 66 233 H77 Q81 233 80 229 Z', fill: '#FFF8E6', stroke: '#BFA986', 'stroke-width': 1 }),
-    traco('M41 231 H56', '#FFC83D', 2), traco('M79 231 H64', '#FFC83D', 2));
+  corpo.append(
+    el('g', { class: 'mia__perna mia__perna--esquerda' },
+      el('path', { d: 'M44 126 L59 126 L58 174 L55 220 L47 220 L45 174 Z', fill: JEANS }),
+      traco('M51 140 L51 172', '#3C4770', 1.2, { opacity: '.6' }), traco('M47 218 H55', '#1B2038', 2),
+      el('path', { d: 'M46 220 H56 L57 227 Q58 231 54 233 H43 Q39 233 40 229 Z', fill: '#FFF8E6', stroke: '#BFA986', 'stroke-width': 1 }), traco('M41 231 H56', '#FFC83D', 2)),
+    el('g', { class: 'mia__perna mia__perna--direita' },
+      el('path', { d: 'M61 126 L76 126 L75 174 L73 220 L65 220 L62 174 Z', fill: JEANS }),
+      traco('M69 140 L69 172', '#3C4770', 1.2, { opacity: '.6' }), traco('M65 218 H73', '#1B2038', 2),
+      el('path', { d: 'M74 220 H64 L63 227 Q62 231 66 233 H77 Q81 233 80 229 Z', fill: '#FFF8E6', stroke: '#BFA986', 'stroke-width': 1 }), traco('M79 231 H64', '#FFC83D', 2)));
   // pescoço, mãos e antebraços, camisa azul solta (colarinho, botões, bolso), mangas dobradas
   const bracoEsquerdo = el('g', { class: 'mia__braco mia__braco--esquerdo' },
     el('path', { d: 'M29 100 L27 128 L33 129 L39 104 Z', fill: PELE }), el('ellipse', { cx: 30, cy: 134, rx: 4, ry: 5.5, fill: PELE }),
@@ -48,7 +51,7 @@ function tutora(humor, { tamanho, rotulo }) {
   // tranças em frente aos ombros, trançadas de verdade (segmentos em relevo) e com miçangas; 3 de cada lado
   [['M46 18 Q33 60 38 112', 38, 112, '#FF6FA5'], ['M50 22 Q41 64 46 118', 46, 118, '#FFC83D'], ['M43 24 Q27 58 31 100', 31, 100, '#FFC83D'],
     ['M74 18 Q87 60 82 112', 82, 112, '#FFC83D'], ['M70 22 Q79 64 74 118', 74, 118, '#FF6FA5'], ['M77 24 Q93 58 89 100', 89, 100, '#FF6FA5']]
-    .forEach(([d, x, y, cor]) => corpo.append(traco(d, CABELO, 4.6), traco(d, '#40302A', 4.6, { 'stroke-dasharray': '1.5 2.1', 'stroke-linecap': 'butt', opacity: '.85' }), el('circle', { cx: x, cy: y, r: 2.3, fill: cor }), el('circle', { cx: x, cy: y - 5, r: 1.4, fill: '#FFF1C9' })));
+    .forEach(([d, x, y, cor]) => corpo.append(el('g', { class: 'mia__tranca' }, traco(d, CABELO, 4.6), traco(d, '#40302A', 4.6, { 'stroke-dasharray': '1.5 2.1', 'stroke-linecap': 'butt', opacity: '.85' }), el('circle', { cx: x, cy: y, r: 2.3, fill: cor }), el('circle', { cx: x, cy: y - 5, r: 1.4, fill: '#FFF1C9' }))));
 
   // cabeça (desenhada em escala maior e reduzida: o rosto mantém os mesmos traços)
   const cabeca = el('g', { transform: 'translate(60 31) scale(.68) translate(-60 -50)' });
@@ -343,10 +346,21 @@ export function celebrar(frase, { humor = 'festa', nivel = 1 } = {}) {
 // Camada por cima de tudo, sem pegar toque nem segurar a navegação. "Menos movimento": não voa (a frase e o som já comemoram).
 // Três jeitos, sorteados para não cansar: cruza (arco de um lado ao outro), pirueta (entra por cima, gira e sai) e sobe (da base, com confete).
 const JEITOS_VOO = ['cruza', 'pirueta', 'sobe'];
-let ultimoJeito = '';
-export function voarComemorando({ jeito, tamanho, confetes = true } = {}) {
+let ultimoJeito = '', vooAtivo = null, passeioTimer;
+function encerrarVoo() {
+  vooAtivo?.();
+  clearTimeout(passeioTimer);
+}
+addEventListener('hashchange', encerrarVoo);
+addEventListener('resize', encerrarVoo);
+document.addEventListener('visibilitychange', () => {
+  document.body.classList.toggle('aba-oculta', document.hidden);
+  if (document.hidden) encerrarVoo();
+});
+matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', e => { if (e.matches) encerrarVoo(); });
+export function voarComemorando({ jeito, tamanho, confetes = true, companhia = false } = {}) {
   if (reduzirMovimento() || document.hidden) return null;
-  document.querySelector('.voo-festa')?.remove();
+  vooAtivo?.();
   const outros = JEITOS_VOO.filter(j => j !== ultimoJeito);
   const j = jeito || outros[Math.floor(Math.random() * outros.length)];
   ultimoJeito = j;
@@ -374,11 +388,26 @@ export function voarComemorando({ jeito, tamanho, confetes = true } = {}) {
     { transform: T(mx, vh * .4, 1.34, 8 * sentido), offset: .62 },
     { transform: T(mx + sentido * vw * .25, -H, .9, 14 * sentido), offset: 1 },
   ];
-  const ms = j === 'cruza' ? 1500 : 1700;
+  if (companhia) {
+    const mia = document.createElement('div'); mia.className = 'voo-festa__mia mia-dancando';
+    mia.append(lou('festa', { mia: true, tamanho: 200, rotulo: '' }));
+    const notas = document.createElement('span'); notas.className = 'festa-notas'; notas.textContent = '♪ ♫ ✦';
+    mia.append(notas); camada.append(mia);
+  }
+  const ms = companhia ? 3000 : j === 'cruza' ? 1500 : 1700;
   const anim = caixa.animate(quadros, { duration: ms, fill: 'forwards' });
-  const fim = () => camada.remove();
-  anim.onfinish = fim; anim.oncancel = fim; setTimeout(fim, ms + 400);
-  if (confetes && !document.body.matches('[data-publico="adulto"]')) setTimeout(() => confete(document.body, 18), ms * (j === 'cruza' ? .5 : .4));
+  let timer, confeteTimer, encerrado = false;
+  const fim = () => {
+    if (encerrado) return;
+    encerrado = true; clearTimeout(timer); clearTimeout(confeteTimer);
+    anim.cancel(); camada.remove();
+    if (vooAtivo === fim) vooAtivo = null;
+  };
+  vooAtivo = fim;
+  anim.onfinish = fim; anim.oncancel = fim; timer = setTimeout(fim, ms + 400);
+  if (confetes && !document.body.matches('[data-publico="adulto"]')) confeteTimer = setTimeout(() => {
+    if (camada.isConnected && !document.hidden && !reduzirMovimento()) confete(document.body, 18);
+  }, ms * (j === 'cruza' ? .5 : .4));
   return camada;
 }
 
@@ -390,7 +419,12 @@ export function passearVoando(rota = '') {
   const agora = Date.now(), ultimo = Number(localStorageGet('passeio') || 0);
   if (agora - ultimo < 90000 || Math.random() > .35) return;
   localStorageSet('passeio', String(agora));
-  setTimeout(() => voarComemorando({ jeito: 'cruza', tamanho: 84, confetes: false }), 900 + Math.random() * 2500);
+  clearTimeout(passeioTimer);
+  passeioTimer = setTimeout(() => {
+    const atual = location.hash.replace(/^#\//, '').split('/')[0];
+    if (TELAS_QUIETAS.has(atual) || document.body.classList.contains('foco-total')) return;
+    voarComemorando({ jeito: 'cruza', tamanho: 84, confetes: false });
+  }, 900 + Math.random() * 2500);
 }
 
 // "+10" que sobe de um elemento e some (acerto)

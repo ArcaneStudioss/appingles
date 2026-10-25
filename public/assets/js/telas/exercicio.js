@@ -172,7 +172,7 @@ export function exercicio(ex, config) {
     btnConferir.disabled = false;
     // acertou de verdade (sem dica, sem revelar a resposta): o Tuiuiú comemora voando por cima da próxima questão
     const festejar = r.correto && !r.ajuda && !pratica && !silencioso;
-    btnConferir.onclick = () => { if (festejar && aoProximo) voarComemorando(); aoProximo?.(); };
+    btnConferir.onclick = () => { if (festejar && aoProximo) voarComemorando({ companhia: combo, jeito: combo ? 'pirueta' : undefined }); aoProximo?.(); };
     btnConferir.removeEventListener('click', aoConferir);
     if (!silencioso) requestAnimationFrame(() => { folha.focus({ preventScroll: true }); folha.scrollIntoView({ block: 'start', behavior: 'instant' }); });
   }

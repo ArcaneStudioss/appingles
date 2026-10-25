@@ -1,6 +1,6 @@
 // Mia explica; Tuiuiú pratica junto. As reações acompanham a atividade e nunca alteram a nota.
 import { h, icone, falarPt, pararVoz } from './ui.js?v=__V__';
-import { lou } from './diversao.js?v=__V__';
+import { lou, louVoando } from './diversao.js?v=__V__';
 
 const GUIAS = {
   escolha: 'Compare as opções e escolha a que combina com o pedido.',
@@ -32,8 +32,13 @@ addEventListener('inglou:voz', ({ detail: d }) => {
 export function duplaPersonagens({ acao = 'inicio', silencioso = false } = {}) {
   const alegre = ['acerto', 'superacao', 'combo', 'fim'].includes(acao), festa = ['combo', 'fim'].includes(acao);
   const dupla = h('div', { class: 'dupla' + (silencioso ? ' dupla--silenciosa' : ''), dados: { acao }, 'aria-hidden': 'true' });
-  for (const personagem of ['mia', 'tuiuiu']) dupla.append(h('div', { class: 'dupla__ator dupla__ator--' + personagem, dados: { personagem } },
-    lou(festa ? 'festa' : alegre ? 'feliz' : acao === 'apoio' || acao === 'dica' ? 'pensando' : 'oi', { mia: personagem === 'mia', tamanho: personagem === 'mia' ? 132 : 96, rotulo: '' })));
+  const humor = festa ? 'festa' : alegre ? 'feliz' : acao === 'apoio' || acao === 'dica' ? 'pensando' : 'oi';
+  dupla.append(h('div', { class: 'dupla__ator dupla__ator--mia', dados: { personagem: 'mia' } }, lou(humor, { mia: true, tamanho: 132, rotulo: '' })));
+  dupla.append(h('div', { class: 'dupla__ator dupla__ator--tuiuiu', dados: { personagem: 'tuiuiu' } },
+    h('span', { class: 'dupla__pousado' }, lou(humor, { tamanho: 96, rotulo: '' })),
+    h('span', { class: 'dupla__voador' }, louVoando())));
+  if (festa || acao === 'superacao') dupla.append(h('span', { class: 'dupla__notas' }, '♪ ♫ ✦'));
+
   return dupla;
 }
 
