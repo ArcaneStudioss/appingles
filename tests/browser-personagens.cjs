@@ -23,7 +23,7 @@ let browser;
     window.companheiros = await import('/assets/js/companheiros.js?v=' + versao);
     const { exercicio } = await import('/assets/js/telas/exercicio.js?v=' + versao);
     window.montar = (ajuda = false) => document.querySelector('main').replaceChildren(exercicio({ id: 'teste', tipo: 'escolha', pergunta: 'Como dizer olá?', opcoes: ['Hello', 'Goodbye'] }, {
-      responder: async () => ({ correto: true, ajuda, sequencia: 3, resposta: 'Hello', explica: 'Hello significa olá.' }),
+      responder: async () => ({ correto: true, ajuda, sequencia: 3, esperado: 'Hello', explica: 'Hello significa olá.' }),
       aoProximo: () => { window.continuou = true; }, relatar: false,
     }));
     window.montar();
@@ -57,6 +57,7 @@ let browser;
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.locator('.voo-festa').waitFor({ state: 'detached' });
   assert.equal(await page.evaluate(() => window.diversao.voarComemorando({ companhia: true })), null);
+  await page.waitForFunction(() => document.querySelector('.dupla').getAnimations({ subtree: true }).length === 0);
   assert.equal(await page.locator('.dupla').evaluate(e => e.getAnimations({ subtree: true }).length), 0);
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.evaluate(() => document.querySelector('main').replaceChildren(window.companheiros.duplaPersonagens({ acao: 'fim', silencioso: true })));

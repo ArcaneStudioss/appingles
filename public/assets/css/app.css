@@ -1142,8 +1142,8 @@ body.foco-total .pouso{display:none}
 }
 @keyframes ab-voo-x{from{transform:translateX(-85vw)}}
 @keyframes ab-voo-y{0%{transform:translateY(22vh) rotate(-16deg)}45%{transform:translateY(-9vh) rotate(-6deg)}75%{transform:translateY(3vh) rotate(5deg)}90%{transform:translateY(-1vh) rotate(-1deg)}100%{transform:none}}
-@keyframes ab-asa-d{from{transform:rotate(-26deg)}to{transform:rotate(24deg)}}
-@keyframes ab-asa-e{from{transform:rotate(26deg)}to{transform:rotate(-24deg)}}
+@keyframes ab-asa-d{from{transform:rotate(-18deg) scaleY(.92)}to{transform:rotate(28deg) scaleY(1)}}
+@keyframes ab-asa-e{from{transform:rotate(18deg) scaleY(.92)}to{transform:rotate(-28deg) scaleY(1)}}
 @keyframes ab-paira{to{transform:translateY(-10px)}}
 @keyframes ab-vento{0%{opacity:0;transform:scaleX(.3)}25%{opacity:1;transform:none}80%{opacity:.9}100%{opacity:0;transform:translateX(-24px)}}
 @media (prefers-reduced-motion:no-preference){

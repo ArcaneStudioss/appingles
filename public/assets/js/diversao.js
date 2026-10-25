@@ -151,32 +151,22 @@ export function lou(humor = 'oi', { tamanho = 96, rotulo = 'Tuiuiú, a arara-azu
   return s;
 }
 
-// Tuiuiú de frente, livre no ar, de asas abertas (abertura, transições e passeios). As asas têm penas largas de ponta redonda,
-// em camadas (primárias, secundárias, coberteiras) e um braço cheio na frente, para a asa ler como uma peça só e não como um leque de espetos.
-// Cada asa é um grupo .asa--e / .asa--d que gira no ombro (transform-origin definido no CSS).
+// Tuiuiú de frente: asas contínuas, com ombro, dobra e penas sobrepostas na borda.
+// A ponta alongada acompanha a envergadura da arara; cada asa gira pelo ombro.
 export function louVoando() {
   const C = { corpo: 'var(--arara-1,#2447D0)', sombra: 'var(--arara-2,#1A33A0)', luz: 'var(--arara-3,#6C8DFF)' };
   const traco = (d, cor, larg, op = 1) => el('path', { d, stroke: cor, 'stroke-width': larg, 'stroke-linecap': 'round', fill: 'none', opacity: op });
-  // pena larga de ponta redonda: base em (bx,by), aponta no ângulo, com comprimento e meia-largura; haste fina no meio
-  const pena = (bx, by, ang, comp, larg, cor, haste = true) => {
-    const L = comp, w = larg, g = el('g', { transform: `translate(${bx} ${by}) rotate(${ang})` });
-    g.append(el('path', { d: `M0 0 C${L * .18} ${-w * .9} ${L * .6} ${-w} ${L * .93} ${-w * .55} Q${L * 1.03} 0 ${L * .93} ${w * .55} C${L * .6} ${w} ${L * .18} ${w * .9} 0 0 Z`, fill: cor }));
-    if (haste) g.append(traco(`M${L * .1} 0 L${L * .88} 0`, C.luz, 1.2, .5));
-    return g;
-  };
   const asa = lado => {
     const g = el('g', { class: 'asa asa--' + lado });
     const f = el('g', lado === 'e' ? { transform: 'translate(240 0) scale(-1 1)' } : {});
-    // primárias: as longas, na ponta da asa, de quase em pé até abertas para o lado
-    [[-78, 76], [-64, 82], [-50, 84], [-36, 82], [-22, 78], [-9, 72]].forEach(([a, c], i) => f.append(pena(160, 62, a, c, 12.5, i % 2 ? C.corpo : C.sombra)));
-    // secundárias: mais curtas, saem do antebraço e fecham a borda de baixo
-    [[0, 60], [11, 56], [22, 52], [33, 46]].forEach(([a, c], i) => f.append(pena(150 - i * 4, 76 + i * 5, a, c, 11, i % 2 ? C.sombra : C.corpo)));
-    // braço cheio por cima das bases das penas: do ombro ao pulso
-    f.append(el('path', { d: 'M126 96 C122 72 136 50 160 40 C174 35 184 44 178 58 C170 76 156 94 138 104 C132 106 127 102 126 96 Z', fill: C.corpo }));
-    // coberteiras: duas fileiras de escamas redondas, da base para a ponta
-    for (let i = 0; i < 5; i++) f.append(el('ellipse', { cx: 170 - i * 9.5, cy: 54 + i * 9, rx: 8.5, ry: 6.2, fill: i % 2 ? C.sombra : C.corpo, opacity: '.95', transform: `rotate(${-36 - i * 4} ${170 - i * 9.5} ${54 + i * 9})` }));
-    for (let i = 0; i < 4; i++) f.append(el('ellipse', { cx: 164 - i * 9.5, cy: 49 + i * 8.5, rx: 7, ry: 5, fill: C.luz, opacity: '.55', transform: `rotate(${-38 - i * 4} ${164 - i * 9.5} ${49 + i * 8.5})` }));
-    f.append(traco('M130 90 C130 70 142 52 162 43', C.luz, 3, .8));
+    // Silhueta única: penas primárias longas na ponta, secundárias menores junto ao corpo.
+    f.append(el('path', { d: 'M132 79 C140 65 149 51 166 47 C186 44 209 36 228 28 C225 43 217 56 207 65 Q204 68 201 65 L208 55 Q199 71 190 77 Q187 79 185 76 L191 65 Q181 80 171 86 Q167 88 165 84 L170 75 Q157 88 145 96 Q137 99 134 90 Z', fill: C.sombra }));
+    // A superfície da asa cobre as bases das penas, sem abri-las em leque.
+    f.append(el('path', { d: 'M133 79 C143 61 151 51 167 48 C187 45 208 37 225 30 C208 47 190 55 176 65 C163 76 151 88 140 92 Q133 91 133 79 Z', fill: C.corpo }));
+    f.append(el('path', { d: 'M138 77 C150 57 158 53 174 51 Q193 48 208 41 C191 52 176 56 164 66 Q151 77 141 85 Z', fill: C.luz, opacity: '.3' }));
+    f.append(traco('M158 72 Q181 59 207 46', C.luz, 1.5, .45),
+      traco('M153 80 Q175 69 194 56', C.luz, 1.4, .35),
+      traco('M147 86 Q165 78 180 67', C.luz, 1.3, .3));
     g.append(f); return g;
   };
   const s = el('svg', { viewBox: '0 -8 240 184', class: 'lou lou--voando', 'aria-hidden': 'true', focusable: 'false' });
