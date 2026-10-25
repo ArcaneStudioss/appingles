@@ -1,26 +1,16 @@
 // Rádio Tuiuiú: um episódio curto por dia com os tropeços do aluno. O Tuiuiú explica em português, a Mia fala inglês.
-// O áudio sai da voz do próprio aparelho (sem custo e sem mandar nada a terceiros). O roteiro fica na tela,
+// O áudio usa exclusivamente as vozes oficiais dos personagens. O roteiro fica na tela,
 // com a fala atual em destaque (dá para ler junto). Nas falas "repita", o player espera a pessoa repetir.
 // No fim, um treino rápido com o mesmo assunto (o gabarito é conferido no servidor).
 import { api } from '../api.js?v=__V__';
 import { h, icone, toast, localStorageGet, localStorageSet } from '../ui.js?v=__V__';
-import { lou, som, confete } from '../diversao.js?v=__V__';
+import { lou, som, confete, voarComemorando } from '../diversao.js?v=__V__';
 import { exercicio } from './exercicio.js?v=__V__';
 import { nomeConquista } from './hoje.js?v=__V__';
+import { tocarVoz, pararVoz, temVoz } from '../voz.js?v=__V__';
 
 const PAUSA_REPITA = 4200;
-const temVozes = () => 'speechSynthesis' in window;
-// A Mia tem voz gravada para as frases do catálogo (mp3 guardado). O que muda por aluno (nome, correção própria) cai na voz do aparelho.
-const PASTA_MIA = '/assets/audio/mia/';
-let mapaMia = null;
-try { fetch(PASTA_MIA + 'mapa.json?v=__V__').then(r => (r.ok ? r.json() : null)).then(j => { mapaMia = j; }).catch(() => {}); } catch {}
-
-function escolherVozes() {
-  const todas = temVozes() ? speechSynthesis.getVoices() : [];
-  const pt = todas.find(v => /^pt[-_]BR/i.test(v.lang) && /natural|google|antonio|daniel|luciana/i.test(v.name)) || todas.find(v => /^pt[-_]BR/i.test(v.lang)) || todas.find(v => /^pt/i.test(v.lang));
-  const en = todas.find(v => /^en[-_]US/i.test(v.lang) && /jenny|aria|samantha|female|google us english/i.test(v.name)) || todas.find(v => /^en[-_]US/i.test(v.lang)) || todas.find(v => /^en/i.test(v.lang));
-  return { pt, en };
-}
+const temVozes = temVoz;
 
 export async function telaPodcast(el) {
   const capa = h('section', { class: 'radio-capa c-rosa', 'aria-live': 'polite' }, h('div', { class: 'radio-capa__carregando' }, lou('pensando', { tamanho: 72, rotulo: '' }), h('p', {}, 'O Tuiuiú está montando o seu episódio...')));
@@ -30,8 +20,7 @@ export async function telaPodcast(el) {
   const falas = ep.falas;
 
   // ---------- capa e controles
-  let i = 0, tocando = false, geracao = 0, timer = null, audioMia = null;
-  const pararMia = () => { try { audioMia?.pause(); } catch {} audioMia = null; };
+  let i = 0, tocando = false, geracao = 0, timer = null;
   let devagar = localStorageGet('radio-devagar') === 'sim';
   const ondas = h('div', { class: 'radio-ondas', 'aria-hidden': 'true' }, Array.from({ length: 5 }, () => h('i')));
   const quemFala = h('p', { class: 'radio-capa__quem', 'aria-live': 'polite' }, 'Toque no play para começar');
@@ -70,44 +59,26 @@ export async function telaPodcast(el) {
   function rolar() { const li = roteiro.children[i]; if (li && tocando) li.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }
 
   function tocar(k) {
-    if (!temVozes()) { toast('Seu navegador não lê em voz alta. Você pode ler o roteiro aqui embaixo.'); return; }
+    if (!temVozes()) { toast('Seu navegador não conseguiu reproduzir o áudio. Tente novamente ou acompanhe o roteiro.'); return; }
     const minha = ++geracao;
-    clearTimeout(timer); pararMia(); if (temVozes()) speechSynthesis.cancel();
+    clearTimeout(timer); pararVoz();
     i = Math.max(0, Math.min(falas.length - 1, k)); tocando = true;
     btnPlay.replaceChildren(icone('pause')); btnPlay.setAttribute('aria-label', 'Pausar'); capa.classList.add('tocando'); capa.classList.remove('repita');
     marcar(); rolar();
-    const f = falas[i], v = escolherVozes();
+    const f = falas[i];
     const fim = () => {
       if (minha !== geracao || !tocando) return;
       if (f.repita) { capa.classList.add('repita'); timer = setTimeout(() => { if (minha === geracao) seguir(); }, PAUSA_REPITA * (devagar ? 1.3 : 1)); }
       else timer = setTimeout(() => { if (minha === geracao) seguir(); }, 250);
     };
-    const arq = f.quem === 'mia' && f.lingua === 'en' && mapaMia && mapaMia[String(f.texto).trim()];
-    if (arq) {
-      const a = new Audio(PASTA_MIA + arq + '?v=__V__');
-      a.playbackRate = devagar ? 0.8 : 1; a.preservesPitch = true;
-      audioMia = a;
-      a.onended = fim;
-      a.onerror = () => { if (minha === geracao && tocando && audioMia === a) { audioMia = null; falarNavegador(); } };
-      a.play().catch(() => { if (minha === geracao && tocando && audioMia === a) { audioMia = null; falarNavegador(); } });
-      return;
-    }
-    falarNavegador();
-    function falarNavegador() {
-    const u = new SpeechSynthesisUtterance(f.texto);
-    const voz = f.lingua === 'en' ? v.en : v.pt;
-    if (voz) u.voice = voz;
-    u.lang = voz?.lang || (f.lingua === 'en' ? 'en-US' : 'pt-BR');
-    u.rate = (f.lingua === 'en' ? 0.95 : 1.05) * (devagar ? 0.8 : 1);
-    u.pitch = f.quem === 'mia' ? 1.15 : 1;
-    u.onend = fim;
-    u.onerror = e => { if (minha === geracao && e.error !== 'interrupted' && e.error !== 'canceled') { pausar(); toast('O áudio parou. Toque no play para continuar.'); } };
-    speechSynthesis.speak(u);
-    }
+    tocarVoz(f.texto, { personagem: f.quem === 'mia' ? 'mia' : 'tuiuiu', idioma: f.lingua,
+      velocidade: (f.lingua === 'en' ? .95 : 1) * (devagar ? .8 : 1), aoFim: fim,
+      aoCancelar: () => { if (minha === geracao && tocando) pausar(); },
+      aoErro: mensagem => { if (minha === geracao) { pausar(); toast(mensagem, { tipo: 'erro' }); } } });
   }
   function seguir() { if (i + 1 < falas.length) tocar(i + 1); else terminar(); }
   function pausar() {
-    tocando = false; geracao++; clearTimeout(timer); pararMia(); if (temVozes()) speechSynthesis.cancel();
+    tocando = false; geracao++; clearTimeout(timer); pararVoz();
     btnPlay.replaceChildren(icone('play')); btnPlay.setAttribute('aria-label', 'Continuar o episódio'); capa.classList.remove('tocando', 'repita');
   }
   function pular(d) { const alvo = Math.max(0, Math.min(falas.length - 1, i + d)); if (tocando) tocar(alvo); else { i = alvo; marcar(); } }
@@ -116,7 +87,7 @@ export async function telaPodcast(el) {
     pausar(); i = falas.length; marcar(); i = 0;
     try {
       const r = await api('/podcast/ouvido', { metodo: 'POST' });
-      if (r.conquistas?.length) { som('fim'); confete(); for (const c of r.conquistas) toast('Nova figurinha: ' + nomeConquista(c), { tipo: 'ok' }); }
+      if (r.conquistas?.length) { som('fim'); confete(); voarComemorando({ jeito: 'cruza', confetes: false }); for (const c of r.conquistas) toast('Nova figurinha: ' + nomeConquista(c), { tipo: 'ok' }); }
       else toast('Episódio ouvido! Agora o treino aqui embaixo.', { tipo: 'ok' });
     } catch (e) { toast(e.message, { tipo: 'erro' }); }
     treinoSec.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });

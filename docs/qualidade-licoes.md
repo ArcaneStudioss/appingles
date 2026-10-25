@@ -31,14 +31,15 @@ A tarefa final oferece um roteiro pelos critérios de avaliação. O modelo comp
 fica dentro de “Ver dicas”, que marca uso de ajuda. No reteste, dicas e modelo
 não são enviados. Os critérios são explicitados no enunciado passado ao avaliador.
 
-A primeira missão do zero agora cobra instruções curtas que de fato ensina, sem
-exigir agradecimento ou soletração não preparados. Os mínimos de palavras das
+A primeira missão do zero ensina e pratica Hello, Bye e Thank you antes de
+cobrar cumprimento, agradecimento e despedida. Os mínimos de palavras das
 outras tarefas iniciais foram reduzidos para permitir respostas curtas que
 cumpram todos os critérios. Os critérios continuam necessários para demonstração.
 
 ## Compatibilidade e verificação
 
-Não há migração de banco. Lições já salvas conservam conteúdo e critérios; aulas
+As mudanças foram integradas à versão atual do app, incluindo público por idade
+e sessões curtas. Não há migração de banco adicional para este reforço. Lições já salvas conservam conteúdo e critérios; aulas
 novas usam as mudanças. A interface de feedback e o roteiro se aplicam às lições
 carregadas quando os campos necessários estão presentes. Missões concluídas não
 são reabertas.

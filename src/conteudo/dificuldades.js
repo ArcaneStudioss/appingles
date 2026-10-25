@@ -317,9 +317,56 @@ const DIFICULDADES = [
       { tipo: 'lacuna', frase: 'She works as ___ engineer.', resposta: ['an'] },
     ],
   },
+  {
+    tag: 'debate-expressoes',
+    nome: 'Expressões de debate (opinar e argumentar)',
+    habilidade: 'gramatica',
+    regra: 'Em debate o inglês tem expressões fixas: "In my opinion" (não "according to me"), "On the other hand" (não "in the other hand"), "discuss" sem "about" e "make a point / a decision" (não "do").',
+    contraste: { pt: 'Segundo eu, discutimos sobre isso e fizemos uma decisão.', en: 'In my opinion, we discussed it and made a decision.', nota: '"Segundo mim", "discutir sobre" e "fazer uma decisão" são traduções palavra por palavra: em inglês cada expressão tem o seu verbo e a sua preposição.' },
+    abordagens: {
+      regra: 'Opinião própria: "In my opinion / In my view". Opinião de outra pessoa: "According to the report". Contraponto: "On the other hand". "Discuss" já traz o "sobre". Make a point, make a decision, make a mistake.',
+      exemplos: ['In my opinion, remote work is here to stay.', 'According to the study, most people prefer flexible hours.', 'We discussed the budget, and we made a decision.', 'On the other hand, the office helps new people learn faster.'],
+      escuta: 'Ouça o encaixe das palavras: "On the other hand, we made a decision."',
+      contraste: 'Em português dizemos "segundo eu" e "fazer uma decisão". Em inglês, "according to" só serve para fontes e outras pessoas; para você, é "in my opinion".',
+    },
+    detectores: [
+      { re: /\baccording to me\b/i, sugestao: 'In my opinion, ...', confianca: 'alta' },
+      { re: /\bin the other hand\b/i, sugestao: 'On the other hand, ...', confianca: 'alta' },
+      { re: /\bdiscuss(?:ed|es|ing)? about\b/i, sugestao: 'discuss (sem "about")', confianca: 'alta' },
+      { re: /\b(?:i|we|you|they|he|she) (?:do|did|does) (?:a|an) (?:point|decision|suggestion|mistake)\b/i, sugestao: 'make a point / a decision / a suggestion / a mistake', confianca: 'alta' },
+    ],
+    exercicios: [
+      { tipo: 'escolha', enunciado: 'Qual abertura funciona para dar a SUA opinião?', opcoes: ['In my opinion, ...', 'According to me, ...', 'Following me, ...'], resposta: 0 },
+      { tipo: 'lacuna', frase: 'We need to ___ a decision before Friday.', resposta: ['make'], dica: 'decisão = make' },
+      { tipo: 'escolha', enunciado: 'Complete: "On ___ other hand, the cost is too high."', opcoes: ['the', 'a', 'in the'], resposta: 0 },
+      { tipo: 'traduzir', pt: 'Nós discutimos o problema ontem.', aceitas: ['We discussed the problem yesterday', 'We discussed the issue yesterday', 'We talked about the problem yesterday'] },
+    ],
+  },
+  {
+    tag: 'conectores-contraste',
+    nome: 'Conectores de contraste (although, despite, however)',
+    habilidade: 'gramatica',
+    regra: '"Although" já faz o contraste sozinho (não se usa "but" junto). "Despite" não leva "of" (só "in spite of"). "However" abre uma frase nova, com ponto antes e vírgula depois.',
+    contraste: { pt: 'Embora seja caro, mas vale a pena. / Apesar de o preço...', en: "Although it's expensive, it's worth it. / Despite the price, it's worth it.", nota: 'No português é comum "embora..., mas...". Em inglês, escolha um só: "although" OU "but".' },
+    abordagens: {
+      regra: 'Although + frase, frase (sem but). Despite / In spite of + substantivo ou -ing. However, + frase nova.',
+      exemplos: ["Although the plan is risky, it could work.", 'Despite the delay, we finished on time.', 'In spite of the cost, people still buy it.', 'The idea is good. However, we have no budget.'],
+      escuta: 'Ouça a pausa depois do conector: "However, we have no budget."',
+      contraste: 'Compare: "Embora seja caro, vale a pena" = "Although it is expensive, it is worth it". Nada de "but" no meio.',
+    },
+    detectores: [
+      { re: /\balthough\b[^.!?;]*,\s*but\b/i, sugestao: 'Although ..., ... (sem "but")', confianca: 'alta' },
+      { re: /\bdespite of\b/i, sugestao: 'despite (sem "of") / in spite of', confianca: 'alta' },
+    ],
+    exercicios: [
+      { tipo: 'escolha', enunciado: '"Embora seja difícil, eu aceito."', opcoes: ["Although it's difficult, I accept.", "Although it's difficult, but I accept.", "Despite of it's difficult, I accept."], resposta: 0 },
+      { tipo: 'lacuna', frase: '___ the rain, we played outside.', resposta: ['Despite', 'In spite of'], dica: 'sem "of"' },
+      { tipo: 'ordenar', palavras: ['Although', 'it', 'is', 'expensive', 'it', 'is', 'worth', 'it'], resposta: 'Although it is expensive it is worth it' },
+    ],
+  },
 ];
 
-const POR_TAG = Object.fromEntries(DIFICULDADES.map(d => [d.tag, d]));
+const POR_TAG =Object.fromEntries(DIFICULDADES.map(d => [d.tag, d]));
 
 // Roda os detectores sobre um texto do aluno. Devolve achados sem repetição de tag+trecho.
 function detectar(texto) {

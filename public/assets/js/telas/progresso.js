@@ -14,6 +14,7 @@ export async function telaProgresso(el) {
 
   el.append(
     h('header', { class: 'cabeca c-lilas' }, h('span', { class: 'bolha' }, icone('book-open-text')), h('div', {}, h('h1', {}, 'Meu álbum'), p.objetivo ? h('p', { class: 'ajuda' }, icone('target'), ' ', p.objetivo.nome, p.objetivo.prazo ? ` · até ${dataBR(p.objetivo.prazo)}` : '') : null)),
+    h('a', { class: 'treino-card c-sol', href: '#/colecao' }, h('span', { class: 'bolha' }, icone('cards')), h('span', { class: 'treino-card__txt' }, h('strong', {}, 'Coleção de figurinhas'), h('small', {}, 'Suas figurinhas, raridades e desafios com amigos')), icone('caret-right')),
     h('a', { class: 'treino-card c-limao', href: '#/aprender' }, h('span', { class: 'bolha' }, icone('compass')), h('span', { class: 'treino-card__txt' }, h('strong', {}, 'Meu jeito de aprender'), h('small', {}, 'como você vai ao ler, escrever e ouvir, e onde mais erra')), icone('caret-right')),
     pl?.plano ? album(pl.plano, { titulo: 'Páginas do álbum', classe: 'album--todo' }) : null,
     p.conquistas.length ? h('section', { class: 'folha c-sol' }, h('h2', {}, 'Figurinhas especiais'), h('ul', { class: 'conquistas' }, p.conquistas.map(x => h('li', {}, h('span', { class: 'medalha' }, icone('medal')), nomeConquista(x.codigo))))) : null,
@@ -21,7 +22,7 @@ export async function telaProgresso(el) {
     h('div', { class: 'duas' },
       h('section', { class: 'folha' },
         h('p', { class: 'rotulo-pequeno' }, 'O que você fez'),
-        h('ul', { class: 'numeros' },
+        h('ul', { class: 'numeros' }, h('li',{},h('strong',{},String(c.sessoes||0)),'sessões guiadas'),
           h('li', {}, h('strong', {}, String(c.licoes)), plural(c.licoes, 'lição', 'lições').replace(/^\d+ /, '')),
           h('li', {}, h('strong', {}, String(c.minutos)), 'minutos'),
           h('li', {}, h('strong', {}, String(c.diasNoMes)), 'dias neste mês'),
@@ -56,11 +57,11 @@ export async function telaProgresso(el) {
       d.firmes?.length ? h('p', {}, h('strong', {}, 'Firmes: '), d.firmes.join('; ').toLowerCase(), '.') : null),
 
     p.comparacao ? h('section', { class: 'folha' },
-      h('h2', {}, 'Antes e agora'),
+      h('h2', {}, 'Antes e agora na mesma missão'),
       h('div', { class: 'duas' },
         h('div', {}, h('p', { class: 'rotulo-pequeno' }, `Primeira amostra · ${dataBR(p.comparacao.primeira.em)}`), h('p', { class: 'ajuda' }, p.comparacao.primeira.tarefa), h('p', { lang: 'en', class: 'pautado amostra' }, p.comparacao.primeira.texto)),
         h('div', {}, h('p', { class: 'rotulo-pequeno' }, `Mais recente · ${dataBR(p.comparacao.ultima.em)}`), h('p', { class: 'ajuda' }, p.comparacao.ultima.tarefa), h('p', { lang: 'en', class: 'pautado amostra' }, p.comparacao.ultima.texto))),
-      h('p', { class: 'ajuda' }, 'Compare você mesmo: as tarefas podem ser diferentes, então olhe a clareza e a segurança, não só o tamanho.')) : null,
+      h('p', { class: 'ajuda' }, 'Amostras da mesma missão, com a mesma rubrica. Os contextos podem variar: compare clareza, autonomia e cumprimento da tarefa. É uma evidência limitada, não um certificado de fluência.')) : null,
 
     h('section', { class: 'folha' },
       h('h2', {}, 'Próximas metas'),

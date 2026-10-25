@@ -1,3 +1,6 @@
+import { tocarVoz, pararVoz as pararAudio } from './voz.js?v=__V__';
+import { destacarReconhecidas } from './fala-acompanhada.js?v=__V__';
+import { significadoLocal } from './traducao.js?v=__V__';
 // Interface: construtor de elementos SEGURO (só textContent, nunca HTML com dado do usuário),
 // ícones, janela (modal), confirmação e aviso no lugar de alert/confirm/prompt, áudio e microfone.
 
@@ -47,8 +50,10 @@ export const reduzirMovimento = () => matchMedia('(prefers-reduced-motion: reduc
 
 // ---------- aviso rápido ----------
 export function toast(msg, { tipo = 'info', ms = 4200 } = {}) {
-  let box = document.querySelector('.ui-toasts');
-  if (!box) { box = h('div', { class: 'ui-toasts', role: 'status', 'aria-live': 'polite' }); document.body.append(box); }
+  const alvo = document.activeElement?.closest('dialog[open] .janela__corpo,.exercicio,form,.passo') || document.getElementById('conteudo') || document.body;
+  let box = alvo.querySelector(':scope > .ui-toasts--inline');
+  if (!box) { box = h('div', { class: 'ui-toasts ui-toasts--inline', role: 'status', 'aria-live': 'polite' }); alvo.prepend(box); }
+  box.replaceChildren();
   const t = h('div', { class: `ui-toast ui-toast--${tipo}` }, msg);
   box.append(t);
   setTimeout(() => { t.classList.add('is-out'); setTimeout(() => t.remove(), 230); }, ms);
@@ -137,105 +142,40 @@ export function ocupado(btn, sim) {
   else { btn.disabled = false; btn.removeAttribute('aria-busy'); btn.querySelector('.carregando')?.remove(); }
 }
 
-// ---------- áudio (voz do próprio navegador) ----------
-let vozes = [];
-function carregarVozes() { vozes = (window.speechSynthesis?.getVoices() || []).filter(v => /^en(-|_|$)/i.test(v.lang)); }
-if ('speechSynthesis' in window) { carregarVozes(); speechSynthesis.addEventListener?.('voiceschanged', carregarVozes); }
-export const temVoz = () => 'speechSynthesis' in window && (vozes.length > 0 || speechSynthesis.getVoices().length > 0);
-// Escolhe a voz mais humana que o aparelho tem: neurais/"naturais" primeiro, depois as de qualidade (Siri, Google, Samantha),
-// e por último as robóticas (eSpeak, compactas). Inglês americano ou britânico, de preferência.
-const BOA = /natural|neural|online|premium|enhanced|siri|aria|jenny|ava|emma|libby|sonia|samantha|serena|karen|google (us|uk)/i;
-const ROBO = /espeak|compact|festival|pico/i;
-export const vozesEn = () => { carregarVozes(); return vozes.slice().sort((a, b) => a.name.localeCompare(b.name)); };
-export function melhorVoz(lista) {
-  const nota = v => (BOA.test(v.name) ? 10 : 0) + (ROBO.test(v.name) ? -20 : 0) + (/en-US/i.test(v.lang) ? 3 : /en-GB/i.test(v.lang) ? 2 : 0) + (v.localService === false ? 1 : 0);
-  return lista.slice().sort((a, b) => nota(b) - nota(a))[0];
+// ---------- áudio: somente as vozes oficiais da Mia e do Tuiuiú ----------
+export { pararVoz, temVoz } from './voz.js?v=__V__';
+export function falar(texto, { velocidade = 1, personagem, vozFem = false, aoFim, emocao = 'contexto' } = {}) {
+  const voz = personagem || (vozFem ? 'mia' : null) || (localStorageGet('personagem-en') === 'tuiuiu' ? 'tuiuiu' : 'mia');
+  return tocarVoz(texto, { personagem: voz, idioma: 'en', emocao, velocidade: velocidade * (Number(localStorageGet('velocidade')) || 1), aoFim, aoCancelar: aoFim, aoErro: mensagem => { toast(mensagem, { tipo: 'erro' }); aoFim?.(); } });
 }
-// Voz do Tuiuiú: frases do conteúdo já vêm gravadas (mp3 gerado uma vez e guardado). O que não tem gravação cai na voz do aparelho.
-const PASTA_VOZ = '/assets/audio/tuiuiu/';
-let mapaVoz = null, tocandoVoz = null;
-try { fetch(PASTA_VOZ + 'mapa.json?v=__V__').then(r => (r.ok ? r.json() : null)).then(j => { mapaVoz = j; }).catch(() => {}); } catch {}
-export function pararVoz() { rodadaPt++; try { tocandoVoz?.pause(); } catch {} tocandoVoz = null; if ('speechSynthesis' in window) speechSynthesis.cancel(); }
-export function falar(texto, { velocidade = 1 } = {}) {
-  const arq = !localStorageGet('voz') && mapaVoz && mapaVoz[String(texto).trim()];
-  if (arq) {
-    pararVoz();
-    const a = new Audio(PASTA_VOZ + arq + '?v=__V__');
-    a.playbackRate = Math.max(0.5, Math.min(1.6, velocidade * (Number(localStorageGet('velocidade')) || 1)));
-    a.preservesPitch = true;
-    tocandoVoz = a;
-    a.play().catch(() => { tocandoVoz = null; falarNavegador(texto, { velocidade }); });
-    return true;
-  }
-  return falarNavegador(texto, { velocidade });
-}
-function falarNavegador(texto, { velocidade = 1 } = {}) {
-  try { tocandoVoz?.pause(); } catch {} tocandoVoz = null;
-  if (!('speechSynthesis' in window)) { toast('Seu navegador não tem leitura de voz. Use "Ver o texto".'); return false; }
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(texto);
-  const pref = localStorageGet('voz') || '';
-  const voz = vozes.find(v => v.name === pref) || melhorVoz(vozes);
-  if (voz) u.voice = voz;
-  u.lang = voz?.lang || 'en-US';
-  u.pitch = 1.05;                      // um tom um pouco mais vivo, de mascote simpático
-  u.rate = Math.max(0.5, Math.min(1.6, velocidade * (Number(localStorageGet('velocidade')) || 1)));
-  speechSynthesis.speak(u);
-  return true;
-}
-// "Ler pra mim": o Tuiuiú lê em voz alta, em português, o que está no balão (ajuda quem lê pouco ou está começando).
-// Cada trecho usa a gravação do Tuiuiú quando existe (mapa.json, chave "pt:" + texto); o que não tem gravação cai na voz em português do aparelho.
-// Cuidados para o iPhone/Safari: cancelar e falar logo em seguida às vezes não sai som, então damos um respiro;
-// sem voz em português ou sem som, avisamos em vez de ficar mudo.
-export function vozPt() {
-  const todas = window.speechSynthesis?.getVoices() || [];
-  return todas.find(v => /^pt[-_]BR/i.test(v.lang) && /natural|google|luciana|francisca|felipe/i.test(v.name)) || todas.find(v => /^pt[-_]BR/i.test(v.lang)) || todas.find(v => /^pt/i.test(v.lang)) || null;
-}
-let dicaSemSomDada = false, rodadaPt = 0;
-export function falarPt(texto, aoFim) {
-  const trechos = (Array.isArray(texto) ? texto : [texto]).map(t => String(t).trim()).filter(Boolean);
-  if (!trechos.length) return false;
-  const gravado = t => mapaVoz && mapaVoz['pt:' + t];
-  if (!trechos.every(gravado) && !('speechSynthesis' in window)) { toast('Seu navegador não tem leitura de voz.'); return false; }
-  pararVoz();
-  const minha = ++rodadaPt;
-  const fim = () => { if (minha === rodadaPt) aoFim?.(); };
-  const proximo = k => {
-    if (minha !== rodadaPt) return;
-    if (k >= trechos.length) { fim(); return; }
-    const t = trechos[k], arq = gravado(t);
-    if (arq) {
-      const a = new Audio(PASTA_VOZ + arq + '?v=__V__');
-      tocandoVoz = a;
-      a.onended = () => proximo(k + 1);
-      a.onerror = () => falarNavegadorPt(t, () => proximo(k + 1));
-      a.play().catch(() => falarNavegadorPt(t, () => proximo(k + 1)));
-    } else falarNavegadorPt(t, () => proximo(k + 1));
-  };
-  const falarNavegadorPt = (t, depois) => {
-    if (!('speechSynthesis' in window)) { depois(); return; }
-    const voz = vozPt();
-    if (!voz && speechSynthesis.getVoices().length) toast('Seu aparelho não tem uma voz em português instalada. Dá para instalar em Ajustes, Acessibilidade, Conteúdo falado, Vozes.');
-    const dizer = () => {
-      if (minha !== rodadaPt) return;
-      const u = new SpeechSynthesisUtterance(t);
-      if (voz) u.voice = voz;
-      u.lang = voz?.lang || 'pt-BR'; u.rate = 1;
-      let comecou = false;
-      u.onstart = () => { comecou = true; };
-      u.onend = depois;
-      u.onerror = e => { if (e.error !== 'interrupted' && e.error !== 'canceled') { toast('Não consegui ler em voz alta agora. Confira o volume e o modo silencioso do celular.'); fim(); } };
-      speechSynthesis.speak(u);
-      setTimeout(() => { if (minha === rodadaPt && !comecou && !speechSynthesis.speaking) { speechSynthesis.cancel(); fim(); if (!dicaSemSomDada) { dicaSemSomDada = true; toast('Sem som? Confira o volume e se o celular não está no modo silencioso.'); } } }, 2500);
-    };
-    if (speechSynthesis.speaking || speechSynthesis.pending) { speechSynthesis.cancel(); setTimeout(dizer, 120); } else dizer();
-  };
-  proximo(0);
-  return true;
+export function falarPt(texto, aoFim, { personagem, emocao = 'contexto' } = {}) {
+  const voz = personagem || (localStorageGet('personagem-pt') === 'mia' ? 'mia' : 'tuiuiu');
+  return tocarVoz(texto, { personagem: voz, idioma: 'pt', emocao, velocidade: Number(localStorageGet('velocidade')) || 1,
+    aoFim, aoCancelar: aoFim, aoErro: mensagem => { toast(mensagem, { tipo: 'erro' }); aoFim?.(); } });
 }
 export function botaoOuvir(texto, { velocidade = 1, rotulo = 'Ouvir' } = {}) {
   return h('button', { type: 'button', class: 'btn btn-sec btn-ouvir', on: { click: () => falar(texto, { velocidade }) } }, icone('speaker-high'), rotulo);
 }
+let dialogoAudio, ultimoBotao, botaoPreparando;
+document.addEventListener('click', e => { ultimoBotao = e.target.closest('button'); }, true);
+// Fechar uma janela também interrompe sua fala, sem criar avisos sobre a atividade.
+addEventListener('inglou:voz', e => {
+  const { fase } = e.detail;
+  if (botaoPreparando) { botaoPreparando.removeAttribute('aria-busy'); botaoPreparando.classList.remove('voz-preparando'); botaoPreparando = null; }
+  if (fase === 'preparando') {
+    if (ultimoBotao?.isConnected) { botaoPreparando = ultimoBotao; botaoPreparando.setAttribute('aria-busy', 'true'); botaoPreparando.classList.add('voz-preparando'); }
+    const dialogo = document.querySelector('dialog[open]');
+    if (dialogoAudio !== dialogo) {
+      dialogoAudio?.removeEventListener('close', pararAudio);
+      dialogoAudio = dialogo;
+      dialogoAudio?.addEventListener('close', pararAudio);
+    }
+  }
+  if (fase === 'parado') {
+    dialogoAudio?.removeEventListener('close', pararAudio);
+    dialogoAudio = null;
+  }
+});
 
 // ---------- microfone (reconhecimento de voz do navegador, opcional) ----------
 export const temMicrofone = () => 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
@@ -285,6 +225,56 @@ export function ouvirMicrofone({ aoTexto, aoFim, aoErro, alvo = '', silencioMs =
   }
   abrir();
   return { stop: encerrar };
+}
+
+// ---------- toque numa palavra: alguns sentidos (dicionário com IA, ver POST /palavra) ----------
+// Devolve o texto com cada palavra em inglês como botão. Sem JS o texto continua inteiro e legível.
+export function palavrasToque(texto) {
+  const frag = document.createDocumentFragment();
+  String(texto).split(/([A-Za-z][A-Za-z'’-]*)/).forEach(pedaco => {
+    if (/^[A-Za-z]/.test(pedaco)) frag.append(h('button', { type: 'button', class: 'palavra-toque', on: { click: () => abrirPalavra(pedaco, texto) } }, pedaco));
+    else if (pedaco) frag.append(pedaco);
+  });
+  return frag;
+}
+export function acompanharFala(texto) {
+  const elemento = h('span', { class: 'leitura-acompanhada' }, palavrasToque(texto));
+  return { elemento, atualizar: transcricao => destacarReconhecidas(elemento, transcricao) };
+}
+const cacheSentidos = new Map();
+const sentidosPendentes = new Map();
+export function abrirPalavra(palavra, frase) {
+  const limpa = palavra.replace(/[’]/g, "'").replace(/^[-']+|[-']+$/g, '');
+  const local = significadoLocal(limpa);
+  const resumo = local ? h('div', {}, h('p', {}, h('strong', {}, local)), h('p', { class: 'ajuda' }, 'Sentido geral. A tradução pode mudar conforme a frase.')) : null;
+  const detalhes = h('div', { 'aria-live': 'polite' });
+  const corpo = h('div', { class: 'palavra-sentidos' }, resumo, detalhes);
+  const { dlg } = janela({ titulo: limpa, corpo, acoes: [h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => falar(limpa, { velocidade: 0.9 }) } }, icone('speaker-high'), 'Ouvir')] });
+  dlg.setAttribute('lang', 'pt-BR');
+  const mostrar = r => {
+    if (!dlg.isConnected) return;
+    if (!r.sentidos?.length) { detalhes.replaceChildren(h('p', {}, r.aviso || 'Não encontrei outros sentidos para esta palavra.'), consultar); ocupado(consultar, false); return; }
+    corpo.replaceChildren(
+      r.forma_base && r.forma_base.toLowerCase() !== limpa.toLowerCase() ? h('p', { class: 'ajuda' }, 'Forma base: ', h('strong', { lang: 'en' }, r.forma_base)) : null,
+      h('ol', { class: 'sentidos' }, r.sentidos.map(s => h('li', { class: s.no_contexto ? 'sentido sentido--aqui' : 'sentido' },
+        h('p', {}, h('small', { class: 'sentido__classe' }, s.classe), ' ', h('strong', {}, s.pt), s.no_contexto ? h('span', { class: 'chip chip-neutro' }, 'nesta frase') : null),
+        h('p', { class: 'sentido__ex' }, h('span', { lang: 'en' }, s.ex_en), ' ', h('small', {}, s.ex_pt))))));
+  };
+  const chave = limpa.toLowerCase() + '|' + String(frase).slice(0, 300).toLowerCase();
+  if (cacheSentidos.has(chave)) return mostrar(cacheSentidos.get(chave));
+  const consultar = h('button', { type: 'button', class: 'btn btn-sec', on: { click: buscar } }, local ? 'Ver outros sentidos nesta frase' : 'Tentar novamente');
+  function buscar() {
+    ocupado(consultar, true);
+    detalhes.replaceChildren(h('p', { class: 'ajuda' }, 'Consultando os sentidos desta frase…'), consultar);
+    if (!sentidosPendentes.has(chave)) {
+      const pedido = import('./api.js?v=__V__').then(({ api }) => api('/palavra', { metodo: 'POST', corpo: { palavra: limpa, frase: String(frase).slice(0, 300) }, signal: AbortSignal.timeout(12000) }))
+        .then(r => { if (r.sentidos?.length) { if (cacheSentidos.size >= 200) cacheSentidos.delete(cacheSentidos.keys().next().value); cacheSentidos.set(chave, r); } return r; })
+        .finally(() => sentidosPendentes.delete(chave));
+      sentidosPendentes.set(chave, pedido);
+    }
+    sentidosPendentes.get(chave).then(mostrar).catch(e => { if (dlg.isConnected) { detalhes.replaceChildren(h('p', {}, e.message), consultar); ocupado(consultar, false); } });
+  }
+  if (local) detalhes.append(consultar); else buscar();
 }
 
 // preferências deste aparelho (não são dados de estudo)

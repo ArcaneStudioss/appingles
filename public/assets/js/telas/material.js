@@ -36,7 +36,7 @@ export async function telaMaterialItem(el, { param, ir }) {
   }
 
   el.append(
-    h('header', { class: 'cabeca' }, h('a', { class: 'btn btn-texto btn-peq', href: '#/material' }, icone('caret-left'), 'Materiais'), h('h1', {}, m.titulo), h('p', { class: 'ajuda' }, dataBR(m.criado_em))),
+    h('header', { class: 'cabeca cabeca--material' }, h('a', { class: 'btn btn-texto btn-peq', href: '#/material' }, icone('caret-left'), 'Materiais'), h('h1', {}, m.titulo), h('p', { class: 'ajuda' }, dataBR(m.criado_em))),
     m.aviso ? h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, m.aviso)) : null,
     m.resumo ? h('section', { class: 'folha com-margem' }, h('h2', {}, 'Resumo'), h('p', { lang: 'en' }, m.resumo), m.resumo_pt ? h('p', { class: 'ajuda' }, m.resumo_pt) : null, h('button', { type: 'button', class: 'btn btn-sec btn-peq', on: { click: () => falar(m.resumo, { velocidade: 0.95 }) } }, icone('speaker-high'), 'Ouvir o resumo')) : null,
     vocab.length ? h('section', { class: 'folha' }, h('h2', {}, 'Vocabulário do seu texto'),
@@ -48,7 +48,7 @@ export async function telaMaterialItem(el, { param, ir }) {
     exs.children.length ? h('section', {}, h('h2', {}, 'Exercícios'), exs) : null,
     m.dialogo?.length ? h('section', { class: 'folha' }, h('h2', {}, 'Diálogo'), h('ol', { class: 'dialogo', lang: 'en' }, m.dialogo.map(f => h('li', {}, h('strong', {}, f.quem + ': '), f.fala))), h('button', { type: 'button', class: 'btn btn-sec btn-peq', on: { click: () => falar(m.dialogo.map(f => f.fala).join(' '), { velocidade: 0.95 }) } }, icone('speaker-high'), 'Ouvir o diálogo')) : null,
     m.audio?.length ? h('section', { class: 'folha' }, h('h2', {}, 'Ouça frases do seu texto'), h('ul', { class: 'exemplos' }, m.audio.map(f => h('li', {}, h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir', on: { click: () => falar(f) } }, icone('speaker-high')), h('span', { lang: 'en' }, f))))) : null,
-    m.simulacao?.length ? h('section', { class: 'folha com-margem' }, h('h2', {}, 'Perguntas para simular'), h('p', { class: 'ajuda' }, 'Responda em voz alta ou por escrito. Depois, converse sobre isso numa simulação de entrevista.'), h('ol', { lang: 'en' }, m.simulacao.map(q => h('li', {}, q))), h('a', { class: 'btn btn-sec', href: '#/conversar?c=entrevista-geral' }, icone('chats'), 'Praticar numa conversa')) : null,
+    m.simulacao?.length ? h('section', { class: 'folha com-margem' }, h('h2', {}, 'Perguntas para simular'), h('p', { class: 'ajuda' }, 'Responda em voz alta ou por escrito. Depois, converse sobre isso numa simulação de entrevista.'), h('ol', { lang: 'en' }, m.simulacao.map(q => h('li', {}, q))), h('a', { class: 'btn btn-sec', href: '#/conversar?c=entrevista-geral&material=' + m.id }, icone('chats'), 'Praticar numa conversa')) : null,
     h('details', { class: 'folha' }, h('summary', {}, 'Ver o texto original'), h('p', { lang: 'en', class: 'texto-original' }, m.texto)),
     h('button', { type: 'button', class: 'btn btn-perigo', on: { click: async () => { if (await confirmar({ titulo: 'Apagar este material?', ok: 'Apagar', perigo: true })) { await api('/materiais/' + m.id, { metodo: 'DELETE' }); ir('#/material'); } } } }, icone('trash'), 'Apagar material'));
 }

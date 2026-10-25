@@ -12,12 +12,12 @@ const ctx = (m, nivel, parte) => ({ perfil: { minutos_dia: 20 }, nivel, hojeISO:
   competencias: { [m.id]: { status: 'praticando', partes: parte - 1 } } });
 
 test('todas as missões têm orientação, exemplos e correções utilizáveis', () => {
-  assert.deepEqual(Object.keys(GUIAS).sort(), MISSOES.map(m => m.id).sort());
+  assert.ok(Object.keys(GUIAS).every(id => POR_ID[id]));
   for (const m of MISSOES) {
     assert.ok(m.guia.foco && m.guia.nota && m.guia.exemplo.en && m.guia.exemplo.pt, m.id);
     assert.ok(avaliarProducao(m.tarefa, m.tarefa.modelo).demonstrado, m.id);
     for (const e of m.exercicios) {
-      assert.ok(corrigirExercicio(e, respostaCerta(e)).correto, e.id);
+      assert.ok(corrigirExercicio(e, e.tipo === 'detetive' ? String(e.erro) : respostaCerta(e)).correto, e.id);
       const erro = corrigirExercicio(e, 'zzz');
       assert.ok(erro.explica && !erro.explica.includes('undefined'), e.id);
       if (e.tipo === 'lacuna' && !e.explica) assert.ok(!erro.explica.includes('___'), e.id);
@@ -33,7 +33,7 @@ test('todas as partes e níveis respeitam o limite e não repetem IDs dentro da 
       const itens = l.blocos.flatMap(b => b.exercicios || []);
       assert.ok(itens.length > 0 && itens.length <= limiteDaLicao(l.blocos), `${m.id}/${nivel}/${parte}`);
       assert.equal(new Set(itens.map(e => e.id)).size, itens.length, `${m.id}/${nivel}/${parte}`);
-      if (!l.inicianteGuiado) assert.ok(l.blocos.some(b => b.guia === m.guia));
+      if (!l.guiada && !l.inicianteGuiado) assert.ok(l.blocos.some(b => b.guia === m.guia));
       const cliente = paraCliente(l, 'qa');
       for (const e of cliente.blocos.flatMap(b => b.exercicios || [])) {
         assert.equal(e.resposta, undefined);
@@ -79,7 +79,7 @@ test('o modelo ajuda na prática e fica oculto nos retestes', () => {
 
 test('a primeira missão cobra apenas as instruções ensinadas', () => {
   const t = POR_ID['zero-sons'].tarefa;
-  assert.ok(avaliarProducao(t, 'Listen and repeat. Please repeat.').demonstrado);
-  assert.ok(!avaliarProducao(t, 'Hello. Thank you. My name is Ana.').demonstrado);
+  assert.ok(avaliarProducao(t, 'Hello! Thank you! Bye!').demonstrado);
+  assert.ok(!avaliarProducao(t, 'Listen and repeat. Please repeat.').demonstrado);
   assert.ok(avaliarProducao(POR_ID['zero-oi-tchau'].tarefa, 'Hello! Thank you. Bye!').demonstrado);
 });

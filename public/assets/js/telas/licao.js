@@ -1,10 +1,10 @@
 // Lição do dia: um passo por tela. Começa explicando o PORQUÊ da aula de hoje.
 import { api } from '../api.js?v=__V__';
-import { h, icone, falar, botaoOuvir, ocupado, toast, confirmar, temMicrofone, ouvirMicrofone } from '../ui.js?v=__V__';
+import { h, icone, falar, falarPt, botaoOuvir, ocupado, toast, confirmar, temMicrofone, ouvirMicrofone, janela } from '../ui.js?v=__V__';
 import { exercicio } from './exercicio.js?v=__V__';
 import { nomeConquista } from './hoje.js?v=__V__';
-import { lou, louFala, som, confete, somLigado } from '../diversao.js?v=__V__';
-import { localStorageSet } from '../ui.js?v=__V__';
+import { lou, louFala, som, confete, botaoSom, pontosFlutuantes, contar, vibrar, voarComemorando } from '../diversao.js?v=__V__';
+import { companheirosAula } from '../companheiros.js?v=__V__';
 
 // cada tipo de passo tem cor e ícone fixos: a pessoa enxerga a estrutura da aula (entender, praticar, ouvir, sua vez)
 const ETAPAS = {
@@ -21,27 +21,48 @@ export function etapa(chave, texto) {
 const ABORDAGEM = { regra: 'A regra direta', contraste: 'Comparando com o português', exemplos: 'Pelos exemplos', escuta: 'Ouvindo' };
 
 export async function telaLicao(el, { ir }) {
+  const infantil = document.body.dataset.publico === 'crianca';
   const { licao, respondidos, status } = await api('/licao');
   // monta a sequência de passos
   const passos = [{ tipo: 'intro' }];
   licao.blocos.forEach((b, bi) => {
-    if (['foco', 'explicacao', 'lembrete'].includes(b.tipo)) passos.push({ tipo: 'bloco', b, bi });
-    if (['exercicios', 'escuta', 'retomada', 'rapidas'].includes(b.tipo)) passos.push({ tipo: 'abre', b, bi });
+    if (b.tipo === 'explicacao' && b.guiada) b.vocab.forEach((v, vi) => passos.push({ tipo: 'palavra', v, vi, b, bi }));
+    else if (['foco', 'explicacao', 'lembrete'].includes(b.tipo)) passos.push({ tipo: 'bloco', b, bi });
+    if (!licao.guiada && ['exercicios', 'escuta', 'retomada', 'rapidas'].includes(b.tipo)) passos.push({ tipo: 'abre', b, bi });
     for (const ex of b.exercicios || []) passos.push({ tipo: 'ex', ex, b, bi });
     if (b.tipo === 'producao') passos.push({ tipo: 'producao', b, bi });
   });
   passos.push({ tipo: 'fim' });
   let i = 0;
   const inicio = Date.now();
+  // combo: acertos seguidos. Nunca pune: errar só zera o contador, sem som feio nem perda de pontos
+  let combo = 0, melhorCombo = 0;
+  const chipCombo = h('span', { class: 'combo', hidden: true, 'aria-live': 'polite' }, icone('flame'), h('b', {}, '0'), h('span', { class: 'oculto' }, ' acertos seguidos'));
+  function marcarCombo(certo, xp = 0) {
+    combo = certo ? combo + 1 : 0;
+    melhorCombo = Math.max(melhorCombo, combo);
+    chipCombo.hidden = combo < 2;
+    // o Tuiuiú da barra reage: pula quando acerta, balança quando erra
+    const mascote = topo.querySelector('.trilho__lou');
+    mascote.classList.remove('trilho__lou--pula', 'trilho__lou--ops'); void mascote.offsetWidth; mascote.classList.add(certo ? 'trilho__lou--pula' : 'trilho__lou--ops');
+    if (certo && xp) pontosFlutuantes(mascote, `+${xp} XP`);
+    chipCombo.querySelector('b').textContent = String(combo);
+    chipCombo.classList.remove('combo--pula'); void chipCombo.offsetWidth; chipCombo.classList.add('combo--pula');
+  }
   // retoma de onde parou
   if (status !== 'concluida' && Object.keys(respondidos).length) { const prox = passos.findIndex(p => p.tipo === 'ex' && !respondidos[p.ex.id]); if (prox > 1) i = Math.max(1, prox); }
 
   const topo = h('div', { class: 'licao-topo' },
     h('button', { type: 'button', class: 'btn btn-texto btn-peq', 'aria-label': 'Sair da lição', on: { click: async () => { if (i === 0 || await confirmar({ titulo: 'Sair da lição?', texto: 'Seu progresso fica salvo e você continua de onde parou.', ok: 'Sair', cancelar: 'Continuar a lição' })) ir('#/hoje'); } } }, icone('x')),
     h('div', { class: 'trilho', role: 'progressbar', 'aria-label': 'Progresso da aula', 'aria-valuemin': 0, 'aria-valuemax': passos.length - 1 }, h('span', { class: 'trilho__cheio' }), h('span', { class: 'trilho__lou' }, lou('feliz', { tamanho: 38, rotulo: '' }))),
-    h('button', { type: 'button', class: 'btn btn-texto btn-peq', 'aria-pressed': String(somLigado()), 'aria-label': 'Sons', on: { click: e => { const v = !somLigado(); localStorageSet('sons', v ? 'sim' : 'nao'); e.currentTarget.setAttribute('aria-pressed', String(v)); e.currentTarget.replaceChildren(icone(v ? 'speaker-high' : 'speaker-x'), h('span', { class: 'oculto' }, 'Sons')); } } }, icone(somLigado() ? 'speaker-high' : 'speaker-x'), h('span', { class: 'oculto' }, 'Sons')));
+    chipCombo,
+    botaoSom());
   const palco = h('div', { class: 'licao-palco' });
-  el.append(topo, palco);
+  const contador = h('p', { class: 'licao-contador', 'aria-live': 'polite' });
+  const palavras = licao.blocos.filter(b => b.tipo === 'explicacao').flatMap(b => b.vocab || []);
+  const apoio = h('div', { class: 'licao-apoio' }, contador,
+    palavras.length ? h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => janela({ titulo: 'Palavras desta aula', corpo: h('div', {}, h('p', {}, 'Olhe o significado e ouça de novo quando precisar.'), exemplos(palavras)) }) } }, icone('book-open-text'), 'Rever palavras') : null);
+  el.append(topo, apoio, palco);
 
   const avancar = () => { i = Math.min(passos.length - 1, i + 1); desenhar(); };
   const barraBotao = (rotulo, acao = avancar) => h('div', { class: 'barra-acao barra-acao--fixa' }, h('div', { class: 'barra-acao__in' }, h('button', { type: 'button', class: 'btn btn-bloco', on: { click: acao } }, rotulo)));
@@ -50,9 +71,11 @@ export async function telaLicao(el, { ir }) {
     barra.setAttribute('aria-valuenow', i);
     barra.style.setProperty('--p', (i / (passos.length - 1)).toFixed(3));
     const p = passos[i];
+    contador.textContent = p.tipo === 'palavra' ? `Aprender: palavra ${p.vi + 1} de ${p.b.vocab.length}` : p.tipo === 'ex' ? `Atividade ${passos.slice(0, i + 1).filter(x => x.tipo === 'ex').length} de ${passos.filter(x => x.tipo === 'ex').length}` : p.tipo === 'fim' ? 'Você chegou ao fim!' : 'Um passo de cada vez';
     const tela = h('div', { class: 'passo' });
     palco.replaceChildren(tela);
     if (p.tipo === 'intro') desenharIntro(tela);
+    else if (p.tipo === 'palavra') desenharPalavra(tela, p);
     else if (p.tipo === 'bloco') desenharBloco(tela, p.b);
     else if (p.tipo === 'abre') {
       const [cor, ic] = etapaDe(p.b);
@@ -65,10 +88,11 @@ export async function telaLicao(el, { ir }) {
       tela.append(exercicio(p.ex, {
         ja: respondidos[p.ex.id],
         devagar: !!p.b.devagar,
-        responder: async (resposta, meta) => { const r = await api('/licao/responder', { metodo: 'POST', corpo: { itemId: p.ex.id, resposta, ...meta } }); respondidos[p.ex.id] = { ...r, resposta }; return r; },
+        responder: async (resposta, meta) => { const r = await api('/licao/responder', { metodo: 'POST', corpo: { itemId: p.ex.id, resposta, ...meta } }); if (!r.pratica) { respondidos[p.ex.id] = { ...r, resposta }; if (!r.repetida) marcarCombo(r.correto && !r.ajuda, r.recompensa?.xp || 0); } return { ...r, sequencia: !r.pratica && !r.repetida ? combo : 0 }; },
         contestar: async () => (await api('/licao/contestar', { metodo: 'POST', corpo: { itemId: p.ex.id } })).mensagem,
         aoProximo: avancar,
         barraFixa: true,
+        permitirTreino: true,
       }));
     } else if (p.tipo === 'producao') desenharProducao(tela, p.b, p.bi);
     else desenharFim(tela);
@@ -85,15 +109,34 @@ export async function telaLicao(el, { ir }) {
     tela.append(
       etapa('intro'),
       h('h1', {}, licao.missao ? licao.missao.titulo : 'Manter e ampliar'),
-      licao.missao ? h('p', { class: 'ajuda' }, `Parte ${licao.missao.parte} de ${licao.missao.total}. Ao fim da missão: “${licao.missao.podeFazer}”`) : null,
-      louFala('oi', h('p', { class: 'bilhete pequeno' }, 'Por que esta aula'), h('ul', { class: 'por-que' }, licao.porque.map(t => h('li', {}, t)))),
-      barraBotao(status === 'concluida' ? 'Rever' : 'Começar'));
+      licao.missao ? h('p', { class: 'ajuda' }, `Parte ${licao.missao.parte} de ${licao.missao.total}. ${licao.missao.podeFazer}`) : null,
+      licao.guiada ? companheirosAula({ texto: licao.reforco ? 'Vamos rever com mais apoio, sem pressa. Eu explico e o Tuiuiú pratica com você.' : infantil ? `Hoje são ${palavras.length} palavras e ${passos.filter(p => p.tipo === 'ex').length} atividades curtinhas. Eu e o Tuiuiú vamos com você!` : `${palavras.length} expressões úteis e ${passos.filter(p => p.tipo === 'ex').length} atividades curtas. Eu ajudo com as explicações e o Tuiuiú acompanha a prática.` }).elemento : louFala('oi', h('p', { class: 'bilhete pequeno' }, 'Por que esta aula'), h('ul', { class: 'por-que' }, licao.porque.map(t => h('li', {}, t)))),
+      licao.guiada ? h('ol', { class: 'como-aprender' }, h('li', {}, icone('speaker-high'), h('span', {}, 'Veja, ouça e descubra o significado.')), h('li', {}, icone('hand-waving'), h('span', {}, 'Toque nas respostas. Pode pedir uma dica.')), h('li', {}, icone('smiley'), h('span', {}, 'Errou? Veja a explicação e tente de novo.'))) : null,
+      barraBotao(status === 'concluida' ? 'Rever a aula' : 'Vamos aprender'));
+  }
+
+  function desenharPalavra(tela, { v, b }) {
+    const exemplo = b.exemplos?.find(e => e.en === v.ex);
+    tela.append(etapa('explicacao', 'Vamos aprender'),
+      companheirosAula({ texto: infantil ? 'Vamos descobrir uma palavra! Ouça o som, veja o significado e repita com a gente.' : 'Associe o som ao significado. Ouça a palavra e observe como ela aparece no exemplo.' }).elemento,
+      h('section', { class: 'palavra-nova' },
+        v.imagem ? h('span', { class: 'palavra-nova__imagem', 'aria-hidden': 'true' }, v.imagem) : lou('oi', { tamanho: 90, rotulo: '' }),
+        h('p', { class: 'rotulo-pequeno' }, 'Em inglês'),
+        h('h1', { lang: 'en', 'data-traducao': v.pt }, v.en),
+        h('p', { class: 'palavra-nova__significado' }, v.pt),
+        h('div', { class: 'linha-acoes' },
+          h('button', { type: 'button', class: 'btn', on: { click: () => falar(v.en, { velocidade: 0.9 }) } }, icone('speaker-high'), 'Ouvir palavra'),
+          h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => falar(v.en, { velocidade: 0.65 }) } }, icone('speaker-high'), 'Mais devagar')),
+        h('p', { class: 'ajuda' }, 'Toque na palavra para ver a tradução. Repita em voz alta se quiser.'),
+        v.ex && v.ex.replace(/[.!?]/g, '').toLowerCase() !== v.en.toLowerCase() ? h('div', { class: 'palavra-nova__exemplo' }, h('p', { class: 'rotulo-pequeno' }, 'Veja um exemplo'), h('p', { lang: 'en', 'data-traducao': exemplo?.pt || null }, v.ex), exemplo ? h('p', {}, exemplo.pt) : null, h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => falar(v.ex, { velocidade: 0.8 }) } }, icone('speaker-high'), 'Ouvir exemplo')) : null),
+      h('details', { class: 'ajuda-exercicio' }, h('summary', {}, 'Entender melhor'), h('p', {}, b.texto), h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => falarPt(b.texto) } }, icone('speaker-high'), 'Ler para mim')),
+      barraBotao('Continuar'));
   }
 
   function exemplos(lista) {
     return h('ul', { class: 'exemplos' }, lista.map(e => {
       const en = typeof e === 'string' ? e : e.en;
-      return h('li', {}, h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir', on: { click: () => falar(en) } }, icone('speaker-high')), h('span', {}, h('span', { lang: 'en' }, en), typeof e === 'string' ? null : h('small', {}, e.pt)));
+      return h('li', {}, h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir ' + en, on: { click: () => falar(en) } }, icone('speaker-high')), h('span', {}, h('span', { lang: 'en', 'data-traducao': typeof e === 'string' ? null : e.pt }, en), typeof e === 'string' ? null : h('small', {}, e.pt)));
     }));
   }
 
@@ -128,12 +171,14 @@ export async function telaLicao(el, { ir }) {
 
   function desenharProducao(tela, b, bi) {
     let usouAjuda = false;
-    const t = h('textarea', { id: 'prod', rows: 7, maxlength: 3000, lang: 'en', spellcheck: 'false', placeholder: 'Write in English...' });
+    tela.addEventListener('inglou:traducao', () => { usouAjuda = true; });
+    const t = h('textarea', { id: 'prod', rows: b.guiada ? 3 : 7, maxlength: 3000, lang: 'en', spellcheck: 'false', placeholder: 'Escreva em inglês. Pode olhar as dicas.' });
     const cont = h('small', { 'aria-live': 'polite' }, `0 palavras (mínimo ${b.tarefa.minPalavras})`);
     t.addEventListener('input', () => { const n = (t.value.match(/[A-Za-z']+/g) || []).length; cont.textContent = `${n} ${n === 1 ? 'palavra' : 'palavras'} (mínimo ${b.tarefa.minPalavras})`; });
     const retorno = h('div', { class: 'retorno-producao', 'aria-live': 'polite' });
     const btn = h('button', { type: 'submit', class: 'btn' }, 'Enviar para correção');
-    const dicas = b.tarefa.dicas?.length ? h('details', { class: 'dicas', on: { toggle: e => { if (e.target.open) usouAjuda = true; } } }, h('summary', {}, icone('lightbulb'), ' Ver dicas (conta como prática com ajuda)'), h('ul', {}, b.tarefa.dicas.map(d => h('li', { lang: 'en' }, d))), b.tarefa.modelo ? h('div', {}, h('p', {}, 'Exemplo completo: leia, feche as dicas e adapte à sua situação.'), h('blockquote', { lang: 'en' }, b.tarefa.modelo)) : null) : null;
+    const dicas = b.tarefa.dicas?.length ? h('details', { class: 'dicas', on: { toggle: e => { if (e.target.open) usouAjuda = true; } } }, h('summary', {}, icone('lightbulb'), ' Me dê uma pista'), h('ul', {}, b.tarefa.dicas.map(d => h('li', {}, d)))) : null;
+    const modelo = b.tarefa.modelo ? h('details', { class: 'ajuda-exercicio', on: { toggle: e => { if (e.target.open) usouAjuda = true; } } }, h('summary', {}, icone('eye'), 'Ver um exemplo para me ajudar'), h('p', { lang: 'en' }, b.tarefa.modelo), h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => falar(b.tarefa.modelo, { velocidade: 0.8 }) } }, icone('speaker-high'), 'Ouvir exemplo')) : null;
     let mic = null;
     if (temMicrofone()) {
       let rec = null, base = '';
@@ -166,8 +211,8 @@ export async function telaLicao(el, { ir }) {
       h('h2', {}, b.titulo),
       h('div', { class: 'folha com-margem situacao' }, h('p', {}, b.situacao), b.area ? h('p', { class: 'ajuda' }, `Se puder, use exemplos da sua área (${b.area}).`) : null,
         b.tarefa.elementos?.length ? h('p', { class: 'ajuda' }, 'Inclua: ' + b.tarefa.elementos.join(' · ')) : null),
-      b.tarefa.roteiro?.length ? h('div', { class: 'folha' }, h('h3', {}, 'Planeje uma frase de cada vez'), h('ol', {}, b.tarefa.roteiro.map(item => h('li', {}, item))), h('p', { class: 'ajuda' }, 'Depois, releia e confira se incluiu cada ponto.')) : null,
-      b.semDicas ? h('p', { class: 'ajuda' }, 'Sem dicas desta vez: é para ver o que você já consegue sozinho. Tudo bem errar.') : dicas,
+      b.tarefa.roteiro?.length ? h('div', { class: 'folha' }, h('h3', {}, 'Planeje uma frase de cada vez'), h('ol', {}, b.tarefa.roteiro.map(item => h('li', {}, item)))) : null,
+      b.semDicas ? h('p', { class: 'ajuda' }, 'Sem dicas desta vez: é para ver o que você já consegue sozinho. Tudo bem errar.') : h('div', { class: 'ajudas-exercicio' }, dicas, modelo),
       form, retorno, h('button', { type: 'button', class: 'btn btn-texto', on: { click: avancar } }, 'Pular esta tarefa por hoje'));
   }
 
@@ -179,24 +224,26 @@ export async function telaLicao(el, { ir }) {
       try {
         const r = await api('/licao/concluir', { metodo: 'POST' });
         for (const c of r.conquistas || []) toast('Conquista: ' + nomeConquista(c), { tipo: 'ok' });
-        ir(r.revisoesPendentes ? '#/revisar' : '#/hoje');
+        ir(licao.guiada ? '#/hoje' : r.revisoesPendentes ? '#/revisar' : '#/hoje');
       } catch (e) { toast(e.message, { tipo: 'erro' }); ocupado(btn, false); }
-    } } }, status === 'concluida' ? 'Voltar' : 'Continuar');
+    } } }, status === 'concluida' ? 'Voltar para o início' : 'Concluir aula');
     const pct = total ? Math.round(100 * certos / total) : 100;
     const minutos = Math.max(1, Math.round((Date.now() - inicio) / 60000));
     tela.classList.add('passo--fim');
     tela.append(
-      lou('festa', { tamanho: 150 }),
-      h('h2', { class: 'fim-titulo' }, pct >= 80 ? 'Figurinha colada!' : 'Aula feita. Bom treino!'),
-      h('p', { class: 'chip c-lilas' }, icone('book-open-text'), 'Mais uma figurinha no seu álbum'),
-      h('div', { class: 'placar' },
-        h('div', { class: 'placar__item placar__item--sol' }, h('span', {}, 'Pontos'), h('strong', {}, String(certos * 10 + 20))),
+      companheirosAula({ fase: 'fim', silencioso: status === 'concluida' }).elemento,
+      h('h2', { class: 'fim-titulo' }, infantil && pct >= 80 ? 'Figurinha colada!' : 'Aula concluída. Bom trabalho!'),
+      h('p', { class: 'chip c-lilas' }, icone('book-open-text'), infantil ? 'Mais uma figurinha no seu álbum' : 'Mais uma etapa da sua aprendizagem'),
+      licao.guiada ? h('p', { class: 'ajuda' }, 'Você praticou mais um pouquinho. Cada palavra aprendida conta!') : h('div', { class: 'placar' },
         h('div', { class: 'placar__item' }, h('span', {}, 'Acertos'), h('strong', {}, `${pct}%`)),
+        melhorCombo >= 3 ? h('div', { class: 'placar__item placar__item--coral' }, h('span', {}, 'Melhor combo'), h('strong', {}, `x${melhorCombo}`)) : null,
         h('div', { class: 'placar__item placar__item--azul' }, h('span', {}, 'Tempo'), h('strong', {}, `${minutos} min`))),
-      h('p', {}, certos < total ? 'O que você errou não tira nada: vira revisão e volta de outro jeito.' : 'Tudo certo hoje.'),
-      h('p', { class: 'ajuda' }, 'Lição concluída é prática. Aprendizado demonstrado é usar sozinho numa tarefa ou conversa.'),
+      palavras.length ? h('section', { class: 'relembre-aula' }, h('h3', {}, infantil ? 'Olha o que você aprendeu!' : 'Vocabulário para usar no dia a dia'), exemplos(palavras)) : null,
+      certos < total ? h('details', { class: 'ajuda-exercicio' }, h('summary', {}, 'Rever as respostas para aprender mais'), passos.filter(p => p.tipo === 'ex' && respondidos[p.ex.id] && !respondidos[p.ex.id].correto).map(p => { const r = respondidos[p.ex.id]; return h('div', { class: 'resumo-resposta' }, h('strong', {}, p.ex.enunciado || p.ex.pergunta || 'Prática de palavras'), h('p', { lang: r.audioResposta ? 'en' : null, 'data-traducao': r.traducao || null }, r.fraseCompleta || r.esperado), h('p', {}, r.explica)); })) : null,
+      licao.guiada ? null : h('p', { class: 'ajuda' }, 'Lição concluída é prática. Aprendizado demonstrado é usar sozinho numa tarefa ou conversa.'),
       h('div', { class: 'barra-acao barra-acao--fixa' }, h('div', { class: 'barra-acao__in' }, btn)));
-    if (status !== 'concluida') { som('fim'); confete(); }
+    for (const n of tela.querySelectorAll('[data-conta]')) contar(n, Number(n.dataset.conta), { sufixo: n.dataset.sufixo || '' });
+    if (status !== 'concluida') { som('fim'); vibrar([30, 40, 30, 40, 60]); confete(); setTimeout(() => confete(document.body, 30), 450); voarComemorando({ jeito: 'sobe', confetes: false }); }
   }
 
   desenhar();
@@ -205,6 +252,7 @@ export async function telaLicao(el, { ir }) {
 export function mostrarAvaliacao(alvo, r) {
   const a = r.avaliacao;
   alvo.replaceChildren(
+    companheirosAula({ fase: a.demonstrado ? 'superacao' : 'apoio', texto: a.demonstrado ? 'Você usou o inglês nesta situação. Vamos olhar juntos o que já funcionou bem.' : 'A Mia ajuda com os ajustes e o Tuiuiú incentiva mais uma tentativa. Confira a correção abaixo.' }).elemento,
     r.aviso ? h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, r.aviso)) : null,
     h('div', { class: 'folha avaliacao' + (a.demonstrado ? ' avaliacao--ok' : '') },
       h('p', { class: 'bilhete' }, a.demonstrado ? 'Demonstrado!' : 'Corrigido'),

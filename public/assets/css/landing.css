@@ -113,7 +113,7 @@ main section{max-width:1120px;margin:0 auto;padding:3.2rem 1rem}
   .objetivo{grid-template-columns:1fr 1fr;gap:3rem}
   .prova__colunas{grid-template-columns:1fr 1.4fr}
   .brasil{grid-template-columns:1fr 1fr;gap:3rem;align-items:center}
-  .planos-lista{grid-template-columns:1fr 1fr;max-width:760px}
+  .planos-lista{grid-template-columns:repeat(3,minmax(0,1fr));max-width:none}
   .faq{max-width:820px}
   .aviso-cookies{left:20px;right:auto;bottom:20px}
 }
@@ -127,3 +127,8 @@ main section{max-width:1120px;margin:0 auto;padding:3.2rem 1rem}
 .prova__col{border-width:2px;border-bottom-width:5px}
 .heroi h1{font-weight:600}
 .preco{font-weight:600}
+
+.plano-card{min-width:0}.plano-card .preco{font-size:2rem}.plano-card .btn{align-self:end}
+@media(min-width:600px) and (max-width:899px){.planos-lista{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Revelações animadas fora da tela não devem ampliar a largura da página. */
+.publico main{overflow-x:clip}

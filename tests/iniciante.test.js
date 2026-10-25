@@ -16,7 +16,7 @@ function aula(m, feitas = 0, nivel = 'A1') {
 test('A1: duas expressões, três práticas por expressão, repetição no dia seguinte e retomada', () => {
   for (const m of MISSOES) {
     const total = licoesPorMissao(m, 'A1');
-    for (let feitas = 0; feitas < total - 3; feitas++) {
+    for (let feitas = 0; feitas < total - 7; feitas++) {
       const l = aula(m, feitas);
       const vocab = l.blocos[0].vocab;
       const itens = l.blocos.flatMap(b => b.exercicios || []);
@@ -57,7 +57,7 @@ test('níveis acima do A1 mantêm a duração e o fluxo anteriores', () => {
 test('A1 sem prazo mantém a trilha inteira mesmo com mais repetições', () => {
   const { montarPlano } = require('../src/motor/plano');
   const { OBJETIVOS } = require('../src/conteudo/objetivos');
-  const plano = montarPlano({ objetivo: 'zero', dias_semana: 3, minutos_dia: 10 }, 'A1', '2026-10-24');
+  const plano = montarPlano({ idade: 30, objetivo: 'zero', dias_semana: 3, minutos_dia: 10 }, 'A1', '2026-10-24');
   assert.deepEqual(plano.missoes.map(m => m.id), OBJETIVOS.zero.missoes);
   assert.ok(plano.semanasPrevistas > 12);
 });

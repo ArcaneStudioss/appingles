@@ -26,7 +26,7 @@
 <link rel="stylesheet" href="/assets/css/arcane-motion.css?v=__V__">
 <link rel="stylesheet" href="/assets/css/landing.css?v=__V__">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebApplication","name":"Inglou","applicationCategory":"EducationalApplication","operatingSystem":"Web","inLanguage":"pt-BR","description":"Plataforma de estudo de inglês com plano personalizado pelo objetivo, prazo e dificuldades de cada aluno.","offers":[{"@type":"Offer","name":"Mensal","price":"29.90","priceCurrency":"BRL"},{"@type":"Offer","name":"Anual","price":"238.80","priceCurrency":"BRL"}]}
+{"@context":"https://schema.org","@type":"WebApplication","name":"Inglou","applicationCategory":"EducationalApplication","operatingSystem":"Web","inLanguage":"pt-BR","description":"Plataforma de estudo de inglês com plano personalizado pelo objetivo, prazo e dificuldades de cada aluno.","offers":__OFERTAS_PLANOS__}
 </script>
 <script defer src="/assets/js/arcane-ui.js?v=__V__"></script>
 <script defer src="/assets/js/arcane-analytics.js?v=__V__"></script>
@@ -132,23 +132,12 @@
 
   <section id="planos" class="planos-sec">
     <h2 data-reveal>Planos simples, sem surpresa</h2>
-    <p class="ajuda">30 dias grátis com tudo liberado. Não pedimos cartão. Se não assinar, nada é cobrado: sua conta fica no acesso livre, com seus dados e revisões.</p>
-    <div class="planos-lista">
-      <article class="plano-card" data-reveal>
-        <h3>Mensal</h3>
-        <p class="preco">R$ 29,90<small>/mês</small></p>
-        <ul class="lista-check"><li>Tudo do plano completo</li><li>Cancele quando quiser, em 1 clique</li></ul>
-        <a class="btn btn-sec btn-bloco" href="/app/#/entrar?modo=cadastro">Começar grátis</a>
-      </article>
-      <article class="plano-card plano-card--destaque" data-reveal>
-        <p class="chip">33% de desconto</p>
-        <h3>Anual</h3>
-        <p class="preco">R$ 238,80<small>/ano</small></p>
-        <p class="ajuda">equivale a R$ 19,90 por mês</p>
-        <ul class="lista-check"><li>Tudo do plano completo</li><li>Cancelamento simples; acesso até o fim do período</li></ul>
-        <a class="btn btn-bloco" href="/app/#/entrar?modo=cadastro">Começar grátis</a>
-      </article>
-    </div>
+    <p class="ajuda">Teste de 30 dias sem cartão, com cotas de demonstração de IA e novos áudios. Se não assinar, nada é cobrado: sua conta fica no acesso livre, com seus dados e revisões.</p>
+    <p class="aviso-suave">Os cinco planos têm preços definidos. A contratação on-line ainda está em preparação; nenhuma cobrança é feita por esta página.</p>
+    <div class="planos-lista">__CATALOGO_PLANOS__</div>
+    <p class="ajuda">Família inclui até 5 pessoas e Turma até 20, contando o responsável. Cada pessoa usa uma conta própria. As contas e o progresso são individuais. As franquias de IA e novos áudios são compartilhadas pelo grupo. Áudios já preparados não consomem essa franquia.</p>
+    <p class="ajuda">Os limites são mensais, inclusive no anual, e não acumulam. Gerações com IA também compartilham uma cota de processamento: materiais e pedidos longos consomem mais. Ao atingir a cota, o conteúdo e a prática sem IA continuam disponíveis nos planos pagos.</p>
+
     <details class="folha incluso">
       <summary>O que está incluso e quais são os limites</summary>
       <div class="conteudo">
@@ -159,7 +148,7 @@
           <li>Correção de escrita, tutor para dúvidas e estudo com seus materiais</li>
           <li>Painel com o que você fez e o que já demonstrou</li>
         </ul>
-        <p>Uso justo de IA por mês, nos planos pagos: até 400 mensagens de conversa, 60 correções detalhadas, 150 perguntas ao tutor e 10 materiais. No teste: 150, 30, 60 e 5. Passou do limite? Você continua estudando no modo sem IA até o mês virar, sem cobrança extra.</p>
+        <p>Basic oferece conteúdo e prática sem IA paga. Completo, Família e Turma acrescentam geração com IA, respeitando suas cotas. No teste: até 15 gerações com IA e 500 caracteres de novos áudios. Áudios já preparados podem ser ouvidos novamente sem consumir a cota de geração.</p>
       </div>
     </details>
   </section>

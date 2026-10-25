@@ -15,7 +15,7 @@ export async function telaConversar(el, { ir }) {
   const pre = new URLSearchParams(location.hash.split('?')[1] || '').get('c');
   const iniciar = async (id, btn) => {
     ocupado(btn, true);
-    try { const c = await api('/conversas', { metodo: 'POST', corpo: { cenario: id } }); ir('#/conversa/' + c.id); }
+    try { const c = await api('/conversas', { metodo: 'POST', corpo: { cenario: id, materialId: new URLSearchParams(location.hash.split('?')[1] || '').get('material') || null } }); ir('#/conversa/' + c.id); }
     catch (e) { toast(e.message, { tipo: 'erro' }); ocupado(btn, false); }
   };
   el.append(
@@ -39,7 +39,7 @@ export async function telaConversa(el, { param, ir }) {
   const balao = (m) => {
     const li = h('li', { class: 'msg msg--' + m.papel },
       m.papel === 'tutor' ? h('span', { class: 'msg__avatar' }, lou('oi', { tamanho: 44, rotulo: '' })) : null,
-      h('div', { class: 'msg__balao', lang: 'en' }, m.texto,
+      h('div', { class: 'msg__balao', lang: 'en' }, h('span',{class:'msg__texto'},m.texto),
         m.papel === 'tutor' ? h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir', on: { click: () => falar(m.texto) } }, icone('speaker-high')) : null));
     return li;
   };

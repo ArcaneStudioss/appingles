@@ -331,3 +331,47 @@ test('dia a dia na cidade: o objetivo monta plano e cada missão nova gera liç�
     assert.ok(l.blocos.some(b => b.exercicios?.length), `${id} sem exercícios na lição`);
   }
 });
+
+test('caça ao erro: a palavra errada é única, só o índice acerta e o gabarito não vai ao navegador', () => {
+  const dets = Object.values(TODOS_EXERCICIOS).filter(e => e.tipo === 'detetive');
+  assert.ok(dets.length >= 28, 'cada missão antiga e as de debate têm caça ao erro');
+  for (const e of dets) {
+    assert.ok(Number.isInteger(e.erro) && e.erro >= 0 && e.erro < e.tokens.length, e.id);
+    assert.ok(e.explica && e.correcao, e.id + ' sem explicação');
+    assert.equal(corrigirExercicio(e, String(e.erro)).correto, true, e.id);
+    assert.equal(corrigirExercicio(e, String((e.erro + 1) % e.tokens.length)).correto, false, e.id);
+    assert.equal(corrigirExercicio(e, 'banana').correto, false, e.id);
+  }
+  const c = paraCliente({ blocos: [{ tipo: 'exercicios', titulo: 'x', exercicios: [dets[0]] }] }, 's').blocos[0].exercicios[0];
+  assert.deepEqual(c.tokens, dets[0].tokens);
+  assert.equal(JSON.stringify(c).includes('correcao'), false);
+  assert.equal('erro' in c, false);
+});
+
+test('trilha de debate: B1 a C1, plano próprio, oponente chega ao navegador e cada missão tem o jogo de debate', () => {
+  const ids = OBJETIVOS.debate.missoes;
+  assert.deepEqual(ids.map(id => MISSOES.find(m => m.id === id).nivel), ['B1', 'B2', 'B2', 'B2', 'C1', 'C1']);
+  const plano = montarPlano({ objetivo: 'debate', dias_semana: 5, minutos_dia: 15, prazo: null }, 'B2', '2026-10-19');
+  assert.equal(plano.missoes.length, 6);
+  assert.ok(plano.avisos.some(a => /B1 ou mais/.test(a)), 'avisa que o plano é para quem já se vira');
+  for (const id of ids) {
+    const m = MISSOES.find(x => x.id === id);
+    assert.ok(m.exercicios.some(e => e.tipo === 'detetive'), id + ' sem caça ao erro');
+    assert.ok(m.exercicios.some(e => e.tipo === 'ordenar'), id + ' sem montar frase');
+    assert.ok(m.exercicios.some(e => e.tipo === 'escuta' || e.tipo === 'ditado'), id + ' sem áudio');
+  }
+  const comOponente = Object.values(TODOS_EXERCICIOS).filter(e => e.oponente);
+  assert.ok(comOponente.length >= 5);
+  const c = paraCliente({ blocos: [{ tipo: 'exercicios', titulo: 'x', exercicios: [comOponente[0]] }] }, 's').blocos[0].exercicios[0];
+  assert.ok(c.oponente.nome && c.oponente.fala);
+  // as lições de debate saem com até 10 questões e trazem um jogo de caça ao erro ou de oponente
+  const l = montarLicao({ perfil: { minutos_dia: 15 }, plano, nivel: 'B2', competencias: {}, focos: [], hipoteses: [], hojeISO: '2026-10-19' });
+  assert.equal(l.missao.id, 'debate-opiniao');
+});
+
+test('detectores de debate pegam os erros típicos e deixam passar o inglês certo', () => {
+  const erros = { 'According to me, it is a good idea.': 'debate-expressoes', 'In the other hand, it costs more.': 'debate-expressoes', 'We discussed about the budget.': 'debate-expressoes', 'I did a decision yesterday.': 'debate-expressoes', 'Although it is expensive, but it is worth it.': 'conectores-contraste', 'Despite of the rain, we went out.': 'conectores-contraste' };
+  for (const [f, tag] of Object.entries(erros)) assert.ok(detectar(f).some(a => a.tag === tag && a.confianca === 'alta'), f);
+  const certas = ['In my opinion, it is a good idea.', 'On the other hand, it costs more.', 'We discussed the budget.', 'We made a decision yesterday.', 'Although it is expensive, it is worth it.', 'Despite the rain, we went out.', 'Did the decision surprise you?', 'According to the report, sales grew.'];
+  for (const f of certas) assert.deepEqual(detectar(f).filter(a => a.confianca !== 'baixa').map(a => a.tag), [], f);
+});

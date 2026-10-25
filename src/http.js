@@ -8,7 +8,7 @@ const PUBLICA = path.join(__dirname, '..', 'public');
 const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.txt': 'text/plain; charset=utf-8', '.xml': 'application/xml; charset=utf-8', '.webmanifest': 'application/manifest+json', '.mp3': 'audio/mpeg' };
 
 // LISTA BRANCA de caminhos públicos. Nada fora disto é servido (nem server.js, nem banco, nem .git).
-const PUBLICO = /^\/(?:index\.html|404\.html|favicon\.svg|og-image\.png|robots\.txt|sitemap\.xml|manifest\.webmanifest|app\/index\.html|obrigado\/index\.html|politica-de-privacidade\/index\.html|termos\/index\.html|assets\/(?:css|js|js\/telas|fontes|icones|img|audio\/tuiuiu|audio\/mia)\/[\w.-]+)$/;
+const PUBLICO = /^\/(?:index\.html|404\.html|favicon\.svg|og-image\.png|robots\.txt|sitemap\.xml|manifest\.webmanifest|app\/index\.html|obrigado\/index\.html|politica-de-privacidade\/index\.html|termos\/index\.html|assets\/(?:css|js|js\/telas|fontes|icones|img)\/[\w.-]+)$/;
 
 // Versão dos arquivos estáticos (para ?v=): hash do conteúdo de assets/, calculado na subida.
 function calcularVersao() {
@@ -70,7 +70,7 @@ function lerCookies(req) {
   const out = {};
   for (const p of String(req.headers.cookie || '').split(';')) {
     const i = p.indexOf('=');
-    if (i > 0) out[p.slice(0, i).trim()] = decodeURIComponent(p.slice(i + 1).trim());
+    if (i > 0) { try { out[p.slice(0, i).trim()] = decodeURIComponent(p.slice(i + 1).trim()); } catch {} }
   }
   return out;
 }
@@ -78,10 +78,10 @@ const seguro = req => req.headers['x-forwarded-proto'] === 'https' || process.en
 const nomeCookie = req => (seguro(req) ? '__Host-inglou' : 'inglou_sessao');
 function definirSessao(req, res, token, dias) {
   const s = seguro(req);
-  res.setHeader('Set-Cookie', `${nomeCookie(req)}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${dias * 86400}${s ? '; Secure' : ''}`);
+  res.appendHeader('Set-Cookie', `${nomeCookie(req)}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${dias * 86400}${s ? '; Secure' : ''}`);
 }
 function limparSessao(req, res) {
-  res.setHeader('Set-Cookie', `${nomeCookie(req)}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${seguro(req) ? '; Secure' : ''}`);
+  res.appendHeader('Set-Cookie', `${nomeCookie(req)}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${seguro(req) ? '; Secure' : ''}`);
 }
 const tokenDaSessao = req => { const c = lerCookies(req); return c['__Host-inglou'] || c.inglou_sessao || null; };
 
@@ -102,7 +102,7 @@ function enviarTexto(res, abs, jaComStatus) {
   try {
     let txt = cacheTexto.get(abs);
     if (txt === undefined) {
-      txt = fs.readFileSync(abs, 'utf8').replaceAll('__V__', VERSAO);
+      txt = fs.readFileSync(abs, 'utf8').replaceAll('__V__', VERSAO).replace('__CATALOGO_PLANOS__',require('./catalogo-planos').htmlPlanos()).replace('__OFERTAS_PLANOS__',JSON.stringify(require('./catalogo-planos').CATALOGO.flatMap(p=>p.mensal?['mensal','anual'].map(periodo=>({'@type':'Offer',name:p.nome+' '+periodo,price:(p[periodo]/100).toFixed(2),priceCurrency:'BRL'})):[])));
       if (process.env.NODE_ENV === 'production') cacheTexto.set(abs, txt);
     }
     if (!jaComStatus) res.statusCode = 200;
@@ -148,4 +148,4 @@ function servir(req, res, url) {
   });
 }
 
-module.exports = { cabecalhos, json, erro, ErroHttp, lerCorpo, definirSessao, limparSessao, tokenDaSessao, ip, servir, naoAchou, VERSAO, seguro };
+module.exports = { lerCookies, cabecalhos, json, erro, ErroHttp, lerCorpo, definirSessao, limparSessao, tokenDaSessao, ip, servir, naoAchou, VERSAO, seguro };
