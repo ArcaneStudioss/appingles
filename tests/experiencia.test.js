@@ -76,10 +76,10 @@ test('iniciante adulto recebe base acessível; criança tem temas próprios sem 
     assert.equal(licao.guiada, true);
     assert.equal(licao.publico, quem);
     const itens = licao.blocos.flatMap(b => b.exercicios || []);
-    assert.ok(itens.length > 0 && itens.length <= 5);
+    assert.ok(itens.length > 0 && itens.length <= 7);
     assert.ok(itens.every(e => ['pares', 'escolha', 'escuta'].includes(e.tipo)), 'não começa exigindo ditado ou escrita livre');
     assert.ok(itens.every(e => e.dica && e.instrucao));
-    assert.equal(licao.blocos.find(b => b.tipo === 'explicacao').vocab.length, 3);
+    assert.equal(licao.blocos.find(b => b.tipo === 'explicacao').vocab.length, 2);
     assert.ok(!licao.blocos.some(b => b.personalizado), 'IA não aumenta a dificuldade inicial');
     assert.doesNotMatch(JSON.stringify(licao), /"(?:resposta|aceitas)":/);
   }
@@ -90,6 +90,8 @@ test('erro explica; repetição corrige sem alterar o primeiro resultado nem con
   const ex = licao.blocos.flatMap(b => b.exercicios || []).find(e => e.tipo === 'escolha');
   const r = await R('adulto', 'POST', '/licao/responder', { itemId: ex.id, resposta: 'banana', tempoMs: 2000 });
   assert.equal(r.correto, false); assert.ok(r.esperado && r.explica);
+  assert.ok(ex.ensino, 'modelo ensinado antes da resposta');
+  assert.equal(db.prepare('SELECT dica FROM tentativas WHERE user_id=? AND item_id=?').get(usuarios.adulto.id, ex.id).dica, 1, 'modelo conta como apoio mesmo sem o cliente avisar');
   const treino = await R('adulto', 'POST', '/licao/responder', { itemId: ex.id, resposta: r.esperado, treinar: true });
   assert.equal(treino.correto, true); assert.equal(treino.pratica, true);
   const volta = await R('adulto', 'GET', '/licao');

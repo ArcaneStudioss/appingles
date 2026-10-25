@@ -3,6 +3,7 @@
 const { POR_ID } = require('../conteudo/missoes');
 const { licoesPorMissao } = require('./plano');
 const { publicoDe } = require('./publico');
+const { montarBaseIniciante } = require('./licao-iniciante');
 
 function montarGuiada(ctx, atual) {
   const { nivel, competencias = {}, tentativas = [], hojeISO, cartoesPendentes = 0 } = ctx;
@@ -15,8 +16,11 @@ function montarGuiada(ctx, atual) {
       .replace(/\bthirty\b/g, publico.id === 'crianca' ? 'eight' : 'sixteen').replace(/\b30\b/g, publico.id === 'crianca' ? '8' : '16'));
     if (def.id === 'zero-numeros') def.tarefa = { ...def.tarefa, enunciado: 'Diga a idade de uma personagem. Você pode inventar a idade e usar o exemplo como ajuda.', minPalavras: 5, elementos: def.tarefa.elementos.slice(0, 1), dicas: ['I am ... years old.'], modelo: publico.id === 'crianca' ? 'I am eight years old.' : 'I am sixteen years old.' };
   }
+  const base = montarBaseIniciante(ctx, atual, def);
+  if (base) return { ...base, publico: publico.id };
   const total = licoesPorMissao(def, nivel);
   const parte = Math.min(total, (competencias[atual.id]?.partes || 0) + 1);
+  const primeira = nivel === 'A1' ? parte === total - 2 : parte === 1;
   const recentes = tentativas.filter(t => t.missao === def.id && t.origem === 'licao').slice(-6);
   const reforco = recentes.length >= 2 && recentes.filter(t => t.correto).length / recentes.length < 0.6;
   const vistos = new Map(tentativas.map(t => [t.item_id, t]));
@@ -27,11 +31,11 @@ function montarGuiada(ctx, atual) {
   const escolhas = def.exercicios.filter(e => e.tipo === 'escolha');
   const guiados = def.exercicios.filter(e => ['lacuna', 'ordenar'].includes(e.tipo) && !e.multi);
   const audios = def.exercicios.filter(e => e.tipo === 'escuta');
-  const praticas = parte === 1 || reforco
+  const praticas = primeira || reforco
     ? escolher(escolhas, 3)
     : [...escolher(escolhas, 1), ...escolher(guiados, 2)];
   // Três palavras novas no máximo; o restante entra nas partes seguintes.
-  const inicio = parte === 1 || reforco ? 0 : Math.min(3, Math.max(0, def.vocab.length - 3));
+  const inicio = primeira || reforco ? 0 : Math.min(3, Math.max(0, def.vocab.length - 3));
   const vocab = def.vocab.slice(inicio, inicio + 3);
   const pares = vocab.map(v => ({ en: v.en, pt: v.pt }));
   const comMissao = ex => {
@@ -40,6 +44,11 @@ function montarGuiada(ctx, atual) {
     if (ex.tipo === 'lacuna') {
       const outras = [...def.exercicios.filter(e => e.tipo === 'lacuna').map(e => e.resposta[0]), ...def.vocab.map(v => v.en), 'Hello', 'Bye'];
       base.bancoPalavras = [...new Set([ex.resposta[0], ...outras.filter(p => p !== ex.resposta[0] && !/\s/.test(p))])].slice(0, 3);
+    }
+    if (primeira || reforco) {
+      const { respostaCerta, corrigirExercicio } = require('./correcao');
+      const modelo = ex.tipo === 'escuta' ? ex.audio : ex.tipo === 'ordenar' ? ex.resposta : ex.tipo === 'lacuna' ? ex.frase.replace('___', ex.resposta[0]) : null;
+      base.ensino = { en: modelo, pt: ex.pt || ex.traducao || (ex.tipo === 'escolha' ? respostaCerta(ex) : ''), nota: corrigirExercicio(ex, respostaCerta(ex)).explica };
     }
     return base;
   };

@@ -96,6 +96,10 @@ export async function telaLicao(el, { ir }) {
       }));
     } else if (p.tipo === 'producao') desenharProducao(tela, p.b, p.bi);
     else desenharFim(tela);
+    if (p.tipo === 'bloco' && p.b.guia) {
+      const g = p.b.guia;
+      tela.append(h('section', { class: 'folha' }, h('h3', {}, g.foco), exemplos([g.exemplo]), h('p', {}, g.nota)));
+    }
     tela.querySelector('h1,h2')?.setAttribute('tabindex', '-1');
     if (p.tipo !== 'ex') tela.querySelector('h1,h2')?.focus({ preventScroll: true });
     scrollTo(0, 0);
@@ -207,6 +211,7 @@ export async function telaLicao(el, { ir }) {
       h('h2', {}, b.titulo),
       h('div', { class: 'folha com-margem situacao' }, h('p', {}, b.situacao), b.area ? h('p', { class: 'ajuda' }, `Se puder, use exemplos da sua área (${b.area}).`) : null,
         b.tarefa.elementos?.length ? h('p', { class: 'ajuda' }, 'Inclua: ' + b.tarefa.elementos.join(' · ')) : null),
+      b.tarefa.roteiro?.length ? h('div', { class: 'folha' }, h('h3', {}, 'Planeje uma frase de cada vez'), h('ol', {}, b.tarefa.roteiro.map(item => h('li', {}, item)))) : null,
       b.semDicas ? h('p', { class: 'ajuda' }, 'Sem dicas desta vez: é para ver o que você já consegue sozinho. Tudo bem errar.') : h('div', { class: 'ajudas-exercicio' }, dicas, modelo),
       form, retorno, h('button', { type: 'button', class: 'btn btn-texto', on: { click: avancar } }, 'Pular esta tarefa por hoje'));
   }
@@ -238,7 +243,7 @@ export async function telaLicao(el, { ir }) {
       licao.guiada ? null : h('p', { class: 'ajuda' }, 'Lição concluída é prática. Aprendizado demonstrado é usar sozinho numa tarefa ou conversa.'),
       h('div', { class: 'barra-acao barra-acao--fixa' }, h('div', { class: 'barra-acao__in' }, btn)));
     for (const n of tela.querySelectorAll('[data-conta]')) contar(n, Number(n.dataset.conta), { sufixo: n.dataset.sufixo || '' });
-    if (status !== 'concluida') { som('fim'); vibrar([30, 40, 30, 40, 60]); confete(); setTimeout(() => confete(document.body, 30), 450); voarComemorando({ jeito: 'sobe', confetes: false }); }
+    if (status !== 'concluida') { som('fim'); vibrar([30, 40, 30, 40, 60]); confete(); setTimeout(() => confete(document.body, 30), 450); voarComemorando({ jeito: 'sobe', confetes: false, companhia: true }); }
   }
 
   desenhar();

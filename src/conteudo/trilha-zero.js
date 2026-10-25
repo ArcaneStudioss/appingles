@@ -96,7 +96,7 @@ Z.push({
   ],
   tarefa: {
     enunciado: 'Escreva uma pequena cena: cumprimente alguém, agradeça e se despeça.',
-    minPalavras: 8,
+    minPalavras: 4,
     elementos: [
       { nome: 'cumprimentar', padroes: ['\\bgood (?:morning|afternoon|evening)\\b', '\\bhello\\b', '\\bhi\\b'] },
       { nome: 'agradecer', padroes: ['\\bthank you\\b', '\\bthanks\\b'] },
@@ -150,7 +150,7 @@ Z.push({
   ],
   tarefa: {
     enunciado: 'Apresente-se: diga seu nome, de onde você é e termine com "Nice to meet you".',
-    minPalavras: 10,
+    minPalavras: 7,
     elementos: [
       { nome: 'seu nome', padroes: ['\\bmy name is\\b', "\\bi'?m [A-Z][a-z]+", '\\bi am [A-Z][a-z]+'] },
       { nome: 'de onde você é', padroes: ["\\bi'?m from\\b", '\\bi am from\\b'] },
@@ -205,7 +205,7 @@ Z.push({
     e('4-8', 'traduzir', { habilidade: 'escrita', tag: 'idade-have', dif: 1, pt: 'Eu tenho dez anos.', aceitas: ['I am ten years old', "I'm ten years old", 'I am ten', "I'm ten", 'I am 10 years old', "I'm 10 years old"] }),
   ],
   tarefa: {
-    enunciado: 'Diga sua idade e o seu número de telefone por extenso (ou parte dele).',
+    enunciado: 'Diga uma idade e um número de telefone inventados, por extenso (ou parte do número).',
     minPalavras: 10,
     elementos: [
       { nome: 'sua idade', padroes: ["\\bi'?m \\w+ years old\\b", '\\bi am \\w+ years old\\b', "\\bi'?m \\d+\\b", '\\bi am \\d+\\b'] },
@@ -259,7 +259,7 @@ Z.push({
   ],
   tarefa: {
     enunciado: 'Escreva sobre você e outra pessoa: como você está, quem é essa pessoa e o que vocês são.',
-    minPalavras: 12,
+    minPalavras: 8,
     elementos: [
       { nome: 'sobre você (I am)', padroes: ['\\bi am\\b', "\\bi'?m\\b"] },
       { nome: 'sobre outra pessoa (he/she is)', padroes: ['\\b(?:he|she) is\\b', "\\b(?:he|she)'?s\\b", '\\w+ is my \\w+'] },
@@ -313,7 +313,7 @@ Z.push({
   ],
   tarefa: {
     enunciado: 'Apresente a sua família: quem são (mãe, pai, irmão...), o nome ou o que fazem e quantos irmãos você tem.',
-    minPalavras: 14,
+    minPalavras: 10,
     elementos: [
       { nome: 'quem é da família (my mother, my father...)', padroes: ['\\bmy (?:mother|father|sister|brother|mom|dad|wife|husband|son|daughter|grandmother|grandfather)\\b'] },
       { nome: 'nome ou o que fazem', padroes: ['\\b(?:he|she) is\\b', '\\bname is\\b', '\\b(?:his|her) name\\b'] },
@@ -367,7 +367,7 @@ Z.push({
   ],
   tarefa: {
     enunciado: 'Descreva um cômodo da sua casa: o que tem nele e de que cor são as coisas.',
-    minPalavras: 12,
+    minPalavras: 8,
     elementos: [
       { nome: 'o que tem (There is / There are)', padroes: ['\\bthere is\\b', '\\bthere are\\b', "\\bthere'?s\\b"] },
       { nome: 'uma cor', padroes: ['\\b(?:red|blue|green|yellow|black|white|orange|pink|purple|brown|gray|grey)\\b'] },
@@ -421,7 +421,7 @@ Z.push({
   ],
   tarefa: {
     enunciado: 'Descreva o seu dia: a hora em que acorda, os dias em que trabalha ou estuda e a hora de dormir.',
-    minPalavras: 14,
+    minPalavras: 10,
     elementos: [
       { nome: 'uma hora (at six, o\'clock)', padroes: ['\\bat \\w+', "o'clock"] },
       { nome: 'dias da semana', padroes: ['\\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|every day|weekend)\\b'] },
@@ -475,7 +475,7 @@ Z.push({
   ],
   tarefa: {
     enunciado: 'Você está num café. Faça o pedido com educação e pergunte o preço.',
-    minPalavras: 10,
+    minPalavras: 6,
     elementos: [
       { nome: 'o pedido (I\'d like / Can I have)', padroes: ["\\bi'?d like\\b", '\\bi would like\\b', '\\bcan i have\\b', '\\bi want\\b'] },
       { nome: 'por favor (please)', padroes: ['\\bplease\\b'] },
@@ -529,7 +529,7 @@ Z.push({
   ],
   tarefa: {
     enunciado: 'Você está perdido na rua. Peça licença, pergunte onde fica um lugar e diga uma direção que você ouviu.',
-    minPalavras: 10,
+    minPalavras: 8,
     elementos: [
       { nome: 'pedir licença (Excuse me)', padroes: ['\\bexcuse me\\b', '\\bsorry\\b', '\\bplease\\b'] },
       { nome: 'perguntar onde fica (Where is)', padroes: ['\\bwhere is\\b', "\\bwhere'?s\\b"] },
@@ -583,7 +583,7 @@ Z.push({
   ],
   tarefa: {
     enunciado: 'Escreva do que você gosta, do que não gosta e faça uma pergunta de volta ("Do you like...?").',
-    minPalavras: 12,
+    minPalavras: 8,
     elementos: [
       { nome: 'do que você gosta (I like / I love)', padroes: ['\\bi like\\b', '\\bi love\\b'] },
       { nome: 'do que não gosta (I don\'t like)', padroes: ["\\bi don'?t like\\b", '\\bi do not like\\b', '\\bi hate\\b'] },
@@ -637,7 +637,7 @@ Z.push({
   ],
   tarefa: {
     enunciado: 'Escreva sua primeira conversa: cumprimente, diga seu nome, de onde é, algo de que gosta e pergunte para a pessoa.',
-    minPalavras: 25,
+    minPalavras: 15,
     elementos: [
       { nome: 'seu nome', padroes: ['\\bmy name is\\b', "\\bi'?m [A-Z][a-z]+", '\\bi am [A-Z][a-z]+'] },
       { nome: 'de onde você é', padroes: ["\\bi'?m from\\b", '\\bi am from\\b', '\\bi live in\\b'] },

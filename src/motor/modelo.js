@@ -13,7 +13,7 @@ function dominioPorTag(tentativas) {
   const out = {};
   const ordenadas = tentativas.slice().sort((a, b) => a.em.localeCompare(b.em));
   for (const t of ordenadas) {
-    if (!t.tag || t.contestada) continue;
+    if (!t.tag || t.contestada || t.dica) continue;
     const d = out[t.tag] || (out[t.tag] = { dominio: 0.5, total: 0, acertos: 0, erros: 0, contextos: new Set(), errosCtx: new Set(), ultima: null, ultimoErro: null });
     const x = t.correto ? 1 : 0;
     const peso = t.formato === 'producao' ? 0.4 : 0.25;    // produzir sozinho pesa mais que reconhecer
@@ -45,7 +45,7 @@ function porHabilidade(tentativas, nivelamento) {
 }
 
 function hipoteses(tentativas, revisoes, { agora = Date.now(), descartadas = [] } = {}) {
-  const janela = tentativas.filter(t => !t.contestada && agora - Date.parse(t.em) <= 30 * DIA);
+  const janela = tentativas.filter(t => !t.contestada && !t.dica && agora - Date.parse(t.em) <= 30 * DIA);
   const recente = janela.filter(t => agora - Date.parse(t.em) <= 10 * DIA);
   const out = [];
   const status = (gapTotal, gapRecente) => (gapRecente === null ? 'hipotese' : gapRecente < gapTotal / 2 ? 'melhorando' : 'confirmando');
@@ -113,7 +113,7 @@ function hipoteses(tentativas, revisoes, { agora = Date.now(), descartadas = [] 
 function dificuldadeAlvo(nivel, tentativas) {
   const i = Math.max(0, NIVEIS.indexOf(nivel || 'A1'));
   let alvo = i <= 0 ? 1 : i === 1 ? 2 : 3;
-  const ultimas = tentativas.filter(t => !t.contestada).slice(-25);
+  const ultimas = tentativas.filter(t => !t.contestada && !t.dica).slice(-25);
   const t = taxa(ultimas);
   if (ultimas.length >= 15 && t !== null) { if (t >= 0.88) alvo++; else if (t <= 0.55) alvo--; }
   return Math.max(1, Math.min(3, alvo));

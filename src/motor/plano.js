@@ -9,6 +9,8 @@ const { publicoDe } = require('./publico');
 const { UNIDADES } = require('../conteudo/biblioteca');
 
 function licoesPorMissao(missao, nivelAluno) {
+  // Vocabulário em pares, quatro oficinas de frases e três aulas de aplicação.
+  if (nivelAluno === 'A1') return Math.ceil(missao.vocab.length / 2) * 2 + 7;
   const diff = NIVEIS.indexOf(nivelAluno) - NIVEIS.indexOf(missao.nivel);
   if (diff >= 2) return 1;      // bem abaixo do nível do aluno: revisão rápida
   if (diff >= 1) return 2;
@@ -31,7 +33,7 @@ function montarPlano(perfil, nivel, hojeISO) {
   const custo = id => Math.ceil(licoesPorMissao(POR_ID[id], nivel) * (id.startsWith('zero-') ? 5 : 15) / minutos) + 1;       // +1 = reteste em outra situação
   let total = ids.reduce((s, id) => s + custo(id), 0);
   let cortadas = [];
-  if (total > sessoesDisponiveis) {
+  if (total > sessoesDisponiveis && (nivel !== 'A1' || perfil.prazo)) {
     // primeiro mantém as essenciais (na ordem da trilha), depois completa com o que couber
     const essenciais = ids.filter(id => baseInicial.includes(id) || obj.essenciais.includes(id));
     const resto = ids.filter(id => !essenciais.includes(id));
