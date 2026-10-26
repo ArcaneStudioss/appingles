@@ -112,7 +112,7 @@ export async function carregarEu() {
   if (progresso) {
     progresso.href = prof ? '#/conta' : '#/progresso'; progresso.dataset.rota = prof ? 'conta' : 'progresso';
     progresso.lastElementChild.textContent = prof ? 'Conta' : estado.eu?.publico?.id === 'crianca' ? 'Álbum' : 'Progresso';
-    progresso.querySelector('use').setAttribute('href', '/assets/icones/sprite.svg?v=__V__#i-' + (prof ? 'user-circle' : 'book-open-text'));
+    progresso.querySelector('use').setAttribute('href', '/assets/icones/sprite.svg?v=__V__#i-' + (prof ? 'user-circle' : estado.eu?.publico?.id === 'crianca' ? 'medal' : 'chart-line-up'));
   }
   nav.querySelector('[data-nav="turmas"]').hidden = prof;
   agendarAviso(estado.eu?.perfil?.lembrete);

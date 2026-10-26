@@ -1204,6 +1204,7 @@ body.foco-total .pouso{display:none}
 .passo--fim>.ajuda-exercicio{width:100%}
 .outras-atividades{background:var(--cartao);border:2px solid var(--borda);border-radius:var(--raio);padding:1rem;min-width:0}
 .outras-atividades>summary{cursor:pointer;font-weight:800;color:var(--azul-forte);line-height:1.4}
+.outras-atividades>summary>svg{margin-right:.5rem;vertical-align:-.2em}
 .outras-atividades[open]>summary{margin-bottom:1rem}
 .outras-atividades__conteudo{display:grid;gap:1rem}
 .hoje--guiada{max-width:760px;margin-inline:auto;width:100%}
