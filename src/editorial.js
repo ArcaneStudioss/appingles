@@ -11,6 +11,12 @@ function culturaRevisada(db, expressao) {
   const r = db.prepare('SELECT dados,revisado_em FROM edicoes_cultura WHERE referencia=? ORDER BY id DESC LIMIT 1').get(expressao.id);
   return r ? { ...expressao, ...JSON.parse(r.dados), revisadoEm: r.revisado_em.slice(0,10) } : expressao;
 }
+// Percentual do teto global de IA já reservado no mês; 80% ou mais pede ação (subir o teto ou rever planos).
+function orcamentoUsadoPct(q, mes, env = process.env) {
+  const limite = Number(env.IA_ORCAMENTO_GLOBAL_USD ?? 10) * 1e6;
+  const usado = q("SELECT qtd FROM consumo_global WHERE mes=? AND tipo='ia'").get(mes)?.qtd || 0;
+  return limite > 0 ? Math.round(usado / limite * 100) : 100;
+}
 function registrar({ db, rota, q, V, agoraISO, lerJson, perfilDe, conquistar, transacao }) {
   const limite = auth.limitadorBanco(db, 'relatos-conteudo', { janelaMs: 3600e3, max: 15 });
   const exigir = ctx => { if (!ehAdmin(ctx.u.id)) throw new ErroHttp(403, 'Área restrita à equipe autorizada.'); };
@@ -33,6 +39,7 @@ function registrar({ db, rota, q, V, agoraISO, lerJson, perfilDe, conquistar, tr
         alunosAtivos7dias:q("SELECT COUNT(DISTINCT user_id) n FROM dias_estudo WHERE data>=date('now','-7 days')").get().n,
         tarefasIndependentes:q('SELECT COUNT(*) n FROM amostras WHERE demonstrado=1').get().n,
         manutencoes:q("SELECT COUNT(*) n FROM competencias WHERE status='retido'").get().n,
+        orcamentoIAUsadoPct:orcamentoUsadoPct(q,agoraISO().slice(0,7)),
         ia:q('SELECT mes,tipo,SUM(qtd) chamadas,SUM(tokens_entrada) entrada,SUM(tokens_saida) saida FROM uso_ia GROUP BY mes,tipo ORDER BY mes DESC LIMIT 40').all(),
         voz:q('SELECT dia,SUM(caracteres) caracteres FROM uso_voz GROUP BY dia ORDER BY dia DESC LIMIT 30').all(),
         diagnosticos:q('SELECT tipo,codigo,COUNT(*) total,ROUND(AVG(duracao_ms)) media_ms FROM diagnosticos GROUP BY tipo,codigo').all(),

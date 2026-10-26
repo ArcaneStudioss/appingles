@@ -20,7 +20,7 @@ const OBJETIVOS = {
   trabalho: {
     nome: 'Inglês no trabalho (reuniões e e-mails)',
     frase: 'Participar de reuniões, dar opinião e escrever e-mails sem travar.',
-    missoes: ['apresentar', 'pedir-repetir', 'telefone', 'reunioes', 'emails', 'small-talk', 'trajetoria', 'projeto', 'fim-de-semana', 'planos', 'forcas'],
+    missoes: ['apresentar', 'pedir-repetir', 'telefone', 'reunioes', 'emails', 'small-talk', 'trajetoria', 'projeto', 'fim-de-semana', 'planos', 'forcas', 'b-apresentar-dados', 'b-feedback', 'b-negociar-prazo', 'b-conduzir-reuniao'],
     essenciais: ['apresentar', 'pedir-repetir', 'reunioes', 'emails'],
     exemploMeta: 'Dar sua opinião numa reunião e escrever e-mails curtos de pedido e confirmação.',
   },
@@ -34,14 +34,14 @@ const OBJETIVOS = {
   cotidiano: {
     nome: 'Dia a dia na cidade (banco, mercado, clínica...)',
     frase: 'Se virar nos lugares do cotidiano em inglês: banco, clínica médica, farmácia, supermercado, padaria e lojas.',
-    missoes: ['pedir-repetir', 'supermercado', 'padaria', 'banco', 'farmacia', 'clinica', 'loja-roupas', 'small-talk', 'viagem-cidade'],
+    missoes: ['pedir-repetir', 'supermercado', 'padaria', 'banco', 'farmacia', 'clinica', 'loja-roupas', 'small-talk', 'viagem-cidade', 'b-reembolso-troca', 'b-sintomas-consulta'],
     essenciais: ['pedir-repetir', 'supermercado', 'banco', 'clinica'],
     exemploMeta: 'Resolver sozinho uma ida ao banco, à farmácia e ao supermercado, sem depender de tradutor.',
   },
   viagem: {
     nome: 'Viagem',
     frase: 'Se virar no aeroporto, no hotel, no restaurante e na rua.',
-    missoes: ['viagem-chegada', 'pedir-repetir', 'viagem-cidade', 'apresentar', 'fim-de-semana', 'rotina', 'planos'],
+    missoes: ['viagem-chegada', 'pedir-repetir', 'viagem-cidade', 'apresentar', 'fim-de-semana', 'rotina', 'planos', 'b-imprevistos-viagem', 'b-aluguel-contrato'],
     essenciais: ['viagem-chegada', 'pedir-repetir', 'viagem-cidade'],
     exemploMeta: 'Fazer check-in, pedir comida e pedir informações sem depender de tradutor.',
   },
@@ -64,7 +64,7 @@ const OBJETIVOS = {
   conversa: {
     nome: 'Conversação do dia a dia',
     frase: 'Conversar sobre você, sua rotina e suas experiências com mais naturalidade.',
-    missoes: ['apresentar', 'small-talk', 'rotina', 'fim-de-semana', 'pedir-repetir', 'planos', 'viagem-cidade', 'reunioes'],
+    missoes: ['apresentar', 'small-talk', 'rotina', 'fim-de-semana', 'pedir-repetir', 'planos', 'viagem-cidade', 'reunioes', 'b-contar-historia', 'b-habitos-passados', 'b-hipoteses-conselhos', 'b-resumir-texto'],
     essenciais: ['apresentar', 'rotina', 'fim-de-semana'],
     exemploMeta: 'Manter uma conversa de 5 minutos sobre você e suas experiências.',
   },
