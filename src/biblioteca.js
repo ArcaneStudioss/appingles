@@ -16,6 +16,7 @@ function registrar({ rota, q, V, lerJson, perfilDe, exigirAcessoCompleto, hojeDe
     return u;
   };
   rota('GET', '/dicionario', () => ({ palavras: Object.fromEntries([...MISSOES, ...UNIDADES].flatMap(u => u.vocab).filter(v => /^[A-Za-z]+$/.test(v.en)).map(v => [v.en.toLowerCase(), v.pt])), expressoes: cultura.dicionarioCultural() }), { publica: true });
+  rota('GET', '/sons', () => require('./conteudo/sons-ingles'));
   rota('GET', '/brasil-mundo', ctx => {
     const p = perfilDe(ctx.u.id), publico = publicoDe(p), professor = ['professor', 'ambos'].includes(p.papel);
     return { publico, regioes: cultura.REGIOES, categorias: cultura.CATEGORIAS, contextos: cultura.CONTEXTOS, revisadoEm: cultura.revisadoEm,

@@ -30,6 +30,7 @@ import { iniciarTraducoes } from './traducao.js?v=__V__';
 import { telaPublico } from './telas/publico.js?v=__V__';
 import { telaBiblioteca, telaUnidade } from './telas/biblioteca.js?v=__V__';
 import { telaBrasil } from './telas/brasil.js?v=__V__';
+import { telaSons } from './telas/sons.js?v=__V__';
 import { telaSocial, telaColecao, telaLoja } from './telas/social.js?v=__V__';
 
 const palco = document.getElementById('conteudo');
@@ -64,6 +65,7 @@ const MAIS = [
   { grupo: 'Amigos e coleção', rota: 'desafios', cor: 'lilas', ic: 'users-three', t: 'Desafios com amigos', s: 'duelos, metas e sequências em grupo' },
   { grupo: 'Amigos e coleção', rota: 'colecao', cor: 'sol', ic: 'cards', t: 'Minhas figurinhas', s: 'raridades e figurinhas para os duelos' },
   { grupo: 'Amigos e coleção', rota: 'loja', cor: 'lilas', ic: 'medal', t: 'Loja e moedas', s: 'XP, poções e caixas de figurinhas' },
+  { grupo: 'Praticar inglês', rota: 'sons', cor: 'menta', ic: 'speaker-high', t: 'Sons do inglês', s: 'alfabeto e os sons mais difíceis' },
   { grupo: 'Praticar inglês', rota: 'revisar', cor: 'sol', ic: 'cards', t: 'Revisar palavras', s: 'relembre o que aprendeu' },
   { grupo: 'Praticar inglês', rota: 'conversar', cor: 'menta', ic: 'chats', t: 'Conversar', s: 'pratique em situações reais' },
   { grupo: 'Praticar inglês', rota: 'treino', cor: 'limao', ic: 'target', t: 'Treinar dificuldades', s: 'questões para reforçar o que precisa' },
@@ -88,7 +90,7 @@ btnMais?.addEventListener('click', () => {
 
 const ROTAS = { admin: telaAdmin, passaporte: telaPassaporte, sessao: telaSessao,
   desafios: telaSocial, colecao: telaColecao, loja: telaLoja,
-  brasil: telaBrasil,
+  brasil: telaBrasil, sons: telaSons,
   biblioteca: telaBiblioteca, unidade: telaUnidade,
   publico: telaPublico, professor: telaTurmas,
   entrar: telaEntrar, perfil: telaPerfil, nivelamento: telaNivelamento, hoje: telaHoje, plano: telaPlano,

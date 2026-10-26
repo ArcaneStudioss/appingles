@@ -112,6 +112,7 @@ export async function telaLicao(el, { ir }) {
       licao.missao ? h('p', { class: 'ajuda' }, `Parte ${licao.missao.parte} de ${licao.missao.total}. ${licao.missao.podeFazer}`) : null,
       licao.guiada ? companheirosAula({ texto: licao.reforco ? 'Vamos rever com mais apoio, sem pressa. Eu explico e o Tuiuiú pratica com você.' : infantil ? `Hoje são ${palavras.length} palavras e ${passos.filter(p => p.tipo === 'ex').length} atividades curtinhas. Eu e o Tuiuiú vamos com você!` : `${palavras.length} expressões úteis e ${passos.filter(p => p.tipo === 'ex').length} atividades curtas. Eu ajudo com as explicações e o Tuiuiú acompanha a prática.` }).elemento : louFala('oi', h('p', { class: 'bilhete pequeno' }, 'Por que esta aula'), h('ul', { class: 'por-que' }, licao.porque.map(t => h('li', {}, t)))),
       licao.guiada ? h('ol', { class: 'como-aprender' }, h('li', {}, icone('speaker-high'), h('span', {}, 'Veja, ouça e descubra o significado.')), h('li', {}, icone('hand-waving'), h('span', {}, 'Toque nas respostas. Pode pedir uma dica.')), h('li', {}, icone('smiley'), h('span', {}, 'Errou? Veja a explicação e tente de novo.'))) : null,
+      licao.missao?.id === 'zero-sons' ? h('a', { class: 'btn btn-texto', href: '#/sons' }, icone('speaker-high'), 'Antes de começar: sons do inglês') : null,
       barraBotao(status === 'concluida' ? 'Rever a aula' : 'Vamos aprender'));
   }
 
@@ -124,6 +125,7 @@ export async function telaLicao(el, { ir }) {
         h('p', { class: 'rotulo-pequeno' }, 'Em inglês'),
         h('h1', { lang: 'en', 'data-traducao': v.pt }, v.en),
         h('p', { class: 'palavra-nova__significado' }, v.pt),
+        v.como ? h('p', { class: 'palavra-nova__como' }, 'Leia assim: ', h('strong', {}, v.como)) : null,
         h('div', { class: 'linha-acoes' },
           h('button', { type: 'button', class: 'btn', on: { click: () => falar(v.en, { velocidade: 0.9 }) } }, icone('speaker-high'), 'Ouvir palavra'),
           h('button', { type: 'button', class: 'btn btn-sec', on: { click: () => falar(v.en, { velocidade: 0.65 }) } }, icone('speaker-high'), 'Mais devagar')),
