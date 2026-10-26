@@ -41,10 +41,17 @@ test('objetivo de entrevista monta a trilha de entrevista e a lição traz exerc
   assert.equal(resultado.nivel, 'A2');
   assert.equal(plano.objetivo, 'entrevista');
   assert.ok(plano.missoes.some(m => m.id === 'perguntas-entrevista'));
+  // Este cenário cobre personalização e produção após a base iniciante.
+  // Fixar A2 evita depender da ordem das alternativas do nivelamento.
+  const n = db.prepare('SELECT id, resultado FROM nivelamentos WHERE user_id = ? ORDER BY id DESC LIMIT 1').get(uid);
+  db.prepare('UPDATE nivelamentos SET resultado = ? WHERE id = ?').run(JSON.stringify({ ...JSON.parse(n.resultado), nivel: 'A2' }), n.id);
+  novoDia();
   const { licao } = await R('GET', '/licao');
   const pers = licao.blocos.find(b => b.personalizado);
   assert.ok(pers, 'bloco feito para a situação do aluno');
   assert.equal(pers.exercicios.length, 3, 'o item inválido da IA foi descartado');
+  const { limiteDaLicao } = require('../src/motor/licao');
+  assert.ok(licao.blocos.flatMap(b => b.exercicios || []).length <= limiteDaLicao(licao.blocos));
   assert.ok(licao.porque.some(t => /enfermagem/.test(t) && /Canadá/.test(t)));
   assert.ok(!JSON.stringify(licao).includes('respostas_aceitas'));
   const r = await R('POST', '/licao/responder', { itemId: pers.exercicios[2].id, resposta: 'I work in the ER' });

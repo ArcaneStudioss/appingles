@@ -11,9 +11,10 @@ const BANCO = { ...TODOS_EXERCICIOS, ...BANCO_BIBLIOTECA };
 function montarSessao({ perfil, plano, competencias, tentativas, minutos, nivel }) {
   const publico = publicoDe(perfil).id, atual = plano && missaoAtual(plano, competencias);
   let missao = POR_ID[atual?.id] || UNIDADES.find(u => u.faixa === publico && u.nivel === (nivel || 'A1')) || MISSOES[0];
+  const totalPartes = licoesPorMissao(missao, nivel);
   if(missao.id.startsWith('zero-')) {
     const guiada=require('./motor/licao-guiada').montarGuiada({perfil,nivel,competencias,tentativas,hojeISO:new Date().toISOString().slice(0,10)},{id:missao.id});
-    missao={...missao,vocab:guiada.blocos[0].vocab,explicacao:guiada.blocos[0].texto,exercicios:guiada.blocos.flatMap(b=>b.exercicios||[]).filter(e=>e.tipo!=='pares')};
+    missao={...missao,exemplos:guiada.blocos[0].exemplos,vocab:guiada.blocos[0].vocab,explicacao:guiada.blocos[0].texto,exercicios:guiada.blocos.flatMap(b=>b.exercicios||[]).filter(e=>e.tipo!=='pares')};
   }
   const vistos = new Set(tentativas.map(t => t.item_id));
   const quantidade = minutos === 5 ? 3 : minutos === 10 ? 6 : 9;
@@ -25,7 +26,7 @@ function montarSessao({ perfil, plano, competencias, tentativas, minutos, nivel 
   return { minutos, missao: missao.id, titulo: missao.titulo, podeFazer: missao.podeFazer, publico,
     vocab: (missao.vocab || []).slice(0, minutos === 5 ? 2 : 3),
     explicacao: typeof missao.explicacao === 'string' ? missao.explicacao : missao.explicacao?.texto || '',
-    itens, nivel, totalPartes: licoesPorMissao(missao, nivel),
+    itens, nivel, totalPartes,
     exemplo: missao.exemplos?.[0] || null };
 }
 
@@ -71,7 +72,7 @@ function registrar({ db, rota, q, V, lerJson, perfilDe, planoDe, nivelamentoDe, 
       if (respostas[itemId]) return { ...respostas[itemId], repetida: true };
       if (r.concluida_em) throw new ErroHttp(409, 'Esta sessão já foi concluída.');
       const resposta = ctx.corpo.revelar === true ? '' : V.str(ctx.corpo.resposta, 500, { min: 1, campo: 'Resposta' });
-      const dica = !!lerJson(r.apoios, {})[itemId] || ctx.corpo.dica === true || ctx.corpo.revelar === true;
+      const dica = !!ex.ensino || !!lerJson(r.apoios, {})[itemId] || ctx.corpo.dica === true || ctx.corpo.revelar === true;
       const av = corrigirExercicio(ex, resposta);
       respostas[itemId] = { ...av, resposta, dica, ajuda:ctx.corpo.revelar===true, textoAudio: ex.audio || null, tempoMs: Math.max(0,Math.min(600000,Number(ctx.corpo.tempoMs)||0)) };
       registrarTentativa(uid, { item_id: ex.id, missao: d.missao, habilidade: ex.habilidade, tag: ex.tag, formato: ['escolha', 'leitura', 'escuta'].includes(ex.tipo) ? 'reconhecimento' : 'producao', modalidade: ['escuta', 'ditado'].includes(ex.tipo) ? 'audio' : 'texto', correto: av.correto, dica, origem: 'sessao', contexto: d.missao, resposta, tempo_ms: ctx.corpo.tempoMs });

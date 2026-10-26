@@ -251,13 +251,13 @@ M.push({
     { en: "I'm taking a course to improve my presentation skills.", pt: 'Estou fazendo um curso para melhorar minhas apresentações.' },
   ],
   exercicios: [
-    { id: 'forcas-1', tipo: 'escolha', habilidade: 'vocabulario', tag: 'preposicoes', dif: 1, enunciado: '"Sou boa em negociar."', opcoes: ["I'm good at negotiating.", "I'm good in negotiate.", 'I am good on negotiating.'], resposta: 0 },
+    { id: 'forcas-1', tipo: 'escolha', habilidade: 'vocabulario', tag: 'preposicoes', dif: 1, enunciado: '"Sou boa em negociar."', opcoes: ["I'm good at negotiating.", "I'm good in negotiate.", 'I am good on negotiating.'], resposta: 0, explica: "Depois de good at, use o verbo com -ing: good at negotiating. Good in não é a combinação usada para essa habilidade." },
     { id: 'forcas-2', tipo: 'lacuna', habilidade: 'vocabulario', tag: 'make-do', dif: 2, frase: "I'm ___ an online course to improve my Excel skills.", resposta: ['taking', 'doing'], explica: 'Fazer um curso = take (ou do) a course, nunca make.' },
     { id: 'forcas-3', tipo: 'lacuna', habilidade: 'gramatica', tag: 'terceira-pessoa', dif: 2, frase: 'My manager always ___ (say) that I am very reliable.', resposta: ['says'] },
     { id: 'forcas-4', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: "Something I'm working on is public speaking. I volunteer to present in our team meetings every month.", pergunta: 'O que a pessoa faz para melhorar?', opcoes: ['Se oferece para apresentar nas reuniões', 'Faz um curso de teatro para perder a timidez', 'Evita apresentar e pede para outra pessoa falar'], resposta: 0 },
     { id: 'forcas-5', tipo: 'escolha', habilidade: 'leitura', dif: 3, enunciado: 'Qual resposta é melhor para "What is your weakness?"', opcoes: ["Sometimes I take on too many tasks. Now I use a planner and I've started to say no when it's necessary.", "I don't have any weaknesses, I am perfect for this job.", 'I am a perfectionist and I work too much, I never stop.'], resposta: 0, explica: 'A melhor resposta mostra consciência e um plano real.' },
     { id: 'forcas-6', tipo: 'ordenar', habilidade: 'gramatica', dif: 2, palavras: ['One', 'of', 'my', 'strengths', 'is', 'attention', 'to', 'detail'], resposta: 'One of my strengths is attention to detail' },
-    { id: 'forcas-7', tipo: 'traduzir', habilidade: 'escrita', dif: 3, pt: 'Por exemplo, no mês passado eu organizei um treinamento para a equipe.', aceitas: ['For example, last month I organized a training for the team', 'For example, last month I organized a training session for the team', 'For example, last month I organised a training for the team', 'For example, last month I organized training for the team'] },
+    { id: 'forcas-7', tipo: 'traduzir', habilidade: 'escrita', dif: 3, pt: 'Por exemplo, no mês passado eu organizei um treinamento para a equipe.', aceitas: ['For example, last month I organized a training session for the team', 'For example, last month I organised a training session for the team', 'For example, last month I organized training for the team', 'For example, last month I organised training for the team'] },
     { id: 'forcas-8', tipo: 'ditado', habilidade: 'escuta', dif: 2, audio: "I'm good at working with deadlines.", resposta: ["I'm good at working with deadlines", 'I am good at working with deadlines'] },
   ],
   tarefa: {
@@ -305,7 +305,7 @@ M.push({
     { en: 'What are the next steps in the process?', pt: 'Quais são os próximos passos do processo?' },
   ],
   exercicios: [
-    { id: 'perguntar-1', tipo: 'escolha', habilidade: 'gramatica', tag: 'explicar-para', dif: 1, enunciado: 'Qual pergunta é natural?', opcoes: ['Could you tell me more about the role?', 'Could you explain me the role?', 'Could you say me about the role?'], resposta: 0 },
+    { id: 'perguntar-1', tipo: 'escolha', habilidade: 'gramatica', tag: 'explicar-para', dif: 1, enunciado: 'Qual pergunta é natural?', opcoes: ['Could you tell me more about the role?', 'Could you explain me the role?', 'Could you say me about the role?'], resposta: 0, explica: "Could you tell me more about...? é uma forma educada de pedir detalhes. About liga o pedido ao assunto: the role." },
     { id: 'perguntar-2', tipo: 'lacuna', habilidade: 'gramatica', tag: 'perguntas-do', dif: 1, frase: 'What ___ a typical day look like?', resposta: ['does'] },
     { id: 'perguntar-3', tipo: 'lacuna', habilidade: 'gramatica', tag: 'perguntas-do', dif: 2, frase: 'How ___ the team share information?', resposta: ['does'], explica: '"The team" = it, então does.' },
     { id: 'perguntar-4', tipo: 'ordenar', habilidade: 'gramatica', dif: 2, palavras: ['What', 'are', 'the', 'next', 'steps', 'in', 'the', 'process'], resposta: 'What are the next steps in the process', sufixo: '?' },
@@ -358,9 +358,9 @@ M.push({
     { en: 'What if we split the project into two phases?', pt: 'E se a gente dividir o projeto em duas fases?' },
   ],
   exercicios: [
-    { id: 'reunioes-1', tipo: 'escolha', habilidade: 'gramatica', tag: 'concordar', dif: 1, enunciado: '"Concordo com você."', opcoes: ['I agree with you.', 'I am agree with you.', 'I agree you.'], resposta: 0 },
+    { id: 'reunioes-1', tipo: 'escolha', habilidade: 'gramatica', tag: 'concordar', dif: 1, enunciado: '"Concordo com você."', opcoes: ['I agree with you.', 'I am agree with you.', 'I agree you.'], resposta: 0, explica: "Agree já é um verbo: I agree. Não coloque am antes dele. With indica com quem você concorda." },
     { id: 'reunioes-2', tipo: 'lacuna', habilidade: 'vocabulario', tag: 'preposicoes', dif: 1, frase: 'It depends ___ the client.', resposta: ['on'] },
-    { id: 'reunioes-3', tipo: 'escolha', habilidade: 'vocabulario', dif: 2, enunciado: 'Qual é a forma mais educada de discordar?', opcoes: ["I see your point, but I think it's risky.", "You're wrong.", 'No, this is a bad idea.'], resposta: 0 },
+    { id: 'reunioes-3', tipo: 'escolha', habilidade: 'vocabulario', dif: 2, enunciado: 'Qual é a forma mais educada de discordar?', opcoes: ["I see your point, but I think it's risky.", "You're wrong.", 'No, this is a bad idea.'], resposta: 0, explica: "I see your point reconhece a opinião do outro. But I think introduz sua discordância sem atacar a pessoa." },
     { id: 'reunioes-4', tipo: 'lacuna', habilidade: 'gramatica', dif: 2, frase: 'What ___ we test it with a small group first?', resposta: ['if'] },
     { id: 'reunioes-5', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: "I see your point, but I'm worried about the budget. What if we start with just one city?", pergunta: 'O que a pessoa sugere?', opcoes: ['Começar com uma cidade só', 'Cancelar o projeto', 'Aumentar o orçamento'], resposta: 0 },
     { id: 'reunioes-6', tipo: 'escuta', habilidade: 'escuta', dif: 3, audio: "Let's discuss the timeline on Thursday. Carla, can you follow up with the supplier?", pergunta: 'O que a Carla precisa fazer?', opcoes: ['Falar com o fornecedor', 'Marcar a reunião de quinta', 'Preparar o cronograma'], resposta: 0 },
@@ -412,14 +412,14 @@ M.push({
     { en: 'Thanks for your feedback.', pt: 'Obrigado pelo retorno.' },
   ],
   exercicios: [
-    { id: 'emails-1', tipo: 'escolha', habilidade: 'vocabulario', tag: 'incontaveis', dif: 1, enunciado: '"Pode me mandar mais informações?"', opcoes: ['Could you send me more information?', 'Could you send me more informations?', 'Could you send me an informations?'], resposta: 0 },
+    { id: 'emails-1', tipo: 'escolha', habilidade: 'vocabulario', tag: 'incontaveis', dif: 1, enunciado: '"Pode me mandar mais informações?"', opcoes: ['Could you send me more information?', 'Could you send me more informations?', 'Could you send me an informations?'], resposta: 0, explica: "Information não recebe -s nesse uso. Could you + verbo faz um pedido educado: Could you send...?" },
     { id: 'emails-2', tipo: 'lacuna', habilidade: 'vocabulario', dif: 1, frase: "I'm ___ to confirm the delivery date.", resposta: ['writing'] },
     { id: 'emails-3', tipo: 'lacuna', habilidade: 'vocabulario', dif: 2, frase: 'Please find the contract ___.', resposta: ['attached'] },
     { id: 'emails-4', tipo: 'ordenar', habilidade: 'gramatica', dif: 2, palavras: ['Let', 'me', 'know', 'if', 'you', 'have', 'any', 'questions'], resposta: 'Let me know if you have any questions' },
     { id: 'emails-5', tipo: 'leitura', habilidade: 'leitura', dif: 2, texto: "Hi Ana, I hope you are well. I'm writing because the delivery will be two days late. The truck had a problem on the road. The new date is Friday. Sorry for the inconvenience. Best regards, Tom", pergunta: 'Qual é a notícia principal do e-mail?', opcoes: ['A entrega vai atrasar dois dias', 'O caminhão foi vendido', 'A reunião mudou para sexta'], resposta: 0 },
     { id: 'emails-6', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: 'Could you please send me the final version by Thursday?', pergunta: 'O que a pessoa pede?', opcoes: ['A versão final até quinta', 'Uma reunião na quinta', 'A primeira versão hoje'], resposta: 0 },
     { id: 'emails-7', tipo: 'traduzir', habilidade: 'escrita', tag: 'incontaveis', dif: 2, pt: 'Obrigada pelo feedback.', aceitas: ['Thanks for the feedback', 'Thank you for the feedback', 'Thanks for your feedback', 'Thank you for your feedback'] },
-    { id: 'emails-8', tipo: 'escolha', habilidade: 'leitura', dif: 3, enunciado: 'Qual fechamento combina com um e-mail profissional?', opcoes: ['Best regards,', 'Kisses,', 'Bye bye,'], resposta: 0 },
+    { id: 'emails-8', tipo: 'escolha', habilidade: 'leitura', dif: 3, enunciado: 'Qual fechamento combina com um e-mail profissional?', opcoes: ['Best regards,', 'Kisses,', 'Bye bye,'], resposta: 0, explica: "Best regards é uma despedida comum em e-mails profissionais. Ela vem antes do seu nome, depois da mensagem." },
   ],
   tarefa: {
     enunciado: 'Escreva um e-mail curto para um cliente ou colega estrangeiro pedindo um documento até uma data.',
@@ -467,7 +467,7 @@ M.push({
     { en: 'Do you mean the new client or the old one?', pt: 'Você quer dizer o cliente novo ou o antigo?' },
   ],
   exercicios: [
-    { id: 'repetir-1', tipo: 'escolha', habilidade: 'vocabulario', tag: 'explicar-para', dif: 1, enunciado: 'Você quer que a pessoa explique de novo.', opcoes: ['Could you explain that again?', 'Could you explain me again?', 'Can you say me again?'], resposta: 0 },
+    { id: 'repetir-1', tipo: 'escolha', habilidade: 'vocabulario', tag: 'explicar-para', dif: 1, enunciado: 'Você quer que a pessoa explique de novo.', opcoes: ['Could you explain that again?', 'Could you explain me again?', 'Can you say me again?'], resposta: 0, explica: "Could you + verbo faz um pedido educado. Again significa de novo; explain pede uma explicação, não só mais volume." },
     { id: 'repetir-2', tipo: 'lacuna', habilidade: 'vocabulario', dif: 1, frase: "Sorry, I didn't ___ that.", resposta: ['catch', 'get', 'understand', 'hear'] },
     { id: 'repetir-3', tipo: 'escuta', habilidade: 'escuta', dif: 1, audio: 'Could you speak a little more slowly, please?', pergunta: 'O que a pessoa pediu?', opcoes: ['Para falar mais devagar', 'Para falar mais alto', 'Para repetir o nome'], resposta: 0 },
     { id: 'repetir-4', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: 'Just to confirm, the call is tomorrow at four, right?', pergunta: 'O que a pessoa está confirmando?', opcoes: ['A ligação amanhã às 4', 'A reunião hoje às 4', 'O endereço do escritório'], resposta: 0 },
@@ -519,7 +519,7 @@ M.push({
     { en: 'Would you like me to send it by email?', pt: 'Quer que eu envie por e-mail?' },
   ],
   exercicios: [
-    { id: 'atender-1', tipo: 'escolha', habilidade: 'gramatica', tag: 'sujeito-oculto', dif: 1, enunciado: '"Tem estacionamento atrás da loja."', opcoes: ["There's a parking lot behind the store.", 'Have a parking lot behind the store.', 'Has parking behind the store.'], resposta: 0 },
+    { id: 'atender-1', tipo: 'escolha', habilidade: 'gramatica', tag: 'sujeito-oculto', dif: 1, enunciado: '"Tem estacionamento atrás da loja."', opcoes: ["There's a parking lot behind the store.", 'Have a parking lot behind the store.', 'Has parking behind the store.'], resposta: 0, explica: "There is apresenta algo que existe no local. Behind significa atrás; a parking lot é um estacionamento." },
     { id: 'atender-2', tipo: 'lacuna', habilidade: 'gramatica', tag: 'sujeito-oculto', dif: 1, frase: "___'s free for students.", resposta: ['It'] },
     { id: 'atender-3', tipo: 'lacuna', habilidade: 'vocabulario', dif: 2, frase: '___ you like to try a different size?', resposta: ['Would'] },
     { id: 'atender-4', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: "Hi, I bought this jacket yesterday, but it's too small. Can I exchange it?", pergunta: 'O que o cliente quer?', opcoes: ['Trocar a jaqueta por ser pequena', 'Comprar outra jaqueta igual', 'Devolver porque não gostou da cor'], resposta: 0 },
@@ -573,7 +573,7 @@ M.push({
     { en: 'We can send a replacement or give you a refund. Which do you prefer?', pt: 'Podemos enviar outro ou reembolsar. O que você prefere?' },
   ],
   exercicios: [
-    { id: 'reclamacao-1', tipo: 'escolha', habilidade: 'vocabulario', dif: 1, enunciado: 'Primeira frase ideal para uma reclamação:', opcoes: ["I'm sorry to hear that.", "It's not my fault.", 'Calm down.'], resposta: 0 },
+    { id: 'reclamacao-1', tipo: 'escolha', habilidade: 'vocabulario', dif: 1, enunciado: 'Primeira frase ideal para uma reclamação:', opcoes: ["I'm sorry to hear that.", "It's not my fault.", 'Calm down.'], resposta: 0, explica: "I am sorry to hear that reconhece a experiência ruim do cliente. Depois, peça os detalhes e ofereça uma solução." },
     { id: 'reclamacao-2', tipo: 'lacuna', habilidade: 'gramatica', tag: 'perguntas-do', dif: 2, frase: 'When ___ you receive the package?', resposta: ['did'] },
     { id: 'reclamacao-3', tipo: 'escolha', habilidade: 'gramatica', tag: 'perguntas-do', dif: 2, enunciado: 'Qual pergunta está certa?', opcoes: ['What happened when you opened the box?', 'What did happened when you opened the box?', 'What happen when you opened the box?'], resposta: 0, explica: 'Quando a pergunta é sobre o próprio sujeito ("o que aconteceu"), não usa did: What happened?' },
     { id: 'reclamacao-4', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: 'I ordered a blue chair, but you sent a red one. And it arrived a week late.', pergunta: 'Quais são os problemas?', opcoes: ['Cor errada e atraso', 'Cadeira quebrada', 'Cobrança duplicada'], resposta: 0 },
@@ -630,7 +630,7 @@ M.push({
     { id: 'viagem1-1', tipo: 'escuta', habilidade: 'escuta', dif: 1, audio: 'What is the purpose of your visit?', pergunta: 'O que o agente perguntou?', opcoes: ['O motivo da viagem', 'Quanto dinheiro você tem', 'Onde você trabalha'], resposta: 0 },
     { id: 'viagem1-2', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: 'How long are you staying, and where are you staying?', pergunta: 'Quais são as duas perguntas?', opcoes: ['Quanto tempo você fica e onde vai ficar', 'Quando você chegou e com quem', 'Se é a primeira vez e por quê'], resposta: 0 },
     { id: 'viagem1-3', tipo: 'lacuna', habilidade: 'gramatica', tag: 'terceira-pessoa', dif: 1, frase: "The shower ___ work.", resposta: ["doesn't", 'does not'] },
-    { id: 'viagem1-4', tipo: 'escolha', habilidade: 'vocabulario', dif: 1, enunciado: '"Tenho uma reserva em nome de Lima."', opcoes: ['I have a reservation under Lima.', 'I have a reserve in name of Lima.', 'I am a reservation for Lima.'], resposta: 0 },
+    { id: 'viagem1-4', tipo: 'escolha', habilidade: 'vocabulario', dif: 1, enunciado: '"Tenho uma reserva em nome de Lima."', opcoes: ['I have a reservation under Lima.', 'I have a reserve in name of Lima.', 'I am a reservation for Lima.'], resposta: 0, explica: "I have a reservation informa que você reservou. Under + nome indica em qual nome a reserva está registrada." },
     { id: 'viagem1-5', tipo: 'ordenar', habilidade: 'gramatica', dif: 2, palavras: ['Can', 'I', 'leave', 'my', 'luggage', 'here'], resposta: 'Can I leave my luggage here', sufixo: '?' },
     { id: 'viagem1-6', tipo: 'escuta', habilidade: 'escuta', dif: 3, audio: "Breakfast is served from seven to ten on the second floor. Check-out is at noon.", pergunta: 'Até que horas é o check-out?', opcoes: ['Meio-dia', 'Dez horas', 'Sete horas'], resposta: 0 },
     { id: 'viagem1-7', tipo: 'traduzir', habilidade: 'escrita', dif: 2, pt: 'Estou aqui de férias por duas semanas.', aceitas: ["I'm here on vacation for two weeks", 'I am here on vacation for two weeks', "I'm here on holiday for two weeks", 'I am here on holiday for two weeks'] },
@@ -680,12 +680,12 @@ M.push({
     { en: "It's about five minutes away on foot.", pt: 'Fica a uns cinco minutos a pé.' },
   ],
   exercicios: [
-    { id: 'viagem2-1', tipo: 'escolha', habilidade: 'gramatica', tag: 'sujeito-oculto', dif: 1, enunciado: '"Tem uma farmácia aqui perto?"', opcoes: ['Is there a pharmacy near here?', 'Have a pharmacy near here?', 'Has pharmacy near here?'], resposta: 0 },
+    { id: 'viagem2-1', tipo: 'escolha', habilidade: 'gramatica', tag: 'sujeito-oculto', dif: 1, enunciado: '"Tem uma farmácia aqui perto?"', opcoes: ['Is there a pharmacy near here?', 'Have a pharmacy near here?', 'Has pharmacy near here?'], resposta: 0, explica: "Is there...? pergunta se existe algo no local. A pharmacy é uma farmácia; near here significa aqui perto." },
     { id: 'viagem2-2', tipo: 'lacuna', habilidade: 'vocabulario', dif: 1, frase: "I'd ___ the soup of the day, please.", resposta: ['like', 'have'] },
     { id: 'viagem2-3', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: 'Go straight for two blocks and turn left. The museum is on your right.', pergunta: 'Como chegar ao museu?', opcoes: ['Reto duas quadras, virar à esquerda, fica à direita', 'Virar à direita e seguir reto por três quadras', 'Reto uma quadra, o museu fica à esquerda'], resposta: 0 },
     { id: 'viagem2-4', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: "That's twenty-four fifty. Would you like to pay by card?", pergunta: 'Quanto deu a conta?', opcoes: ['24,50', '42,50', '20,45'], resposta: 0 },
     { id: 'viagem2-5', tipo: 'ordenar', habilidade: 'gramatica', dif: 1, palavras: ['How', 'do', 'I', 'get', 'to', 'the', 'station'], resposta: 'How do I get to the station', sufixo: '?' },
-    { id: 'viagem2-6', tipo: 'traduzir', habilidade: 'escrita', dif: 2, pt: 'Pode trazer a conta, por favor?', aceitas: ['Could I have the check, please', 'Can I have the check, please', 'Could I have the bill, please', 'Can I have the bill, please', 'Could we have the check, please', 'Could we have the bill, please'], sufixo: '?' },
+    { id: 'viagem2-6', tipo: 'traduzir', habilidade: 'escrita', dif: 2, pt: 'Pode trazer a conta, por favor?', aceitas: ['Could I have the check, please', 'Can I have the check, please', 'Could I have the bill, please', 'Can I have the bill, please', 'Could we have the check, please', 'Could we have the bill, please', 'Could you bring the bill, please', 'Can you bring the check, please'], sufixo: '?' },
     { id: 'viagem2-7', tipo: 'ditado', habilidade: 'escuta', dif: 2, audio: "It's ten minutes away on foot.", resposta: ["It's ten minutes away on foot", 'It is ten minutes away on foot', "It's 10 minutes away on foot"] },
     { id: 'viagem2-8', tipo: 'lacuna', habilidade: 'gramatica', tag: 'sujeito-oculto', dif: 2, frase: "___ very cold today. Let's take a taxi.", resposta: ["It's", 'It is'] },
   ],
@@ -734,12 +734,12 @@ M.push({
   ],
   exercicios: [
     { id: 'fds-1', tipo: 'lacuna', habilidade: 'gramatica', tag: 'passado-irregular', dif: 1, frase: 'On Saturday I ___ (go) to the beach.', resposta: ['went'] },
-    { id: 'fds-2', tipo: 'escolha', habilidade: 'gramatica', tag: 'perguntas-do', dif: 1, enunciado: 'Pergunta correta:', opcoes: ['What did you do on Sunday?', 'What did you did on Sunday?', 'What you did on Sunday?'], resposta: 0 },
+    { id: 'fds-2', tipo: 'escolha', habilidade: 'gramatica', tag: 'perguntas-do', dif: 1, enunciado: 'Pergunta correta:', opcoes: ['What did you do on Sunday?', 'What did you did on Sunday?', 'What you did on Sunday?'], resposta: 0, explica: "Na pergunta sobre o passado, did vem antes do sujeito e o verbo principal fica na forma básica: What did you do...?" },
     { id: 'fds-3', tipo: 'lacuna', habilidade: 'gramatica', tag: 'passado-irregular', dif: 2, frase: 'We ___ (have) a barbecue and ___ (see) some old friends.', resposta: ['had saw', 'had, saw'], multi: true },
     { id: 'fds-4', tipo: 'escuta', habilidade: 'escuta', tag: 'passado-irregular', dif: 2, audio: 'It was quiet. I stayed home on Saturday, but on Sunday I took my kids to the park.', pergunta: 'O que a pessoa fez no domingo?', opcoes: ['Levou os filhos ao parque', 'Ficou em casa descansando o dia todo', 'Foi a uma festa de aniversário'], resposta: 0 },
     { id: 'fds-5', tipo: 'escuta', habilidade: 'escuta', dif: 3, audio: "We drove to the mountains, but it rained all day, so we spent most of the time in a café.", pergunta: 'Por que ficaram no café?', opcoes: ['Choveu o dia todo', 'O carro quebrou', 'Estava muito frio para andar'], resposta: 0 },
     { id: 'fds-6', tipo: 'ordenar', habilidade: 'gramatica', tag: 'perguntas-do', dif: 2, palavras: ['Where', 'did', 'you', 'go', 'last', 'weekend'], resposta: 'Where did you go last weekend', sufixo: '?' },
-    { id: 'fds-7', tipo: 'traduzir', habilidade: 'escrita', tag: 'passado-irregular', dif: 2, pt: 'No sábado eu fiquei em casa e assisti a uma série.', aceitas: ['On Saturday I stayed home and watched a series', 'On Saturday I stayed at home and watched a series', 'On Saturday I stayed home and watched a show', 'On Saturday I stayed home and watched a TV series'] },
+    { id: 'fds-7', tipo: 'traduzir', habilidade: 'escrita', tag: 'passado-irregular', dif: 2, pt: 'No sábado eu fiquei em casa e assisti a uma série.', aceitas: ['On Saturday I stayed home and watched a series', 'On Saturday I stayed at home and watched a series', 'On Saturday I stayed home and watched a show', 'On Saturday I stayed home and watched a TV series', 'On Saturday I stayed at home and watched a TV series', 'On Saturday I stayed at home and watched a show'] },
     { id: 'fds-8', tipo: 'ditado', habilidade: 'escuta', dif: 2, audio: 'How was your weekend?', resposta: ['How was your weekend'], sufixo: '?' },
   ],
   tarefa: {
@@ -788,7 +788,7 @@ M.push({
   ],
   exercicios: [
     { id: 'rotina-1', tipo: 'lacuna', habilidade: 'gramatica', tag: 'terceira-pessoa', dif: 1, frase: 'My sister ___ (live) in Canada.', resposta: ['lives'] },
-    { id: 'rotina-2', tipo: 'escolha', habilidade: 'vocabulario', tag: 'falsos-cognatos', dif: 2, enunciado: '"De vez em quando eu viajo a trabalho."', opcoes: ['Sometimes I travel for work.', 'Eventually I travel for work.', 'Actually I travel for work.'], resposta: 0 },
+    { id: 'rotina-2', tipo: 'escolha', habilidade: 'vocabulario', tag: 'falsos-cognatos', dif: 2, enunciado: '"De vez em quando eu viajo a trabalho."', opcoes: ['Sometimes I travel for work.', 'Eventually I travel for work.', 'Actually I travel for work.'], resposta: 0, explica: "Sometimes significa às vezes e pode vir no começo. For work indica o motivo da viagem: a trabalho." },
     { id: 'rotina-3', tipo: 'ordenar', habilidade: 'gramatica', dif: 1, palavras: ['I', 'usually', 'wake', 'up', 'at', 'seven'], resposta: 'I usually wake up at seven' },
     { id: 'rotina-4', tipo: 'escuta', habilidade: 'escuta', dif: 1, audio: 'I usually work from home on Mondays and Fridays.', pergunta: 'Quando a pessoa trabalha de casa?', opcoes: ['Segundas e sextas', 'Todos os dias', 'Só nos fins de semana'], resposta: 0 },
     { id: 'rotina-5', tipo: 'escuta', habilidade: 'escuta', tag: 'terceira-pessoa', dif: 2, audio: 'My wife teaches math, and she goes to school very early, so I take the kids to school.', pergunta: 'Quem leva as crianças à escola?', opcoes: ['A pessoa que está falando', 'A esposa', 'Os avós'], resposta: 0 },
@@ -841,7 +841,7 @@ M.push({
     { en: "In five years, I'd like to lead my own team.", pt: 'Em cinco anos, gostaria de liderar minha própria equipe.' },
   ],
   exercicios: [
-    { id: 'planos-1', tipo: 'escolha', habilidade: 'vocabulario', tag: 'falsos-cognatos', dif: 1, enunciado: '"Pretendo mudar de área."', opcoes: ['I plan to change careers.', 'I pretend to change careers.', 'I pretend change careers.'], resposta: 0 },
+    { id: 'planos-1', tipo: 'escolha', habilidade: 'vocabulario', tag: 'falsos-cognatos', dif: 1, enunciado: '"Pretendo mudar de área."', opcoes: ['I plan to change careers.', 'I pretend to change careers.', 'I pretend change careers.'], resposta: 0, explica: "Depois de plan, use to + verbo: plan to change. Change careers significa mudar de área profissional." },
     { id: 'planos-2', tipo: 'lacuna', habilidade: 'gramatica', dif: 1, frase: "I'm ___ to start the new job in May.", resposta: ['going'] },
     { id: 'planos-3', tipo: 'lacuna', habilidade: 'vocabulario', tag: 'make-do', dif: 2, frase: "I'm going to ___ a course in data analysis.", resposta: ['take', 'do'] },
     { id: 'planos-4', tipo: 'escuta', habilidade: 'escuta', dif: 2, audio: 'In the short term, I want to improve my English. In the long term, I plan to work in Canada.', pergunta: 'Qual é o plano de longo prazo?', opcoes: ['Trabalhar no Canadá', 'Melhorar o inglês', 'Mudar de empresa no Brasil'], resposta: 0 },
@@ -885,6 +885,9 @@ for (const m of M) {
   const cand = m.exemplos.filter(x => { const n = x.en.trim().split(/\s+/).length; return n >= 3 && n <= 8; }).sort((a, b) => a.en.length - b.en.length)[0];
   if (cand) m.exercicios.push({ id: `${m.id}-fala`, tipo: 'fala', habilidade: 'fala', dif: m.nivel === 'A1' ? 1 : 2, frase: cand.en, audio: cand.en, pt: cand.pt });
 }
+
+const { GUIAS } = require('./guias');
+for (const m of M) m.guia = GUIAS[m.id] || { foco: m.explicacao.titulo, exemplo: m.exemplos[0], nota: m.explicacao.texto };
 
 const POR_ID = Object.fromEntries(M.map(m => [m.id, m]));
 const TODOS_EXERCICIOS = Object.fromEntries(M.flatMap(m => m.exercicios.map(e => [e.id, { ...e, missao: m.id }])));

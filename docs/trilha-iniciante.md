@@ -6,8 +6,8 @@ A trilha inicial funciona para crianças, adolescentes e adultos. A idade muda o
 
 1. Idade e perfil de aluno ou professor no cadastro. Contas existentes completam esses dados uma vez. Quem é menor de idade confirma a autorização do responsável.
 2. Quem escolhe começar do zero entra direto na primeira aula, sem teste e sem perguntas sobre carreira ou prazo.
-3. A primeira aula ensina Hello, Bye e Thank you: uma expressão por tela, com significado e áudio lento opcional.
-4. Até cinco atividades por aula: combinar até três pares, reconhecer significados e ouvir. Completar e montar frases entram depois. Ditado e escrita livre não são exigidos no primeiro contato.
+3. A primeira missão ensina Hello, Bye e Thank you, duas expressões por aula: uma expressão por tela, com significado e áudio lento opcional.
+4. Até sete atividades curtas por aula: combinar até três pares, reconhecer significados e ouvir. Completar e montar frases entram depois. Ditado e escrita livre não são exigidos no primeiro contato.
 5. Toda resposta mostra o resultado e uma explicação. Há dicas, tradução ao toque, consulta da resposta e nova tentativa de prática.
 
 ## Ajuda e progresso
@@ -42,3 +42,21 @@ Uma aula da turma pode incluir explicação, palavras, texto em inglês, traduç
 - Tradução ao toque: `public/assets/js/traducao.js`.
 - Professor e aluno: `src/turmas.js`, `src/motor/turmas.js` e telas `professor.js` e `turmas.js`.
 - Testes: `npm test`, incluindo idade, nivelamento, correção, assinatura, biblioteca, privacidade e reutilização de aulas.
+
+## Reforço antes da aplicação
+
+No A1, cada par de expressões é praticado em duas aulas. Antes da aplicação,
+quatro oficinas acrescentam vinte atividades sobre duas frases curtas, repetidas
+em aulas consecutivas. A primeira tentativa mostra modelo, significado e
+explicação; depois o apoio é retirado aos poucos. As doze missões do zero têm
+frases divididas em pedaços com tradução, incluindo os elementos gramaticais.
+
+O modelo aparece junto à questão e pode ser ouvido devagar. A resposta com
+modelo é registrada pelo servidor como prática com ajuda, inclusive na sessão
+curta. Ela não eleva a dificuldade adaptativa nem o domínio independente.
+Alternativas da base usam somente o par apresentado ou palavras já ensinadas.
+
+Lições salvas continuam disponíveis. O plano usa a duração atual ao avançar,
+mesmo quando uma versão antiga guardou apenas três partes. Missões já
+demonstradas preservam seu estado. A duração da sessão curta é calculada com
+o vocabulário completo da missão, não com o recorte exibido naquele dia.

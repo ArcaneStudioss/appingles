@@ -6,9 +6,10 @@
 const { POR_ID, TODOS_EXERCICIOS } = require('../conteudo/missoes');
 const { POR_TAG } = require('../conteudo/dificuldades');
 const { CENARIOS } = require('../conteudo/cenarios');
-const { embaralhar, diasEntre } = require('./util');
+const { embaralhar, diasEntre, normalizar } = require('./util');
 const { dificuldadeAlvo } = require('./modelo');
 const { licoesPorMissao } = require('./plano');
+const { montarBaseIniciante } = require('./licao-iniciante');
 const { montarGuiada } = require('./licao-guiada');
 const { apoioDoExercicio } = require('./apoio');
 
@@ -23,7 +24,7 @@ function missaoAtual(plano, competencias) {
   for (const m of plano.missoes) {
     const c = competencias[m.id];
     // A criança pode seguir depois de praticar com ajuda. O selo de domínio continua exigindo uso independente.
-    if (m.id.startsWith('zero-') && c?.partes >= (m.licoes || 3)) continue;
+    if (m.id.startsWith('zero-') && c?.partes >= licoesPorMissao(POR_ID[m.id], plano.nivelInicial || 'A1')) continue;
     if (!c || c.status === 'nao_iniciada' || c.status === 'praticando') return m;
   }
   return null;    // trilha concluída: entra o modo "manter e ampliar"
@@ -33,13 +34,13 @@ function escolherExercicios(lista, { quantos, alvo, vistos, preferirProducao, ex
   const pontua = e => {
     let p = 0;
     const v = vistos[e.id];
-    if (!v) p += 3; else if (!v.acertou) p += 2;
+    if (v && !v.acertou) p += 6; else if (!v) p += 3;
     if ((e.dif || 1) <= alvo) p += 1; else p -= 1;
     if ((e.dif || 1) === alvo) p += 0.5;
     if (preferirProducao && PRODUCAO.includes(e.tipo)) p += 1.5;
     return p;
   };
-  return lista.filter(e => !excluir.has(e.id)).map(e => [e, pontua(e)]).sort((a, b) => b[1] - a[1]).slice(0, quantos).map(([e]) => e);
+  return lista.filter(e => !excluir.has(e.id) && (e.dif || 1) <= alvo).map(e => [e, pontua(e)]).sort((a, b) => b[1] - a[1]).slice(0, quantos).map(([e]) => e);
 }
 
 function exerciciosDaTag(tag) {
@@ -67,17 +68,19 @@ function blocoFoco(foco, origemTexto) {
 }
 
 // Teto de questões por lição: 10, ou 7 quando há áudio (escuta pesa mais). A tarefa de escrever no fim não conta.
-// Corta primeiro o que é reforço (respostas rápidas, retomada, treino extra) e só depois a prática principal.
+// Corta primeiro o treino extra e preserva uma questão de prática, escuta e retomada.
 const MAX_QUESTOES = 10, MAX_COM_AUDIO = 7;
-const ORDEM_CORTE = [b => b.tipo === 'rapidas', b => b.tipo === 'retomada', b => b.titulo === 'Treino extra', b => b.tipo === 'exercicios' && b.titulo !== 'Combine os pares' && b.titulo !== 'Treino extra', b => b.tipo === 'escuta'];
-function limiteDaLicao(blocos) { return blocos.some(b => b.tipo === 'escuta' || b.exercicios?.some(e => e.tipo === 'escuta' || e.tipo === 'ditado')) ? MAX_COM_AUDIO : MAX_QUESTOES; }
+const ORDEM_CORTE = [b => b.tipo === 'rapidas', b => b.titulo === 'Treino extra', b => b.personalizado,
+  b => b.tipo === 'exercicios' && b.titulo !== 'Combine os pares', b => b.tipo === 'escuta', b => b.tipo === 'foco', b => b.tipo === 'retomada', b => b.tipo === 'exercicios'];
+function limiteDaLicao(blocos) { return blocos.some(b => b.tipo === 'escuta' || b.exercicios?.some(e => ['escuta', 'ditado', 'fala'].includes(e.tipo))) ? MAX_COM_AUDIO : MAX_QUESTOES; }
 function limitarQuestoes(blocos) {
-  const conta = () => blocos.reduce((n, b) => n + (b.exercicios ? b.exercicios.length : 0), 0);
+  const conta = () => blocos.reduce((n, b) => n + (b.exercicios?.length || 0), 0);
   const antes = conta(), teto = limiteDaLicao(blocos);
-  for (const alvo of ORDEM_CORTE) {
-    for (const b of blocos.filter(alvo).reverse()) {
-      while (b.exercicios.length > 1 && conta() > teto) b.exercicios.pop();
-      if (conta() > teto && b.exercicios.length === 1 && b.tipo !== 'escuta') b.exercicios.pop();
+  // Preservar uma questão de prática, escuta e retomada antes de cortar um bloco inteiro.
+  for (const minimo of [1, 0]) {
+    for (const alvo of ORDEM_CORTE) for (const b of blocos.filter(alvo).reverse()) {
+      const manter = b.tipo === 'rapidas' || b.titulo === 'Treino extra' ? 0 : minimo;
+      while (b.exercicios?.length > manter && conta() > teto) b.exercicios.pop();
     }
     if (conta() <= teto) break;
   }
@@ -97,6 +100,8 @@ function montarLicao(ctx) {
   const { perfil, plano, nivel, tentativas = [], competencias = {}, focos = [], hipoteses = [], hojeISO, cartoesPendentes = 0 } = ctx;
   const proxima = missaoAtual(plano, competencias);
   if (proxima?.id.startsWith('zero-') && !plano.missoes.some(m => retesteVencido(competencias[m.id], hojeISO))) return montarGuiada(ctx, proxima);
+  const base = proxima && montarBaseIniciante(ctx, proxima);
+  if (base && !plano.missoes.some(m => retesteVencido(competencias[m.id], hojeISO))) return base;
   const orcamento = Math.max(10, Math.min(20, perfil.minutos_dia | 0 || 15));
   let gasto = 0;
   const porque = [], blocos = [];
@@ -134,7 +139,7 @@ function montarLicao(ctx) {
     const [m] = missaoReteste; const def = POR_ID[m.id];
     const c = competencias[m.id];
     const situacao = def.reteste[(c.retestes || 0) % def.reteste.length];
-    blocos.push({ tipo: 'producao', reteste: true, missao: m.id, titulo: `Teste em outra situação: ${def.titulo.toLowerCase()}`, situacao, tarefa: { ...def.tarefa, enunciado: situacao }, semDicas: true, focoId: focoReteste?.id || null, focoTag: focoReteste?.tag || null });
+    blocos.push({ tipo: 'producao', reteste: true, missao: m.id, titulo: `Teste em outra situação: ${def.titulo.toLowerCase()}`, situacao, tarefa: { ...def.tarefa, enunciado: situacao + ' Inclua: ' + def.tarefa.elementos.map(e => e.nome).join('; ') + '.' }, semDicas: true, focoId: focoReteste?.id || null, focoTag: focoReteste?.tag || null });
     gasto += MIN.producao; temProducao = true;
     porque.push(`Você demonstrou “${def.titulo.toLowerCase()}” há ${diasEntre(c.demonstrado_em.slice(0, 10), hojeISO)} dias. Agora vamos ver se ficou, numa situação nova e sem dicas.`);
   } else if (focoReteste) {
@@ -157,17 +162,17 @@ function montarLicao(ctx) {
     const parte = Math.min(total, feitas + 1);
     missaoInfo = { id: def.id, titulo: def.titulo, podeFazer: def.podeFazer, parte, total };
     const resta = Math.max(4, orcamento - gasto);
-    const primeira = parte === 1;
+    const primeira = nivel === 'A1' ? parte === total - 2 : parte === 1;
     const ultima = parte === total;
     porque.push(`${primeira ? "Começamos" : "Seguimos com"} a missão “${def.titulo}” (parte ${parte} de ${total}), um passo do seu objetivo: ${plano.objetivoNome.toLowerCase()}.`);
 
     if (primeira) {
-      blocos.push({ tipo: 'explicacao', titulo: def.explicacao.titulo, texto: def.explicacao.texto, estrutura: def.explicacao.estrutura, exemplos: def.exemplos, vocab: def.vocab, missao: def.id });
+      blocos.push({ tipo: 'explicacao', titulo: def.explicacao.titulo, texto: def.explicacao.texto, estrutura: def.explicacao.estrutura, exemplos: def.exemplos, vocab: def.vocab, guia: def.guia, missao: def.id });
       // combinar pares com o vocabulário que acabou de aparecer (aquecimento rápido de memória)
       blocos.push({ tipo: 'exercicios', titulo: 'Combine os pares', exercicios: [{ id: `pares:${def.id}`, tipo: 'pares', habilidade: 'vocabulario', dif: 1, missao: def.id, pares: def.vocab.slice(0, 5).map(v => ({ en: v.en, pt: v.pt })) }] });
       gasto += 1;
     } else {
-      blocos.push({ tipo: 'lembrete', titulo: 'Relembrando a estrutura', estrutura: def.explicacao.estrutura, missao: def.id });
+      blocos.push({ tipo: 'lembrete', titulo: 'Relembrando a estrutura', estrutura: def.explicacao.estrutura, guia: def.guia, missao: def.id });
       // aquecimento diferente a cada parte: o vocabulário da missão girado, para não repetir os mesmos 5 pares
       const giro = def.vocab.slice((parte - 1) % def.vocab.length).concat(def.vocab.slice(0, (parte - 1) % def.vocab.length));
       blocos.push({ tipo: 'exercicios', titulo: 'Combine os pares', exercicios: [{ id: `pares:${def.id}:${parte}`, tipo: 'pares', habilidade: 'vocabulario', dif: 1, missao: def.id, pares: giro.slice(0, 5).map(v => ({ en: v.en, pt: v.pt })) }] });
@@ -176,25 +181,28 @@ function montarLicao(ctx) {
     const custoExp = primeira ? MIN.explicacao : 0.5;
     const reservaProducao = ultima && !temProducao ? MIN.producao : 0;
     const vagas = Math.max(2, Math.floor((resta - custoExp - reservaProducao) / MIN.exercicio));
-    const naoEscuta = def.exercicios.filter(e => e.tipo !== 'escuta' && e.tipo !== 'ditado' && e.tipo !== 'fala');
-    const escuta = def.exercicios.filter(e => e.tipo === 'escuta' || e.tipo === 'ditado');
+    const permitidos = def.exercicios.filter(e => nivel !== 'A1' || ((e.dif || 1) <= (ultima ? 2 : 1) && (ultima || !['traduzir', 'ditado'].includes(e.tipo))));
+    const naoEscuta = permitidos.filter(e => e.tipo !== 'escuta' && e.tipo !== 'ditado' && e.tipo !== 'fala');
+    const escuta = permitidos.filter(e => e.tipo === 'escuta' || e.tipo === 'ditado');
     const nEscuta = Math.min(escuta.length, hip.has('escuta-x-leitura') ? 3 : primeira ? 1 : 2);
     // cada parte usa sua fatia dos exercícios da missão (senão a parte 1 gasta tudo)
-    const fatia = Math.ceil(naoEscuta.length / total) + (primeira ? 0 : 1);
+    const fatia = Math.ceil(naoEscuta.length / (nivel === 'A1' ? 3 : total)) + (primeira ? 0 : 1);
     const exs = escolherExercicios(naoEscuta, { quantos: Math.max(1, Math.min(vagas - nEscuta, fatia)), alvo: primeira ? Math.min(alvo, 2) : alvo, vistos, preferirProducao, excluir: usados });
     exs.forEach(e => usados.add(e.id));
     if (exs.length) blocos.push({ tipo: 'exercicios', titulo: primeira ? 'Primeira prática' : 'Prática', exercicios: exs.map(e => ({ ...e, missao: def.id })) });
     const esc = escolherExercicios(escuta, { quantos: nEscuta, alvo, vistos, excluir: usados });
+    esc.forEach(e => usados.add(e.id));
     if (esc.length) blocos.push({ tipo: 'escuta', titulo: 'Escuta', exercicios: esc.map(e => ({ ...e, missao: def.id })), devagar: hip.has('escuta-x-leitura') || nivel === 'A1', mostrarTextoDepois: true });
     // a partir da segunda parte da missão entra uma frase para falar em voz alta (microfone ou digitando)
     const fala = !primeira ? escolherExercicios(def.exercicios.filter(e => e.tipo === 'fala'), { quantos: 1, alvo, vistos, excluir: usados }) : [];
+    fala.forEach(e => usados.add(e.id));
     if (fala.length) { blocos.push({ tipo: 'exercicios', titulo: 'Fale em voz alta', exercicios: fala.map(e => ({ ...e, missao: def.id })) }); gasto += MIN.exercicio; }
     if (hip.has('escuta-x-leitura')) porque.push('Incluímos mais escuta porque, até aqui, você tem entendido melhor lendo do que ouvindo.');
     if (preferirProducao) porque.push('Trocamos parte das alternativas por frases para você montar, porque produzir sozinho ainda é o passo que falta.');
     gasto += custoExp + exs.length * MIN.exercicio + esc.length * MIN.escuta;
     // sobrou tempo? treino extra dos pontos de gramática da missão (catálogo de dificuldades)
     const sobra = Math.floor((orcamento - gasto - (ultima && !temProducao ? MIN.producao : 0) - 1) / MIN.exercicio);
-    if (sobra >= 2) {
+    if (sobra >= 2 && nivel !== 'A1') {
       const extra = escolherExercicios(def.tags.flatMap(exerciciosDaTag), { quantos: Math.min(4, sobra), alvo, vistos, preferirProducao, excluir: usados });
       extra.forEach(e => usados.add(e.id));
       if (extra.length) { blocos.push({ tipo: 'exercicios', titulo: 'Treino extra', exercicios: extra }); gasto += extra.length * MIN.exercicio; }
@@ -210,8 +218,8 @@ function montarLicao(ctx) {
 
   // 4) Retomada: 1-2 itens de missões anteriores (lembrar depois de dias ajuda a fixar)
   const anteriores = plano.missoes.filter(m => competencias[m.id] && competencias[m.id].status !== 'nao_iniciada' && m.id !== atual?.id);
-  if (anteriores.length && gasto < orcamento - 1) {
-    const pool = anteriores.flatMap(m => POR_ID[m.id].exercicios.map(e => ({ ...e, missao: m.id }))).filter(e => !usados.has(e.id));
+  if (anteriores.length) {
+    const pool = anteriores.flatMap(m => POR_ID[m.id].exercicios.map(e => ({ ...e, missao: m.id }))).filter(e => !usados.has(e.id) && (e.dif || 1) <= alvo);
     const errados = pool.filter(e => vistos[e.id] && !vistos[e.id].acertou);
     const escolha = (errados.length ? errados : embaralhar(pool, hojeISO)).slice(0, gasto < orcamento - 2 ? 2 : 1);
     if (escolha.length) {
@@ -263,6 +271,7 @@ function paraCliente(licao, semente) {
     if (e.imagem) base.imagem = e.imagem;
     if (e.tokens) base.tokens = e.tokens;   // caça ao erro: só as palavras; o índice do erro fica no servidor
     if (e.oponente) base.oponente = e.oponente;
+    if (e.ensino) base.ensino = e.ensino;
     if (e.pares) base.pares = e.pares;   // nos pares a tradução já foi mostrada na explicação: não é gabarito escondido
     return base;
   };
@@ -271,7 +280,7 @@ function paraCliente(licao, semente) {
     blocos: licao.blocos.map(b => {
       const c = { ...b };
       if (b.exercicios) c.exercicios = b.exercicios.map(limpar);
-      if (b.tarefa) c.tarefa = { enunciado: b.tarefa.enunciado, minPalavras: b.tarefa.minPalavras, dicas: b.semDicas ? [] : (b.tarefa.dicas || []), modelo: b.guiada && !b.semDicas ? b.tarefa.modelo : null, elementos: (b.tarefa.elementos || []).map(e => e.nome) };
+      if (b.tarefa) c.tarefa = { enunciado: b.tarefa.enunciado, minPalavras: b.tarefa.minPalavras, dicas: b.semDicas ? [] : (b.tarefa.dicas || []), roteiro: b.semDicas ? [] : (b.tarefa.elementos || []).map(e => e.nome), modelo: !b.semDicas ? b.tarefa.modelo || null : null, elementos: (b.tarefa.elementos || []).map(e => e.nome) };
       return c;
     }),
   };
@@ -285,11 +294,15 @@ function acharExercicio(licaoCompleta, id) {
 
 // Exercícios vindos da IA: só entra o que tem forma válida e uma resposta certa clara.
 function validarExerciciosIa(lista, missaoId, tag, max = 3) {
+  if (!Number.isInteger(max) || max < 1) return [];
   const ok = [];
   const txt = (s, max) => typeof s === 'string' && s.trim().length > 0 && s.length <= max;
   for (const e of (Array.isArray(lista) ? lista : []).slice(0, max + 4)) {
+    if (!e || !txt(e.explicacao, 300)) continue;
+    const assinatura = normalizar(e.enunciado || e.frase || e.pt);
+    if (ok.some(x => normalizar(x.enunciado || x.frase || x.pt) === assinatura)) continue;
     const base = { id: `ia:${missaoId}:${ok.length}`, habilidade: e.tipo === 'traduzir' ? 'escrita' : 'gramatica', tag: tag || null, dif: 2, missao: missaoId, personalizado: true, explica: txt(e.explicacao, 300) ? e.explicacao : null };
-    if (e.tipo === 'escolha' && txt(e.enunciado, 200) && Array.isArray(e.opcoes) && e.opcoes.length >= 2 && e.opcoes.length <= 5 && e.opcoes.every(o => txt(o, 160)) && new Set(e.opcoes).size === e.opcoes.length && Number.isInteger(e.correta) && e.correta >= 0 && e.correta < e.opcoes.length)
+    if (e.tipo === 'escolha' && txt(e.enunciado, 200) && Array.isArray(e.opcoes) && e.opcoes.length >= 2 && e.opcoes.length <= 5 && e.opcoes.every(o => txt(o, 160)) && new Set(e.opcoes.map(normalizar)).size === e.opcoes.length && Number.isInteger(e.correta) && e.correta >= 0 && e.correta < e.opcoes.length)
       ok.push({ ...base, tipo: 'escolha', enunciado: e.enunciado, opcoes: e.opcoes, resposta: e.correta });
     else if (e.tipo === 'lacuna' && txt(e.frase, 200) && e.frase.split('___').length === 2 && Array.isArray(e.respostas_aceitas) && e.respostas_aceitas.length && e.respostas_aceitas.every(r => txt(r, 60)))
       ok.push({ ...base, tipo: 'lacuna', frase: e.frase, resposta: e.respostas_aceitas });
@@ -300,4 +313,4 @@ function validarExerciciosIa(lista, missaoId, tag, max = 3) {
   return ok;
 }
 
-module.exports = { retesteVencido, limitarQuestoes, limiteDaLicao, MAX_QUESTOES, MAX_COM_AUDIO, montarLicao, paraCliente, acharExercicio, exerciciosDaTag, missaoAtual, validarExerciciosIa };
+module.exports = { escolherExercicios, retesteVencido, limitarQuestoes, limiteDaLicao, MAX_QUESTOES, MAX_COM_AUDIO, montarLicao, paraCliente, acharExercicio, exerciciosDaTag, missaoAtual, validarExerciciosIa };

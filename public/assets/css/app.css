@@ -1142,8 +1142,8 @@ body.foco-total .pouso{display:none}
 }
 @keyframes ab-voo-x{from{transform:translateX(-85vw)}}
 @keyframes ab-voo-y{0%{transform:translateY(22vh) rotate(-16deg)}45%{transform:translateY(-9vh) rotate(-6deg)}75%{transform:translateY(3vh) rotate(5deg)}90%{transform:translateY(-1vh) rotate(-1deg)}100%{transform:none}}
-@keyframes ab-asa-d{from{transform:rotate(-26deg)}to{transform:rotate(24deg)}}
-@keyframes ab-asa-e{from{transform:rotate(26deg)}to{transform:rotate(-24deg)}}
+@keyframes ab-asa-d{from{transform:rotate(-18deg) scaleY(.92)}to{transform:rotate(28deg) scaleY(1)}}
+@keyframes ab-asa-e{from{transform:rotate(18deg) scaleY(.92)}to{transform:rotate(-28deg) scaleY(1)}}
 @keyframes ab-paira{to{transform:translateY(-10px)}}
 @keyframes ab-vento{0%{opacity:0;transform:scaleX(.3)}25%{opacity:1;transform:none}80%{opacity:.9}100%{opacity:0;transform:translateX(-24px)}}
 @media (prefers-reduced-motion:no-preference){
@@ -1224,7 +1224,7 @@ body.foco-total .pouso{display:none}
 /* Cada fase tem o próprio tom visual; o nível do conteúdo é independente da idade. */
 body[data-publico="adulto"]{--f-titulo:"Nunito",system-ui,sans-serif;--ceu:none;--raio:16px;--raio-p:11px;--mola:cubic-bezier(.22,1,.36,1);font-weight:500}
 body[data-publico="adolescente"]{--f-titulo:"Nunito",system-ui,sans-serif;--ceu:none;--raio:18px;--raio-p:13px}
-body[data-publico="adulto"] .palavra-nova__imagem,body[data-publico="adulto"] .exercicio__cena,body[data-publico="adulto"] .folha-resposta__lou,body[data-publico="adulto"] .confete,body[data-publico="adulto"] .voo-festa{display:none}
+body[data-publico="adulto"] .palavra-nova__imagem,body[data-publico="adulto"] .exercicio__cena,body[data-publico="adulto"] .folha-resposta__lou,body[data-publico="adulto"] .confete{display:none}
 body[data-publico="adulto"] .aula__pacote{display:none}
 body[data-publico="adulto"] .lou-fala>.lou{max-width:52px;max-height:52px}
 body[data-publico="adulto"] .passo--fim>.lou{max-width:72px;max-height:72px}
@@ -1542,3 +1542,60 @@ body[data-publico] .retorno-exercicio .companheiros--compactos{--mia-alto:48px;-
   .pouso--pula .lou{animation:ab-pulinho .9s var(--mola)}
 }
 @keyframes ab-pulinho{0%{transform:none}25%{transform:translateY(-12px) rotate(-8deg)}50%{transform:translateY(0) rotate(6deg)}70%{transform:translateY(-6px) rotate(-3deg)}100%{transform:none}}
+
+/* Coreografia: passos da Mia e decolagem/pouso do Tuí, sem interceptar a atividade. */
+.dupla{position:relative;padding-top:18px}
+.dupla::after{content:"";position:absolute;bottom:-3px;left:12%;width:76%;height:7px;border-radius:50%;background:rgba(26,51,160,.12);z-index:-1}
+.dupla__ator--tuiuiu{position:relative}
+.dupla__pousado{display:flex}
+.dupla__pousado>.lou{height:var(--tui-alto,96px);width:auto}
+.dupla__voador{position:absolute;width:160%;left:-30%;bottom:20%;opacity:0;pointer-events:none}
+.dupla__voador>.lou{width:100%;height:auto;display:block;overflow:visible}
+.dupla .dupla__voador .asa{animation:none}
+.dupla__notas{position:absolute;right:-4px;top:2px;color:var(--rosa-forte);font-size:1.3rem;font-weight:900;opacity:0;pointer-events:none}
+.mia__perna--esquerda{transform-origin:51px 136px}
+.mia__perna--direita{transform-origin:69px 136px}
+.mia__tranca{transform-origin:60px 22px}
+.voo-festa__mia{position:absolute;right:clamp(14px,8vw,140px);bottom:calc(90px + env(safe-area-inset-bottom,0px));filter:drop-shadow(0 9px 7px rgba(26,51,160,.2))}
+.voo-festa__mia>.lou{height:clamp(150px,24vh,210px);width:auto;overflow:visible}
+.festa-notas{position:absolute;inset:0 -24px auto;color:var(--rosa-forte);font-size:1.7rem;font-weight:900;text-shadow:0 2px white}
+body[data-publico] .retorno-exercicio .companheiros--compactos:is([data-fase=combo],[data-fase=superacao],[data-fase=fim]){--mia-alto:118px;--tui-alto:84px;--dupla-largo:150px;grid-template-columns:1fr;justify-items:center;gap:.4rem}
+body[data-publico] .retorno-exercicio .companheiros--compactos:is([data-fase=combo],[data-fase=superacao],[data-fase=fim]) .companheiros__balao{width:100%}
+@media(prefers-reduced-motion:no-preference){
+  .dupla:not(.dupla--silenciosa) .lou__olhos{animation:dupla-pisca 6.5s ease-in-out infinite}
+  .dupla[data-acao=inicio] .lou__corpo{animation:dupla-respira 4s ease-in-out infinite}
+  .dupla[data-acao=inicio] .mia__cabeca{animation:mia-curiosa 9s ease-in-out infinite}
+  .dupla:is([data-acao=acerto],[data-acao=superacao],[data-acao=combo],[data-acao=fim]) .dupla__ator--tuiuiu{animation:tui-volta-alegre 2.8s ease-in-out 1}
+  .dupla:is([data-acao=acerto],[data-acao=superacao],[data-acao=combo],[data-acao=fim]) .dupla__pousado{animation:tui-sai-poleiro 2.8s ease-in-out 1}
+  .dupla:is([data-acao=acerto],[data-acao=superacao],[data-acao=combo],[data-acao=fim]) .dupla__voador{animation:tui-abre-voo 2.8s ease-in-out 1}
+  .dupla:is([data-acao=acerto],[data-acao=superacao],[data-acao=combo],[data-acao=fim]) .dupla__voador .asa--d{animation:ab-asa-d .16s ease-in-out 18 alternate}
+  .dupla:is([data-acao=acerto],[data-acao=superacao],[data-acao=combo],[data-acao=fim]) .dupla__voador .asa--e{animation:ab-asa-e .16s ease-in-out 18 alternate}
+  .dupla:is([data-acao=superacao],[data-acao=combo],[data-acao=fim]) .dupla__ator--mia{animation:mia-passo-lado .7s ease-in-out 4}
+  .dupla:is([data-acao=superacao],[data-acao=combo],[data-acao=fim]) .mia__braco--esquerdo,.mia-dancando .mia__braco--esquerdo{animation:mia-braco-danca .7s ease-in-out 4}
+  .dupla:is([data-acao=superacao],[data-acao=combo],[data-acao=fim]) .mia__braco--direito,.mia-dancando .mia__braco--direito{animation:mia-braco-danca-direito .7s ease-in-out 4}
+  .dupla:is([data-acao=superacao],[data-acao=combo],[data-acao=fim]) .mia__perna--esquerda,.mia-dancando .mia__perna--esquerda{animation:mia-passo-esquerdo .7s ease-in-out 4}
+  .dupla:is([data-acao=superacao],[data-acao=combo],[data-acao=fim]) .mia__perna--direita,.mia-dancando .mia__perna--direita{animation:mia-passo-direito .7s ease-in-out 4}
+  .dupla:is([data-acao=superacao],[data-acao=combo],[data-acao=fim]) .mia__tranca,.mia-dancando .mia__tranca{animation:mia-trancas-danca .7s ease-in-out 4}
+  .dupla:is([data-acao=superacao],[data-acao=combo],[data-acao=fim]) .mia__cabeca,.mia-dancando .mia__cabeca{animation:mia-cabeca-ritmo .7s ease-in-out 4}
+  .dupla__notas{animation:dupla-notas 2.8s ease-out 1}
+  .mia-dancando{animation:mia-chega-festa 3s ease-in-out 1}
+  .mia-dancando .lou--mia .lou__corpo{animation:mia-passo-lado .7s ease-in-out 4}
+  .festa-notas{animation:dupla-notas 1.4s ease-out 2}
+}
+@keyframes dupla-pisca{0%,43%,47%,100%{transform:scaleY(1)}45%{transform:scaleY(.08)}}
+@keyframes dupla-respira{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@keyframes mia-curiosa{0%,65%,100%{transform:rotate(0)}76%{transform:rotate(-5deg)}88%{transform:rotate(3deg)}}
+@keyframes tui-volta-alegre{0%,100%{transform:none}12%{transform:translateY(3px) scale(1.06,.94)}32%{transform:translate(9px,-27px) rotate(9deg)}55%{transform:translate(-8px,-35px) rotate(-10deg)}76%{transform:translate(3px,-22px) rotate(5deg)}92%{transform:translateY(2px) scale(1.06,.94)}}
+@keyframes tui-sai-poleiro{0%,12%,90%,100%{opacity:1}22%,80%{opacity:0}}
+@keyframes tui-abre-voo{0%,12%,90%,100%{opacity:0;transform:scale(.7)}22%,80%{opacity:1;transform:scale(1)}}
+@keyframes mia-passo-lado{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(-7px,-7px) rotate(-6deg)}50%{transform:translate(0,0) rotate(0)}75%{transform:translate(7px,-7px) rotate(6deg)}}
+@keyframes mia-braco-danca{0%,100%{transform:rotate(-25deg)}25%{transform:rotate(95deg)}50%{transform:rotate(25deg)}75%{transform:rotate(-55deg)}}
+@keyframes mia-braco-danca-direito{0%,100%{transform:rotate(25deg)}25%{transform:rotate(55deg)}50%{transform:rotate(-25deg)}75%{transform:rotate(-95deg)}}
+@keyframes mia-passo-esquerdo{0%,50%,100%{transform:rotate(0)}25%{transform:rotate(18deg) translateY(-3px)}75%{transform:rotate(-8deg)}}
+@keyframes mia-passo-direito{0%,50%,100%{transform:rotate(0)}25%{transform:rotate(8deg)}75%{transform:rotate(-18deg) translateY(-3px)}}
+@keyframes mia-trancas-danca{0%,50%,100%{transform:rotate(0)}25%{transform:rotate(7deg)}75%{transform:rotate(-7deg)}}
+@keyframes mia-cabeca-ritmo{0%,50%,100%{transform:rotate(0)}25%{transform:rotate(5deg)}75%{transform:rotate(-5deg)}}
+@keyframes dupla-notas{0%{opacity:0;transform:translateY(8px) scale(.7)}25%,65%{opacity:1}100%{opacity:0;transform:translateY(-22px) scale(1.1)}}
+@keyframes mia-chega-festa{0%{opacity:0;transform:translateY(40px) scale(.8)}12%,85%{opacity:1;transform:none}100%{opacity:0;transform:translateY(30px) scale(.8)}}
+body.aba-oculta .dupla *,body.aba-oculta .lou *{animation-play-state:paused!important}
+@media(prefers-reduced-motion:reduce){.dupla *,.mia-dancando *,.dupla__notas{animation:none!important}.dupla__voador,.dupla__notas{display:none}.dupla__pousado{opacity:1}}

@@ -45,7 +45,7 @@ function completarLacunas(ex) {
   const partes = primeira.split(/[,\s]+/).filter(Boolean);
   if (partes.length !== n) return null;
   let i = 0;
-  return ex.frase.replace(/___/g, () => partes[i++]);
+  return ex.frase.replace(/___(?: \([^)]*\))?/g, () => partes[i++]);
 }
 
 function retornoDidatico(ex, esperado) {

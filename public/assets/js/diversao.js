@@ -24,12 +24,15 @@ function tutora(humor, { tamanho, rotulo }) {
   const feliz = humor === 'feliz' || humor === 'festa';
 
   // pernas de jeans (coxa larga, tornozelo fino) e tênis brancos
-  corpo.append(el('path', { d: 'M44 126 L59 126 L58 174 L55 220 L47 220 L45 174 Z', fill: JEANS }), el('path', { d: 'M61 126 L76 126 L75 174 L73 220 L65 220 L62 174 Z', fill: JEANS }),
-    traco('M51 140 L51 172', '#3C4770', 1.2, { opacity: '.6' }), traco('M69 140 L69 172', '#3C4770', 1.2, { opacity: '.6' }),
-    traco('M47 218 H55', '#1B2038', 2), traco('M65 218 H73', '#1B2038', 2),
-    el('path', { d: 'M46 220 H56 L57 227 Q58 231 54 233 H43 Q39 233 40 229 Z', fill: '#FFF8E6', stroke: '#BFA986', 'stroke-width': 1 }),
-    el('path', { d: 'M74 220 H64 L63 227 Q62 231 66 233 H77 Q81 233 80 229 Z', fill: '#FFF8E6', stroke: '#BFA986', 'stroke-width': 1 }),
-    traco('M41 231 H56', '#FFC83D', 2), traco('M79 231 H64', '#FFC83D', 2));
+  corpo.append(
+    el('g', { class: 'mia__perna mia__perna--esquerda' },
+      el('path', { d: 'M44 126 L59 126 L58 174 L55 220 L47 220 L45 174 Z', fill: JEANS }),
+      traco('M51 140 L51 172', '#3C4770', 1.2, { opacity: '.6' }), traco('M47 218 H55', '#1B2038', 2),
+      el('path', { d: 'M46 220 H56 L57 227 Q58 231 54 233 H43 Q39 233 40 229 Z', fill: '#FFF8E6', stroke: '#BFA986', 'stroke-width': 1 }), traco('M41 231 H56', '#FFC83D', 2)),
+    el('g', { class: 'mia__perna mia__perna--direita' },
+      el('path', { d: 'M61 126 L76 126 L75 174 L73 220 L65 220 L62 174 Z', fill: JEANS }),
+      traco('M69 140 L69 172', '#3C4770', 1.2, { opacity: '.6' }), traco('M65 218 H73', '#1B2038', 2),
+      el('path', { d: 'M74 220 H64 L63 227 Q62 231 66 233 H77 Q81 233 80 229 Z', fill: '#FFF8E6', stroke: '#BFA986', 'stroke-width': 1 }), traco('M79 231 H64', '#FFC83D', 2)));
   // pescoço, mãos e antebraços, camisa azul solta (colarinho, botões, bolso), mangas dobradas
   const bracoEsquerdo = el('g', { class: 'mia__braco mia__braco--esquerdo' },
     el('path', { d: 'M29 100 L27 128 L33 129 L39 104 Z', fill: PELE }), el('ellipse', { cx: 30, cy: 134, rx: 4, ry: 5.5, fill: PELE }),
@@ -48,7 +51,7 @@ function tutora(humor, { tamanho, rotulo }) {
   // tranças em frente aos ombros, trançadas de verdade (segmentos em relevo) e com miçangas; 3 de cada lado
   [['M46 18 Q33 60 38 112', 38, 112, '#FF6FA5'], ['M50 22 Q41 64 46 118', 46, 118, '#FFC83D'], ['M43 24 Q27 58 31 100', 31, 100, '#FFC83D'],
     ['M74 18 Q87 60 82 112', 82, 112, '#FFC83D'], ['M70 22 Q79 64 74 118', 74, 118, '#FF6FA5'], ['M77 24 Q93 58 89 100', 89, 100, '#FF6FA5']]
-    .forEach(([d, x, y, cor]) => corpo.append(traco(d, CABELO, 4.6), traco(d, '#40302A', 4.6, { 'stroke-dasharray': '1.5 2.1', 'stroke-linecap': 'butt', opacity: '.85' }), el('circle', { cx: x, cy: y, r: 2.3, fill: cor }), el('circle', { cx: x, cy: y - 5, r: 1.4, fill: '#FFF1C9' })));
+    .forEach(([d, x, y, cor]) => corpo.append(el('g', { class: 'mia__tranca' }, traco(d, CABELO, 4.6), traco(d, '#40302A', 4.6, { 'stroke-dasharray': '1.5 2.1', 'stroke-linecap': 'butt', opacity: '.85' }), el('circle', { cx: x, cy: y, r: 2.3, fill: cor }), el('circle', { cx: x, cy: y - 5, r: 1.4, fill: '#FFF1C9' }))));
 
   // cabeça (desenhada em escala maior e reduzida: o rosto mantém os mesmos traços)
   const cabeca = el('g', { transform: 'translate(60 31) scale(.68) translate(-60 -50)' });
@@ -148,32 +151,22 @@ export function lou(humor = 'oi', { tamanho = 96, rotulo = 'Tuiuiú, a arara-azu
   return s;
 }
 
-// Tuiuiú de frente, livre no ar, de asas abertas (abertura, transições e passeios). As asas têm penas largas de ponta redonda,
-// em camadas (primárias, secundárias, coberteiras) e um braço cheio na frente, para a asa ler como uma peça só e não como um leque de espetos.
-// Cada asa é um grupo .asa--e / .asa--d que gira no ombro (transform-origin definido no CSS).
+// Tuiuiú de frente: asas contínuas, com ombro, dobra e penas sobrepostas na borda.
+// A ponta alongada acompanha a envergadura da arara; cada asa gira pelo ombro.
 export function louVoando() {
   const C = { corpo: 'var(--arara-1,#2447D0)', sombra: 'var(--arara-2,#1A33A0)', luz: 'var(--arara-3,#6C8DFF)' };
   const traco = (d, cor, larg, op = 1) => el('path', { d, stroke: cor, 'stroke-width': larg, 'stroke-linecap': 'round', fill: 'none', opacity: op });
-  // pena larga de ponta redonda: base em (bx,by), aponta no ângulo, com comprimento e meia-largura; haste fina no meio
-  const pena = (bx, by, ang, comp, larg, cor, haste = true) => {
-    const L = comp, w = larg, g = el('g', { transform: `translate(${bx} ${by}) rotate(${ang})` });
-    g.append(el('path', { d: `M0 0 C${L * .18} ${-w * .9} ${L * .6} ${-w} ${L * .93} ${-w * .55} Q${L * 1.03} 0 ${L * .93} ${w * .55} C${L * .6} ${w} ${L * .18} ${w * .9} 0 0 Z`, fill: cor }));
-    if (haste) g.append(traco(`M${L * .1} 0 L${L * .88} 0`, C.luz, 1.2, .5));
-    return g;
-  };
   const asa = lado => {
     const g = el('g', { class: 'asa asa--' + lado });
     const f = el('g', lado === 'e' ? { transform: 'translate(240 0) scale(-1 1)' } : {});
-    // primárias: as longas, na ponta da asa, de quase em pé até abertas para o lado
-    [[-78, 76], [-64, 82], [-50, 84], [-36, 82], [-22, 78], [-9, 72]].forEach(([a, c], i) => f.append(pena(160, 62, a, c, 12.5, i % 2 ? C.corpo : C.sombra)));
-    // secundárias: mais curtas, saem do antebraço e fecham a borda de baixo
-    [[0, 60], [11, 56], [22, 52], [33, 46]].forEach(([a, c], i) => f.append(pena(150 - i * 4, 76 + i * 5, a, c, 11, i % 2 ? C.sombra : C.corpo)));
-    // braço cheio por cima das bases das penas: do ombro ao pulso
-    f.append(el('path', { d: 'M126 96 C122 72 136 50 160 40 C174 35 184 44 178 58 C170 76 156 94 138 104 C132 106 127 102 126 96 Z', fill: C.corpo }));
-    // coberteiras: duas fileiras de escamas redondas, da base para a ponta
-    for (let i = 0; i < 5; i++) f.append(el('ellipse', { cx: 170 - i * 9.5, cy: 54 + i * 9, rx: 8.5, ry: 6.2, fill: i % 2 ? C.sombra : C.corpo, opacity: '.95', transform: `rotate(${-36 - i * 4} ${170 - i * 9.5} ${54 + i * 9})` }));
-    for (let i = 0; i < 4; i++) f.append(el('ellipse', { cx: 164 - i * 9.5, cy: 49 + i * 8.5, rx: 7, ry: 5, fill: C.luz, opacity: '.55', transform: `rotate(${-38 - i * 4} ${164 - i * 9.5} ${49 + i * 8.5})` }));
-    f.append(traco('M130 90 C130 70 142 52 162 43', C.luz, 3, .8));
+    // Silhueta única: penas primárias longas na ponta, secundárias menores junto ao corpo.
+    f.append(el('path', { d: 'M132 79 C140 65 149 51 166 47 C186 44 209 36 228 28 C225 43 217 56 207 65 Q204 68 201 65 L208 55 Q199 71 190 77 Q187 79 185 76 L191 65 Q181 80 171 86 Q167 88 165 84 L170 75 Q157 88 145 96 Q137 99 134 90 Z', fill: C.sombra }));
+    // A superfície da asa cobre as bases das penas, sem abri-las em leque.
+    f.append(el('path', { d: 'M133 79 C143 61 151 51 167 48 C187 45 208 37 225 30 C208 47 190 55 176 65 C163 76 151 88 140 92 Q133 91 133 79 Z', fill: C.corpo }));
+    f.append(el('path', { d: 'M138 77 C150 57 158 53 174 51 Q193 48 208 41 C191 52 176 56 164 66 Q151 77 141 85 Z', fill: C.luz, opacity: '.3' }));
+    f.append(traco('M158 72 Q181 59 207 46', C.luz, 1.5, .45),
+      traco('M153 80 Q175 69 194 56', C.luz, 1.4, .35),
+      traco('M147 86 Q165 78 180 67', C.luz, 1.3, .3));
     g.append(f); return g;
   };
   const s = el('svg', { viewBox: '0 -8 240 184', class: 'lou lou--voando', 'aria-hidden': 'true', focusable: 'false' });
@@ -343,10 +336,21 @@ export function celebrar(frase, { humor = 'festa', nivel = 1 } = {}) {
 // Camada por cima de tudo, sem pegar toque nem segurar a navegação. "Menos movimento": não voa (a frase e o som já comemoram).
 // Três jeitos, sorteados para não cansar: cruza (arco de um lado ao outro), pirueta (entra por cima, gira e sai) e sobe (da base, com confete).
 const JEITOS_VOO = ['cruza', 'pirueta', 'sobe'];
-let ultimoJeito = '';
-export function voarComemorando({ jeito, tamanho, confetes = true } = {}) {
+let ultimoJeito = '', vooAtivo = null, passeioTimer;
+function encerrarVoo() {
+  vooAtivo?.();
+  clearTimeout(passeioTimer);
+}
+addEventListener('hashchange', encerrarVoo);
+addEventListener('resize', encerrarVoo);
+document.addEventListener('visibilitychange', () => {
+  document.body.classList.toggle('aba-oculta', document.hidden);
+  if (document.hidden) encerrarVoo();
+});
+matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', e => { if (e.matches) encerrarVoo(); });
+export function voarComemorando({ jeito, tamanho, confetes = true, companhia = false } = {}) {
   if (reduzirMovimento() || document.hidden) return null;
-  document.querySelector('.voo-festa')?.remove();
+  vooAtivo?.();
   const outros = JEITOS_VOO.filter(j => j !== ultimoJeito);
   const j = jeito || outros[Math.floor(Math.random() * outros.length)];
   ultimoJeito = j;
@@ -374,11 +378,26 @@ export function voarComemorando({ jeito, tamanho, confetes = true } = {}) {
     { transform: T(mx, vh * .4, 1.34, 8 * sentido), offset: .62 },
     { transform: T(mx + sentido * vw * .25, -H, .9, 14 * sentido), offset: 1 },
   ];
-  const ms = j === 'cruza' ? 1500 : 1700;
+  if (companhia) {
+    const mia = document.createElement('div'); mia.className = 'voo-festa__mia mia-dancando';
+    mia.append(lou('festa', { mia: true, tamanho: 200, rotulo: '' }));
+    const notas = document.createElement('span'); notas.className = 'festa-notas'; notas.textContent = '♪ ♫ ✦';
+    mia.append(notas); camada.append(mia);
+  }
+  const ms = companhia ? 3000 : j === 'cruza' ? 1500 : 1700;
   const anim = caixa.animate(quadros, { duration: ms, fill: 'forwards' });
-  const fim = () => camada.remove();
-  anim.onfinish = fim; anim.oncancel = fim; setTimeout(fim, ms + 400);
-  if (confetes && !document.body.matches('[data-publico="adulto"]')) setTimeout(() => confete(document.body, 18), ms * (j === 'cruza' ? .5 : .4));
+  let timer, confeteTimer, encerrado = false;
+  const fim = () => {
+    if (encerrado) return;
+    encerrado = true; clearTimeout(timer); clearTimeout(confeteTimer);
+    anim.cancel(); camada.remove();
+    if (vooAtivo === fim) vooAtivo = null;
+  };
+  vooAtivo = fim;
+  anim.onfinish = fim; anim.oncancel = fim; timer = setTimeout(fim, ms + 400);
+  if (confetes && !document.body.matches('[data-publico="adulto"]')) confeteTimer = setTimeout(() => {
+    if (camada.isConnected && !document.hidden && !reduzirMovimento()) confete(document.body, 18);
+  }, ms * (j === 'cruza' ? .5 : .4));
   return camada;
 }
 
@@ -390,7 +409,12 @@ export function passearVoando(rota = '') {
   const agora = Date.now(), ultimo = Number(localStorageGet('passeio') || 0);
   if (agora - ultimo < 90000 || Math.random() > .35) return;
   localStorageSet('passeio', String(agora));
-  setTimeout(() => voarComemorando({ jeito: 'cruza', tamanho: 84, confetes: false }), 900 + Math.random() * 2500);
+  clearTimeout(passeioTimer);
+  passeioTimer = setTimeout(() => {
+    const atual = location.hash.replace(/^#\//, '').split('/')[0];
+    if (TELAS_QUIETAS.has(atual) || document.body.classList.contains('foco-total')) return;
+    voarComemorando({ jeito: 'cruza', tamanho: 84, confetes: false });
+  }, 900 + Math.random() * 2500);
 }
 
 // "+10" que sobe de um elemento e some (acerto)

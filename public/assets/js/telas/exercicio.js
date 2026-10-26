@@ -50,7 +50,7 @@ export function exercicio(ex, config) {
   const infantil = document.body.dataset.publico === 'crianca';
   const { responder, contestar, ja, devagar = false, aoProximo, rotuloProximo = 'Continuar', barraFixa = false, permitirTreino = false, pratica = false } = config;
   const t0 = performance.now();
-  let usouDica = pratica, conferido = false, enviando = false, rec = null, pegarResposta = () => null;
+  let usouDica = pratica || !!ex.ensino, conferido = false, enviando = false, rec = null, pegarResposta = () => null;
   const raiz = h('article', { class: 'exercicio', dados: { tipo: ex.tipo } });
   const companhia = companheirosAula({ tipo: ex.tipo, fase: pratica ? 'tentar' : 'inicio' });
   raiz.addEventListener('inglou:traducao', () => { usouDica = true; });
@@ -78,6 +78,16 @@ export function exercicio(ex, config) {
     ex.guiado && infantil ? h('p', { class: 'rotulo-pequeno' }, ({ escolha: 'Escolha e descubra', lacuna: 'Encaixe a palavra', ordenar: 'Monte com bloquinhos', escuta: 'Ouvidos atentos', pares: 'Junte as duplas' })[ex.tipo]) : null,
     h('h2', { class: 'enunciado' }, trechosTitulo), ex.instrucao ? h('p', { class: 'instrucao' }, ex.instrucao) : null);
   if (ex.tipo === 'escuta' && ex.pergunta && ex.enunciado) raiz.append(h('p', {}, ex.pergunta));
+  if (ex.ensino) {
+    const a = ex.ensino;
+    raiz.append(h('section', { class: 'folha ensino-exercicio', 'aria-label': 'Aprenda antes de responder' },
+      h('h3', {}, 'Aprenda antes de responder'),
+      a.en ? h('p', { lang: 'en' }, h('strong', {}, a.en)) : null,
+      a.pt ? h('p', {}, a.pt) : null,
+      a.pedacos?.length ? h('ul', {}, a.pedacos.map(p => h('li', {}, h('span', { lang: 'en' }, p.en), ' = ', p.pt))) : null,
+      a.nota ? h('p', { class: 'ajuda' }, a.nota) : null,
+      a.en ? h('button', { type: 'button', class: 'btn btn-sec btn-peq', on: { click: () => falar(a.en, { velocidade: 0.8 }) } }, icone('speaker-high'), 'Ouvir o modelo') : null));
+  }
   raiz.append(companhia.elemento);
   // debate: a outra pessoa fala primeiro e o aluno escolhe a melhor resposta
   if (ex.oponente) raiz.insertBefore(h('div', { class: 'oponente' }, h('span', { class: 'oponente__nome' }, ex.oponente.nome), h('p', { class: 'oponente__fala', lang: 'en' }, ex.oponente.fala), h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir ' + ex.oponente.nome, on: { click: () => falar(ex.oponente.fala) } }, icone('speaker-high'))), raiz.firstChild);
@@ -162,7 +172,7 @@ export function exercicio(ex, config) {
     btnConferir.disabled = false;
     // acertou de verdade (sem dica, sem revelar a resposta): o Tuiuiú comemora voando por cima da próxima questão
     const festejar = r.correto && !r.ajuda && !pratica && !silencioso;
-    btnConferir.onclick = () => { if (festejar && aoProximo) voarComemorando(); aoProximo?.(); };
+    btnConferir.onclick = () => { if (festejar && aoProximo) voarComemorando({ companhia: combo, jeito: combo ? 'pirueta' : undefined }); aoProximo?.(); };
     btnConferir.removeEventListener('click', aoConferir);
     if (!silencioso) requestAnimationFrame(() => { folha.focus({ preventScroll: true }); folha.scrollIntoView({ block: 'start', behavior: 'instant' }); });
   }
