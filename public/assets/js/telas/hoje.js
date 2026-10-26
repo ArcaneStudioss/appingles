@@ -92,16 +92,17 @@ export async function telaHoje(el, { ir, estado }) {
   principal.append(
     h('header', { class: 'saudacao' },
       h('h1', {}, `${saud}, ${d.nome}!`),
-      h('button', { type: 'button', class: 'status__item status__item--seq c-coral' + (d.sequencia.estudouHoje ? ' acesa' : ''), 'aria-label': `Sequência: ${d.sequencia.atual} dias seguidos. Ver detalhes`, on: { click: () => verSequencia(d.sequencia, d.diasNoMes) } },
-        icone('flame'), h('strong', {}, String(d.sequencia.atual)))));
+      d.sequencia.atual || d.sequencia.recorde ? h('button', { type: 'button', class: 'status__item status__item--seq c-coral' + (d.sequencia.estudouHoje ? ' acesa' : ''), 'aria-label': `Sequência: ${d.sequencia.atual} dias seguidos. Ver detalhes`, on: { click: () => verSequencia(d.sequencia, d.diasNoMes) } },
+        icone('flame'), h('strong', {}, String(d.sequencia.atual))) : null));
 
   if (a.acesso === 'completo') {
     const tempos = h('div', { class: 'linha-acoes' });
-    for (const minutos of [5, 10, 20]) tempos.append(h('button', { type: 'button', class: 'btn btn-sec', on: { click: async e => {
+    const meta = estado?.eu?.perfil?.minutos_dia, recomendado = iniciante ? 5 : [5, 10, 20].reduce((m, x) => Math.abs(x - (meta || 10)) < Math.abs(m - (meta || 10)) ? x : m);
+    for (const minutos of [5, 10, 20]) tempos.append(h('button', { type: 'button', class: minutos === recomendado ? 'btn' : 'btn btn-sec', 'aria-description': minutos === recomendado ? 'Tempo recomendado' : null, on: { click: async e => {
       const b = e.currentTarget; b.disabled = true;
       try { await api('/sessao', { metodo: 'POST', corpo: { minutos } }); ir('#/sessao'); }
       catch (err) { toast(err.message, { tipo: 'erro' }); b.disabled = false; }
-    } } }, `${minutos} minutos`));
+    } } }, `${minutos} minutos`, minutos === recomendado ? h('small', { class: 'tempo-rec', 'aria-hidden': 'true' }, 'recomendado') : null));
     const salva=ss.sessao, iniciada=salva&&Object.keys(salva.respondidos).length>0;
     principal.append(h('section', { class: 'folha sessao-convite c-azul' }, h('h2', {}, salva?.concluida ? 'Seu treino de hoje está salvo!' : iniciada ? 'Vamos continuar de onde parou?' : 'Quanto tempo você tem hoje?'), h('p', {}, L?.missao?.podeFazer || 'Exemplos, prática e revisão no seu ritmo.'), h('p', {class:'ajuda'}, 'Pode pedir ajuda e sair quando precisar. O progresso fica salvo.'), salva?.concluida || iniciada ? h('a',{class:'btn btn-bloco',href:'#/sessao'},salva.concluida?'Rever minha sessão':'Continuar minha sessão') : tempos));
   }

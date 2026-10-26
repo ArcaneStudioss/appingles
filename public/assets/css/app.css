@@ -180,6 +180,7 @@ summary{list-style:none;cursor:pointer}summary::-webkit-details-marker{display:n
 .centro{text-align:center}
 .linha-acoes{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
 .linha-acoes>*{min-width:0;max-width:100%}
+.tempo-rec{display:block;font-size:.72rem;font-weight:700;opacity:.85;line-height:1.1}
 .duas{display:grid;gap:1rem}
 .lista-check{list-style:none;padding:0;margin:0;display:grid;gap:.5rem}
 .lista-check li{position:relative;padding-left:2rem}
