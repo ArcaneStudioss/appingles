@@ -132,3 +132,19 @@ main section{max-width:1120px;margin:0 auto;padding:3.2rem 1rem}
 @media(min-width:600px) and (max-width:899px){.planos-lista{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* Revelações animadas fora da tela não devem ampliar a largura da página. */
 .publico main{overflow-x:clip}
+
+/* herói com mais presença e seção para empresas */
+.heroi__selos{list-style:none;display:flex;flex-wrap:wrap;gap:.4rem .6rem;padding:0;margin:1.2rem 0 0}
+.heroi__selos li{padding:.3rem .8rem;border-radius:999px;background:var(--caneta-fundo);color:var(--caneta-forte);font-size:.85rem;font-weight:700}
+.empresas{display:grid;gap:1.2rem;justify-items:start}
+.empresas h2{max-width:20ch}
+.empresas__lista{display:grid;gap:1rem;width:100%}
+.empresas__lista article{padding:1.3rem;background:var(--folha);border:2px solid var(--linha);border-bottom-width:5px;border-radius:var(--raio-g)}
+.empresas__lista h3{margin:0 0 .3rem}
+.empresas__lista p{margin:0;color:var(--grafite)}
+@media (min-width:900px){
+  .heroi h1{font-size:clamp(3.4rem,5.4vw,5.2rem)}
+  .heroi__sub{font-size:1.3rem}
+  .caderno__lou{width:150px;height:150px;right:4%;top:-98px}
+  .empresas__lista{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
