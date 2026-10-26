@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Inglou para empresas e negócios · apresentação</title>
+<style>
+@font-face{font-family:"Fredoka";src:url("../../public/assets/fontes/fredoka.woff2") format("woff2");font-weight:300 700}
+@font-face{font-family:"Nunito";src:url("../../public/assets/fontes/nunito.woff2") format("woff2");font-weight:200 1000}
+@font-face{font-family:"Caveat";src:url("../../public/assets/fontes/caveat-600.woff2") format("woff2");font-weight:600}
+@page{size:A4;margin:0}
+:root{
+  --noite:#0B1330;--noite-2:#141F49;--azul:#2F5BEA;--azul-forte:#1D3FB0;--azul-fundo:#E1E9FF;--ceu:#EDF2FF;
+  --tinta:#16224A;--tinta-2:#46557A;--borda:#D9E2F6;--sol:#FFC83D;--menta:#20B27D;--lilas:#7C5CE6;--coral:#FF7A59;--turquesa:#17A6C9;
+  --arcane:#3D63E0;--f-titulo:"Fredoka",ui-rounded,sans-serif;--f-texto:"Nunito",system-ui,sans-serif;--pill:999px
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:var(--f-texto);color:var(--tinta);background:#cfd6ea;font-size:10.5pt;line-height:1.5}
+.pg{width:210mm;height:297mm;margin:0 auto 8mm;position:relative;overflow:hidden;background:#fff;page-break-after:always;padding:18mm 17mm 20mm}
+@media print{body{background:none}.pg{margin:0}}
+h1,h2,h3{font-family:var(--f-titulo);font-weight:600;line-height:1.08;letter-spacing:-.01em}
+h2{font-size:30pt;max-width:19ch}
+h3{font-size:13pt;margin-bottom:1.5mm}
+p{color:var(--tinta-2)}
+.rot{display:inline-block;font:700 8pt var(--f-texto);letter-spacing:.12em;text-transform:uppercase;color:var(--azul);margin-bottom:3mm}
+.rot::before{content:"";display:inline-block;width:5mm;height:2px;background:var(--sol);vertical-align:middle;margin-right:2mm;border-radius:2px}
+.lead{font-size:13pt;max-width:56ch;margin:5mm 0 9mm}
+.rodape{position:absolute;left:17mm;right:17mm;bottom:8mm;display:flex;justify-content:space-between;align-items:center;font-size:7.5pt;color:var(--tinta-2);border-top:1px solid var(--borda);padding-top:3mm}
+.rodape .a{display:flex;align-items:center;gap:2mm}
+.rodape .a svg{height:4.2mm;width:auto}
+.rodape b{font-family:var(--f-titulo);color:var(--azul-forte);font-size:9pt}
+.pill{display:inline-block;border-radius:var(--pill);padding:1mm 3.2mm;font:700 7.5pt var(--f-texto)}
+.ok{background:#DAF5EA;color:#0B6B49}.em{background:#FFF3D3;color:#7A5200}
+
+/* capa */
+.capa{background:var(--noite);color:#fff;padding:0}
+.capa::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(1.6px 1.6px at 12% 14%,#fff9 50%,transparent 51%),radial-gradient(1.2px 1.2px at 78% 8%,#fffc 50%,transparent 51%),
+  radial-gradient(1.6px 1.6px at 45% 30%,#fff7 50%,transparent 51%),radial-gradient(1.2px 1.2px at 90% 38%,#fff9 50%,transparent 51%),
+  radial-gradient(1.4px 1.4px at 22% 62%,#fff8 50%,transparent 51%),radial-gradient(1.2px 1.2px at 66% 70%,#fff6 50%,transparent 51%)}
+.capa .grade{position:absolute;inset:0;background-image:linear-gradient(#ffffff0d 1px,transparent 1px),linear-gradient(90deg,#ffffff0d 1px,transparent 1px);background-size:11mm 11mm;mask-image:linear-gradient(180deg,#000 0,transparent 70%)}
+.capa .logo{position:absolute;left:17mm;top:18mm;font:600 28pt var(--f-titulo);letter-spacing:-.02em}
+.capa .logo i{display:block;width:11mm;height:1.6mm;background:var(--sol);border-radius:2mm;margin:1mm 0 0 14mm}
+.capa .lou{position:absolute;right:12mm;top:42mm;width:78mm;height:78mm;filter:drop-shadow(0 8mm 10mm #0008)}
+.capa .lou .faisca{position:absolute;right:-4mm;top:-6mm;width:11mm}
+.capa .tit{position:absolute;left:17mm;right:17mm;top:140mm}
+.capa .tit .rot{color:var(--sol)}
+.capa h1{font-size:46pt;line-height:1;max-width:11ch}
+.capa h1 em{font-style:normal;color:#7FA2FF}
+.capa .sub{color:#B6C1E0;font-size:13pt;max-width:42ch;margin-top:7mm}
+.capa .base{position:absolute;left:17mm;right:17mm;bottom:14mm;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #ffffff24;padding-top:6mm;color:#B6C1E0;font-size:8.5pt}
+.capa .base svg{height:9mm;width:auto;display:block;margin-bottom:2mm}
+.capa .base b{color:#fff;font-weight:700}
+
+/* grades */
+.p3 .card{padding:5mm 6mm}.p3 .card p{font-size:9.6pt}.p3 .card .n{width:8.5mm;height:8.5mm;margin-bottom:2mm}.p3 .lead{margin-bottom:6mm}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:5mm}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:5mm}
+.card{border:1px solid var(--borda);border-radius:6mm;padding:7mm;background:#fff;position:relative}
+.card.cor{border:0}
+.card .n{display:grid;place-items:center;width:10mm;height:10mm;border-radius:50%;color:#fff;font:600 13pt var(--f-titulo);margin-bottom:3mm}
+.card p{font-size:10.5pt}
+.c-azul .n{background:var(--azul)}.c-sol .n{background:var(--sol);color:#3B2A00}.c-menta .n{background:var(--menta)}
+.c-lilas .n{background:var(--lilas)}.c-coral .n{background:var(--coral)}.c-turq .n{background:var(--turquesa)}
+.c-azul{background:#E1E9FF}.c-sol{background:#FFF3D3}.c-menta{background:#DAF5EA}.c-lilas{background:#EBE5FF}.c-coral{background:#FFE8E0}.c-turq{background:#DAF3FA}
+.faixa{background:var(--noite);color:#fff;border-radius:7mm;padding:7mm 8mm;margin-top:7mm;display:flex;gap:8mm;align-items:center}
+.faixa p{color:#B6C1E0}.faixa h3{font-size:15pt;color:#fff}
+.faixa .num{font:600 30pt var(--f-titulo);color:var(--sol);line-height:1}
+
+/* problema */
+.dor{display:grid;grid-template-columns:14mm 1fr;gap:5mm;padding:8mm 0;border-bottom:1px solid var(--borda)}
+.dor .x{font:600 22pt var(--f-titulo);color:var(--coral)}
+.dor:last-of-type{border:0}
+.cit{margin-top:6mm;border-left:3px solid var(--azul);padding:2mm 0 2mm 6mm;font:600 13pt var(--f-titulo);color:var(--azul-forte);max-width:34ch}
+
+/* ciclo */
+.ciclo{display:grid;grid-template-columns:repeat(5,1fr);gap:3mm;margin:6mm 0}
+.ciclo div{background:var(--ceu);border-radius:5mm;padding:4mm 3mm;position:relative}
+.ciclo div b{display:block;font:600 11pt var(--f-titulo);color:var(--azul-forte);margin-bottom:1mm}
+.ciclo div span{font-size:9pt;color:var(--tinta-2);line-height:1.35;display:block}
+.ciclo div i{font:600 18pt var(--f-titulo);color:var(--azul);font-style:normal;display:block;margin-bottom:1mm}
+.caderno{background:var(--ceu);border:1px solid var(--borda);border-radius:6mm;padding:6mm 7mm;transform:rotate(-.8deg);box-shadow:0 3mm 8mm #16224a14}
+.caderno small{font:700 7.5pt var(--f-texto);letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-2)}
+.risc{text-decoration:line-through;color:#8791AE}
+.cane{font:600 13pt "Caveat","Segoe Script",cursive;color:var(--azul-forte)}
+.post{background:var(--azul);color:#fff;border-radius:3mm 3mm 5mm 3mm;padding:4mm 5mm;margin:3mm 0 0 18mm;transform:rotate(1.4deg);font-size:9.5pt}
+.post p{color:#fff}
+
+/* listas */
+ul.v{list-style:none;margin-top:2mm}
+ul.v li{padding-left:6mm;position:relative;font-size:10.8pt;color:var(--tinta-2);margin:2mm 0}
+ul.v li::before{content:"";position:absolute;left:0;top:1.9mm;width:2.2mm;height:2.2mm;border-radius:50%;background:var(--azul)}
+.tag{display:inline-block;background:var(--azul-fundo);color:var(--azul-forte);border-radius:var(--pill);padding:.8mm 3mm;font:700 8pt var(--f-texto);margin:0 1mm 1.6mm 0}
+.nums{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;margin:6mm 0}
+.nums div{border-top:3px solid var(--sol);padding-top:3mm}
+.nums b{display:block;font:600 24pt var(--f-titulo);color:var(--azul-forte);line-height:1}
+.nums span{font-size:9.5pt;color:var(--tinta-2)}
+
+/* planos */
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:10pt;margin-top:4mm;border:1px solid var(--borda);border-radius:5mm;overflow:hidden}
+th{background:var(--noite);color:#fff;font:600 9.5pt var(--f-titulo);text-align:left;padding:3mm 3mm}
+td{padding:3.4mm 3mm;border-top:1px solid var(--borda);color:var(--tinta-2)}
+td:first-child{font-weight:800;color:var(--tinta)}
+tr.d td{background:var(--azul-fundo)}
+.nota{font-size:8pt;color:var(--tinta-2);margin-top:3mm}
+
+/* roadmap */
+.rm{display:grid;grid-template-columns:repeat(2,1fr);gap:4mm;margin-top:4mm}
+.rm .card{padding:6mm 6mm}
+.rm .card h3{font-size:11.5pt}
+.rm .card p{font-size:10pt}
+.rm .card .pill{position:absolute;right:4mm;top:4mm}
+
+/* fecho */
+.fim{background:var(--noite);color:#fff;padding:0}
+.fim .grade{position:absolute;inset:0;background-image:linear-gradient(#ffffff0d 1px,transparent 1px),linear-gradient(90deg,#ffffff0d 1px,transparent 1px);background-size:11mm 11mm;mask-image:linear-gradient(0deg,#000 0,transparent 75%)}
+.fim .in{position:absolute;left:17mm;right:17mm;top:40mm}
+.fim h2{color:#fff;font-size:34pt;max-width:14ch}
+.fim p{color:#B6C1E0}
+.passos{margin:10mm 0;display:grid;gap:4mm}
+.passos>div{display:grid;grid-template-columns:11mm 1fr;gap:4mm;align-items:start;background:#ffffff10;border:1px solid #ffffff1f;border-radius:5mm;padding:4.5mm 5mm}
+.passos .n{width:10mm;height:10mm;border-radius:50%;background:var(--sol);color:#3B2A00;display:grid;place-items:center;font:600 13pt var(--f-titulo)}
+.passos b{font:600 12pt var(--f-titulo);color:#fff;display:block}
+.fim .assina{position:absolute;left:17mm;right:17mm;bottom:14mm;border-top:1px solid #ffffff24;padding-top:6mm;display:flex;justify-content:space-between;align-items:flex-end;font-size:8.5pt;color:#B6C1E0}
+.fim .assina svg{height:9mm;width:auto;display:block;margin-bottom:2mm}
+.fim .lou{position:absolute;right:12mm;top:12mm;width:34mm;height:34mm}
+</style>
+</head>
+<body>
+
+<!-- 1 · CAPA -->
+<section class="pg capa">
+  <div class="grade"></div>
+  <div class="logo">inglou<i></i></div>
+  <div class="lou"><svg viewBox="0 0 120 120" width="100%" height="100%" role="img" aria-label="Tuiuiú, a arara-azul do Inglou"><g class="lou__corpo"><path d="M12 120 Q12 92 36 84 H84 Q108 92 108 120 Z" fill="var(--arara-2,#1A33A0)"></path><path d="M34 120 Q36 95 60 91 Q84 95 86 120 Z" fill="var(--arara-1,#2447D0)"></path><path d="M22 114 Q24 102 31 95" stroke="var(--arara-3,#6C8DFF)" stroke-width="3" stroke-linecap="round" fill="none" opacity=".55"></path><path d="M98 114 Q96 102 89 95" stroke="var(--arara-3,#6C8DFF)" stroke-width="3" stroke-linecap="round" fill="none" opacity=".55"></path><ellipse cx="51" cy="19" rx="5.5" ry="10" fill="var(--arara-1,#2447D0)" transform="rotate(-18 51 19)"></ellipse><ellipse cx="67" cy="18" rx="5.5" ry="11" fill="var(--arara-1,#2447D0)" transform="rotate(14 67 18)"></ellipse><ellipse cx="60" cy="52" rx="37" ry="35" fill="var(--arara-1,#2447D0)"></ellipse><path d="M25 58 Q30 88 60 88 Q90 88 95 58 Q88 80 60 80 Q32 80 25 58 Z" fill="var(--arara-2,#1A33A0)" opacity=".45"></path><path d="M31 40 Q35 25 50 20" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".3"></path><ellipse cx="44" cy="67" rx="8" ry="6" fill="#FFC83D"></ellipse><ellipse cx="76" cy="67" rx="8" ry="6" fill="#FFC83D"></ellipse><g class="lou__olhos"><path d="M35 49 Q42 37 49 49" stroke="#16224A" stroke-width="4.5" stroke-linecap="round" fill="none"></path><path d="M71 49 Q78 37 85 49" stroke="#16224A" stroke-width="4.5" stroke-linecap="round" fill="none"></path></g><circle cx="28" cy="62" r="4.5" fill="#FF9FB2" opacity=".5"></circle><circle cx="92" cy="62" r="4.5" fill="#FF9FB2" opacity=".5"></circle><path d="M50 60 Q50 50 60 50 Q70 50 70 60 Q70 70 64 79 Q60 85 56 79 Q50 70 50 60 Z" fill="#3A4254"></path><path d="M54 56 Q56 53 60 53" stroke="#7A849B" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".75"></path><circle cx="56.5" cy="58" r="1.3" fill="#000" opacity=".35"></circle><circle cx="63.5" cy="58" r="1.3" fill="#000" opacity=".35"></circle><path d="M55 72 Q60 77 65 72" stroke="var(--arara-2,#1A33A0)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity=".55"></path></g></svg>
+</div>
+  <div class="tit">
+    <span class="rot">Apresentação para empresas e negócios</span>
+    <h1>Inglês que serve para o <em>trabalho</em> de verdade.</h1>
+    <p class="sub">Um professor particular digital que organiza o curso em torno do que a pessoa precisa fazer em inglês: entrevista, reunião, atendimento, viagem a trabalho.</p>
+  </div>
+  <div class="base">
+    <div><svg xmlns="http://www.w3.org/2000/svg" viewBox="-12 -12 455.4 124"><g transform="translate(0 15.5) scale(.9)"><rect x="2" y="54" width="44" height="44" rx="3" fill="#FFFFFF"/><rect x="54" y="54" width="44" height="44" rx="3" fill="#FFFFFF"/><rect x="2" y="2" width="44" height="44" rx="3" fill="#FFFFFF"/><path fill="#FFFFFF" d="M73.80 -0.20h4.40v4.44h-4.40zM73.80 4.20h4.40v4.44h-4.40zM69.40 8.60h13.20v4.44h-13.20zM69.40 13.00h13.20v4.44h-13.20zM60.60 17.40h30.80v4.44h-30.80zM51.80 21.80h48.40v4.44h-48.40zM60.60 26.20h30.80v4.44h-30.80zM69.40 30.60h13.20v4.44h-13.20zM69.40 35.00h13.20v4.44h-13.20zM73.80 39.40h4.40v4.44h-4.40zM73.80 43.80h4.40v4.44h-4.40z"/></g><g transform="translate(112 0)"><path d="M1.248 64.0 19.408 19.007999999999996H26.512L44.528 64.0H35.248L21.312 27.104H24.48L10.368 64.0ZM10.88 55.6V48.304H35.056V55.6ZM66.736 45.2V38.432H77.168Q80.368 38.432 82.128 36.792Q83.888 35.152 83.888 32.272Q83.888 29.631999999999998 82.152 27.872Q80.416 26.112000000000002 77.216 26.112000000000002H66.736V19.007999999999996H77.968Q82.32 19.007999999999996 85.616 20.711999999999996Q88.912 22.415999999999997 90.744 25.368Q92.576 28.32 92.576 32.128Q92.576 36.08 90.73599999999999 39.007999999999996Q88.896 41.936 85.568 43.568Q82.24 45.2 77.80799999999999 45.2ZM60.352 64.0V19.007999999999996H69.072V64.0ZM84.928 64.0 70.064 44.544 78.08 42.048 95.52 64.0ZM132.208 64.672Q127.24799999999999 64.672 123.024 62.912Q118.8 61.152 115.648 57.976Q112.496 54.8 110.776 50.576Q109.056 46.352000000000004 109.056 41.488Q109.056 36.608000000000004 110.776 32.392Q112.496 28.176000000000002 115.63999999999999 25.04Q118.78399999999999 21.903999999999996 123.0 20.119999999999997Q127.216 18.336 132.176 18.336Q137.584 18.336 141.664 20.096Q145.744 21.856 148.864 24.896L142.992 30.784Q141.12 28.735999999999997 138.43200000000002 27.584Q135.744 26.432000000000002 132.176 26.432000000000002Q129.04 26.432000000000002 126.44 27.504Q123.84 28.576 121.944 30.584Q120.048 32.592 119.01599999999999 35.367999999999995Q117.984 38.144 117.984 41.488Q117.984 44.848 119.01599999999999 47.623999999999995Q120.048 50.4 121.944 52.408Q123.84 54.416 126.44 55.495999999999995Q129.04 56.576 132.176 56.576Q135.968 56.576 138.672 55.416Q141.376 54.256 143.28 52.192L149.168 58.08Q146.016 61.168 141.83999999999997 62.92Q137.664 64.672 132.208 64.672ZM161.87199999999999 64.0 180.03199999999998 19.007999999999996H187.136L205.152 64.0H195.87199999999999L181.936 27.104H185.10399999999998L170.992 64.0ZM171.504 55.6V48.304H195.68V55.6ZM220.976 64.0V19.007999999999996H227.05599999999998L229.696 27.744V64.0ZM252.096 64.0 225.37599999999998 29.439999999999998 227.05599999999998 19.007999999999996 253.77599999999998 53.568ZM252.096 64.0 249.61599999999999 55.568V19.007999999999996H258.336V64.0ZM277.50399999999996 64.0V19.007999999999996H286.224V64.0ZM283.888 64.0V56.304H308.816V64.0ZM283.888 44.751999999999995V37.312H306.592V44.751999999999995ZM283.888 26.704V19.007999999999996H308.47999999999996V26.704Z" fill="#FFFFFF"/><path d="M8.618 104.31Q6.1225 104.31 4.3245 103.37225000000001Q2.5265 102.4345 1.178 100.714L2.7435 99.164Q3.844 100.6985 5.2855 101.4425Q6.727 102.1865 8.711 102.1865Q10.757 102.1865 12.02025 101.25649999999999Q13.2835 100.3265 13.2835 98.6835Q13.2835 97.397 12.70225 96.58324999999999Q12.121 95.7695 11.16775 95.25025Q10.2145 94.731 9.07525 94.328Q7.936 93.925 6.796749999999999 93.4755Q5.6575 93.026 4.70425 92.35175Q3.751 91.6775 3.1697499999999996 90.61574999999999Q2.5885 89.554 2.5885 87.911Q2.5885 86.1905 3.4255 84.9505Q4.2625 83.7105 5.7195 83.03625Q7.1765 82.362 9.0365 82.362Q11.1135 82.362 12.748750000000001 83.168Q14.384 83.974 15.469 85.3535L13.9035 86.90350000000001Q12.9115 85.71000000000001 11.7335 85.09775Q10.5555 84.4855 8.99 84.4855Q7.13 84.4855 6.00625 85.3535Q4.8825 86.22149999999999 4.8825 87.7715Q4.8825 88.965 5.46375 89.709Q6.045 90.453 6.9982500000000005 90.949Q7.9515 91.445 9.09075 91.84025Q10.23 92.2355 11.369250000000001 92.7005Q12.5085 93.1655 13.461749999999999 93.87074999999999Q14.415 94.576 14.99625 95.68424999999999Q15.5775 96.7925 15.5775 98.482Q15.5775 101.2565 13.702 102.78325000000001Q11.8265 104.31 8.618 104.31ZM56.04 104.0V83.2765H58.3185V104.0ZM48.5225 84.749V82.672H65.836V84.749ZM107.69839999999999 104.31Q105.39379999999998 104.31 103.5735 103.27228151260505Q101.75319999999999 102.23456302521008 100.7011 100.4269243697479Q99.64899999999999 98.61928571428571 99.64899999999999 96.343V82.672H101.9275V96.2345Q101.9275 98.03191784037558 102.68651022304832 99.35924178403755Q103.44552044609664 100.68656572769953 104.7565381040892 101.40553286384977Q106.06755576208177 102.1245 107.69597769516727 102.1245Q109.35199999999999 102.1245 110.63787583892616 101.4059433962264Q111.92375167785234 100.68738679245283 112.67612583892617 99.36082075471698Q113.42849999999999 98.03425471698114 113.42849999999999 96.2655V82.672H115.707V96.374Q115.707 98.65099578059072 114.66237209302325 100.44245569620253Q113.61774418604651 102.23391561181434 111.81037209302325 103.27195780590716Q110.00299999999999 104.31 107.69839999999999 104.31ZM152.48049999999998 104.0V101.9075H158.75799999999998Q161.269 101.9075 163.191 100.807Q165.113 99.7065 166.19025 97.769Q167.26749999999998 95.8315 167.26749999999998 93.305Q167.26749999999998 90.8095 166.1825 88.87975Q165.0975 86.95 163.1755 85.85725Q161.2535 84.7645 158.75799999999998 84.7645H152.5425V82.672H158.8045Q161.14499999999998 82.672 163.1135 83.47025Q165.082 84.2685 166.54674999999997 85.70224999999999Q168.01149999999998 87.136 168.8175 89.08125Q169.62349999999998 91.0265 169.62349999999998 93.336Q169.62349999999998 95.61449999999999 168.8175 97.5675Q168.01149999999998 99.5205 166.56225 100.96199999999999Q165.113 102.4035 163.1445 103.20175Q161.176 104.0 158.8665 104.0ZM151.0855 104.0V82.672H153.36399999999998V104.0ZM204.2115 104.0V82.672H206.49V104.0ZM251.773 104.31Q249.51 104.31 247.56475 103.46525Q245.61950000000002 102.6205 244.16250000000002 101.10925Q242.7055 99.598 241.89175 97.5985Q241.078 95.599 241.078 93.305Q241.078 90.99549999999999 241.88400000000001 89.0115Q242.69 87.0275 244.13925 85.53175Q245.5885 84.036 247.51825000000002 83.199Q249.448 82.362 251.711 82.362Q253.974 82.362 255.9115 83.199Q257.849 84.036 259.29825 85.53175Q260.7475 87.0275 261.56125 89.027Q262.375 91.0265 262.375 93.336Q262.375 95.63 261.56899999999996 97.62950000000001Q260.763 99.629 259.31375 101.12475Q257.8645 102.6205 255.9425 103.46525Q254.0205 104.31 251.773 104.31ZM251.711 102.1245Q254.129 102.1245 255.99675000000002 100.97749999999999Q257.8645 99.8305 258.94175 97.83875Q260.019 95.847 260.019 93.305Q260.019 91.414 259.399 89.8175Q258.779 88.221 257.663 87.03525Q256.547 85.8495 255.03575 85.1985Q253.5245 84.5475 251.711 84.5475Q249.3085 84.5475 247.44075 85.679Q245.573 86.8105 244.5035 88.78675000000001Q243.434 90.763 243.434 93.305Q243.434 95.196 244.054 96.81575000000001Q244.674 98.4355 245.78225 99.62125Q246.8905 100.807 248.4095 101.46575Q249.9285 102.1245 251.711 102.1245ZM302.884 104.31Q300.3885 104.31 298.5905 103.37225000000001Q296.7925 102.4345 295.444 100.714L297.0095 99.164Q298.11 100.6985 299.55150000000003 101.4425Q300.993 102.1865 302.97700000000003 102.1865Q305.023 102.1865 306.28625 101.25649999999999Q307.5495 100.3265 307.5495 98.6835Q307.5495 97.397 306.96825 96.58324999999999Q306.387 95.7695 305.43375000000003 95.25025Q304.4805 94.731 303.34125 94.328Q302.202 93.925 301.06275000000005 93.4755Q299.92350000000005 93.026 298.97025 92.35175Q298.017 91.6775 297.43575 90.61574999999999Q296.85450000000003 89.554 296.85450000000003 87.911Q296.85450000000003 86.1905 297.6915 84.9505Q298.5285 83.7105 299.9855 83.03625Q301.4425 82.362 303.3025 82.362Q305.3795 82.362 307.01475000000005 83.168Q308.65000000000003 83.974 309.735 85.3535L308.1695 86.90350000000001Q307.1775 85.71000000000001 305.9995 85.09775Q304.8215 84.4855 303.25600000000003 84.4855Q301.396 84.4855 300.27225 85.3535Q299.1485 86.22149999999999 299.1485 87.7715Q299.1485 88.965 299.72975 89.709Q300.31100000000004 90.453 301.26425000000006 90.949Q302.21750000000003 91.445 303.35675000000003 91.84025Q304.49600000000004 92.2355 305.63525000000004 92.7005Q306.77450000000005 93.1655 307.72775 93.87074999999999Q308.68100000000004 94.576 309.26225 95.68424999999999Q309.8435 96.7925 309.8435 98.482Q309.8435 101.2565 307.968 102.78325000000001Q306.09250000000003 104.31 302.884 104.31Z" fill="#FFFFFF"/></g></svg><span>Plataforma criada e mantida pela <b>Arcane Studios</b> · arcanestudios.io</span></div>
+    <div style="text-align:right">Outubro de 2026<br>Documento comercial</div>
+  </div>
+</section>
+
+<!-- 2 · PROBLEMA -->
+<section class="pg">
+  <span class="rot">O ponto de partida</span>
+  <h2>Curso de inglês genérico não resolve a reunião de quinta.</h2>
+  <p class="lead">Quando uma equipe precisa do inglês para uma tarefa concreta, três coisas costumam falhar. O Inglou foi desenhado em cima delas.</p>
+  <div class="dor"><div class="x">01</div><div><h3>O conteúdo não é do trabalho dela</h3><p>Aula de "o gato está na mesa" não prepara ninguém para explicar um projeto, atender um cliente estrangeiro ou responder um e-mail difícil.</p></div></div>
+  <div class="dor"><div class="x">02</div><div><h3>Ninguém sabe o que travou</h3><p>O aluno erra, o app marca vermelho, e o mesmo erro volta na semana seguinte. Falta olhar o padrão: entende lendo, mas não ouvindo? Reconhece, mas não produz?</p></div></div>
+  <div class="dor"><div class="x">03</div><div><h3>Progresso que não dá para provar</h3><p>Horas assistidas e sequência de dias mostram constância, mas não mostram se a pessoa consegue de fato se apresentar, negociar ou resumir uma reunião.</p></div></div>
+  <p class="cit">A conversa de hoje vira a aula de amanhã.</p>
+  <div class="faixa">
+    <div class="num">1</div>
+    <div><h3>Um objetivo real organiza o curso</h3><p>O aluno diz o que vem pela frente e o plano inteiro (missões, lições, revisões, conversas) se monta em volta disso.</p></div>
+  </div>
+  <div class="rodape"><div class="a"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 112 112"><rect x="2" y="54" width="44" height="44" rx="3" fill="#3D63E0"/><rect x="54" y="54" width="44" height="44" rx="3" fill="#3D63E0"/><rect x="2" y="2" width="44" height="44" rx="3" fill="#3D63E0"/><path fill="#3D63E0" d="M73.80 -0.20h4.40v4.44h-4.40zM73.80 4.20h4.40v4.44h-4.40zM69.40 8.60h13.20v4.44h-13.20zM69.40 13.00h13.20v4.44h-13.20zM60.60 17.40h30.80v4.44h-30.80zM51.80 21.80h48.40v4.44h-48.40zM60.60 26.20h30.80v4.44h-30.80zM69.40 30.60h13.20v4.44h-13.20zM69.40 35.00h13.20v4.44h-13.20zM73.80 39.40h4.40v4.44h-4.40zM73.80 43.80h4.40v4.44h-4.40z"/></svg><span>Inglou · para empresas e negócios</span></div><b>02</b></div>
+</section>
+
+<!-- 3 · SOLUÇÃO -->
+<section class="pg p3">
+  <span class="rot">A solução</span>
+  <h2>Seis ideias que diferenciam o Inglou.</h2>
+  <p class="lead">Não é "mais um app com IA". A inteligência fica a serviço de um método.</p>
+  <div class="g2">
+    <div class="card cor c-azul"><div class="n">1</div><h3>Objetivo manda no curso</h3><p>Entrevista, reuniões e e-mails, atendimento a estrangeiros, viagem, debate. Cada objetivo vira missões em ordem, com prazo realista e aviso franco quando o prazo é curto.</p></div>
+    <div class="card cor c-sol"><div class="n">2</div><h3>A conversa vira a próxima aula</h3><p>O que travou numa simulação vira foco da lição seguinte, cartão de revisão e um novo teste dias depois, em outra situação.</p></div>
+    <div class="card cor c-menta"><div class="n">3</div><h3>Mapa de dificuldades</h3><p>O motor mede o que a pessoa acerta ao ler, ouvir e escrever e treina o ponto fraco. Cada conclusão mostra em que dado se baseia e pode ser descartada.</p></div>
+    <div class="card cor c-lilas"><div class="n">4</div><h3>Material da própria empresa</h3><p>Descrição de vaga, e-mail, apresentação ou texto técnico viram vocabulário, exercícios e perguntas de simulação sob medida.</p></div>
+    <div class="card cor c-coral"><div class="n">5</div><h3>Progresso que se prova</h3><p>O painel separa <b>feito</b> (lições e minutos), <b>demonstrado</b> (tarefa sozinho, com data e texto) e <b>mantido</b> (usou de novo dias depois).</p></div>
+    <div class="card cor c-turq"><div class="n">6</div><h3>Feito para quem fala português</h3><p>Explicações em português, catálogo de erros típicos de brasileiros e o módulo "Do Brasil pro mundo", com expressões e gírias traduzidas com contexto.</p></div>
+  </div>
+  <div class="caderno" style="margin-top:6mm">
+    <small>Exemplo ilustrativo (não é caso de cliente) · conversa de terça · entrevista</small>
+    <p style="margin-top:2mm">Recrutador: <i>How long have you been in your current role?</i></p>
+    <p><span class="risc">I work there since 2021.</span> &nbsp; <span class="cane">I've worked there since 2021.</span></p>
+  </div>
+  <div class="post"><p><b>Aula de quarta:</b> since x for, com exemplos da sua área. Sábado, um teste numa situação nova, sem dicas.</p></div>
+  <div class="rodape"><div class="a"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 112 112"><rect x="2" y="54" width="44" height="44" rx="3" fill="#3D63E0"/><rect x="54" y="54" width="44" height="44" rx="3" fill="#3D63E0"/><rect x="2" y="2" width="44" height="44" rx="3" fill="#3D63E0"/><path fill="#3D63E0" d="M73.80 -0.20h4.40v4.44h-4.40zM73.80 4.20h4.40v4.44h-4.40zM69.40 8.60h13.20v4.44h-13.20zM69.40 13.00h13.20v4.44h-13.20zM60.60 17.40h30.80v4.44h-30.80zM51.80 21.80h48.40v4.44h-48.40zM60.60 26.20h30.80v4.44h-30.80zM69.40 30.60h13.20v4.44h-13.20zM69.40 35.00h13.20v4.44h-13.20zM73.80 39.40h4.40v4.44h-4.40zM73.80 43.80h4.40v4.44h-4.40z"/></svg><span>Inglou · para empresas e negócios</span></div><b>03</b></div>
+</section>
+
+<!-- 4 · COMO FUNCIONA -->
+<section class="pg">
+  <span class="rot">Como funciona</span>
+  <h2>Do primeiro acesso à primeira conversa em inglês.</h2>
+  <p class="lead">Cinco etapas, todas dentro do mesmo app, no celular ou no computador.</p>
+  <div class="ciclo">
+    <div><i>1</i><b>Objetivo</b><span>Para que precisa do inglês, prazo, área e minutos por dia.</span></div>
+    <div><i>2</i><b>Nível</b><span>Teste curto de A1 a C1, com aviso de incerteza. Quem começa do zero pula o teste.</span></div>
+    <div><i>3</i><b>Plano</b><span>Missões por semana e meta que a pessoa consegue cumprir.</span></div>
+    <div><i>4</i><b>Hoje</b><span>Sessão de 5, 10 ou 20 minutos: exemplos, prática, apoio e revisão.</span></div>
+    <div><i>5</i><b>Prova</b><span>Tarefa sozinho, comparação entre amostras e retestes espaçados.</span></div>
+  </div>
+  <div class="g2">
+    <div>
+      <h3>O dia a dia do aluno</h3>
+      <ul class="v">
+        <li>Sessão curta que cabe no intervalo, com progresso salvo no servidor: sair não perde nada.</li>
+        <li>Toque numa palavra em inglês e veja a tradução na hora.</li>
+        <li>Leitura em voz alta com acompanhamento visual das palavras reconhecidas.</li>
+        <li>Revisão espaçada com áudio e com os erros do próprio aluno.</li>
+        <li>Rádio Tuiuiú: um episódio por dia com os tropeços dos últimos dias.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Funciona também sem IA</h3>
+      <ul class="v">
+        <li>Todo o conteúdo, correção por regras e conversa por roteiro funcionam sem IA paga.</li>
+        <li>Com IA entram conversa livre, correção detalhada e material próprio.</li>
+        <li>Teto de gasto de IA por assinatura: custo previsível para quem contrata.</li>
+        <li>A IA avisa quando não tem certeza e nunca promete fluência em prazo.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="faixa">
+    <div class="num">Lou</div>
+    <div><h3>Um mascote que o aluno quer encontrar</h3><p>O Tuiuiú, arara-azul do Inglou, fala português, anda no trilho de progresso e comemora cada aula. Cores fixas por atividade ajudam a se guiar sem ler muito. Temas Dia e Noite.</p></div>
+  </div>
+  <div class="rodape"><div class="a"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 112 112"><rect x="2" y="54" width="44" height="44" rx="3" fill="#3D63E0"/><rect x="54" y="54" width="44" height="44" rx="3" fill="#3D63E0"/><rect x="2" y="2" width="44" height="44" rx="3" fill="#3D63E0"/><path fill="#3D63E0" d="M73.80 -0.20h4.40v4.44h-4.40zM73.80 4.20h4.40v4.44h-4.40zM69.40 8.60h13.20v4.44h-13.20zM69.40 13.00h13.20v4.44h-13.20zM60.60 17.40h30.80v4.44h-30.80zM51.80 21.80h48.40v4.44h-48.40zM60.60 26.20h30.80v4.44h-30.80zM69.40 30.60h13.20v4.44h-13.20zM69.40 35.00h13.20v4.44h-13.20zM73.80 39.40h4.40v4.44h-4.40zM73.80 43.80h4.40v4.44h-4.40z"/></svg><span>Inglou · para empresas e negócios</span></div><b>04</b></div>
+</section>
+
+<!-- 5 · SITUAÇÕES -->
+<section class="pg">
+  <span class="rot">Conteúdo disponível hoje</span>
+  <h2>Situações de trabalho prontas para treinar.</h2>
+  <p class="lead">O catálogo atual já cobre objetivos profissionais e cotidianos, com conversas de simulação e prática em cada etapa.</p>
+  <div class="nums">
+    <div><b>9</b><span>objetivos que organizam o curso</span></div>
+    <div><b>54</b><span>cenários de conversa de simulação</span></div>
+    <div><b>21</b><span>capítulos na biblioteca, de A1 a B1</span></div>
+    <div><b>60</b><span>fichas em "Do Brasil pro mundo"</span></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <h3>Objetivos profissionais</h3>
+      <span class="tag">Entrevista de emprego</span><span class="tag">Reuniões e e-mails</span><span class="tag">Atender clientes estrangeiros</span><span class="tag">Debater e argumentar</span><span class="tag">Estudar fora ou fazer prova</span>
+      <p style="margin-top:2mm">Ex.: entrevista completa, reunião de equipe, ligar para marcar reunião, atender um cliente, negociar prioridades com clareza, mediar e resumir.</p>
+    </div>
+    <div class="card">
+      <h3>Vida fora do escritório</h3>
+      <span class="tag">Começar do zero</span><span class="tag">Dia a dia na cidade</span><span class="tag">Viagem</span><span class="tag">Conversação</span>
+      <p style="margin-top:2mm">Ex.: banco, clínica, farmácia, mercado, recepção de hotel, restaurante, perdido na cidade.</p>
+    </div>
+  </div>
+  <div class="g2" style="margin-top:5mm">
+    <div class="card c-azul cor"><h3>Idade e nível, separados</h3><p>A idade orienta os temas e a linguagem (crianças, adolescentes, adultos); o nível de inglês orienta a dificuldade. Uma pessoa nunca fica presa a um nível por causa da idade.</p></div>
+    <div class="card c-sol cor"><h3>Vozes consistentes</h3><p>Quatro vozes oficiais para a Mia (inglês) e o Tuiuiú (português). O conteúdo fixo tem áudio compartilhado; textos pessoais ficam separados por conta.</p></div>
+  </div>
+  <div class="card" style="margin-top:5mm">
+    <h3>Do Brasil pro mundo</h3>
+    <p>Módulo que ensina a explicar em inglês o que é muito brasileiro: nomes regionais (bergamota, mexerica, tangerina), gírias de internet, ditados, convivência. Cada ficha traz equivalente, exemplo, contexto, registro, áudio e fonte. Útil para equipes que recebem ou atendem pessoas de fora.</p>
+  </div>
+  <div class="rodape"><div class="a"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 112 112"><rect x="2" y="54" width="44" height="44" rx="3" fill="#3D63E0"/><rect x="54" y="54" width="44" height="44" rx="3" fill="#3D63E0"/><rect x="2" y="2" width="44" height="44" rx="3" fill="#3D63E0"/><path fill="#3D63E0" d="M73.80 -0.20h4.40v4.44h-4.40zM73.80 4.20h4.40v4.44h-4.40zM69.40 8.60h13.20v4.44h-13.20zM69.40 13.00h13.20v4.44h-13.20zM60.60 17.40h30.80v4.44h-30.80zM51.80 21.80h48.40v4.44h-48.40zM60.60 26.20h30.80v4.44h-30.80zM69.40 30.60h13.20v4.44h-13.20zM69.40 35.00h13.20v4.44h-13.20zM73.80 39.40h4.40v4.44h-4.40zM73.80 43.80h4.40v4.44h-4.40z"/></svg><span>Inglou · para empresas e negócios</span></div><b>05</b></div>
+</section>
+
+<!-- 6 · EQUIPES -->
+<section class="pg">
+  <span class="rot">Para equipes, escolas e professores</span>
+  <h2>Uma turma, um painel, privacidade no lugar.</h2>
+  <p class="lead">O plano Turma reúne até 20 pessoas sob uma assinatura, com contas e progresso individuais, e dá ao responsável ferramentas de ensino.</p>
+  <div class="g2">
+    <div>
+      <h3>Ferramentas do responsável</h3>
+      <ul class="v">
+        <li>Criar turma com público e nível e entrar por código de 6 caracteres ou link.</li>
+        <li>Montar atividades com material de estudo, questões filtradas e perguntas próprias.</li>
+        <li>Rascunho, publicação, encerramento e versões; respostas já dadas nunca são alteradas.</li>
+        <li>Reutilizar uma aula em outra turma, sem copiar respostas.</li>
+        <li>Ver respondidas, acerto, atividades feitas e <b>dificuldades da turma</b>.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>O que o aluno vê e faz</h3>
+      <ul class="v">
+        <li>Cartão em "Hoje" com as atividades pendentes da turma.</li>
+        <li>Resolve uma questão por vez, com correção no servidor e explicação.</li>
+        <li>Pode sair da turma quando quiser; as respostas dele nela são apagadas.</li>
+        <li>As respostas também alimentam o plano pessoal de estudo dele.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="faixa" style="background:var(--azul-forte)">
+    <div class="num" style="font-size:26pt">LGPD</div>
+    <div><h3>Privacidade como regra de produto</h3><p style="color:#DCE6FF">O responsável vê nome, acertos, tempo e conclusão nas atividades da turma. <b>Nunca</b> vê o que o aluno digitou, conversas, textos, cartões ou o resto do estudo.</p></div>
+  </div>
+  <div class="g2" style="margin-top:6mm">
+    <div class="card"><h3>Dados do aluno</h3><p>Exportação e exclusão dos próprios dados pelo aluno. Cadastro de menores registra a confirmação de autorização do responsável legal.</p></div>
+    <div class="card"><h3>Operação</h3><p>Contas com Supabase, senhas e login Google, rotina de backup e de restauração e acesso administrativo restrito por identificadores configurados no servidor.</p></div>
+  </div>
+  <p class="nota">Declaração de autorização de menores é um registro de aceite, não verificação de identidade. Este documento não substitui o contrato nem a política de privacidade vigentes.</p>
+  <div class="rodape"><div class="a"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 112 112"><rect x="2" y="54" width="44" height="44" rx="3" fill="#3D63E0"/><rect x="54" y="54" width="44" height="44" rx="3" fill="#3D63E0"/><rect x="2" y="2" width="44" height="44" rx="3" fill="#3D63E0"/><path fill="#3D63E0" d="M73.80 -0.20h4.40v4.44h-4.40zM73.80 4.20h4.40v4.44h-4.40zM69.40 8.60h13.20v4.44h-13.20zM69.40 13.00h13.20v4.44h-13.20zM60.60 17.40h30.80v4.44h-30.80zM51.80 21.80h48.40v4.44h-48.40zM60.60 26.20h30.80v4.44h-30.80zM69.40 30.60h13.20v4.44h-13.20zM69.40 35.00h13.20v4.44h-13.20zM73.80 39.40h4.40v4.44h-4.40zM73.80 43.80h4.40v4.44h-4.40z"/></svg><span>Inglou · para empresas e negócios</span></div><b>06</b></div>
+</section>
+
+<!-- 7 · PLANOS -->
+<section class="pg">
+  <span class="rot">Investimento</span>
+  <h2>Planos simples, sem surpresa.</h2>
+  <p class="lead">Teste de 30 dias sem cartão. Acabando o teste, a conta volta ao Grátis, com revisões e histórico preservados.</p>
+  <table>
+    <tr><th>Plano</th><th>Mensal</th><th>Anual</th><th>Pessoas</th><th>Gerações de IA/mês</th><th>Voz nova/mês</th></tr>
+    <tr><td>Grátis</td><td>R$ 0</td><td>R$ 0</td><td>1</td><td>0</td><td>0</td></tr>
+    <tr><td>Basic</td><td>R$ 9,90</td><td>R$ 79,90</td><td>1</td><td>0</td><td>1.000 car.</td></tr>
+    <tr><td>Completo</td><td>R$ 19,90</td><td>R$ 149,90</td><td>1</td><td>até 60</td><td>2.500 car.</td></tr>
+    <tr><td>Família</td><td>R$ 27,90</td><td>R$ 249,90</td><td>até 5</td><td>até 120 (grupo)</td><td>4.000 car. (grupo)</td></tr>
+    <tr class="d"><td>Turma</td><td>R$ 99,90</td><td>R$ 899,90</td><td>até 20</td><td>até 400 (grupo)</td><td>12.000 car. (grupo)</td></tr>
+  </table>
+  <p class="nota">Tabela individual vigente em 22/10/2026. Conteúdo e prática sem IA continuam em todos os planos pagos. Cotas renovam todo mês, inclusive no anual. A contratação on-line está em preparação nesta data.</p>
+  <div class="g2" style="margin-top:7mm">
+    <div class="card cor c-menta">
+      <h3>Cálculo rápido para equipes</h3>
+      <p>No plano Turma, 20 pessoas ficam em <b>R$ 5,00 por pessoa ao mês</b> no pagamento mensal (R$ 99,90 ÷ 20), ou cerca de <b>R$ 3,75</b> no anual (R$ 899,90 ÷ 12 ÷ 20). As franquias de IA e de voz são do grupo.</p>
+    </div>
+    <div class="card cor c-sol">
+      <h3>Acima de 20 pessoas</h3>
+      <p>Condições para empresas maiores, nota fiscal e contrato institucional são tratadas <b>sob proposta</b>. Os preços de tabela acima não incluem esse atendimento.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:5mm">
+    <h3>Piloto sugerido de 30 dias</h3>
+    <ul class="v">
+      <li>Um grupo pequeno, um objetivo claro (por exemplo, atender clientes estrangeiros ou reuniões em inglês).</li>
+      <li>Início com teste de nível e meta combinada; ao final, comparação de amostras da mesma missão, sem prometer fluência.</li>
+      <li>Relatório de encerramento com o que foi feito, demonstrado e mantido, e as dificuldades mais comuns do grupo.</li>
+    </ul>
+  </div>
+  <div class="rodape"><div class="a"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 112 112"><rect x="2" y="54" width="44" height="44" rx="3" fill="#3D63E0"/><rect x="54" y="54" width="44" height="44" rx="3" fill="#3D63E0"/><rect x="2" y="2" width="44" height="44" rx="3" fill="#3D63E0"/><path fill="#3D63E0" d="M73.80 -0.20h4.40v4.44h-4.40zM73.80 4.20h4.40v4.44h-4.40zM69.40 8.60h13.20v4.44h-13.20zM69.40 13.00h13.20v4.44h-13.20zM60.60 17.40h30.80v4.44h-30.80zM51.80 21.80h48.40v4.44h-48.40zM60.60 26.20h30.80v4.44h-30.80zM69.40 30.60h13.20v4.44h-13.20zM69.40 35.00h13.20v4.44h-13.20zM73.80 39.40h4.40v4.44h-4.40zM73.80 43.80h4.40v4.44h-4.40z"/></svg><span>Inglou · para empresas e negócios</span></div><b>07</b></div>
+</section>
+
+<!-- 8 · ROADMAP -->
+<section class="pg">
+  <span class="rot">Próximos passos do produto</span>
+  <h2>O que construímos junto com as empresas.</h2>
+  <p class="lead">Itens abaixo são <b>propostas de evolução</b>, ainda não disponíveis. Prioridade e prazo se definem com o primeiro grupo piloto.</p>
+  <div class="rm">
+    <div class="card"><span class="pill em">Proposta</span><h3>Painel da empresa</h3><p>Visão agregada por equipe: participação, missões demonstradas e dificuldades mais comuns, sem expor o que cada pessoa escreveu.</p></div>
+    <div class="card"><span class="pill em">Proposta</span><h3>Trilhas por setor</h3><p>Hotelaria, saúde, varejo, tecnologia, indústria: vocabulário e cenários do dia a dia de cada área, criados com especialistas.</p></div>
+    <div class="card"><span class="pill em">Proposta</span><h3>Relatório de evidências</h3><p>Documento por pessoa e por turma com tarefas demonstradas, datas e comparação antes e agora, pronto para RH e gestores.</p></div>
+    <div class="card"><span class="pill em">Proposta</span><h3>Simulação com o seu cliente</h3><p>Conversas treinadas com o roteiro real da empresa: política de atendimento, objeções comuns, catálogo, tom de voz da marca.</p></div>
+    <div class="card"><span class="pill em">Proposta</span><h3>Convite e entrada em lote</h3><p>Planilha ou link único para cadastrar a equipe, e convite por e-mail. Hoje a entrada é por código de turma.</p></div>
+    <div class="card"><span class="pill em">Proposta</span><h3>Contrato e faturamento</h3><p>Nota fiscal, pagamento por boleto ou Pix para empresas e plano institucional acima de 20 pessoas.</p></div>
+  </div>
+  <div class="faixa" style="margin-top:8mm">
+    <div class="num" style="font-size:22pt">Hoje</div>
+    <div><h3>O que já está pronto para um piloto</h3><p>Objetivos profissionais, simulações, mapa de dificuldades, plano Turma com atividades e painel do responsável, privacidade entre aluno e professor, voz, biblioteca e módulo cultural.</p></div>
+  </div>
+  <div class="rodape"><div class="a"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 112 112"><rect x="2" y="54" width="44" height="44" rx="3" fill="#3D63E0"/><rect x="54" y="54" width="44" height="44" rx="3" fill="#3D63E0"/><rect x="2" y="2" width="44" height="44" rx="3" fill="#3D63E0"/><path fill="#3D63E0" d="M73.80 -0.20h4.40v4.44h-4.40zM73.80 4.20h4.40v4.44h-4.40zM69.40 8.60h13.20v4.44h-13.20zM69.40 13.00h13.20v4.44h-13.20zM60.60 17.40h30.80v4.44h-30.80zM51.80 21.80h48.40v4.44h-48.40zM60.60 26.20h30.80v4.44h-30.80zM69.40 30.60h13.20v4.44h-13.20zM69.40 35.00h13.20v4.44h-13.20zM73.80 39.40h4.40v4.44h-4.40zM73.80 43.80h4.40v4.44h-4.40z"/></svg><span>Inglou · para empresas e negócios</span></div><b>08</b></div>
+</section>
+
+<!-- 9 · FECHO -->
+<section class="pg fim">
+  <div class="grade"></div>
+  <div class="lou"><svg viewBox="0 0 120 120" width="100%" height="100%" role="img" aria-label="Tuiuiú, a arara-azul do Inglou"><g class="lou__corpo"><path d="M12 120 Q12 92 36 84 H84 Q108 92 108 120 Z" fill="var(--arara-2,#1A33A0)"></path><path d="M34 120 Q36 95 60 91 Q84 95 86 120 Z" fill="var(--arara-1,#2447D0)"></path><path d="M22 114 Q24 102 31 95" stroke="var(--arara-3,#6C8DFF)" stroke-width="3" stroke-linecap="round" fill="none" opacity=".55"></path><path d="M98 114 Q96 102 89 95" stroke="var(--arara-3,#6C8DFF)" stroke-width="3" stroke-linecap="round" fill="none" opacity=".55"></path><ellipse cx="51" cy="19" rx="5.5" ry="10" fill="var(--arara-1,#2447D0)" transform="rotate(-18 51 19)"></ellipse><ellipse cx="67" cy="18" rx="5.5" ry="11" fill="var(--arara-1,#2447D0)" transform="rotate(14 67 18)"></ellipse><ellipse cx="60" cy="52" rx="37" ry="35" fill="var(--arara-1,#2447D0)"></ellipse><path d="M25 58 Q30 88 60 88 Q90 88 95 58 Q88 80 60 80 Q32 80 25 58 Z" fill="var(--arara-2,#1A33A0)" opacity=".45"></path><path d="M31 40 Q35 25 50 20" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".3"></path><ellipse cx="44" cy="67" rx="8" ry="6" fill="#FFC83D"></ellipse><ellipse cx="76" cy="67" rx="8" ry="6" fill="#FFC83D"></ellipse><g class="lou__olhos"><path d="M35 49 Q42 37 49 49" stroke="#16224A" stroke-width="4.5" stroke-linecap="round" fill="none"></path><path d="M71 49 Q78 37 85 49" stroke="#16224A" stroke-width="4.5" stroke-linecap="round" fill="none"></path></g><circle cx="28" cy="62" r="4.5" fill="#FF9FB2" opacity=".5"></circle><circle cx="92" cy="62" r="4.5" fill="#FF9FB2" opacity=".5"></circle><path d="M50 60 Q50 50 60 50 Q70 50 70 60 Q70 70 64 79 Q60 85 56 79 Q50 70 50 60 Z" fill="#3A4254"></path><path d="M54 56 Q56 53 60 53" stroke="#7A849B" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".75"></path><circle cx="56.5" cy="58" r="1.3" fill="#000" opacity=".35"></circle><circle cx="63.5" cy="58" r="1.3" fill="#000" opacity=".35"></circle><path d="M55 72 Q60 77 65 72" stroke="var(--arara-2,#1A33A0)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity=".55"></path></g></svg>
+</div>
+  <div class="in">
+    <span class="rot" style="color:var(--sol)">Vamos conversar</span>
+    <h2>Seu time falando inglês onde importa.</h2>
+    <p style="font-size:12pt;max-width:46ch;margin-top:5mm">Três passos para começar, sem compromisso de longo prazo.</p>
+    <div class="passos">
+      <div><span class="n">1</span><div><b>Conversa de 30 minutos</b><p>Entender o negócio, a equipe e as situações em que o inglês aparece.</p></div></div>
+      <div><span class="n">2</span><div><b>Piloto de 30 dias</b><p>Um grupo, um objetivo, uma meta combinada e acompanhamento no meio.</p></div></div>
+      <div><span class="n">3</span><div><b>Decisão com evidência</b><p>Relatório do que foi feito e demonstrado, e proposta para ampliar.</p></div></div>
+    </div>
+  </div>
+  <div class="assina">
+    <div><svg xmlns="http://www.w3.org/2000/svg" viewBox="-12 -12 455.4 124"><g transform="translate(0 15.5) scale(.9)"><rect x="2" y="54" width="44" height="44" rx="3" fill="#FFFFFF"/><rect x="54" y="54" width="44" height="44" rx="3" fill="#FFFFFF"/><rect x="2" y="2" width="44" height="44" rx="3" fill="#FFFFFF"/><path fill="#FFFFFF" d="M73.80 -0.20h4.40v4.44h-4.40zM73.80 4.20h4.40v4.44h-4.40zM69.40 8.60h13.20v4.44h-13.20zM69.40 13.00h13.20v4.44h-13.20zM60.60 17.40h30.80v4.44h-30.80zM51.80 21.80h48.40v4.44h-48.40zM60.60 26.20h30.80v4.44h-30.80zM69.40 30.60h13.20v4.44h-13.20zM69.40 35.00h13.20v4.44h-13.20zM73.80 39.40h4.40v4.44h-4.40zM73.80 43.80h4.40v4.44h-4.40z"/></g><g transform="translate(112 0)"><path d="M1.248 64.0 19.408 19.007999999999996H26.512L44.528 64.0H35.248L21.312 27.104H24.48L10.368 64.0ZM10.88 55.6V48.304H35.056V55.6ZM66.736 45.2V38.432H77.168Q80.368 38.432 82.128 36.792Q83.888 35.152 83.888 32.272Q83.888 29.631999999999998 82.152 27.872Q80.416 26.112000000000002 77.216 26.112000000000002H66.736V19.007999999999996H77.968Q82.32 19.007999999999996 85.616 20.711999999999996Q88.912 22.415999999999997 90.744 25.368Q92.576 28.32 92.576 32.128Q92.576 36.08 90.73599999999999 39.007999999999996Q88.896 41.936 85.568 43.568Q82.24 45.2 77.80799999999999 45.2ZM60.352 64.0V19.007999999999996H69.072V64.0ZM84.928 64.0 70.064 44.544 78.08 42.048 95.52 64.0ZM132.208 64.672Q127.24799999999999 64.672 123.024 62.912Q118.8 61.152 115.648 57.976Q112.496 54.8 110.776 50.576Q109.056 46.352000000000004 109.056 41.488Q109.056 36.608000000000004 110.776 32.392Q112.496 28.176000000000002 115.63999999999999 25.04Q118.78399999999999 21.903999999999996 123.0 20.119999999999997Q127.216 18.336 132.176 18.336Q137.584 18.336 141.664 20.096Q145.744 21.856 148.864 24.896L142.992 30.784Q141.12 28.735999999999997 138.43200000000002 27.584Q135.744 26.432000000000002 132.176 26.432000000000002Q129.04 26.432000000000002 126.44 27.504Q123.84 28.576 121.944 30.584Q120.048 32.592 119.01599999999999 35.367999999999995Q117.984 38.144 117.984 41.488Q117.984 44.848 119.01599999999999 47.623999999999995Q120.048 50.4 121.944 52.408Q123.84 54.416 126.44 55.495999999999995Q129.04 56.576 132.176 56.576Q135.968 56.576 138.672 55.416Q141.376 54.256 143.28 52.192L149.168 58.08Q146.016 61.168 141.83999999999997 62.92Q137.664 64.672 132.208 64.672ZM161.87199999999999 64.0 180.03199999999998 19.007999999999996H187.136L205.152 64.0H195.87199999999999L181.936 27.104H185.10399999999998L170.992 64.0ZM171.504 55.6V48.304H195.68V55.6ZM220.976 64.0V19.007999999999996H227.05599999999998L229.696 27.744V64.0ZM252.096 64.0 225.37599999999998 29.439999999999998 227.05599999999998 19.007999999999996 253.77599999999998 53.568ZM252.096 64.0 249.61599999999999 55.568V19.007999999999996H258.336V64.0ZM277.50399999999996 64.0V19.007999999999996H286.224V64.0ZM283.888 64.0V56.304H308.816V64.0ZM283.888 44.751999999999995V37.312H306.592V44.751999999999995ZM283.888 26.704V19.007999999999996H308.47999999999996V26.704Z" fill="#FFFFFF"/><path d="M8.618 104.31Q6.1225 104.31 4.3245 103.37225000000001Q2.5265 102.4345 1.178 100.714L2.7435 99.164Q3.844 100.6985 5.2855 101.4425Q6.727 102.1865 8.711 102.1865Q10.757 102.1865 12.02025 101.25649999999999Q13.2835 100.3265 13.2835 98.6835Q13.2835 97.397 12.70225 96.58324999999999Q12.121 95.7695 11.16775 95.25025Q10.2145 94.731 9.07525 94.328Q7.936 93.925 6.796749999999999 93.4755Q5.6575 93.026 4.70425 92.35175Q3.751 91.6775 3.1697499999999996 90.61574999999999Q2.5885 89.554 2.5885 87.911Q2.5885 86.1905 3.4255 84.9505Q4.2625 83.7105 5.7195 83.03625Q7.1765 82.362 9.0365 82.362Q11.1135 82.362 12.748750000000001 83.168Q14.384 83.974 15.469 85.3535L13.9035 86.90350000000001Q12.9115 85.71000000000001 11.7335 85.09775Q10.5555 84.4855 8.99 84.4855Q7.13 84.4855 6.00625 85.3535Q4.8825 86.22149999999999 4.8825 87.7715Q4.8825 88.965 5.46375 89.709Q6.045 90.453 6.9982500000000005 90.949Q7.9515 91.445 9.09075 91.84025Q10.23 92.2355 11.369250000000001 92.7005Q12.5085 93.1655 13.461749999999999 93.87074999999999Q14.415 94.576 14.99625 95.68424999999999Q15.5775 96.7925 15.5775 98.482Q15.5775 101.2565 13.702 102.78325000000001Q11.8265 104.31 8.618 104.31ZM56.04 104.0V83.2765H58.3185V104.0ZM48.5225 84.749V82.672H65.836V84.749ZM107.69839999999999 104.31Q105.39379999999998 104.31 103.5735 103.27228151260505Q101.75319999999999 102.23456302521008 100.7011 100.4269243697479Q99.64899999999999 98.61928571428571 99.64899999999999 96.343V82.672H101.9275V96.2345Q101.9275 98.03191784037558 102.68651022304832 99.35924178403755Q103.44552044609664 100.68656572769953 104.7565381040892 101.40553286384977Q106.06755576208177 102.1245 107.69597769516727 102.1245Q109.35199999999999 102.1245 110.63787583892616 101.4059433962264Q111.92375167785234 100.68738679245283 112.67612583892617 99.36082075471698Q113.42849999999999 98.03425471698114 113.42849999999999 96.2655V82.672H115.707V96.374Q115.707 98.65099578059072 114.66237209302325 100.44245569620253Q113.61774418604651 102.23391561181434 111.81037209302325 103.27195780590716Q110.00299999999999 104.31 107.69839999999999 104.31ZM152.48049999999998 104.0V101.9075H158.75799999999998Q161.269 101.9075 163.191 100.807Q165.113 99.7065 166.19025 97.769Q167.26749999999998 95.8315 167.26749999999998 93.305Q167.26749999999998 90.8095 166.1825 88.87975Q165.0975 86.95 163.1755 85.85725Q161.2535 84.7645 158.75799999999998 84.7645H152.5425V82.672H158.8045Q161.14499999999998 82.672 163.1135 83.47025Q165.082 84.2685 166.54674999999997 85.70224999999999Q168.01149999999998 87.136 168.8175 89.08125Q169.62349999999998 91.0265 169.62349999999998 93.336Q169.62349999999998 95.61449999999999 168.8175 97.5675Q168.01149999999998 99.5205 166.56225 100.96199999999999Q165.113 102.4035 163.1445 103.20175Q161.176 104.0 158.8665 104.0ZM151.0855 104.0V82.672H153.36399999999998V104.0ZM204.2115 104.0V82.672H206.49V104.0ZM251.773 104.31Q249.51 104.31 247.56475 103.46525Q245.61950000000002 102.6205 244.16250000000002 101.10925Q242.7055 99.598 241.89175 97.5985Q241.078 95.599 241.078 93.305Q241.078 90.99549999999999 241.88400000000001 89.0115Q242.69 87.0275 244.13925 85.53175Q245.5885 84.036 247.51825000000002 83.199Q249.448 82.362 251.711 82.362Q253.974 82.362 255.9115 83.199Q257.849 84.036 259.29825 85.53175Q260.7475 87.0275 261.56125 89.027Q262.375 91.0265 262.375 93.336Q262.375 95.63 261.56899999999996 97.62950000000001Q260.763 99.629 259.31375 101.12475Q257.8645 102.6205 255.9425 103.46525Q254.0205 104.31 251.773 104.31ZM251.711 102.1245Q254.129 102.1245 255.99675000000002 100.97749999999999Q257.8645 99.8305 258.94175 97.83875Q260.019 95.847 260.019 93.305Q260.019 91.414 259.399 89.8175Q258.779 88.221 257.663 87.03525Q256.547 85.8495 255.03575 85.1985Q253.5245 84.5475 251.711 84.5475Q249.3085 84.5475 247.44075 85.679Q245.573 86.8105 244.5035 88.78675000000001Q243.434 90.763 243.434 93.305Q243.434 95.196 244.054 96.81575000000001Q244.674 98.4355 245.78225 99.62125Q246.8905 100.807 248.4095 101.46575Q249.9285 102.1245 251.711 102.1245ZM302.884 104.31Q300.3885 104.31 298.5905 103.37225000000001Q296.7925 102.4345 295.444 100.714L297.0095 99.164Q298.11 100.6985 299.55150000000003 101.4425Q300.993 102.1865 302.97700000000003 102.1865Q305.023 102.1865 306.28625 101.25649999999999Q307.5495 100.3265 307.5495 98.6835Q307.5495 97.397 306.96825 96.58324999999999Q306.387 95.7695 305.43375000000003 95.25025Q304.4805 94.731 303.34125 94.328Q302.202 93.925 301.06275000000005 93.4755Q299.92350000000005 93.026 298.97025 92.35175Q298.017 91.6775 297.43575 90.61574999999999Q296.85450000000003 89.554 296.85450000000003 87.911Q296.85450000000003 86.1905 297.6915 84.9505Q298.5285 83.7105 299.9855 83.03625Q301.4425 82.362 303.3025 82.362Q305.3795 82.362 307.01475000000005 83.168Q308.65000000000003 83.974 309.735 85.3535L308.1695 86.90350000000001Q307.1775 85.71000000000001 305.9995 85.09775Q304.8215 84.4855 303.25600000000003 84.4855Q301.396 84.4855 300.27225 85.3535Q299.1485 86.22149999999999 299.1485 87.7715Q299.1485 88.965 299.72975 89.709Q300.31100000000004 90.453 301.26425000000006 90.949Q302.21750000000003 91.445 303.35675000000003 91.84025Q304.49600000000004 92.2355 305.63525000000004 92.7005Q306.77450000000005 93.1655 307.72775 93.87074999999999Q308.68100000000004 94.576 309.26225 95.68424999999999Q309.8435 96.7925 309.8435 98.482Q309.8435 101.2565 307.968 102.78325000000001Q306.09250000000003 104.31 302.884 104.31Z" fill="#FFFFFF"/></g></svg><span>Inglou é um produto <b style="color:#fff">Arcane Studios</b><br>Site e contato: arcanestudios.io · [e-mail e WhatsApp comerciais a definir]</span></div>
+    <div style="text-align:right">inglou.arcanestudios.io</div>
+  </div>
+</section>
+
+</body>
+</html>
