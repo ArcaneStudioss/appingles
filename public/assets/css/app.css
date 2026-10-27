@@ -367,7 +367,7 @@ body[data-papel="professor"] .nav{grid-template-columns:repeat(4,1fr)}
 .pagina--adiante{background:var(--cartao-2)}
 .pagina--adiante h3{color:var(--tinta-2)}
 .pagina__selo{position:absolute;top:.75rem;right:.75rem;margin:0}
-.figurinhas{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,76px);gap:.55rem;list-style:none;padding:0;margin:0}
+.figurinhas{display:grid;grid-template-columns:repeat(auto-fill,minmax(2.3rem,3.2rem));justify-content:start;gap:.55rem;list-style:none;padding:0;margin:0}
 .figurinhas>li{display:grid}
 .figurinha{position:relative;width:100%;display:grid;place-items:center;aspect-ratio:3/4;border-radius:12px;border:2.5px dashed var(--borda-forte);background:var(--cartao-2);color:var(--tinta-3);font:700 1.2rem/1 var(--f-titulo);text-decoration:none;cursor:pointer;padding:0;transition:transform .2s var(--mola)}
 .figurinha .ico{width:1.6rem;height:1.6rem}
