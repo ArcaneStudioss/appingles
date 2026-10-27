@@ -32,6 +32,7 @@ import { iniciarTraducoes } from './traducao.js?v=__V__';
 import { telaPublico } from './telas/publico.js?v=__V__';
 import { telaBiblioteca, telaUnidade } from './telas/biblioteca.js?v=__V__';
 import { telaBrasil } from './telas/brasil.js?v=__V__';
+import { telaSons } from './telas/sons.js?v=__V__';
 import { telaSocial, telaColecao, telaLoja } from './telas/social.js?v=__V__';
 
 const palco = document.getElementById('conteudo');
@@ -63,6 +64,7 @@ btnTema.addEventListener('click', () => {
 // "k" são palavras que o aluno pode digitar para achar o item sem saber o nome que damos a ele.
 const MAIS = [
   { grupo: 'Praticar', rota: 'conversar', cor: 'menta', ic: 'chats', t: 'Conversar', s: 'pratique em situações reais', k: 'falar dialogo tutor ia' },
+  { grupo: 'Praticar', rota: 'sons', cor: 'menta', ic: 'speaker-high', t: 'Sons do inglês', s: 'alfabeto e os sons mais difíceis', k: 'pronuncia alfabeto letras fonetica' },
   { grupo: 'Praticar', rota: 'revisar', cor: 'sol', ic: 'cards', t: 'Revisar palavras', s: 'relembre o que aprendeu', k: 'cartoes vocabulario memoria' },
   { grupo: 'Praticar', rota: 'treino', cor: 'limao', ic: 'target', t: 'Treinar o que erro', s: 'questões para reforçar suas dificuldades', k: 'dificuldade erros reforco' },
   { grupo: 'Praticar', rota: 'podcast', cor: 'rosa', ic: 'headphones', t: 'Rádio Tuiuiú', s: 'ouça um episódio com legendas', k: 'podcast audio ouvir video mia' },
@@ -112,7 +114,7 @@ btnMais?.addEventListener('click', abrirMais);
 
 const ROTAS = { admin: telaAdmin, passaporte: telaPassaporte, sessao: telaSessao,
   desafios: telaSocial, colecao: telaColecao, loja: telaLoja,
-  brasil: telaBrasil,
+  brasil: telaBrasil, sons: telaSons,
   biblioteca: telaBiblioteca, unidade: telaUnidade,
   publico: telaPublico, professor: telaTurmas,
   entrar: telaEntrar, perfil: telaPerfil, nivelamento: telaNivelamento, hoje: telaHoje, plano: telaPlano,

@@ -12,6 +12,9 @@ A trilha inicial funciona para crianças, adolescentes e adultos. A idade muda o
 
 ## Ajuda e progresso
 
+- Cada expressão da trilha do zero mostra "Leia assim" (leitura aproximada em português, `src/conteudo/pronuncia-zero.js`), que continua visível mesmo se o áudio falhar.
+- `#/sons` (Mais > Sons do inglês, e link na primeira aula): alfabeto e oito sons difíceis para quem fala português, com palavras para ouvir (`src/conteudo/sons-ingles.js`, entram no cache público de voz).
+
 - O balão de tradução aparece acima da palavra ao tocar ou usar o teclado. Fecha ao tocar fora, rolar ou pressionar Escape.
 - O dicionário usa traduções conhecidas; não inventa sentidos para palavras ausentes. Mostra o contexto traduzido quando disponível.
 - A explicação fica no conteúdo da página, sem ser cortada pela barra fixa do celular.

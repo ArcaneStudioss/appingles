@@ -655,4 +655,7 @@ Z.push({
   conversa: 'zero-conhecer',
 });
 
+const { COMO_LER } = require('./pronuncia-zero');
+Z.forEach(m => m.vocab.forEach(v => { const como = COMO_LER[v.en.toLowerCase()]; if (como) v.como = como; }));
+
 module.exports = { TRILHA_ZERO: Z };
