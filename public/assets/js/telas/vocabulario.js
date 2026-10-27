@@ -3,8 +3,9 @@
 import { h, icone, janela, falar } from '../ui.js?v=__V__';
 import { som } from '../diversao.js?v=__V__';
 import { GRUPOS } from '../vocabulario-cenas.js?v=__V__';
+import { svgDe } from '../vocabulario-desenhos.js?v=__V__';
 
-const figura = cena => h('div', { class: 'vocab__cena', 'aria-hidden': 'true' }, cena);
+const figura = en => { const f = h('div', { class: 'vocab__cena' }); f.innerHTML = svgDe(en); return f; };
 const misturar = lista => lista.map(x => [Math.random(), x]).sort((a, b) => a[0] - b[0]).map(p => p[1]);
 
 function treinar(grupo) {
@@ -30,7 +31,7 @@ function treinar(grupo) {
       falar(item.frase, { velocidade: .85 });
       corpo.append(h('button', { type: 'button', class: 'btn', on: { click: () => { i++; passo(); } } }, i + 1 < itens.length ? 'Próxima' : 'Ver resultado'));
     } } }, o.en));
-    corpo.replaceChildren(h('p', { class: 'ajuda' }, `${i + 1} de ${itens.length}`), figura(item.cena), h('p', { class: 'parecidas__pergunta' }, grupo.pergunta), h('div', { class: 'parecidas__opcoes' }, botoes), resposta);
+    corpo.replaceChildren(h('p', { class: 'ajuda' }, `${i + 1} de ${itens.length}`), figura(item.en), h('p', { class: 'parecidas__pergunta' }, grupo.pergunta), h('div', { class: 'parecidas__opcoes' }, botoes), resposta);
   }
   passo();
 }
@@ -40,7 +41,7 @@ export async function telaVocabulario(el) {
     h('header', { class: 'cabeca c-rosa' }, h('span', { class: 'bolha' }, icone('eye')),
       h('div', {}, h('h1', {}, 'Palavras em desenho'), h('p', { class: 'ajuda' }, 'Veja o desenho, ouça a frase e treine. Dá para entender sem traduzir.'))),
     GRUPOS.map(g => h('section', { class: 'folha parecidas', 'aria-label': g.titulo }, h('h2', {}, g.titulo),
-      h('ul', { class: 'vocab__lista' }, g.itens.map(it => h('li', { class: 'vocab__card' }, figura(it.cena),
+      h('ul', { class: 'vocab__lista' }, g.itens.map(it => h('li', { class: 'vocab__card' }, figura(it.en),
         h('strong', { lang: 'en' }, it.en), h('span', {}, it.pt),
         h('button', { type: 'button', class: 'btn btn-sec btn-peq', 'aria-label': 'Ouvir ' + it.en, on: { click: () => falar(it.frase, { velocidade: .85 }) } }, icone('speaker-high'), 'Ouvir')))),
       h('button', { type: 'button', class: 'btn', on: { click: () => treinar(g) } }, icone('target'), 'Treinar este grupo'))));
