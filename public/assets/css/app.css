@@ -1,4 +1,5 @@
-/* ===================================================================   Inglou · área do aluno · "O álbum do Lou"
+/* ==========================================================================
+   Inglou · área do aluno · "O álbum do Lou"
    Metáfora: um álbum de figurinhas. Cada missão é uma página, cada aula feita cola uma figurinha,
    a tarefa final vira figurinha brilhante. Cada atividade tem SEMPRE a mesma cor e o mesmo ícone
    (aula = azul, revisar = sol, conversar = menta, álbum = lilás, material = turquesa, dúvidas = coral):
@@ -1680,7 +1681,6 @@ body.aba-oculta .dupla *,body.aba-oculta .lou *{animation-play-state:paused!impo
   .tour__foco{transition:left .35s var(--ease),top .35s var(--ease),width .35s var(--ease),height .35s var(--ease)}
   .tour__cartao--troca{animation:cena-entra .35s var(--ease) both}
 }
-=======
 /* Vida extra dos personagens: entrada com mola, respiração, sombra que acompanha e faíscas de comemoração. */
 .dupla::before{content:"";position:absolute;left:50%;top:30%;width:7px;height:7px;border-radius:50%;opacity:0;pointer-events:none;z-index:2}
 .dupla__ator--mia>.lou,.dupla__pousado>.lou{transform-origin:50% 100%}
