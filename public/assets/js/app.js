@@ -21,15 +21,18 @@ import { telaDuvidas } from './telas/duvidas.js?v=__V__';
 import { telaConta } from './telas/conta.js?v=__V__';
 import { telaPodcast } from './telas/podcast.js?v=__V__';
 import { telaSobMedida, telaEstudo, telaAssunto, telaSimulado } from './telas/sobmedida.js?v=__V__';
+import { telaNivel } from './telas/nivel.js?v=__V__';
 import { telaAprender } from './telas/aprender.js?v=__V__';
 import { telaTreino } from './telas/treino.js?v=__V__';
 import { telaTurmas, telaMinhaTurma, telaAtividade } from './telas/turmas.js?v=__V__';
 import { telaTurma } from './telas/professor.js?v=__V__';
+import { iniciarTour, chaveDoTour } from './tour.js?v=__V__';
 import { agendarAviso } from './lembrete.js?v=__V__';
 import { iniciarTraducoes } from './traducao.js?v=__V__';
 import { telaPublico } from './telas/publico.js?v=__V__';
 import { telaBiblioteca, telaUnidade } from './telas/biblioteca.js?v=__V__';
 import { telaBrasil } from './telas/brasil.js?v=__V__';
+import { telaSons } from './telas/sons.js?v=__V__';
 import { telaSocial, telaColecao, telaLoja } from './telas/social.js?v=__V__';
 
 const palco = document.getElementById('conteudo');
@@ -57,45 +60,68 @@ btnTema.addEventListener('click', () => {
   localStorageSet('tema', t); aplicarTema(t); som('toque');
 });
 
-// A mesma navegação curta no celular e no computador. Os outros recursos ficam agrupados por finalidade.
+// A mesma navegação curta no celular e no computador. O resto fica em "Mais", em poucos grupos e com busca.
+// "k" são palavras que o aluno pode digitar para achar o item sem saber o nome que damos a ele.
 const MAIS = [
-  { grupo: 'Praticar inglês', rota: 'passaporte', cor: 'turquesa', ic: 'airplane', t: 'Passaporte cultural', s: 'missões Do Brasil pro mundo' },
-  { grupo: 'Ensino e conta', rota: 'admin', cor: 'azul', ic: 'gear', t: 'Revisão e qualidade', s: 'conteúdo e métricas', admin: true },
-  { grupo: 'Amigos e coleção', rota: 'desafios', cor: 'lilas', ic: 'users-three', t: 'Desafios com amigos', s: 'duelos, metas e sequências em grupo' },
-  { grupo: 'Amigos e coleção', rota: 'colecao', cor: 'sol', ic: 'cards', t: 'Minhas figurinhas', s: 'raridades e figurinhas para os duelos' },
-  { grupo: 'Amigos e coleção', rota: 'loja', cor: 'lilas', ic: 'medal', t: 'Loja e moedas', s: 'XP, poções e caixas de figurinhas' },
-  { grupo: 'Praticar inglês', rota: 'revisar', cor: 'sol', ic: 'cards', t: 'Revisar palavras', s: 'relembre o que aprendeu' },
-  { grupo: 'Praticar inglês', rota: 'conversar', cor: 'menta', ic: 'chats', t: 'Conversar', s: 'pratique em situações reais' },
-  { grupo: 'Praticar inglês', rota: 'treino', cor: 'limao', ic: 'target', t: 'Treinar dificuldades', s: 'questões para reforçar o que precisa' },
-  { grupo: 'Praticar inglês', rota: 'podcast', cor: 'rosa', ic: 'headphones', t: 'Ouvir inglês', s: 'episódios da Rádio Tuiuiú com transcrição' },
-  { grupo: 'Personalizar estudos', rota: 'sobmedida', cor: 'turquesa', ic: 'graduation-cap', t: 'Estudar para um objetivo', s: 'prepare-se para uma prova ou uma viagem' },
-  { grupo: 'Personalizar estudos', rota: 'material', cor: 'turquesa', ic: 'file-text', t: 'Estudar meu texto', s: 'use um material seu para praticar' },
-  { grupo: 'Personalizar estudos', rota: 'aprender', cor: 'limao', ic: 'compass', t: 'Meu jeito de aprender', s: 'entenda seu progresso e suas preferências' },
-  { grupo: 'Personalizar estudos', rota: 'progresso', cor: 'lilas', ic: 'book-open-text', t: 'Meu progresso', s: 'acompanhe seu estudo individual', professor: true },
-  { grupo: 'Ensino e conta', rota: 'professor', cor: 'menta', ic: 'users-three', t: 'Área do professor', s: 'crie turmas, monte aulas e acompanhe alunos', aluno: true },
-  { grupo: 'Ensino e conta', rota: 'turmas', cor: 'lilas', ic: 'users-three', t: 'Minhas turmas como aluno', s: 'acesse as aulas de outros professores', professor: true },
-  { grupo: 'Ensino e conta', rota: 'duvidas', cor: 'coral', ic: 'question', t: 'Tirar uma dúvida', s: 'pergunte ao tutor' },
-  { grupo: 'Ensino e conta', rota: 'conta', cor: 'azul', ic: 'user-circle', t: 'Minha conta', s: 'assinatura, idade, preferências e lembretes', aluno: true },
+  { grupo: 'Praticar', rota: 'conversar', cor: 'menta', ic: 'chats', t: 'Conversar', s: 'pratique em situações reais', k: 'falar dialogo tutor ia' },
+  { grupo: 'Praticar', rota: 'sons', cor: 'menta', ic: 'speaker-high', t: 'Sons do inglês', s: 'alfabeto e os sons mais difíceis', k: 'pronuncia alfabeto letras fonetica' },
+  { grupo: 'Praticar', rota: 'revisar', cor: 'sol', ic: 'cards', t: 'Revisar palavras', s: 'relembre o que aprendeu', k: 'cartoes vocabulario memoria' },
+  { grupo: 'Praticar', rota: 'treino', cor: 'limao', ic: 'target', t: 'Treinar o que erro', s: 'questões para reforçar suas dificuldades', k: 'dificuldade erros reforco' },
+  { grupo: 'Praticar', rota: 'podcast', cor: 'rosa', ic: 'headphones', t: 'Rádio Tuiuiú', s: 'ouça um episódio com legendas', k: 'podcast audio ouvir video mia' },
+  { grupo: 'Meu caminho', rota: 'progresso', cor: 'lilas', ic: 'chart-line-up', t: 'Meu progresso', s: 'sequência, conquistas e evolução', k: 'sequencia estatistica conquistas', professor: true },
+  { grupo: 'Meu caminho', rota: 'nivel', cor: 'lilas', ic: 'chart-line-up', t: 'Meu nível', s: 'ver, subir ou descer de nível', k: 'facil dificil a1 a2 b1 b2 c1 ajustar', aluno: true },
+  { grupo: 'Meu caminho', rota: 'aprender', cor: 'limao', ic: 'compass', t: 'Meu jeito de aprender', s: 'suas preferências e pontos fortes', k: 'perfil estilo preferencias' },
+  { grupo: 'Meu caminho', rota: 'sobmedida', cor: 'turquesa', ic: 'graduation-cap', t: 'Estudar para um objetivo', s: 'prova, entrevista ou viagem', k: 'objetivo prova entrevista viagem plano' },
+  { grupo: 'Meu caminho', rota: 'material', cor: 'turquesa', ic: 'file-text', t: 'Estudar meu texto', s: 'use um material seu', k: 'texto upload pdf' },
+  { grupo: 'Meu caminho', rota: 'passaporte', cor: 'turquesa', ic: 'airplane', t: 'Passaporte cultural', s: 'missões Do Brasil pro mundo', k: 'cultura carimbos' },
+  { grupo: 'Amigos e figurinhas', rota: 'desafios', cor: 'lilas', ic: 'users-three', t: 'Desafios com amigos', s: 'duelos, metas e sequências em grupo', k: 'amigos duelo' },
+  { grupo: 'Amigos e figurinhas', rota: 'colecao', cor: 'sol', ic: 'cards', t: 'Minhas figurinhas', s: 'raridades e repetidas', k: 'colecao album trocas' },
+  { grupo: 'Amigos e figurinhas', rota: 'loja', cor: 'lilas', ic: 'medal', t: 'Loja e moedas', s: 'XP, poções e caixas', k: 'moedas xp caixa' },
+  { grupo: 'Ajuda e conta', rota: 'duvidas', cor: 'coral', ic: 'question', t: 'Tirar uma dúvida', s: 'pergunte ao tutor', k: 'ajuda pergunta suporte' },
+  { grupo: 'Ajuda e conta', acao: 'tour', cor: 'azul', ic: 'compass', t: 'Tour pelo app', s: 'um passeio rápido pelas telas', k: 'ajuda tutorial guia comecar' },
+  { grupo: 'Ajuda e conta', rota: 'conta', cor: 'azul', ic: 'user-circle', t: 'Minha conta', s: 'plano, idade, lembretes e dados', k: 'assinatura pagamento senha lembrete privacidade', aluno: true },
+  { grupo: 'Ajuda e conta', rota: 'professor', cor: 'menta', ic: 'users-three', t: 'Área do professor', s: 'turmas, aulas e alunos', k: 'turma ensinar', aluno: true },
+  { grupo: 'Ajuda e conta', rota: 'turmas', cor: 'lilas', ic: 'users-three', t: 'Minhas turmas como aluno', s: 'aulas de outros professores', k: 'codigo professor', professor: true },
+  { grupo: 'Ajuda e conta', rota: 'admin', cor: 'azul', ic: 'gear', t: 'Revisão e qualidade', s: 'conteúdo e métricas', k: 'admin', admin: true },
 ];
 const btnMais = document.querySelector('.nav__mais');
 const itensMais = () => MAIS.filter(m => (!m.admin || estado.eu?.admin)).filter(m => estado.eu?.perfil?.papel === 'ambos' ? true : estado.eu?.perfil?.papel === 'professor' ? !m.aluno : !m.professor);
-btnMais?.addEventListener('click', () => {
+const semAcento = t => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+function abrirMais() {
   const itens = itensMais();
-  janela({ titulo: 'O que você quer fazer?', corpo: h('div', { class: 'mais-grupos' }, [...new Set(itens.map(m => m.grupo))].map(grupo => h('section', { class: 'mais-grupo' },
-    h('h3', {}, grupo), h('ul', { class: 'mais-lista' }, itens.filter(m => m.grupo === grupo).map(m => h('li', {},
-      h('a', { class: 'mais-item c-' + m.cor, href: '#/' + m.rota }, h('span', { class: 'bolha' }, icone(m.ic)), h('span', {}, h('strong', {}, m.t), h('small', {}, m.s))))))))) });
-});
+  const busca = h('input', { type: 'search', class: 'mais-busca', 'aria-label': 'Buscar no app', placeholder: 'Buscar: revisar, nível, podcast...', autocomplete: 'off', enterkeyhint: 'search' });
+  const lista = h('div', { class: 'mais-grupos' });
+  let janelaMais;
+  const item = m => {
+    const miolo = [h('span', { class: 'bolha' }, icone(m.ic)), h('span', {}, h('strong', {}, m.t), h('small', {}, m.s))];
+    return h('li', {}, m.acao
+      ? h('button', { type: 'button', class: 'mais-item c-' + m.cor, on: { click: () => { janelaMais.fechar(); setTimeout(() => iniciarTour({ chave: chaveDoTour(estado.eu) }), 250); } } }, ...miolo)
+      : h('a', { class: 'mais-item c-' + m.cor, href: '#/' + m.rota }, ...miolo));
+  };
+  const desenhar = () => {
+    const termo = semAcento(busca.value);
+    const achados = termo ? itens.filter(m => termo.split(/\s+/).every(t => semAcento(`${m.t} ${m.s} ${m.k || ''} ${m.grupo}`).includes(t))) : itens;
+    lista.replaceChildren(...(achados.length
+      ? [...new Set(achados.map(m => m.grupo))].map(grupo => h('section', { class: 'mais-grupo' }, h('h3', {}, grupo), h('ul', { class: 'mais-lista' }, achados.filter(m => m.grupo === grupo).map(item))))
+      : [h('p', { class: 'ajuda mais-vazio' }, 'Não achei nada com essa busca. Tente "revisar", "nível", "conta" ou "ajuda".')]));
+  };
+  busca.addEventListener('input', desenhar);
+  desenhar();
+  janelaMais = janela({ titulo: 'O que você quer fazer?', corpo: h('div', {}, busca, lista) });
+}
+btnMais?.addEventListener('click', abrirMais);
 
 const ROTAS = { admin: telaAdmin, passaporte: telaPassaporte, sessao: telaSessao,
   desafios: telaSocial, colecao: telaColecao, loja: telaLoja,
-  brasil: telaBrasil,
+  brasil: telaBrasil, sons: telaSons,
   biblioteca: telaBiblioteca, unidade: telaUnidade,
   publico: telaPublico, professor: telaTurmas,
   entrar: telaEntrar, perfil: telaPerfil, nivelamento: telaNivelamento, hoje: telaHoje, plano: telaPlano,
   licao: telaLicao, revisar: telaRevisar, conversar: telaConversar, conversa: telaConversa, progresso: telaProgresso,
   material: telaMaterial, 'material-item': telaMaterialItem, duvidas: telaDuvidas, conta: telaConta, podcast: telaPodcast,
   turmas: telaTurmas, minhaturma: telaMinhaTurma, atividade: telaAtividade, turma: telaTurma,
-  aprender: telaAprender, treino: telaTreino, sobmedida: telaSobMedida, estudo: telaEstudo, assunto: telaAssunto, simulado: telaSimulado,
+  nivel: telaNivel, aprender: telaAprender, treino: telaTreino, sobmedida: telaSobMedida, estudo: telaEstudo, assunto: telaAssunto, simulado: telaSimulado,
 };
 const LIVRES = new Set(['entrar']);
 const ONBOARDING = new Set(['perfil', 'nivelamento', 'plano', 'publico']);
@@ -167,7 +193,22 @@ async function render() {
     if (meu !== renderizando) return;
     limpar(alvo).append(h('div', { class: 'folha vazio' }, lou('ops', { tamanho: 96 }), h('h1', {}, 'Algo não carregou'), h('p', {}, e.message || 'Tente de novo em instantes.'), h('button', { class: 'btn', on: { click: render } }, 'Tentar de novo')));
   }
-  if (meu === renderizando) { palco.focus({ preventScroll: true }); scrollTo(0, 0); passearVoando(rota); }
+  if (meu === renderizando) { palco.focus({ preventScroll: true }); scrollTo(0, 0); passearVoando(rota); tourDaPrimeiraVez(rota); }
+}
+
+// Primeira vez no app: o tour aparece uma vez por conta neste aparelho, na tela inicial, depois do cadastro e do nível.
+function tourDaPrimeiraVez(rota) {
+  if (!['hoje', 'professor'].includes(rota) || nav.hidden || estado.eu?.passo !== 'app') return;
+  const chave = chaveDoTour(estado.eu);
+  if (localStorageGet(chave) === 'sim') return;
+  // espera a tela de abertura (o Tuiuiú chegando) sair, para o tour não começar por baixo dela
+  let tentativas = 0;
+  const tentar = () => {
+    if (document.body.dataset.rota !== rota || nav.hidden || ++tentativas > 40) return;
+    if (document.querySelector('.abertura, dialog[open], .tour')) return setTimeout(tentar, 400);
+    iniciarTour({ chave });
+  };
+  setTimeout(tentar, 600);
 }
 
 addEventListener('inglou:lembrete', e => agendarAviso(e.detail));

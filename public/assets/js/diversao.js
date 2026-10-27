@@ -17,7 +17,7 @@ let desenhoSequencia = 0;
 // Em tamanho pequeno (até 60) mostra só da cabeça aos ombros. Cores fixas: pele e cabelo não mudam no modo Noite.
 function tutora(humor, { tamanho, rotulo }) {
   const pequeno = tamanho <= 60;
-  const s = el('svg', { viewBox: pequeno ? (humor === 'festa' ? '18 -18 84 84' : '22 -2 76 76') : '0 -18 120 264', width: pequeno ? tamanho : Math.round(tamanho * 120 / 264), height: tamanho, class: `lou lou--${humor} lou--mia`, role: 'img', 'aria-label': rotulo });
+  const s = el('svg', { viewBox: pequeno ? (humor === 'festa' ? '18 -18 84 84' : '22 -2 76 76') : '0 -18 120 264', width: pequeno ? tamanho : Math.round(tamanho * 120 / 264), height: tamanho, class: `lou lou--${humor} lou--mia` + (pequeno && humor !== 'festa' ? ' lou--busto' : ''), role: 'img', 'aria-label': rotulo });
   const corpo = el('g', { class: 'lou__corpo' });
   const traco = (d, cor, larg, extra = {}) => el('path', { d, stroke: cor, 'stroke-width': larg, 'stroke-linecap': 'round', fill: 'none', ...extra });
   const PELE = '#6B4430', PELE_SOMBRA = '#55351F', CABELO = '#1B1210', TINTA = '#1A0F0B', BOCA = '#2A130C', AZUL = '#2E73D9', AZUL_ESC = '#1F55A8', JEANS = '#2B3350';

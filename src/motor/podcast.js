@@ -38,10 +38,10 @@ const primeiraVersao = s => String(s || '').split(' / ')[0].trim();
 function roteiroDeTropecos(tropecos, { nome }) {
   const falas = [];
   const lou = (texto, riscado = null) => falas.push({ quem: 'lou', texto, riscado });
-  const mia = (texto, repita = false) => falas.push({ quem: 'mia', texto, repita });
+  const mia = (texto, repita = false, pt = null) => falas.push({ quem: 'mia', texto, repita, pt });
   lou(`Oi, ${nome}! Aqui é o Tuiuiú, e este é o seu episódio de hoje da Rádio Tuiuiú.`);
   lou('A Mia está comigo. Ela vai dar voz ao inglês.');
-  mia(`Hi, ${nome}! Nice to see you again.`);
+  mia(`Hi, ${nome}! Nice to see you again.`, false, `Oi, ${nome}! Que bom te ver de novo.`);
   lou(`Juntei ${tropecos.length === 1 ? 'uma coisa' : tropecos.length + ' coisas'} em que você tropeçou nos últimos dias. Errar é normal: é assim que a gente descobre o que treinar.`);
   tropecos.forEach((t, i) => {
     const d = POR_TAG[t.tag];
@@ -53,7 +53,7 @@ function roteiroDeTropecos(tropecos, { nome }) {
       mia(fraseLimpa(t.correcao) ? t.correcao : exemplos[0]);
     }
     lou(d.regra);
-    if (d.contraste?.pt && fraseLimpa(primeiraVersao(d.contraste.en))) { lou(`Em português a gente diz: ${d.contraste.pt} Em inglês:`); mia(primeiraVersao(d.contraste.en)); }
+    if (d.contraste?.pt && fraseLimpa(primeiraVersao(d.contraste.en))) { lou(`Em português a gente diz: ${d.contraste.pt} Em inglês:`); mia(primeiraVersao(d.contraste.en), false, primeiraVersao(d.contraste.pt)); }
     lou('Mais dois exemplos.');
     for (const e of exemplos.slice(0, 2)) mia(e);
     lou('Agora repita depois da Mia, em voz alta. Pode ser baixinho.');
@@ -61,7 +61,7 @@ function roteiroDeTropecos(tropecos, { nome }) {
   });
   lou(`Resumindo o episódio: ${tropecos.map(t => POR_TAG[t.tag].nome.toLowerCase()).join('; ')}.`);
   lou('Esses pontos já estão nos seus cartões de revisão. Agora tem um treino rapidinho aqui embaixo. Bora?');
-  mia(`See you tomorrow, ${nome}!`);
+  mia(`See you tomorrow, ${nome}!`, false, `Até amanhã, ${nome}!`);
   return falas;
 }
 
@@ -70,20 +70,20 @@ function roteiroDeMissao(missao, { nome }) {
   const m = POR_ID[missao?.id] || null;
   const falas = [];
   const lou = (texto) => falas.push({ quem: 'lou', texto });
-  const mia = (texto, repita = false) => falas.push({ quem: 'mia', texto, repita });
+  const mia = (texto, repita = false, pt = null) => falas.push({ quem: 'mia', texto, repita, pt });
   lou(`Oi, ${nome}! Aqui é o Tuiuiú, na Rádio Tuiuiú.`);
   lou('Ainda não juntei tropeços seus: eles aparecem depois das aulas e conversas. Então hoje o episódio é sobre a sua missão.');
   if (!m) { lou('Faça a aula de hoje e uma conversa curta. Amanhã o episódio já vem com o que você precisa treinar.'); return falas; }
   lou(`A missão é: ${m.titulo}. No fim dela você vai conseguir dizer: ${m.podeFazer}`);
   lou(m.explicacao.texto);
   lou('A Mia vai dar uns exemplos.');
-  for (const e of (m.exemplos || []).slice(0, 3)) { mia(e.en); lou(e.pt); }
+  for (const e of (m.exemplos || []).slice(0, 3)) { mia(e.en, false, e.pt); lou(e.pt); }
   lou('Agora umas expressões que ajudam.');
   for (const v of (m.vocab || []).slice(0, 3)) { mia(v.ex); lou(`${v.en.replace(/\.\.\.$/, '')}: ${v.pt.replace(/\.\.\.$/, '')}.`); }
   lou('Repita depois da Mia.');
-  if (m.exemplos?.[0]) mia(m.exemplos[0].en, true);
+  if (m.exemplos?.[0]) mia(m.exemplos[0].en, true, m.exemplos[0].pt);
   lou('Pronto! Tem um treino rapidinho aqui embaixo.');
-  mia(`See you tomorrow, ${nome}!`);
+  mia(`See you tomorrow, ${nome}!`, false, `Até amanhã, ${nome}!`);
   return falas;
 }
 
@@ -105,7 +105,7 @@ function montarEpisodio({ tropecos, missao, nome, falasIa = null }) {
     titulo: tropecos.length ? `Seus tropeços: ${tropecos.map(t => POR_TAG[t.tag].nome.split(/ \(|:/)[0].toLowerCase()).join(', ')}` : `Missão: ${POR_ID[missao?.id]?.titulo || 'primeiros passos'}`,
     minutos: Math.max(1, Math.round(segundos / 60)),
     tropecos: tropecos.map(t => ({ tag: t.tag, nome: t.nome, vezes: t.vezes })),
-    falas: falas.map(f => ({ quem: f.quem, lingua: f.quem === 'mia' ? 'en' : 'pt', texto: f.texto, repita: !!f.repita, riscado: f.riscado ? String(f.riscado).slice(0, 200) : null })),
+    falas: falas.map(f => ({ quem: f.quem, lingua: f.quem === 'mia' ? 'en' : 'pt', texto: f.texto, repita: !!f.repita, pt: f.quem === 'mia' && f.pt ? String(f.pt).slice(0, 200) : null, riscado: f.riscado ? String(f.riscado).slice(0, 200) : null })),
     treino: treinoDe(tropecos, missao),
     modo: falasIa ? 'ia' : 'roteiro',
   };

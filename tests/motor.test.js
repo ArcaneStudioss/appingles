@@ -375,3 +375,18 @@ test('detectores de debate pegam os erros típicos e deixam passar o inglês cer
   const certas = ['In my opinion, it is a good idea.', 'On the other hand, it costs more.', 'We discussed the budget.', 'We made a decision yesterday.', 'Although it is expensive, it is worth it.', 'Despite the rain, we went out.', 'Did the decision surprise you?', 'According to the report, sales grew.'];
   for (const f of certas) assert.deepEqual(detectar(f).filter(a => a.confianca !== 'baixa').map(a => a.tag), [], f);
 });
+
+test('ajuste de nível: desce quando erra muito, sobe quando acerta sem ajuda, mantém e reforça no meio', () => {
+  const { avaliarNivel } = require('../src/motor/ajuste-nivel');
+  const agora = new Date('2026-10-20T12:00:00Z');
+  const serie = (acertos, dicas = 0) => Array.from({ length: 24 }, (_, i) => ({ em: `2026-10-${String(10 + (i % 4)).padStart(2, '0')}T10:${String(i).padStart(2, '0')}:00.000Z`, origem: 'licao', correto: i < acertos ? 1 : 0, dica: i < dicas ? 1 : 0 }));
+  assert.equal(avaliarNivel({ tentativas: serie(8), nivel: 'A2', agora }).acao, 'descer');
+  assert.equal(avaliarNivel({ tentativas: serie(8), nivel: 'A1', agora }).acao, 'manter', 'não desce abaixo do A1');
+  assert.equal(avaliarNivel({ tentativas: serie(24), nivel: 'A2', agora }).acao, 'subir');
+  assert.equal(avaliarNivel({ tentativas: serie(24, 12), nivel: 'A2', agora }).acao, 'manter', 'acerto com muita dica não sobe');
+  const meio = avaliarNivel({ tentativas: serie(16), nivel: 'A2', agora });
+  assert.equal(meio.acao, 'manter'); assert.equal(meio.reforcar, true);
+  assert.equal(avaliarNivel({ tentativas: serie(8).slice(0, 10), nivel: 'A2', agora }).motivo, 'poucos', 'amostra pequena não decide');
+  assert.equal(avaliarNivel({ tentativas: serie(8), nivel: 'A2', ultimoAjusteEm: '2026-10-18T00:00:00.000Z', agora }).acao, 'manter', 'respeita o descanso depois de um ajuste');
+  assert.equal(avaliarNivel({ tentativas: serie(8).map(t => ({ ...t, origem: 'nivelamento' })), nivel: 'A2', agora }).motivo, 'poucos', 'o teste de nível não conta');
+});

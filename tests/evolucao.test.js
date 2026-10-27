@@ -69,7 +69,7 @@ test('admin é autorizado por configuração do servidor; revisão publica fonte
  assert.equal((await R('menor','GET','/admin')).status,403);assert.equal((await R('menor','PUT','/perfil/publico',{idade:12,papel:'ambos',responsavel:true,admin:true})).status,200);
  assert.equal((await R('menor','GET','/admin')).status,403);
  const relato=await R('menor','POST','/conteudo/relatar',{tipo:'cultura',referencia:'bergamota',motivo:'Conferir a descrição das variedades de fruta.'});assert.equal(relato.status,200);
- const painel=await R('adulto','GET','/admin');assert.equal(painel.status,200);assert.ok(painel.relatos.length);assert.doesNotMatch(JSON.stringify(painel.metricas),/email|resposta|conversa|senha_hash/);
+ const painel=await R('adulto','GET','/admin');assert.equal(painel.status,200);assert.ok(painel.relatos.length);assert.equal(typeof painel.metricas.orcamentoIAUsadoPct,'number');assert.doesNotMatch(JSON.stringify(painel.metricas),/email|resposta|conversa|senha_hash/);
  assert.equal((await R('adulto','PUT','/admin/cultura/bergamota',{resumo:'Revisão de teste.',brasil:'Contexto de teste.',cuidado:'Cuidado de teste.',fontes:[{titulo:'Fonte',url:'javascript:alert(1)'}]})).status,422);
  const ficha=painel.cultura.find(e=>e.id==='bergamota');assert.equal((await R('adulto','PUT','/admin/cultura/bergamota',{...ficha,resumo:'Descrição editorial revisada para o teste.'})).status,200);
  const catalogo=await R('menor','GET','/brasil-mundo');assert.equal(catalogo.expressoes.find(e=>e.id==='bergamota').resumo,'Descrição editorial revisada para o teste.');

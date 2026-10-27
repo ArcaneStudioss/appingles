@@ -216,3 +216,31 @@ test('toque numa palavra devolve alguns sentidos e rejeita o que não é palavra
   assert.ok(!('uso' in r));
   await assert.rejects(R('POST', '/palavra', { palavra: '<img src=x>', frase: '' }));
 });
+
+test('nível: aluno sobe e desce na mão, desfaz uma vez, e o app desce sozinho quando está difícil demais', async () => {
+  const nivelAtual = () => db.prepare('SELECT resultado FROM nivelamentos WHERE user_id = ? ORDER BY id DESC LIMIT 1').get(uid);
+  const base = (await R('GET', '/nivel')).atual;
+  assert.equal(base, 'A1');
+  await assert.rejects(R('POST', '/nivel/ajustar', { direcao: 'descer' }), /mais básico/);
+  await assert.rejects(R('POST', '/nivel/ajustar', { direcao: 'lateral' }));
+  const sobe = await R('POST', '/nivel/ajustar', { direcao: 'subir' });
+  assert.equal(sobe.atual, 'A2'); assert.equal(sobe.ajuste.origem, 'aluno');
+  assert.equal((await R('GET', '/plano')).nivelamento.nivel, 'A2', 'o plano acompanha o nível novo');
+  const volta = await R('POST', '/nivel/desfazer');
+  assert.equal(volta.atual, 'A1');
+  await assert.rejects(R('POST', '/nivel/desfazer'), /desfazer/, 'só desfaz uma vez');
+  // O aluno sobe para o A2 e erra quase tudo nos dias seguintes: o app desce sozinho.
+  await R('POST', '/nivel/ajustar', { direcao: 'subir' });
+  const antigo = new Date(Date.now() - 10 * 864e5).toISOString();
+  const linha = db.prepare('SELECT id, resultado FROM nivelamentos WHERE user_id = ? ORDER BY id DESC LIMIT 1').get(uid);
+  const res = JSON.parse(linha.resultado); res.ajuste.em = antigo;
+  db.prepare('UPDATE nivelamentos SET resultado = ? WHERE id = ?').run(JSON.stringify(res), linha.id);
+  db.prepare('DELETE FROM tentativas WHERE user_id = ?').run(uid);   // só as tentativas deste cenário contam
+  const ins = db.prepare("INSERT INTO tentativas (user_id, em, item_id, correto, dica, origem) VALUES (?, ?, ?, ?, 0, 'licao')");
+  for (let i = 0; i < 24; i++) ins.run(uid, new Date(Date.now() - (1 + (i % 3)) * 864e5 + i * 1000).toISOString(), 'x' + i, i < 5 ? 1 : 0);
+  const hoje = await R('GET', '/hoje');
+  assert.equal(hoje.nivel.atual, 'A1', 'errou muito: desceu');
+  assert.equal(hoje.nivel.ajuste.origem, 'auto');
+  assert.equal(JSON.parse(nivelAtual().resultado).nivel, 'A1');
+  assert.equal((await R('GET', '/hoje')).nivel.atual, 'A1', 'não desce de novo na hora');
+});
