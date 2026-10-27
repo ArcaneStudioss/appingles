@@ -48,6 +48,33 @@ function trechosDe(texto) {
 }
 const classeAudio = () => globalThis.AudioContext || globalThis.webkitAudioContext;
 export const temVoz = () => !!classeAudio() && typeof fetch === 'function';
+// Corpo do pedido de síntese. Pré-carga e reprodução usam o mesmo texto para compartilhar o áudio já baixado.
+const corpoDe = (trechos, i, { personagem, idioma, emocao, velocidade }) => JSON.stringify({ texto: trechos[i], personagem, idioma, emocao, velocidade: Math.max(.5, Math.min(1.6, Number(velocidade) || 1)),
+  anterior: i ? trechos[i - 1].slice(-500) : '', seguinte: trechos[i + 1]?.slice(0, 500) || '' });
+const preCarga = new Map();
+async function requisitar(corpo, signal) {
+  const r = await fetch('/api/v1/vozes/sintetizar', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Inglou': '1' }, body: corpo, signal });
+  if (!r.ok) { const d = await r.json().catch(() => null); throw new Error(d?.erro || 'Não consegui preparar esta fala. Tente novamente.'); }
+  if (!/^audio\/mpeg(?:;|$)/i.test(r.headers.get('content-type') || '')) throw new Error('Não consegui carregar o áudio. Tente novamente.');
+  return r.arrayBuffer();
+}
+// Usa o áudio pré-carregado, se houver. decodeAudioData consome o buffer, então a entrada sai do mapa.
+async function baixar(corpo, signal) {
+  const pronto = preCarga.get(corpo);
+  if (!pronto) return requisitar(corpo, signal);
+  preCarga.delete(corpo);
+  try { return await pronto; } catch { return requisitar(corpo, signal); }
+}
+// Baixa antes o começo da próxima fala para a troca não ter espera. Falha em silêncio: a reprodução tenta de novo.
+export function preCarregarVoz(texto, { personagem = 'mia', idioma = 'en', velocidade = 1, emocao = 'contexto' } = {}) {
+  const trechos = trechosDe(texto);
+  if (!trechos.length || !temVoz()) return;
+  const corpo = corpoDe(trechos, 0, { personagem, idioma, emocao, velocidade });
+  if (preCarga.has(corpo)) return;
+  if (preCarga.size > 6) preCarga.delete(preCarga.keys().next().value);
+  const promessa = requisitar(corpo); promessa.catch(() => preCarga.delete(corpo));
+  preCarga.set(corpo, promessa);
+}
 export function tocarVoz(texto, { personagem = 'mia', idioma = 'en', velocidade = 1, emocao = 'contexto', aoFim, aoErro, aoCancelar } = {}) {
   const trechos = trechosDe(texto);
   if (!trechos.length || !temVoz()) { aoErro?.('O áudio não está disponível neste navegador.'); return false; }
@@ -69,14 +96,7 @@ export function tocarVoz(texto, { personagem = 'mia', idioma = 'en', velocidade 
       await pausaAnterior;
       if (!ativa()) return;
       const preparar = async i => {
-        const r = await fetch('/api/v1/vozes/sintetizar', {
-          method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Inglou': '1' },
-          body: JSON.stringify({ texto: trechos[i], personagem, idioma, emocao, velocidade: Math.max(.5, Math.min(1.6, Number(velocidade) || 1)),
-            anterior: i ? trechos[i - 1].slice(-500) : '', seguinte: trechos[i + 1]?.slice(0, 500) || '' }), signal: controle.signal,
-        });
-        if (!r.ok) { const d = await r.json().catch(() => null); throw new Error(d?.erro || 'Não consegui preparar esta fala. Tente novamente.'); }
-        if (!/^audio\/mpeg(?:;|$)/i.test(r.headers.get('content-type') || '')) throw new Error('Não consegui carregar o áudio. Tente novamente.');
-        const dados = await r.arrayBuffer();
+        const dados = await baixar(corpoDe(trechos, i, { personagem, idioma, emocao, velocidade }), controle.signal);
         if (!ativa()) return null;
         return contextoAudio.decodeAudioData(dados);
       };
