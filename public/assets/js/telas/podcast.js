@@ -7,7 +7,7 @@ import { h, icone, toast, localStorageGet, localStorageSet } from '../ui.js?v=__
 import { lou, som, confete, voarComemorando } from '../diversao.js?v=__V__';
 import { exercicio } from './exercicio.js?v=__V__';
 import { nomeConquista } from './hoje.js?v=__V__';
-import { tocarVoz, pararVoz, preCarregarVoz, temVoz } from '../voz.js?v=__V__';
+import { tocarVoz, tocarSilencio, pararVoz, preCarregarVoz, temVoz, configurarMidia, encerrarMidia } from '../voz.js?v=__V__';
 import { significadoLocal } from '../traducao.js?v=__V__';
 
 const PAUSA_REPITA = 4200;
@@ -116,15 +116,17 @@ export async function telaPodcast(el) {
     const f = falas[i];
     const fim = () => {
       if (minha !== geracao || !tocando) return;
-      if (f.repita) { video.classList.add('repita'); timer = setTimeout(() => { if (minha === geracao) seguir(); }, PAUSA_REPITA * (devagar ? 1.3 : 1)); }
-      else timer = setTimeout(() => { if (minha === geracao) seguir(); }, 80);
+      // o silêncio toca no mesmo player, para o episódio seguir com a tela apagada
+      if (f.repita) video.classList.add('repita');
+      tocarSilencio(f.repita ? PAUSA_REPITA * (devagar ? 1.3 : 1) : 80, { aoFim: () => { if (minha === geracao) seguir(); } });
     };
-    tocarVoz(f.texto, { ...opcoesVoz(f), aoFim: fim,
+    tocarVoz(f.texto, { ...opcoesVoz(f), midia: true, aoFim: fim,
       aoCancelar: () => { if (minha === geracao && tocando) pausar(); },
       aoErro: mensagem => { if (minha === geracao) { pausar(); toast(mensagem, { tipo: 'erro' }); } } });
     // já baixa o começo da próxima fala para a troca não ter espera
     const prox = falas[i + 1]; if (prox) preCarregarVoz(prox.texto, opcoesVoz(prox));
   }
+  configurarMidia({ titulo: ep.titulo, aoPlay: () => tocar(i), aoPausa: () => pausar(), aoProxima: () => pular(1), aoAnterior: () => pular(-1) });
   function seguir() { if (i + 1 < falas.length) tocar(i + 1); else terminar(); }
   function pausar() {
     tocando = false; geracao++; clearTimeout(timer); pararVoz();
@@ -165,6 +167,6 @@ export async function telaPodcast(el) {
     temVozes() ? null : h('button', { type: 'button', class: 'btn btn-sec', on: { click: terminar } }, icone('check'), 'Li o roteiro todo'));
 
   // sair da tela para o áudio
-  addEventListener('hashchange', pausar, { once: true });
+  addEventListener('hashchange', () => { pausar(); encerrarMidia(); }, { once: true });
   marcar();
 }
