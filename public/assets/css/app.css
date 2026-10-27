@@ -1703,3 +1703,17 @@ body.aba-oculta .dupla *,body.aba-oculta .lou *{animation-play-state:paused!impo
 @keyframes dupla-faiscas{0%{opacity:0;transform:translate(-50%,0) scale(.2)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-14px) scale(1.7)}}
 @keyframes mia-abraca{0%,100%{transform:none}30%,70%{transform:translateY(2px) scale(1.04,.96)}}
 @keyframes mia-pensa{0%,100%{transform:rotate(0)}30%,70%{transform:rotate(-8deg) translateY(-1px)}50%{transform:rotate(-6deg)}}
+
+.parecidas{display:grid;gap:.9rem}
+.parecidas__lista{list-style:none;margin:0;padding:0;display:grid;gap:.8rem;grid-template-columns:repeat(auto-fill,minmax(13rem,1fr))}
+.parecidas__card{display:grid;gap:.3rem;justify-items:start;padding:.7rem;border-radius:var(--raio);background:var(--rosa-fundo)}
+.parecidas__card strong{font-size:1.25rem}
+.parecidas__figura{width:100%;overflow:hidden;border-radius:var(--raio-p)}
+.parecidas__cena{display:block;width:100%;height:auto}
+.parecidas__treino{display:grid;gap:.8rem}
+.parecidas__pergunta{margin:0;font-weight:800;font-size:1.15rem}
+.parecidas__opcoes{display:flex;flex-wrap:wrap;gap:.5rem}
+.parecidas__opcoes .btn.certa{outline:3px solid var(--menta);outline-offset:2px}
+.parecidas__opcoes .btn.errada{outline:3px solid var(--rosa);outline-offset:2px}
+.parecidas__resposta{margin:0}
+.parecidas__placar{margin:0;font-size:2.2rem;font-weight:800;text-align:center}

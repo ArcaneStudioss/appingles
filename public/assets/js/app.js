@@ -33,6 +33,7 @@ import { telaPublico } from './telas/publico.js?v=__V__';
 import { telaBiblioteca, telaUnidade } from './telas/biblioteca.js?v=__V__';
 import { telaBrasil } from './telas/brasil.js?v=__V__';
 import { telaSons } from './telas/sons.js?v=__V__';
+import { telaParecidas } from './telas/parecidas.js?v=__V__';
 import { telaSocial, telaColecao, telaLoja } from './telas/social.js?v=__V__';
 
 const palco = document.getElementById('conteudo');
@@ -65,6 +66,7 @@ btnTema.addEventListener('click', () => {
 const MAIS = [
   { grupo: 'Praticar', rota: 'conversar', cor: 'menta', ic: 'chats', t: 'Conversar', s: 'pratique em situações reais', k: 'falar dialogo tutor ia' },
   { grupo: 'Praticar', rota: 'sons', cor: 'menta', ic: 'speaker-high', t: 'Sons do inglês', s: 'alfabeto e os sons mais difíceis', k: 'pronuncia alfabeto letras fonetica' },
+  { grupo: 'Praticar', rota: 'parecidas', cor: 'rosa', ic: 'eye', t: 'Palavras parecidas', s: 'veja a diferença em desenhos', k: 'preposicao in on at under between among visual desenho bola carro' },
   { grupo: 'Praticar', rota: 'revisar', cor: 'sol', ic: 'cards', t: 'Revisar palavras', s: 'relembre o que aprendeu', k: 'cartoes vocabulario memoria' },
   { grupo: 'Praticar', rota: 'treino', cor: 'limao', ic: 'target', t: 'Treinar o que erro', s: 'questões para reforçar suas dificuldades', k: 'dificuldade erros reforco' },
   { grupo: 'Praticar', rota: 'podcast', cor: 'rosa', ic: 'headphones', t: 'Rádio Tuiuiú', s: 'ouça um episódio com legendas', k: 'podcast audio ouvir video mia' },
@@ -114,7 +116,7 @@ btnMais?.addEventListener('click', abrirMais);
 
 const ROTAS = { admin: telaAdmin, passaporte: telaPassaporte, sessao: telaSessao,
   desafios: telaSocial, colecao: telaColecao, loja: telaLoja,
-  brasil: telaBrasil, sons: telaSons,
+  brasil: telaBrasil, sons: telaSons, parecidas: telaParecidas,
   biblioteca: telaBiblioteca, unidade: telaUnidade,
   publico: telaPublico, professor: telaTurmas,
   entrar: telaEntrar, perfil: telaPerfil, nivelamento: telaNivelamento, hoje: telaHoje, plano: telaPlano,
