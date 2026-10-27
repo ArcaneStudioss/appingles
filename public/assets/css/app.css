@@ -1629,3 +1629,43 @@ body[data-publico] .retorno-exercicio .companheiros--compactos:is([data-fase=com
 @keyframes mia-chega-festa{0%{opacity:0;transform:translateY(40px) scale(.8)}12%,85%{opacity:1;transform:none}100%{opacity:0;transform:translateY(30px) scale(.8)}}
 body.aba-oculta .dupla *,body.aba-oculta .lou *{animation-play-state:paused!important}
 @media(prefers-reduced-motion:reduce){.dupla *,.mia-dancando *,.dupla__notas{animation:none!important}.dupla__voador,.dupla__notas{display:none}.dupla__pousado{opacity:1}}
+
+/* menu Mais: busca e grupos */
+.mais-busca{width:100%;margin-bottom:1rem;border-radius:var(--pill,999px)}
+.mais-vazio{text-align:center;margin:1.2rem 0}
+
+/* nível: chip na tela Hoje, avisos e a tela Meu nível */
+.nivel-chip{text-decoration:none;font-weight:800}
+.nivel-chip .ico{width:1rem;height:1rem}
+.nivel-aviso{display:grid;grid-template-columns:auto 1fr;gap:.4rem .7rem;align-items:start;text-decoration:none;color:var(--tinta)}
+.nivel-aviso p{margin:0}
+.nivel-aviso .linha-acoes{grid-column:1/-1}
+.nivel-aviso--reforco{grid-template-columns:auto 1fr auto;align-items:center}
+.nivel-agora h2{margin:.1rem 0}
+.nivel-escada{display:grid;grid-template-columns:repeat(5,1fr);gap:.3rem;list-style:none;margin:1rem 0;padding:0}
+.nivel-degrau{display:grid;gap:.1rem;justify-items:center;padding:.55rem .15rem;border-radius:16px;background:var(--cartao-2);border:2px solid transparent;text-align:center;color:var(--tinta-2)}
+.nivel-degrau strong{font-family:var(--f-titulo);font-size:1.1rem}
+.nivel-degrau small{font-size:.66rem;line-height:1.15;overflow-wrap:anywhere}
+.nivel-degrau--ja{background:var(--lilas-fundo);color:var(--lilas-forte)}
+.nivel-degrau--agora{background:var(--lilas);color:var(--lilas-sobre);border-color:var(--lilas-forte);transform:translateY(-3px);box-shadow:0 4px 0 var(--lilas-sombra)}
+.nivel-situacao{display:flex;gap:.6rem;align-items:flex-start;margin:0;padding:.75rem .9rem;border-radius:16px;background:var(--cartao-2)}
+.nivel-situacao .ico{flex:none;margin-top:.15rem}
+.nivel-botoes{display:grid;gap:.6rem;margin:.8rem 0}
+@media (min-width:720px){.nivel-botoes{grid-template-columns:1fr 1fr}}
+
+/* tour de boas-vindas: sombra gigante no entorno e um cartão ao lado da parte em destaque */
+.tour{position:fixed;inset:0;z-index:2000}
+.tour__foco{position:fixed;left:var(--x,50%);top:var(--y,50%);width:var(--w,0);height:var(--h,0);border-radius:20px;box-shadow:0 0 0 9999px rgba(8,14,40,.74),0 0 0 3px var(--sol);pointer-events:none}
+.tour__cartao{position:fixed;left:var(--cx,12px);top:var(--cy,auto);bottom:var(--cb,auto);width:var(--cw,320px);padding:1rem 1.1rem;border-radius:24px;background:var(--cartao);color:var(--tinta);border:2px solid var(--borda);box-shadow:0 8px 0 rgba(0,0,0,.18),0 18px 40px rgba(0,0,0,.35)}
+.tour__topo{display:flex;align-items:center;gap:.6rem;margin-bottom:.3rem}
+.tour__topo h2{margin:0;font-size:1.2rem}
+.tour__cartao>p{margin:0 0 .8rem;line-height:1.45}
+.tour__rodape{display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap}
+.tour__acoes{display:flex;gap:.4rem;margin-left:auto}
+.tour__pontos{display:flex;gap:.3rem}
+.tour__pontos i{width:7px;height:7px;border-radius:50%;background:var(--borda)}
+.tour__pontos i.agora{width:18px;border-radius:99px;background:var(--azul)}
+@media (prefers-reduced-motion:no-preference){
+  .tour__foco{transition:left .35s var(--ease),top .35s var(--ease),width .35s var(--ease),height .35s var(--ease)}
+  .tour__cartao--troca{animation:cena-entra .35s var(--ease) both}
+}

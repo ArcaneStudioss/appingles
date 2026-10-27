@@ -27,6 +27,7 @@ const { processarOffline } = require('./motor/material');
 const { hoje, somarDias, diasEntre, embaralhar, palavras, normalizar } = require('./motor/util');
 const { calcularSequencia, premiosAlcancados } = require('./motor/sequencia');
 const radio = require('./motor/podcast');
+const { avaliarNivel, vizinho } = require('./motor/ajuste-nivel');
 const estudoMotor = require('./motor/estudo');
 const APR = require('./motor/aprendizagem');
 const { respostaCerta: respostaDe } = require('./motor/correcao');
@@ -471,10 +472,51 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     };
   });
 
+  // Nível: o aluno sobe ou desce na mão; o app também ajusta sozinho quando está difícil ou fácil demais.
+  // Cada mudança vira uma nova linha em nivelamentos (a anterior fica no histórico) e o plano é refeito.
+  const ajusteDe = uid => { const r = q('SELECT id, resultado FROM nivelamentos WHERE user_id = ? ORDER BY id DESC LIMIT 1').get(uid); const a = r ? lerJson(r.resultado, {}).ajuste : null; return a ? { ...a, linha: r.id } : null; };
+  function aplicarNivel(uid, h, para, ajuste) {
+    const n = nivelamentoDe(uid); if (!n || n.nivel === para) return null;
+    const { feito_em, ...base } = n;
+    const resultado = { ...base, nivel: para, ajuste: { de: n.nivel, para, em: agoraISO(), ...ajuste } };
+    const linha = q('INSERT INTO nivelamentos (user_id, feito_em, resultado) VALUES (?, ?, ?)').run(uid, feito_em, JSON.stringify(resultado)).lastInsertRowid;
+    // gerarPlano tem a própria transação; se falhar, o nível volta como estava
+    try { gerarPlano(uid, h); } catch (e) { q('DELETE FROM nivelamentos WHERE id = ?').run(linha); throw e; }
+    return resultado.ajuste;
+  }
+  const avaliacaoDe = uid => { const n = nivelamentoDe(uid); return n ? avaliarNivel({ tentativas: tentativasDe(uid, 30), nivel: n.nivel, ultimoAjusteEm: ajusteDe(uid)?.em || null }) : null; };
+  function ajustarSozinho(uid, h) {
+    const av = avaliacaoDe(uid);
+    if (av && (av.acao === 'descer' || av.acao === 'subir')) {
+      const ajuste = aplicarNivel(uid, h, vizinho(av.nivel, av.acao === 'subir' ? 1 : -1), { origem: 'auto', motivo: av.motivo, taxa: av.taxa, amostra: av.amostra });
+      return { ajuste, av: avaliacaoDe(uid) };
+    }
+    return { ajuste: null, av };
+  }
+  const estadoNivel = (uid, av = avaliacaoDe(uid)) => ({ atual: nivelamentoDe(uid)?.nivel || null, avaliacao: av, ajuste: ajusteDe(uid) });
+  rota('GET', '/nivel', (ctx) => { if (!nivelamentoDe(ctx.u.id)) throw new ErroHttp(409, 'Faça o teste de nível primeiro.'); return estadoNivel(ctx.u.id); });
+  rota('POST', '/nivel/ajustar', (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid), n = nivelamentoDe(uid);
+    if (!n) throw new ErroHttp(409, 'Faça o teste de nível primeiro.');
+    const dir = ctx.corpo?.direcao;
+    if (dir !== 'subir' && dir !== 'descer') throw new ErroHttp(422, 'Escolha subir ou descer.');
+    const para = vizinho(n.nivel, dir === 'subir' ? 1 : -1);
+    if (!para) throw new ErroHttp(409, dir === 'subir' ? 'Você já está no nível mais alto.' : 'Você já está no nível mais básico.');
+    aplicarNivel(uid, h, para, { origem: 'aluno' });
+    return estadoNivel(uid);
+  });
+  rota('POST', '/nivel/desfazer', (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid), a = ajusteDe(uid);
+    if (!a || a.desfez) throw new ErroHttp(409, 'Não há ajuste para desfazer.');
+    aplicarNivel(uid, h, a.de, { origem: 'aluno', desfez: true });
+    return estadoNivel(uid);
+  });
+
   // Tela inicial
   rota('GET', '/hoje', (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid);
     const est = estadoAssinatura(uid, h);
+    if (planoDe(uid) && est.acesso === 'completo') ajustarSozinho(uid, h);
     const plano = planoDe(uid);
     if (!plano) return { semPlano: true };
     const lic = est.acesso === 'completo' ? licaoDeHoje(uid, h) : licaoDeHoje(uid, h, { criar: false });
@@ -503,7 +545,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
       foco: focoNovo ? { nome: POR_TAG[focoNovo.tag]?.nome, origem: focoNovo.origem } : null,
       objetivo: { nome: plano.objetivoNome, prazo: plano.prazo, metaRealista: plano.metaRealista },
       assinatura: est, novasConquistas, pontosHoje, diasNoMes, sequencia: sequenciaDe(uid, h), estudo: estudoResumo(uid, h), treino: treinoResumo(uid, h),
-      radio: radioResumo(uid, h), turmas: turmasMod.resumoParaHoje(uid),
+      radio: radioResumo(uid, h), turmas: turmasMod.resumoParaHoje(uid), nivel: estadoNivel(uid),
     };
   });
 

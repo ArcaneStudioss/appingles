@@ -75,6 +75,22 @@ function verSequencia(seq, diasNoMes) {
       h('li', {}, 'Se a sequência recomeçar, nada se perde: o recorde e as figurinhas ficam no seu álbum.'))) });
 }
 
+// O app ajustou o nível sozinho? Avisa com o motivo e deixa desfazer. Nível certo mas com erros? Convida a reforçar.
+function avisosDeNivel(destino, nivel) {
+  const a = nivel?.ajuste;
+  const recente = a && a.origem === 'auto' && !a.desfez && Date.now() - new Date(a.em) < 7 * 864e5;
+  if (recente && localStorageGet('nivel-visto') !== a.em) {
+    const motivo = a.motivo === 'facil' ? 'estava fácil: você acertou bastante, quase sem ajuda' : `estava puxado: o acerto ficou em ${Math.round((a.taxa || 0) * 100)}%`;
+    const caixa = h('div', { class: 'aviso-suave nivel-aviso' }, icone('chart-line-up'), h('p', {}, `Ajustei seu nível de ${a.de} para ${a.para}, porque o último trecho ${motivo}.`),
+      h('div', { class: 'linha-acoes' },
+        h('button', { type: 'button', class: 'btn btn-sec btn-peq', on: { click: async e => { e.currentTarget.disabled = true; try { await api('/nivel/desfazer', { metodo: 'POST' }); location.reload(); } catch (err) { toast(err.message, { tipo: 'erro' }); e.currentTarget.disabled = false; } } } }, 'Voltar para ' + a.de),
+        h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => { localStorageSet('nivel-visto', a.em); caixa.remove(); } } }, 'Entendi')));
+    destino.append(caixa);
+  } else if (nivel?.avaliacao?.reforcar) {
+    destino.append(h('a', { class: 'aviso-suave nivel-aviso nivel-aviso--reforco', href: '#/treino' }, icone('target'), h('p', {}, 'Seu nível está certo, mas ainda há erros para firmar. Que tal um treino só com o que você errou?'), icone('caret-right')));
+  }
+}
+
 // ---------- tela
 export async function telaHoje(el, { ir, estado }) {
   const [d, p, ss] = await Promise.all([api('/hoje'), api('/plano').catch(() => null), api('/sessao').catch(() => ({sessao:null}))]);
@@ -93,7 +109,9 @@ export async function telaHoje(el, { ir, estado }) {
     h('header', { class: 'saudacao' },
       h('h1', {}, `${saud}, ${d.nome}!`),
       d.sequencia.atual || d.sequencia.recorde ? h('button', { type: 'button', class: 'status__item status__item--seq c-coral' + (d.sequencia.estudouHoje ? ' acesa' : ''), 'aria-label': `Sequência: ${d.sequencia.atual} dias seguidos. Ver detalhes`, on: { click: () => verSequencia(d.sequencia, d.diasNoMes) } },
-        icone('flame'), h('strong', {}, String(d.sequencia.atual))) : null));
+        icone('flame'), h('strong', {}, String(d.sequencia.atual))) : null,
+      d.nivel?.atual ? h('a', { class: 'chip nivel-chip', href: '#/nivel', 'aria-label': `Meu nível: ${d.nivel.atual}. Ver ou ajustar` }, icone('chart-line-up'), d.nivel.atual) : null));
+  avisosDeNivel(principal, d.nivel);
 
   if (a.acesso === 'completo') {
     const tempos = h('div', { class: 'linha-acoes' });
