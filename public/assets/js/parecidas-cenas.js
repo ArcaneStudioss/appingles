@@ -1,34 +1,52 @@
-// Desenhos das palavras parecidas: bola, caixa e carro. SVG fixo e confiável (sem dados do aluno), com fundo próprio para ler em qualquer tema.
-const BOLA = (x, y, r = 11) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#E5383B" stroke="#9D1D20" stroke-width="2"/><circle cx="${x - r / 3}" cy="${y - r / 3}" r="${r / 4}" fill="#fff" opacity=".7"/>`;
-const CAIXA = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="#C98B4B" stroke="#8A5A27" stroke-width="2"/><rect x="${x + w * .3}" y="${y}" width="${w * .4}" height="5" fill="#E8B77A"/>`;
-const CARRO = (x, y) => `<g transform="translate(${x} ${y})"><rect x="0" y="8" width="46" height="16" rx="5" fill="#2F6FDE" stroke="#1B3F86" stroke-width="2"/><path d="M10 8 L16 -2 H32 L38 8 Z" fill="#8FB8FF" stroke="#1B3F86" stroke-width="2" stroke-linejoin="round"/><circle cx="11" cy="25" r="5.5" fill="#333"/><circle cx="35" cy="25" r="5.5" fill="#333"/></g>`;
-const SETA = (d, tracejada = true) => `<path d="${d}" fill="none" stroke="#1F2A44" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" ${tracejada ? 'stroke-dasharray="2 7"' : ''} marker-end="url(#ponta)"/>`;
-const CHAO = '<rect x="0" y="100" width="200" height="20" fill="#9ED89B"/>';
-const MESA = '<rect x="58" y="48" width="84" height="9" rx="3" fill="#8A5A27"/><rect x="64" y="57" width="7" height="43" fill="#8A5A27"/><rect x="129" y="57" width="7" height="43" fill="#8A5A27"/>';
-const GARAGEM = '<path d="M104 52 L145 28 L186 52 V100 H104 Z" fill="#F4C95D" stroke="#B48A1E" stroke-width="2" stroke-linejoin="round"/><rect x="118" y="64" width="54" height="36" fill="#3B2F2F"/>';
-const ESTRADA = '<rect x="0" y="84" width="200" height="22" fill="#6B7280"/><path d="M0 95 H200" stroke="#fff" stroke-width="2" stroke-dasharray="12 10"/>';
+// Desenhos das palavras parecidas: bola, caixa e carro. SVG fixo e confiável (sem dados do aluno), com céu e grama próprios para ler em qualquer tema.
+// Volume com degradês, brilho e sombra no chão; os degradês ficam em DEFS e valem para todos os desenhos.
+const SOMBRA = (x, y, rx) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${Math.max(2.5, rx / 6)}" fill="#1B3A1B" opacity=".28"/>`;
+const BOLA = (x, y, r = 11, sombra = 0) => (sombra ? SOMBRA(x, sombra, r * .95) : '') + `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#gBola)"/><path d="M${x - r * .9} ${y - r * .15} Q${x} ${y + r * .45} ${x + r * .9} ${y - r * .15}" fill="none" stroke="#fff" stroke-width="${r / 5}" opacity=".55"/><ellipse cx="${x - r * .38}" cy="${y - r * .45}" rx="${r * .28}" ry="${r * .18}" fill="#fff" opacity=".85" transform="rotate(-30 ${x - r * .38} ${y - r * .45})"/>`;
+const TABUAS = (x, y, w, h) => [1, 2].map(k => `<path d="M${x + 2} ${y + h * k / 3} H${x + w - 2}" stroke="#7A4A1E" stroke-width="1.3" opacity=".55"/>`).join('');
+const CAIXA = (x, y, w, h, sombra = true) => (sombra ? SOMBRA(x + w / 2 + 3, y + h, w * .58) : '') + `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="url(#gMadeira)" stroke="#7A4A1E" stroke-width="1.8"/>${TABUAS(x, y, w, h)}<rect x="${x + w * .36}" y="${y}" width="${w * .28}" height="${h}" fill="#F0D9A8" opacity=".75"/><rect x="${x}" y="${y}" width="${w}" height="4" rx="2" fill="#fff" opacity=".28"/>`;
+const CARRO = (x, y) => `<g transform="translate(${x} ${y})">${SOMBRA(24, 31, 29)}<path d="M2 24 Q0 14 6 12 L12 11 Q16 0 24 0 H34 Q40 0 44 11 L48 13 Q51 16 50 24 Q50 27 47 27 H5 Q2 27 2 24 Z" fill="url(#gCarro)" stroke="#173C86" stroke-width="1.8" stroke-linejoin="round"/><path d="M15 11 Q18 3 24 3 H27 V11 Z M31 11 V3 H34 Q38 3 41 11 Z" fill="url(#gVidro)" stroke="#173C86" stroke-width="1.2"/><rect x="45" y="15" width="5" height="5" rx="2" fill="#FFE98A"/><rect x="1" y="16" width="4" height="4" rx="1.5" fill="#FF6B6B"/><path d="M6 17 H44" stroke="#fff" stroke-width="1.3" opacity=".4"/>${[13, 39].map(cx => `<circle cx="${cx}" cy="27" r="7" fill="#222"/><circle cx="${cx}" cy="27" r="3.6" fill="#C9CED6"/><circle cx="${cx}" cy="27" r="1.2" fill="#6B7280"/>`).join('')}</g>`;
+const SETA = (d, tracejada = true) => `<path d="${d}" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".7"/><path d="${d}" fill="none" stroke="#1F2A44" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" ${tracejada ? 'stroke-dasharray="1 7"' : ''} marker-end="url(#ponta)"/>`;
+const GRAMA = '<rect x="0" y="100" width="200" height="20" fill="url(#gGrama)"/><path d="M0 100 Q25 96 50 100 T100 100 T150 100 T200 100" fill="#7CC95B"/>';
+const MESA = SOMBRA(100, 100, 46) + '<rect x="64" y="57" width="7" height="43" fill="#8A5A27"/><rect x="129" y="57" width="7" height="43" fill="#6E4520"/><rect x="56" y="47" width="88" height="11" rx="3" fill="url(#gMadeira)" stroke="#7A4A1E" stroke-width="1.8"/><rect x="56" y="47" width="88" height="3.5" rx="2" fill="#fff" opacity=".3"/>';
+const GARAGEM = SOMBRA(146, 101, 44) + '<rect x="106" y="52" width="80" height="48" fill="#F2E3C2" stroke="#B59A63" stroke-width="2"/><path d="M100 54 L146 26 L192 54 Z" fill="url(#gTelhado)" stroke="#7C2F25" stroke-width="2" stroke-linejoin="round"/><rect x="118" y="64" width="56" height="36" fill="#2E2626"/><rect x="118" y="64" width="56" height="36" fill="url(#gSombraPorta)"/><path d="M118 64 H174 M118 70 H174" stroke="#8C7F7F" stroke-width="1.2" opacity=".5"/>';
+const ESTRADA = '<rect x="0" y="82" width="200" height="26" fill="url(#gAsfalto)"/><path d="M0 94 H200" stroke="#fff" stroke-width="2.2" stroke-dasharray="12 9"/><rect x="0" y="80" width="200" height="3" fill="#D8D3C4"/>';
+const ARVORE = (x, y) => `${SOMBRA(x, y, 11)}<rect x="${x - 2.5}" y="${y - 16}" width="5" height="16" fill="#7A4A1E"/><circle cx="${x}" cy="${y - 24}" r="12" fill="#3E9E4A"/><circle cx="${x - 5}" cy="${y - 28}" r="7" fill="#5CBA5F" opacity=".8"/>`;
 
 export const CENAS = {
-  in: CHAO + `<rect x="76" y="58" width="48" height="42" rx="4" fill="#A9733A"/>${BOLA(100, 68, 12)}<rect x="76" y="76" width="48" height="24" rx="4" fill="#C98B4B" stroke="#8A5A27" stroke-width="2"/>`,
-  on: CHAO + CAIXA(78, 66, 44, 34) + BOLA(100, 55),
-  under: CHAO + MESA + BOLA(100, 88),
-  over: CHAO + CAIXA(78, 70, 44, 30) + SETA('M52 66 Q100 -6 148 66') + BOLA(100, 30),
-  above: CHAO + CAIXA(78, 80, 44, 20) + BOLA(100, 28) + '<path d="M100 44 V74" stroke="#1F2A44" stroke-width="2" stroke-dasharray="3 5"/>',
-  behind: CHAO + BOLA(122, 82, 16) + CAIXA(56, 62, 56, 38),
-  'in front of': CHAO + CAIXA(56, 60, 56, 40) + BOLA(98, 86, 15),
-  beside: CHAO + CAIXA(40, 64, 46, 36) + BOLA(130, 89),
-  between: CHAO + CAIXA(22, 62, 44, 38) + CAIXA(134, 62, 44, 38) + BOLA(100, 89),
-  among: CHAO + CAIXA(52, 40, 30, 28) + CAIXA(52, 72, 30, 28) + CAIXA(118, 40, 30, 28) + CAIXA(118, 72, 30, 28) + CAIXA(14, 72, 26, 28) + CAIXA(160, 72, 26, 28) + BOLA(100, 70, 12),
-  through: '<path d="M26 100 V62 Q26 26 100 26 Q174 26 174 62 V100 Z" fill="#8EA95B" stroke="#5A6F31" stroke-width="2"/><path d="M62 100 V68 Q62 46 100 46 Q138 46 138 68 V100 Z" fill="#2B2B2B"/><rect x="0" y="100" width="200" height="20" fill="#6B7280"/>' + CARRO(77, 78) + SETA('M6 88 H194'),
-  across: '<rect x="0" y="74" width="200" height="46" fill="#7CC3F2"/><rect x="0" y="66" width="44" height="54" fill="#9ED89B"/><rect x="156" y="66" width="44" height="54" fill="#9ED89B"/><rect x="30" y="62" width="140" height="8" rx="3" fill="#8A5A27"/>' + CARRO(77, 36) + SETA('M20 28 H180'),
-  along: '<rect x="0" y="96" width="200" height="24" fill="#9ED89B"/>' + ESTRADA + CARRO(30, 58) + SETA('M82 82 H186') + '<circle cx="40" cy="104" r="0"/>',
-  around: '<rect x="0" y="100" width="200" height="20" fill="#9ED89B"/><circle cx="100" cy="62" r="20" fill="#7DBE6D" stroke="#4E8A42" stroke-width="2"/><circle cx="100" cy="62" r="40" fill="none" stroke="#6B7280" stroke-width="14"/>' + CARRO(77, 6) + SETA('M146 40 A48 48 0 0 1 100 112'),
-  into: CHAO + GARAGEM + CARRO(20, 76) + SETA('M72 90 H114'),
-  'out of': CHAO + GARAGEM + CARRO(20, 76) + SETA('M114 90 H72'),
-  towards: CHAO + '<rect x="150" y="40" width="4" height="60" fill="#8A5A27"/><path d="M154 40 L186 52 L154 64 Z" fill="#E5383B"/>' + CARRO(20, 76) + SETA('M76 90 H136'),
+  in: GRAMA + SOMBRA(103, 100, 30) + '<rect x="76" y="58" width="48" height="42" rx="3" fill="#5E3A17"/>' + BOLA(100, 68, 12) + '<rect x="76" y="76" width="48" height="24" rx="3" fill="url(#gMadeira)" stroke="#7A4A1E" stroke-width="1.8"/>' + TABUAS(76, 76, 48, 24) + '<rect x="76" y="76" width="48" height="4" rx="2" fill="#fff" opacity=".28"/>',
+  on: GRAMA + CAIXA(78, 68, 44, 32) + BOLA(100, 57, 11),
+  under: GRAMA + MESA + BOLA(100, 88, 11, 100),
+  over: GRAMA + CAIXA(78, 72, 44, 28) + SETA('M52 66 Q100 -6 148 66') + BOLA(100, 30),
+  above: GRAMA + CAIXA(78, 82, 44, 18) + BOLA(100, 28) + '<path d="M100 44 V76" stroke="#1F2A44" stroke-width="2" stroke-dasharray="3 5"/>',
+  behind: GRAMA + SOMBRA(124, 100, 17) + BOLA(122, 82, 16) + CAIXA(56, 62, 56, 38),
+  'in front of': GRAMA + CAIXA(56, 60, 56, 40) + BOLA(98, 86, 15, 100),
+  beside: GRAMA + CAIXA(40, 64, 46, 36) + BOLA(130, 89, 11, 100),
+  between: GRAMA + CAIXA(22, 62, 44, 38) + CAIXA(134, 62, 44, 38) + BOLA(100, 89, 11, 100),
+  among: GRAMA + CAIXA(14, 72, 26, 28) + CAIXA(160, 72, 26, 28) + CAIXA(52, 72, 30, 28) + CAIXA(118, 72, 30, 28) + CAIXA(52, 44, 30, 28, false) + CAIXA(118, 44, 30, 28, false) + BOLA(100, 78, 12, 100),
+  through: '<rect x="0" y="100" width="200" height="20" fill="url(#gAsfalto)"/><path d="M14 100 V64 Q14 22 100 22 Q186 22 186 64 V100 Z" fill="url(#gMorro)" stroke="#4F6B2C" stroke-width="2"/><path d="M58 100 V70 Q58 42 100 42 Q142 42 142 70 V100 Z" fill="#1E1E1E" stroke="#8F8F8F" stroke-width="3"/><path d="M58 100 V70 Q58 42 100 42" fill="none" stroke="#B9B2A2" stroke-width="3"/>' + CARRO(77, 76) + SETA('M6 90 H194'),
+  across: '<rect x="0" y="70" width="200" height="50" fill="url(#gRio)"/><path d="M52 96 q8 -4 16 0 t16 0 M110 106 q8 -4 16 0 t16 0" stroke="#fff" stroke-width="2" fill="none" opacity=".6"/><rect x="0" y="62" width="44" height="58" fill="url(#gGrama)"/><rect x="156" y="62" width="44" height="58" fill="url(#gGrama)"/><rect x="34" y="62" width="132" height="9" rx="3" fill="url(#gMadeira)" stroke="#7A4A1E" stroke-width="1.8"/><path d="M34 52 V62 M166 52 V62 M34 54 H166" stroke="#7A4A1E" stroke-width="2.2" stroke-linecap="round"/><rect x="74" y="71" width="6" height="22" fill="#6E4520"/><rect x="120" y="71" width="6" height="22" fill="#6E4520"/>' + CARRO(77, 28) + SETA('M20 22 H180'),
+  along: '<rect x="0" y="100" width="200" height="20" fill="url(#gGrama)"/>' + ARVORE(168, 82) + ESTRADA + CARRO(28, 54) + SETA('M82 76 H186'),
+  around: GRAMA + '<circle cx="100" cy="62" r="42" fill="url(#gAsfalto)" stroke="#D8D3C4" stroke-width="2"/><circle cx="100" cy="62" r="22" fill="url(#gGrama)" stroke="#D8D3C4" stroke-width="2"/><circle cx="100" cy="62" r="32" fill="none" stroke="#fff" stroke-width="1.5" stroke-dasharray="6 5"/>' + CARRO(77, 8) + SETA('M150 38 A50 50 0 0 1 100 112'),
+  into: GRAMA + GARAGEM + CARRO(20, 74) + SETA('M72 90 H114'),
+  'out of': GRAMA + GARAGEM + CARRO(20, 74) + SETA('M114 90 H72'),
+  towards: GRAMA + ARVORE(176, 100) + '<rect x="146" y="40" width="3.5" height="60" fill="#8A5A27"/><path d="M149.5 40 L182 51 L149.5 62 Z" fill="#E5383B" stroke="#9D1D20" stroke-width="1.5" stroke-linejoin="round"/>' + CARRO(20, 74) + SETA('M76 90 H132'),
 };
 
-export const svgDe = id => `<svg class="parecidas__cena" viewBox="0 0 200 120" role="img" focusable="false"><defs><marker id="ponta" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#1F2A44"/></marker></defs><rect width="200" height="120" fill="#FFF6DD"/>${CENAS[id]}</svg>`;
+const NUVEM = (x, y, e = 1) => `<g transform="translate(${x} ${y}) scale(${e})" fill="#fff" opacity=".9"><ellipse cx="0" cy="0" rx="14" ry="6"/><ellipse cx="9" cy="-4" rx="9" ry="6"/><ellipse cx="-8" cy="-3" rx="7" ry="5"/></g>`;
+const DEFS = '<defs><marker id="ponta" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#1F2A44"/></marker>'
+  + '<linearGradient id="gCeu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8FD3FF"/><stop offset="1" stop-color="#EAF8FF"/></linearGradient>'
+  + '<linearGradient id="gGrama" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7FCB5B"/><stop offset="1" stop-color="#4E9E3A"/></linearGradient>'
+  + '<radialGradient id="gBola" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#FF8A80"/><stop offset=".45" stop-color="#E5383B"/><stop offset="1" stop-color="#8E1519"/></radialGradient>'
+  + '<linearGradient id="gMadeira" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E2A95F"/><stop offset="1" stop-color="#B7773A"/></linearGradient>'
+  + '<linearGradient id="gCarro" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6FA2FF"/><stop offset=".55" stop-color="#2F6FDE"/><stop offset="1" stop-color="#1B3F9A"/></linearGradient>'
+  + '<linearGradient id="gVidro" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E4F3FF"/><stop offset="1" stop-color="#8DBBE8"/></linearGradient>'
+  + '<linearGradient id="gAsfalto" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7B8190"/><stop offset="1" stop-color="#585E6C"/></linearGradient>'
+  + '<linearGradient id="gRio" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7CCBF5"/><stop offset="1" stop-color="#3C93D1"/></linearGradient>'
+  + '<linearGradient id="gMorro" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8FBF5A"/><stop offset="1" stop-color="#5F8E3A"/></linearGradient>'
+  + '<linearGradient id="gTelhado" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D9604F"/><stop offset="1" stop-color="#A83A2E"/></linearGradient>'
+  + '<linearGradient id="gSombraPorta" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient></defs>';
+
+export const svgDe = id => `<svg class="parecidas__cena" viewBox="0 0 200 120" role="img" focusable="false">${DEFS}<rect width="200" height="120" fill="url(#gCeu)"/><circle cx="178" cy="16" r="9" fill="#FFE27A" opacity=".95"/>${NUVEM(30, 18)}${NUVEM(138, 30, .7)}${CENAS[id]}</svg>`;
 
 // grupos de palavras que se confundem. frase: exemplo com objeto infantil; dica: o que separa uma da outra
 export const GRUPOS = [
