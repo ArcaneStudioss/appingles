@@ -88,11 +88,11 @@ test('sair da página para a reprodução e uma nova fala não retoma a anterior
   assert.equal(p.estados.at(-1), 'suspended'); assert.equal(p.sintetizadas(), 0);
 });
 
-test('fala da aula usa sessão transient (fora do Controle do iPhone) e restaura a sessão após concluir', async () => {
-  const p = player(async () => { assert.equal(p.audioSession.type, 'transient'); return mp3(); });
+test('fala da aula toca no silencioso do iPhone (playback) e restaura a sessão após concluir', async () => {
+  const p = player(async () => { assert.equal(p.audioSession.type, 'playback'); return mp3(); });
   await new Promise((resolve, reject) => p.contexto.tocarVoz('Vamos aprender juntos.', { aoFim: resolve, aoErro: reject }));
   await new Promise(resolve => setTimeout(resolve, 0));
-  assert.deepEqual(p.tiposSessao, ['transient', 'auto']);
+  assert.deepEqual(p.tiposSessao, ['playback', 'auto']);
   assert.equal(p.audioSession.type, 'auto'); assert.equal(p.reproducoes.length, 1);
 });
 
@@ -114,7 +114,7 @@ test('trocar de fala durante preparação mantém a sessão e cancelar ou falhar
   const p = player(async () => new Promise(resolve => { liberar = resolve; }));
   p.contexto.tocarVoz('Primeira fala.'); await new Promise(resolve => setTimeout(resolve, 0));
   p.contexto.tocarVoz('Segunda fala.'); await new Promise(resolve => setTimeout(resolve, 0));
-  assert.equal(p.audioSession.type, 'transient');
+  assert.equal(p.audioSession.type, 'playback');
   p.contexto.pararVoz(); liberar(mp3()); await new Promise(resolve => setTimeout(resolve, 0));
   assert.equal(p.audioSession.type, 'auto'); assert.equal(p.reproducoes.length, 0);
   const falha = player(async () => new Response('{}', { status: 503 }));

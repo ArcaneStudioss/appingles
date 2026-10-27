@@ -7,12 +7,14 @@ function liberar(estado) {
   if (!estado) return;
   if (estado.fonte) { estado.fonte.onended = null; try { estado.fonte.stop(); } catch {} estado.fonte.disconnect(); estado.fonte = null; }
 }
-function ativarSessaoDeFala(tipo) {
-  // Falas curtas das aulas usam 'transient', como os sons de Duolingo e WhatsApp: não viram "tocando agora" no Controle do iPhone.
-  // O podcast usa 'playback' (tela apagada, outros apps, controles na tela de bloqueio).
+function ativarSessaoDeFala() {
+  // 'playback' faz a fala tocar mesmo com o iPhone no silencioso, como no Duolingo.
+  // Sem título nem estado de reprodução, o Safari tem menos o que mostrar no Controle (tentativa: no Web o iOS decide sozinho).
   try {
     const sessao = globalThis.navigator?.audioSession;
-    if (sessao) { if (sessaoAnterior === null) sessaoAnterior = sessao.type; sessao.type = tipo; }
+    if (sessao) { if (sessaoAnterior === null) sessaoAnterior = sessao.type; sessao.type = 'playback'; }
+    const ms = globalThis.navigator?.mediaSession;
+    if (ms && !emEpisodio) { ms.metadata = null; ms.playbackState = 'none'; }
   } catch {}
 }
 function restaurarSessaoAudio() {
@@ -70,7 +72,7 @@ export function encerrarMidia() {
 export function tocarSilencio(ms, { aoFim } = {}) {
   pararVoz();
   const minha = geracao, controle = new AbortController(), estado = { controle, fonte: null }; atual = estado;
-  ativarSessaoDeFala('playback');
+  ativarSessaoDeFala();
   tocarNoElemento(silencioWav(ms), estado).then(() => { if (atual === estado && minha === geracao) { atual = null; aoFim?.(); } }, () => {});
 }
 export function pararVoz() {
@@ -130,7 +132,7 @@ export function tocarVoz(texto, { personagem = 'mia', idioma = 'en', velocidade 
   const minha = geracao, controle = new AbortController();
   let desbloquear;
   try {
-    ativarSessaoDeFala(noPlayer ? 'playback' : 'transient');
+    ativarSessaoDeFala();
     if (noPlayer) desbloquear = Promise.resolve();
     else { contextoAudio ||= new (classeAudio())({ latencyHint: 'interactive' }); desbloquear = contextoAudio.resume(); }
   } catch { restaurarSessaoAudio(); aoErro?.('Não consegui iniciar o áudio. Toque em ouvir novamente.'); return false; }
