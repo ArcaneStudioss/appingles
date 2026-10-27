@@ -28,6 +28,7 @@ const { hoje, somarDias, diasEntre, embaralhar, palavras, normalizar } = require
 const { calcularSequencia, premiosAlcancados } = require('./motor/sequencia');
 const radio = require('./motor/podcast');
 const estudoMotor = require('./motor/estudo');
+const adequacao = require('./motor/adequacao');
 const APR = require('./motor/aprendizagem');
 const { respostaCerta: respostaDe } = require('./motor/correcao');
 const { publicoDe } = require('./motor/publico');
@@ -386,6 +387,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     const dias = V.int(b.dias_semana ?? 5, 1, 7, 'Dias por semana');
     const area = V.str(b.area, 80, { campo: 'Área' });
     const detalhe = V.str(b.objetivo_detalhe, 300, { campo: 'Objetivo' });
+    exigirAdequado(uid, { area, detalhe });
     if (!Array.isArray(b.interesses ?? []) || (b.interesses || []).length > 8) throw new ErroHttp(422, 'Interesses inválidos.');
     const interesses = (b.interesses || []).map(i => V.str(i, 30, { campo: 'Interesse' })).filter(Boolean);
     const fuso = typeof b.fuso === 'string' && /^[A-Za-z_]+\/[A-Za-z_]+(?:\/[A-Za-z_]+)?$/.test(b.fuso) && b.fuso.length < 40 ? b.fuso : 'America/Sao_Paulo';
@@ -995,6 +997,8 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
   });
 
   // ---------- Estudo sob medida: prova, entrevista, viagem... com assuntos, mini-aulas e simulado ----------
+  // adequação à idade: o pedido do aluno e o que a IA devolve passam por aqui (ver motor/adequacao.js)
+  const exigirAdequado = (uid, textos) => { const r = adequacao.avaliarPedido(textos, publicoDe(perfilDe(uid))); if (!r.ok) throw new ErroHttp(422, r.mensagem); };
   const estudoDe = (uid, id) => {
     const r = q('SELECT * FROM estudos WHERE id = ? AND user_id = ?').get(id, uid);
     if (!r) throw new ErroHttp(404, 'Estudo não encontrado.');
@@ -1030,24 +1034,31 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     const descricao = V.str(b.descricao, 1500, { min: 10, campo: 'O que você precisa estudar' });
     const material = V.str(b.material, 8000, { campo: 'Material' });
     if (material && material.length < 80) throw new ErroHttp(422, 'Material: cole um trecho maior (pelo menos 80 caracteres) ou deixe em branco.');
+    exigirAdequado(uid, { titulo, descricao, material });
     if (q('SELECT COUNT(*) n FROM estudos WHERE user_id = ? AND ativo = 1').get(uid).n >= 5) throw new ErroHttp(422, 'Você já tem 5 estudos em andamento. Encerre um para criar outro.');
     const chave = 'estcria' + uid;
     if (emAndamento.has(chave)) throw new ErroHttp(409, 'Já estamos montando um estudo.');
     emAndamento.add(chave);
     try {
-      let lista = null, modo = 'regras', aviso = null;
+      let lista = null, modo = 'regras', aviso = null, recusado = false;
+      const publico = publicoDe(perfilDe(uid));
       const perm = podeIa(uid, 'estudo', h);
       if (perm.pode) {
         try {
           const r = await ia.planejarEstudo({ titulo, tipo, descricao, material, diasRestantes: data_alvo ? diasEntre(h, data_alvo) : null, perfil: perfilDe(uid), nivel: nivelamentoDe(uid)?.nivel });
           contarIa(uid, 'estudo', h, r.uso);
-          const ok = (r.assuntos || []).filter(a => a && typeof a.nome === 'string' && a.nome.trim().length >= 2).slice(0, estudoMotor.MAX_ASSUNTOS).map(a => ({ nome: a.nome.trim(), porque: typeof a.porque === 'string' ? a.porque.trim() : null }));
+          if (r.adequado === false) recusado = true;
+          const ok = (r.assuntos || []).filter(a => a && typeof a.nome === 'string' && a.nome.trim().length >= 2 && adequacao.saidaAdequada(a, publico)).slice(0, estudoMotor.MAX_ASSUNTOS).map(a => ({ nome: a.nome.trim(), porque: typeof a.porque === 'string' ? a.porque.trim() : null }));
           if (ok.length >= 2) { lista = ok; modo = 'ia'; }
         } catch (e) { perm.desfazer(); console.error('[ia] plano de estudo falhou:', e.message); aviso = avisoFalhaIa(e); }
       } else aviso = avisoIa(perm.motivo);
+      if (recusado) throw new ErroHttp(422, 'Esse pedido não é adequado para a sua faixa etária no Inglou. Escolha outro assunto ou converse com um responsável.');
       if (!lista) lista = estudoMotor.dividirAssuntos(descricao);
       if (!lista.length) throw new ErroHttp(422, 'Não consegui separar assuntos. Escreva o que cai, um por linha ou separado por vírgula.');
       const assuntos = estudoMotor.montarAssuntos(lista);
+      // sem IA, assunto fora do catálogo só funciona com texto do aluno: avisa já, não só ao abrir
+      const semCobertura = modo === 'regras' && !material ? assuntos.filter(a => !a.tags.length).map(a => a.nome) : [];
+      if (semCobertura.length) aviso = [aviso, `Sem a IA, estes assuntos precisam de um texto seu (cole em Material): ${semCobertura.slice(0, 4).join('; ')}${semCobertura.length > 4 ? '...' : ''}.`].filter(Boolean).join(' ');
       const r = q('INSERT INTO estudos (user_id, titulo, tipo, data_alvo, criado_em, descricao, material, assuntos, modo) VALUES (?,?,?,?,?,?,?,?,?)').run(uid, titulo, tipo, data_alvo, agoraISO(), descricao, material || null, JSON.stringify(assuntos), modo);
       return { id: Number(r.lastInsertRowid), modo, aviso };
     } finally { emAndamento.delete(chave); }
@@ -1064,7 +1075,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
   rota('PATCH', '/sobmedida/:id', (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid), b = ctx.corpo;
     const e = estudoDe(uid, V.id(ctx.params.id));
-    if (b.titulo !== undefined) e.titulo = V.str(b.titulo, 80, { min: 3, campo: 'Nome do estudo' });
+    if (b.titulo !== undefined) { e.titulo = V.str(b.titulo, 80, { min: 3, campo: 'Nome do estudo' }); exigirAdequado(uid, { titulo: e.titulo }); }
     if (b.data_alvo !== undefined) {
       const d = V.data(b.data_alvo, 'Data');
       if (d && (d < h || diasEntre(h, d) > 400)) throw new ErroHttp(422, 'Data: escolha um dia de hoje até 400 dias à frente.');
@@ -1102,6 +1113,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
             const r = await ia.estudarAssunto({ assunto: a.nome, porque: a.porque, estudo: e, material: e.material, perfil: perfilDe(uid), nivel });
             contarIa(uid, 'estudo', h, r.uso);
             c = estudoMotor.conteudoDaIa(r, a, validarExerciciosIa);
+            if (c && !adequacao.saidaAdequada(c, publicoDe(perfilDe(uid)))) { console.error('[ia] assunto descartado: inadequado para a idade'); c = null; aviso = 'Não consegui montar este assunto com segurança para a sua idade. Mostrei o que o catálogo cobre.'; }
           } catch (err) { perm.desfazer(); console.error('[ia] assunto falhou:', err.message); aviso = avisoFalhaIa(err); }
         } else aviso = avisoIa(perm.motivo);
         if (!c) c = estudoMotor.conteudoOffline(a, e.material, nivel);
