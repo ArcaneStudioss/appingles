@@ -1728,3 +1728,6 @@ body.aba-oculta .dupla *,body.aba-oculta .lou *{animation-play-state:paused!impo
   .companheiros{--mia-alto:76px;--tui-alto:56px;--dupla-largo:96px}
   .companheiros__balao{padding:.5rem .65rem}
 }
+
+/* O cabeçalho fixo não cobre o alvo ao rolar até um botão ou card */
+@media (max-width:899px){html{scroll-padding-top:5rem}}
