@@ -10,20 +10,19 @@ const NAV = {
   progresso: ['Progresso', 'Sua sequência de dias, o que você já domina e onde ainda tropeça.'],
   conta: ['Conta', 'Seus dados, o plano e os lembretes.'],
   turmas: ['Turmas', 'Atividades do professor. Entre com o código que ele passar.'],
-  mais: ['Mais', 'Tudo o resto mora aqui: revisar, conversar, ouvir a Rádio, mudar de nível e tirar dúvidas. Tem um campo de busca para achar rápido.'],
+  mais: ['Mais', 'Tudo o resto mora aqui: revisar, conversar, ouvir a Rádio, biblioteca, mudar de nível ou de tema e tirar dúvidas. Tem um campo de busca para achar rápido.'],
 };
+
+// Passeio curto: só o que a pessoa precisa para começar a primeira aula. O resto ela descobre em Mais.
+const ESSENCIAIS = new Set(['hoje', 'professor', 'turmas', 'progresso', 'mais']);
 
 export const chaveDoTour = eu => `tour-feito:${eu?.usuario?.email || 'x'}`;
 
 function passos() {
-  const lista = [{ titulo: 'Bem-vindo ao Inglou!', texto: 'Eu sou o Tuiuiú. Em 1 minuto eu mostro onde fica cada coisa. Dá para pular quando quiser.' }];
+  const lista = [{ titulo: 'Bem-vindo ao Inglou!', texto: 'Eu sou o Tuiuiú. Em 30 segundos eu mostro o essencial. Dá para pular quando quiser.' }];
   for (const el of document.querySelectorAll('.nav a:not([hidden]), .nav .nav__mais')) {
-    const info = NAV[el.dataset.rota]; if (info && el.getClientRects().length) lista.push({ alvo: el, titulo: info[0], texto: info[1] });
+    const info = ESSENCIAIS.has(el.dataset.rota) && NAV[el.dataset.rota]; if (info && el.getClientRects().length) lista.push({ alvo: el, titulo: info[0], texto: info[1] });
   }
-  const nivel = document.querySelector('.nivel-chip');
-  if (nivel) lista.push({ alvo: nivel, titulo: 'Seu nível', texto: 'Este é o seu nível de inglês. Se achar fácil ou difícil demais, toque aqui para mudar. Eu também ajusto sozinho pelos seus acertos.' });
-  const tema = document.querySelector('.tema-troca');
-  if (tema?.getClientRects().length) lista.push({ alvo: tema, titulo: 'Dia ou noite', texto: 'Troque o tema para estudar com a luz que ficar melhor para os seus olhos.' });
   lista.push({ titulo: 'Pronto, é só começar!', texto: 'Para rever este passeio, abra Mais e toque em Tour pelo app.' });
   return lista;
 }
