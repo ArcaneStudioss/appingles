@@ -4,6 +4,7 @@ const PRIMEIRAS_FRASES = {
   'zero-sons': [ [['Hello!', 'Olá!'], ['Thank you.', 'Obrigado.']], [['Thank you.', 'Obrigado.'], ['Bye!', 'Tchau!']] ],
   'zero-oi-tchau': [ [['Good morning!', 'Bom dia!'], ['Thank you.', 'Obrigado.']], [['Sorry.', 'Desculpe.'], ['Bye!', 'Tchau!']] ],
   'zero-nome-origem': [ [['My name is', 'Meu nome é'], ['Ana.', 'Ana.']], [['I am from', 'Eu sou de'], ['Brazil.', 'Brasil.']] ],
+  'zero-sobrevivencia': [ [["Sorry,", 'Desculpe,'], ["I don't understand.", 'eu não entendo.']], [['Can you repeat,', 'Você pode repetir,'], ['please?', 'por favor?']] ],
   'zero-numeros': [ [['I am', 'Eu tenho (para idade)'], ['ten', 'dez'], ['years old.', 'anos de idade.']], [['My number is', 'Meu número é'], ['one, two, three.', 'um, dois, três.']] ],
   'zero-to-be': [ [['I am', 'Eu estou'], ['happy.', 'feliz.']], [['She is', 'Ela é'], ['my friend.', 'minha amiga.']] ],
   'zero-familia': [ [['This is', 'Esta é'], ['my mother.', 'minha mãe.']], [['I have', 'Eu tenho'], ['one brother.', 'um irmão.']] ],

@@ -2,6 +2,8 @@
 // Leitura aproximada em português das expressões da trilha "Começar do zero". É um apoio, não substitui o áudio.
 // A sílaba forte leva acento; "th" (língua entre os dentes) é explicado no guia de sons.
 const COMO_LER = {
+  "i don't understand": 'ái dôunt ân-der-sténd', 'can you repeat?': 'quén iú ri-pít', 'speak slowly, please': 'spík slôu-li plíz',
+  'do you speak portuguese?': 'du iú spík por-tchu-guís', 'yes, please': 'iés plíz', 'no, thank you': 'nôu thénk iú',
   'hello': 'ré-lou', 'bye': 'bái', 'thank you': 'thénk iú', 'good morning': 'gúd mór-nin', 'good night': 'gúd náit',
   'sorry': 'só-ri', 'my name is': 'mái nêim iz', 'i am from': 'ái ém frâm', 'nice to meet you': 'náis tu mít iú',
   'city': 'sí-ri', 'country': 'cân-tri', 'brazilian': 'bra-zí-lian', 'one, two, three': 'uân, tu, thrí', 'ten': 'tén',

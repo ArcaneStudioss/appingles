@@ -168,6 +168,60 @@ Z.push({
 });
 
 Z.push({
+  id: 'zero-sobrevivencia',
+  titulo: 'Não entendi, e agora?',
+  podeFazer: 'Consigo pedir para repetir, falar mais devagar e dizer sim ou não com educação.',
+  nivel: 'A1',
+  tags: [],
+  vocab: [
+    { en: "I don't understand", pt: 'eu não entendo', ex: "Sorry, I don't understand." },
+    { en: 'Can you repeat?', pt: 'você pode repetir?', ex: 'Can you repeat, please?' },
+    { en: 'Speak slowly, please', pt: 'fale devagar, por favor', ex: 'Speak slowly, please.' },
+    { en: 'Do you speak Portuguese?', pt: 'você fala português?', ex: 'Excuse me, do you speak Portuguese?' },
+    { en: 'Yes, please', pt: 'sim, por favor', ex: 'Water? Yes, please.' },
+    { en: 'No, thank you', pt: 'não, obrigado', ex: 'More coffee? No, thank you.' },
+  ],
+  explicacao: {
+    titulo: 'Ninguém entende tudo, e tudo bem',
+    texto: 'No começo, você vai ouvir coisas que não entende. Isso é normal. Em vez de ficar calado, use estas frases: "I don\'t understand" (eu não entendo), "Can you repeat?" (você pode repetir?) e "Speak slowly, please" (fale devagar, por favor). Se precisar, pergunte "Do you speak Portuguese?". Para aceitar, diga "Yes, please". Para recusar com educação, "No, thank you".',
+    estrutura: ["I don't understand.", 'Can you repeat, please?', 'Speak slowly, please.', 'Yes, please. / No, thank you.'],
+  },
+  exemplos: [
+    { en: "Sorry, I don't understand.", pt: 'Desculpe, eu não entendo.' },
+    { en: 'Can you repeat, please?', pt: 'Você pode repetir, por favor?' },
+    { en: 'Speak slowly, please.', pt: 'Fale devagar, por favor.' },
+    { en: 'Do you speak Portuguese?', pt: 'Você fala português?' },
+  ],
+  exercicios: [
+    e('s-1', 'escolha', { habilidade: 'vocabulario', dif: 1, enunciado: 'Você não entendeu nada. O que diz?', opcoes: ["I don't understand", 'Thank you', 'Good morning'], resposta: 0, explica: "I don't understand = eu não entendo." }),
+    e('s-2', 'escolha', { habilidade: 'vocabulario', dif: 1, enunciado: 'Como pedir para a pessoa repetir?', opcoes: ['Can you repeat?', 'Bye', 'My name is Ana'], resposta: 0, explica: 'Can you repeat? = você pode repetir?' }),
+    e('s-3', 'escolha', { habilidade: 'vocabulario', dif: 1, enunciado: 'O que significa “Speak slowly, please”?', opcoes: ['Fale devagar, por favor', 'Fale mais alto, por favor', 'Obrigado, tchau'], resposta: 0, explica: 'Slowly = devagar. Please = por favor.' }),
+    e('s-4', 'escuta', { habilidade: 'escuta', dif: 1, audio: "Sorry, I don't understand.", pergunta: 'O que a pessoa disse?', opcoes: ['Eu não entendo', 'Eu gosto', 'Eu sou do Brasil'], resposta: 0 }),
+    e('s-5', 'escuta', { habilidade: 'escuta', dif: 1, audio: 'Do you speak Portuguese?', pergunta: 'O que a pessoa perguntou?', opcoes: ['Se você fala português', 'Seu nome', 'Onde você mora'], resposta: 0 }),
+    e('s-6', 'ditado', { habilidade: 'escuta', dif: 1, audio: 'Can you repeat, please?', resposta: ['Can you repeat, please', 'Can you repeat please'], explica: 'Can you repeat, please? = você pode repetir, por favor?' }),
+    e('s-7', 'ordenar', { habilidade: 'gramatica', dif: 1, palavras: ['Speak', 'slowly,', 'please'], resposta: 'Speak slowly, please' }),
+    e('s-8', 'lacuna', { habilidade: 'vocabulario', dif: 1, frase: "Sorry, I ___ understand.", resposta: ["don't"], explica: "Para negar, use don't: I don't understand." }),
+    e('s-9', 'escolha', { habilidade: 'vocabulario', dif: 1, enunciado: 'Te ofereceram café e você não quer. O que diz?', opcoes: ['No, thank you', 'Yes, please', 'Hello'], resposta: 0, explica: 'No, thank you = não, obrigado. É a forma educada de recusar.' }),
+  ],
+  tarefa: {
+    enunciado: 'Alguém falou rápido demais em inglês. Escreva o que você diria: que não entendeu e pedir para repetir mais devagar.',
+    minPalavras: 5,
+    elementos: [
+      { nome: 'dizer que não entendeu', padroes: ["\\bi don'?t understand\\b", "\\bi do not understand\\b"] },
+      { nome: 'pedir para repetir ou falar devagar', padroes: ['\\brepeat\\b', '\\bslowly\\b'] },
+    ],
+    tagsChave: [],
+    dicas: ["I don't understand.", 'Can you repeat, please?', 'Speak slowly, please.'],
+    modelo: "Sorry, I don't understand. Can you repeat, please? Speak slowly, please.",
+  },
+  reteste: [
+    'Um turista fala rápido com você e você não entende. Peça, em inglês, para ele repetir e falar mais devagar.',
+    'Você quer saber se a pessoa fala português. Pergunte, e depois recuse um café com educação.',
+  ],
+  conversa: 'zero-cumprimentos',
+});
+
+Z.push({
   id: 'zero-numeros',
   titulo: 'Números e idade',
   podeFazer: 'Consigo dizer números, minha idade e meu telefone.',
@@ -616,7 +670,7 @@ Z.push({
   ],
   explicacao: {
     titulo: 'Juntando tudo numa conversa',
-    texto: 'Uma conversa curta tem uma ordem: cumprimentar, perguntar como a pessoa está, falar de você (nome, de onde é, idade, o que faz, do que gosta) e devolver a pergunta com "And you?" ou "What about you?". Despeça-se com "Nice talking to you". Aqui você usa tudo o que aprendeu nas 11 missões. Errar é parte do treino.',
+    texto: 'Uma conversa curta tem uma ordem: cumprimentar, perguntar como a pessoa está, falar de você (nome, de onde é, idade, o que faz, do que gosta) e devolver a pergunta com "And you?" ou "What about you?". Despeça-se com "Nice talking to you". Aqui você usa tudo o que aprendeu nas missões anteriores. Errar é parte do treino.',
     estrutura: ['Hello! How are you?', 'My name is ... I am from ...', 'I am ... years old.', 'I like ... What about you?'],
   },
   exemplos: [
