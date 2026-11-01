@@ -9,8 +9,8 @@ const { publicoDe } = require('./publico');
 const { UNIDADES } = require('../conteudo/biblioteca');
 
 function licoesPorMissao(missao, nivelAluno) {
-  // Vocabulário em pares, quatro oficinas de frases e três aulas de aplicação.
-  if (nivelAluno === 'A1') return Math.ceil(missao.vocab.length / 2) * 2 + 7;
+  // Vocabulário em pares (uma aula por par), quatro oficinas de frases e três aulas de aplicação.
+  if (nivelAluno === 'A1') return Math.ceil(missao.vocab.length / 2) + 7;
   const diff = NIVEIS.indexOf(nivelAluno) - NIVEIS.indexOf(missao.nivel);
   if (diff >= 2) return 1;      // bem abaixo do nível do aluno: revisão rápida
   if (diff >= 1) return 2;

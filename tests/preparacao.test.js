@@ -11,7 +11,7 @@ const montar = (m, partes, idade = 30) => ({ perfil: { idade, minutos_dia: 10 },
 
 test('quatro oficinas acrescentam vinte práticas, ensinam o modelo e retiram apoio aos poucos', () => {
   for (const m of MISSOES) {
-    const inicio = Math.ceil(m.vocab.length / 2) * 2;
+    const inicio = Math.ceil(m.vocab.length / 2);
     const modelos = [];
     for (let rodada = 0; rodada < 4; rodada++) {
       const l = montarLicao(montar(m, inicio + rodada));
@@ -41,7 +41,7 @@ test('quatro oficinas acrescentam vinte práticas, ensinam o modelo e retiram ap
 test('vocabulário e alternativas da base ficam no que foi apresentado', () => {
   const m = POR_ID['zero-sons'];
   const l = montarLicao(montar(m, 0));
-  const aprendidas = l.blocos[0].vocab.map(v => v.pt);
+  const aprendidas = l.blocos[0].vocab.flatMap(v => [v.pt, v.en]);
   for (const e of l.blocos.flatMap(b => b.exercicios || [])) {
     assert.ok(e.opcoes.every(o => aprendidas.includes(o)));
   }

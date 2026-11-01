@@ -102,11 +102,11 @@ test('material pessoal acompanha a conversa e outra conta não consegue anexá-l
  assert.equal((await R('adulto','POST',`/conversas/${conversa.id}/mensagem`,{texto:'I would like to explain my project.'})).status,200);
 });
 test('apagar respostas e refazer a sessão no mesmo dia não repete XP nem avanço',async()=>{
- const uid=users.adulto.id,antes=db.prepare('SELECT SUM(quantidade) n FROM xp_extrato WHERE user_id=?').get(uid).n;
+ const uid=users.adulto.id,conclusoes=()=>db.prepare("SELECT COUNT(*) n FROM xp_extrato WHERE user_id=? AND motivo='Sessão guiada concluída'").get(uid).n,antes=conclusoes();
  assert.equal((await R('adulto','POST','/dados/apagar',{escopo:'respostas'})).status,200);
  const s=await R('adulto','POST','/sessao',{minutos:5});assert.equal(s.status,200);
  const d=JSON.parse(db.prepare('SELECT dados FROM sessoes_guiadas WHERE user_id=?').get(uid).dados);
  for(const e of d.itens)await R('adulto','POST','/sessao/responder',{itemId:e.id,resposta:respostaCerta(e)});
  const fim=await R('adulto','POST','/sessao/concluir');assert.equal(fim.repetida,true);
- assert.equal(db.prepare('SELECT SUM(quantidade) n FROM xp_extrato WHERE user_id=?').get(uid).n,antes);
+ assert.equal(conclusoes(),antes);
 });

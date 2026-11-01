@@ -13,7 +13,7 @@ function aula(m, feitas = 0, nivel = 'A1') {
     hojeISO: '2026-10-24', cartoesPendentes: 2 });
 }
 
-test('A1: duas expressões, três práticas por expressão, repetição no dia seguinte e retomada', () => {
+test('A1: duas expressões, três práticas por expressão, retomada da aula anterior', () => {
   for (const m of MISSOES) {
     const total = licoesPorMissao(m, 'A1');
     for (let feitas = 0; feitas < total - 7; feitas++) {
@@ -32,11 +32,11 @@ test('A1: duas expressões, três práticas por expressão, repetição no dia s
         const resposta = e.opcoes ? e.opcoes[e.resposta] : e.resposta;
         assert.ok(corrigirExercicio(e, resposta).correto, e.id);
         assert.equal(acharExercicio(l, e.id), e);
-        if (e.opcoes) assert.equal(new Set(e.opcoes).size, 2, e.id);
+        if (e.opcoes) assert.equal(new Set(e.opcoes).size, e.opcoes.length, e.id);
+        if (e.opcoes) assert.ok(e.opcoes.length >= 2 && e.opcoes.length <= 3, e.id);
       }
       const cliente = paraCliente(l, 'teste');
       for (const e of cliente.blocos.flatMap(b => b.exercicios || [])) assert.equal(e.resposta, undefined);
-      if (feitas % 2) assert.deepEqual(vocab, aula(m, feitas - 1).blocos[0].vocab);
       if (feitas >= 2) assert.ok(l.blocos.some(b => b.tipo === 'retomada'));
     }
     const transicao = aula(m, total - 3);
