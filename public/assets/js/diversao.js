@@ -63,7 +63,7 @@ function tutora(humor, { tamanho, rotulo }) {
     traco('M60 8 L60 21', '#2A1D18', 1.6, { opacity: '.9' }),
     traco('M35 30 Q60 15 85 30', '#FFC83D', 4),
     el('g', { transform: 'rotate(25 80 27) translate(80 27) scale(.8) translate(-84 -26)' }, el('path', { d: 'M84 26 L69 15 L71 36 Z', fill: '#FF6FA5' }), el('path', { d: 'M84 26 L99 19 L96 37 Z', fill: '#FF6FA5' }), el('path', { d: 'M84 26 L69 15 L71 36 Z', fill: '#E8408A', opacity: '.18' }), el('circle', { cx: 84, cy: 26, r: 3.4, fill: '#E8408A' })));
-  const olhos = el('g', { class: 'lou__olhos', style: 'transform-origin:60px 47px' });
+  const olhos = el('g', { class: 'lou__olhos' }); olhos.style.transformOrigin = '60px 47px';
   for (const x of [48, 72]) {
     const lado = x < 60 ? -1 : 1;   // -1 = olho esquerdo (canto de fora à esquerda)
     if (feliz) {
@@ -129,7 +129,7 @@ export function lou(humor = 'oi', { tamanho = 96, rotulo = 'Tuiuiú, a arara-azu
   // cabeça
   corpo.append(el('circle', { cx: 68, cy: 40, r: 19, fill: P.corpo }), traco('M54 30 Q58 22 66 21', '#fff', 3, { opacity: '.3' }));
   // olho com anel amarelo
-  const olhos = el('g', { class: 'lou__olhos', style: 'transform-origin:75px 38px' });
+  const olhos = el('g', { class: 'lou__olhos' }); olhos.style.transformOrigin = '75px 38px';
   olhos.append(el('circle', { cx: 74, cy: 38, r: 8.5, fill: P.anel }));
   if (feliz) olhos.append(traco('M69 40 Q75 32 81 40', TINTA_OLHO, 3.6));
   else {

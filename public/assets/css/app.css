@@ -1722,3 +1722,9 @@ body.aba-oculta .dupla *,body.aba-oculta .lou *{animation-play-state:paused!impo
 .parecidas__opcoes .btn.errada{outline:3px solid var(--rosa);outline-offset:2px}
 .parecidas__resposta{margin:0}
 .parecidas__placar{margin:0;font-size:2.2rem;font-weight:800;text-align:center}
+
+/* Telas baixas (celulares pequenos): menos altura para as personagens, para as alternativas aparecerem sem rolar */
+@media (max-height:760px) and (max-width:600px){
+  .companheiros{--mia-alto:76px;--tui-alto:56px;--dupla-largo:96px}
+  .companheiros__balao{padding:.5rem .65rem}
+}

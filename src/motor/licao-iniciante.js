@@ -22,11 +22,12 @@ function montarBaseIniciante(ctx, atual, adaptada) {
     ...(modo === 'ler' || modo === 'ouvir' || modo === 'montar' ? { ensino: { en: v.en, pt: v.pt, nota: 'Olhe o significado e use o modelo. Esta é uma atividade para aprender.' } } : {}),
     explica: `${v.en} = ${v.pt}. Ouça e repita quantas vezes precisar.`,
   });
+  const cap = t => (t ? t[0].toUpperCase() + t.slice(1) : t);
   const escolha = (v, i, modo) => {
     const outra = vocab.find(x => x.pt !== v.pt) || def.vocab[grupo * 2 - 1];
     return { ...base(v, i, modo), tipo: modo === 'ouvir' ? 'escuta' : 'escolha',
       ...(modo === 'ouvir' ? { audio: v.en, pergunta: 'O que você ouviu?' } : { enunciado: `O que significa “${v.en}”?` }),
-      opcoes: [v.pt, outra.pt], resposta: 0 };
+      opcoes: [cap(v.pt), cap(outra.pt)], resposta: 0 };
   };
   const blocos = [
     { tipo: 'explicacao', guiada: true, missao: def.id, titulo: repetir ? 'Vamos repetir com calma' : 'Só duas expressões por vez',
@@ -37,15 +38,15 @@ function montarBaseIniciante(ctx, atual, adaptada) {
     { tipo: 'escuta', titulo: 'Ouça as mesmas expressões', devagar: true, mostrarTextoDepois: true,
       exercicios: vocab.map((v, i) => escolha(v, i, 'ouvir')) },
     { tipo: 'exercicios', titulo: repetir ? 'Monte o que você já praticou' : 'Mais uma vez para fixar',
-      exercicios: vocab.map((v, i) => repetir
-        ? { ...base(v, i, 'montar'), tipo: 'ordenar', enunciado: `Monte em inglês: ${v.pt}`, palavras: v.en.split(/\s+/), resposta: v.en }
+      exercicios: vocab.map((v, i) => repetir && /\s/.test(v.en)
+        ? { ...base(v, i, 'montar'), tipo: 'ordenar', enunciado: `Monte em inglês: ${cap(v.pt)}`, palavras: v.en.split(/\s+/), resposta: v.en }
         : escolha(v, i, 'repetir')) },
   ];
   if (grupo > 0) {
     const anterior = def.vocab[grupo * 2 - 1];
     blocos.push({ tipo: 'retomada', titulo: 'Lembra da aula anterior?', exercicios: [{
       id: `base:${def.id}:${grupo * 2 - 1}:revisar`, missao: def.id, tipo: 'escolha', habilidade: 'vocabulario', dif: 1,
-      enunciado: `O que significa “${anterior.en}”?`, opcoes: [anterior.pt, vocab[0].pt], resposta: 0,
+      enunciado: `O que significa “${anterior.en}”?`, opcoes: [cap(anterior.pt), cap(vocab[0].pt)], resposta: 0,
       explica: `${anterior.en} = ${anterior.pt}.`,
     }] });
   }

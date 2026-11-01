@@ -700,6 +700,9 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     const lic = licaoDeHoje(uid, h, { criar: false });
     if (!lic) throw new ErroHttp(404, 'Lição não encontrada.');
     if (lic.status === 'concluida') return { ok: true, repetida: true };
+    // Só conclui quem passou por todos os exercícios (revelar a resposta conta como passar); pares não são gravados no servidor.
+    const faltam = lic.dados.blocos.flatMap(b => b.exercicios || []).filter(e => e.tipo !== 'pares' && !lic.respondidos[e.id]).length;
+    if (faltam > 0) throw new ErroHttp(409, 'Faltam ' + faltam + (faltam === 1 ? ' atividade' : ' atividades') + ' para concluir a aula de hoje.');
     const minutos = Math.max(1, Math.min(90, Math.round((Date.now() - Date.parse(lic.iniciada_em || agoraISO())) / 60000)));
     const conq = [];
     transacao(db, () => {
