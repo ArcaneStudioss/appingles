@@ -424,6 +424,15 @@ END;
    FROM pontos_estudo WHERE user_id = NEW.user_id HAVING COUNT(*) % 5 = 0;
   END;
   `,
+  // 15: índices por aluno nas tabelas que não tinham (sem eles, abrir Hoje, Revisar e Conversar e excluir uma conta varrem a tabela inteira)
+  `CREATE INDEX IF NOT EXISTS nivelamentos_user ON nivelamentos(user_id, id);
+   CREATE INDEX IF NOT EXISTS planos_user ON planos(user_id, ativo);
+   CREATE INDEX IF NOT EXISTS cartoes_vence ON cartoes(user_id, vence_em);
+   CREATE INDEX IF NOT EXISTS revisoes_user ON revisoes(user_id, em);
+   CREATE INDEX IF NOT EXISTS conversas_user ON conversas(user_id, id);
+   CREATE INDEX IF NOT EXISTS focos_user ON focos(user_id, status);
+   CREATE INDEX IF NOT EXISTS amostras_user ON amostras(user_id, em);
+   CREATE INDEX IF NOT EXISTS materiais_user ON materiais(user_id, id);`,
 ];
 
 function abrir(dir) {
