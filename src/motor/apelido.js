@@ -3,6 +3,8 @@
 // sem palavrões e sem tentativas simples de disfarce (acentos, números no lugar de letras).
 const TROCAS = { 0: 'o', 1: 'i', 3: 'e', 4: 'a', 5: 's', 7: 't', '@': 'a', $: 's', '!': 'i' };
 const PALAVRAS = ['porra', 'caralho', 'puta', 'puto', 'merda', 'bosta', 'cu', 'cuzao', 'buceta', 'pau', 'piroca', 'foder', 'foda', 'fodase', 'viado', 'bicha', 'arrombado', 'otario', 'idiota', 'retardado', 'macaco', 'nazista', 'hitler', 'estupro', 'estuprador', 'pedofilo', 'suicida', 'fuck', 'shit', 'bitch', 'dick', 'cock', 'pussy', 'nigger', 'nigga', 'faggot', 'rape', 'rapist', 'porn', 'porno', 'sexo', 'nude', 'nudes'];
+// Ambíguas: também são nomes e sobrenomes reais (Cu Lin, Pau Gasol). Só barram se forem o apelido inteiro.
+const AMBIGUAS = ['cu', 'pau'];
 const RADICAIS = ['caralho', 'buceta', 'estupr', 'pedofil', 'nazist', 'hitler', 'fuck', 'nigg', 'faggot', 'porra', 'merda'];
 const CONTATO = /(https?:|www\.|\.com|\.br\b|@|whats|zap\b|insta|telegram|discord|tiktok|snap|facebook|fb\.|\bt\.me)/i;
 
@@ -23,7 +25,7 @@ function apelidoPermitido(texto) {
   const palavras = destrocado.split(/[^a-z]+/).filter(Boolean);
   const colado = destrocado.replace(/[^a-z]/g, '');
   // Palavra solta; palavras longas (6+ letras) também por trecho e sem separadores ("c.a.r.a.l.h.o"); curtas só se forem o apelido inteiro ("c.u"), para não barrar "Computador".
-  const ruim = palavras.some(p => PALAVRAS.includes(p)) || PALAVRAS.includes(colado)
+  const ruim = palavras.some(p => PALAVRAS.includes(p) && !AMBIGUAS.includes(p)) || PALAVRAS.includes(colado)
     || RADICAIS.some(r => colado.includes(r)) || PALAVRAS.some(p => p.length >= 6 && colado.includes(p));
   if (ruim) return { ok: false, motivo: 'Escolha um apelido gentil, que todos possam ver.' };
   return { ok: true, apelido: bruto.replace(/\s+/g, ' ') };
