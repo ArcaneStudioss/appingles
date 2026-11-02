@@ -1905,14 +1905,6 @@ main details>summary:focus-visible{outline:3px solid var(--azul);outline-offset:
   .lou--tui.tui--reage .tui__mandibula{animation:tui-pia .22s ease-in-out 3 alternate}
   .lou--tui.tui--reage .tui__sombra{animation:tui-hop-sombra .65s var(--ease) 1}
   .lou--tui.tui--reage .tui__cabeca{animation:tui-olha-rapido .65s ease-in-out 1}
-  /* Mia também vive: balança as tranças, cabeceia, pisca e acena quando tocada */
-  .lou--mia .mia__cabeca{animation:mia-cabeceia 7s ease-in-out var(--tui-atraso,0s) infinite}
-  .lou--mia .lou__olhos,.dupla .lou--mia .lou__olhos{animation:lou-pisca 5.2s var(--tui-atraso,0s) infinite}
-  .lou--mia .mia__tranca{transform-box:fill-box;transform-origin:50% 0;animation:mia-tranca 3.4s ease-in-out var(--tui-atraso,0s) infinite alternate}
-  .lou--mia .mia__tranca:nth-of-type(even){animation-direction:alternate-reverse}
-  .lou--mia .mia__braco--esquerdo{animation:mia-braco 6s ease-in-out var(--tui-atraso,0s) infinite}
-  .lou--mia.mia--acena .mia__braco--esquerdo{animation:mia-acena 1.2s ease-in-out 1}
-  .lou--mia.mia--acena .mia__cabeca{animation:mia-concorda 1.2s ease-in-out 1}
 }
 @keyframes tui-respira{0%,100%{transform:scale(1,1)}50%{transform:scale(1.015,1.03)}}
 @keyframes tui-olha{0%,100%{transform:rotate(0)}14%{transform:rotate(-5deg) translateY(-1px)}28%{transform:rotate(0)}55%{transform:rotate(4deg) translateX(1px)}70%{transform:rotate(0)}}
@@ -1934,9 +1926,6 @@ main details>summary:focus-visible{outline:3px solid var(--azul);outline-offset:
 @keyframes tui-ideia{0%,100%{opacity:1}50%{opacity:.35}}
 @keyframes tui-gota{0%{transform:translateY(-3px);opacity:0}25%{opacity:1}100%{transform:translateY(12px);opacity:0}}
 @keyframes tui-z{0%{transform:translate(0,4px);opacity:0}30%{opacity:1}100%{transform:translate(4px,-10px);opacity:0}}
-@keyframes mia-cabeceia{0%,100%{transform:rotate(0)}30%{transform:rotate(-2.5deg)}65%{transform:rotate(2deg)}}
-@keyframes mia-tranca{from{transform:rotate(-2.6deg)}to{transform:rotate(2.6deg)}}
-@keyframes mia-braco{0%,100%{transform:rotate(0)}50%{transform:rotate(2.5deg)}}
 /* as reações de acerto e festa batem a asa para a frente (a asa pende para baixo; girar para o lado positivo a levanta atrás da cabeça) */
 @keyframes tui-toca-aqui{0%,100%{transform:rotate(0)}35%,65%{transform:rotate(125deg)}50%{transform:rotate(135deg)}}
 @keyframes tui-bate-asa{0%,100%{transform:rotate(0)}50%{transform:rotate(150deg)}}
@@ -1951,3 +1940,81 @@ main details>summary:focus-visible{outline:3px solid var(--azul);outline-offset:
 .dupla .lou--tui.tui--comemora .tui__resp{animation-iteration-count:3}
 .dupla .lou--tui.tui--comemora .tui__asa,.dupla .lou--tui.tui--comemora .tui__asa-longe{animation-iteration-count:10}
 .dupla .lou--tui.tui--acena .tui__asa,.dupla .lou--tui.tui--acena .tui__asa-longe{animation-iteration-count:6}
+
+/* ---------- Mia viva: cabeça que cabeceia, tranças que balançam, braços com cotovelo, boca que fala ---------- */
+.lou--mia2{transform:none;overflow:visible;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.lou--mia2.m2--espia,.lou--mia2.lou--busto{overflow:hidden}
+.lou--mia2 .lou__corpo{animation:none}
+.lou--mia2 .m2__vida{transform-origin:60px 156px}
+.lou--mia2 .m2__cabeca{transform-origin:60px 80px;transition:transform .5s var(--mola,ease)}
+.lou--mia2 .m2__tranca{transform-box:fill-box;transform-origin:50% 0}
+.lou--mia2 .m2__braco{transition:transform .5s var(--mola,ease)}
+.lou--mia2 .m2__braco--esquerdo{transform-origin:31px 92px}
+.lou--mia2 .m2__braco--direito{transform-origin:89px 92px}
+.lou--mia2 .m2__antebraco{transition:transform .5s var(--mola,ease)}
+.lou--mia2 .m2__braco--esquerdo .m2__antebraco{transform-origin:26px 126px}
+.lou--mia2 .m2__braco--direito .m2__antebraco{transform-origin:94px 126px}
+.lou--mia2 .m2__pupila{transform:translate(var(--ox,0px),var(--oy,0px));transition:transform .14s ease-out}
+.lou--mia2 .m2__fala{opacity:0;transform-origin:60px 68px}
+.lou--mia2.m2--acena .m2__braco--esquerdo{transform:rotate(158deg)}
+.lou--mia2.m2--acena .m2__cabeca{transform:rotate(-4deg)}
+.lou--mia2.m2--aponta .m2__braco--direito{transform:rotate(-88deg)}
+.lou--mia2.m2--aponta .m2__cabeca{transform:rotate(5deg)}
+.lou--mia2.m2--comemora .m2__braco--esquerdo{transform:rotate(166deg)}
+.lou--mia2.m2--comemora .m2__braco--direito{transform:rotate(-166deg)}
+.lou--mia2.m2--ideia .m2__braco--direito{transform:rotate(-30deg)}
+.lou--mia2.m2--ideia .m2__braco--direito .m2__antebraco{transform:rotate(-150deg)}
+.lou--mia2.m2--ideia .m2__cabeca{transform:rotate(-5deg)}
+.lou--mia2.m2--consola .m2__braco--direito{transform:rotate(30deg)}
+.lou--mia2.m2--consola .m2__braco--direito .m2__antebraco{transform:rotate(115deg)}
+.lou--mia2.m2--consola .m2__cabeca{transform:rotate(6deg) translateY(3px)}
+@media (prefers-reduced-motion:no-preference){
+  .lou--mia2 .m2__vida{animation:m2-respira 4s ease-in-out var(--tui-atraso,0s) infinite}
+  .lou--mia2 .m2__cabeca{animation:m2-cabeceia 7s ease-in-out var(--tui-atraso,0s) infinite}
+  .lou--mia2 .lou__olhos,.dupla .lou--mia2 .lou__olhos{animation:lou-pisca 5s var(--tui-atraso,0s) infinite}
+  .lou--mia2 .m2__tranca{animation:m2-tranca 3.2s ease-in-out calc(var(--tui-atraso,0s) + var(--i,0) * -.45s) infinite alternate}
+  .lou--mia2 .m2__tranca--d{animation-direction:alternate-reverse}
+  .lou--mia2 .m2__braco--esquerdo{animation:m2-braco 6s ease-in-out var(--tui-atraso,0s) infinite}
+  .lou--mia2 .m2__braco--direito{animation:m2-braco 6.6s ease-in-out calc(var(--tui-atraso,0s) - 1s) infinite reverse}
+  .lou--mia2 .m2__ideia{animation:tui-ideia 2.2s ease-in-out infinite}
+  .lou--mia2 .m2__gota{animation:tui-gota 1.8s ease-in infinite}
+  .lou--mia2.m2--acena .m2__braco--esquerdo{animation:none}
+  .lou--mia2.m2--acena .m2__braco--esquerdo .m2__antebraco{animation:m2-onda .55s ease-in-out infinite alternate}
+  .lou--mia2.m2--aponta .m2__braco--direito,.lou--mia2.m2--ideia .m2__braco--direito,.lou--mia2.m2--consola .m2__braco--direito,.lou--mia2.m2--comemora .m2__braco{animation:none}
+  .lou--mia2.m2--aponta .m2__braco--direito .m2__antebraco{animation:m2-aponta 1.3s ease-in-out infinite alternate}
+  .lou--mia2.m2--comemora .m2__vida{animation:m2-pula .75s var(--ease) infinite}
+  .lou--mia2.m2--comemora .m2__antebraco{animation:m2-onda .3s ease-in-out infinite alternate}
+  .lou--mia2.m2--ideia .m2__braco--direito .m2__antebraco{animation:m2-ideia 1.6s ease-in-out infinite alternate}
+  .lou--mia2.m2--espia .m2__vida{animation:tui-espia 7s ease-in-out var(--tui-atraso,0s) infinite}
+  /* ela fala: boca abre e fecha e a cabeça acompanha o ritmo */
+  .dupla__ator.esta-falando .lou--mia2 .m2__fala{opacity:1;animation:m2-boca .26s ease-in-out infinite alternate}
+  .dupla__ator.esta-falando .lou--mia2 .m2__cabeca{animation:m2-nod .7s ease-in-out infinite}
+  /* toque na Mia: ela acena e sorri */
+  .lou--mia2.mia--acena .m2__braco--esquerdo{animation:m2-toque 1.2s ease-in-out 1}
+  .lou--mia2.mia--acena .m2__braco--esquerdo .m2__antebraco{animation:m2-onda .3s ease-in-out 4 alternate}
+  .lou--mia2.mia--acena .m2__cabeca{animation:m2-curiosa 1.2s ease-in-out 1}
+  .lou--mia2.mia--acena .m2__fala{opacity:1;animation:m2-boca .22s ease-in-out 3 alternate}
+  .mia-dancando .lou--mia2 .m2__vida{animation:m2-danca .7s ease-in-out infinite}
+  .mia-dancando .lou--mia2 .m2__braco--esquerdo{animation:none;transform:rotate(166deg)}
+  .mia-dancando .lou--mia2 .m2__braco--direito{animation:none;transform:rotate(-166deg)}
+  /* nas reações curtas ao lado do balão a festa termina sozinha */
+  .dupla .lou--mia2.m2--comemora .m2__vida{animation-iteration-count:3}
+  .dupla .lou--mia2.m2--acena .m2__antebraco{animation-iteration-count:8}
+}
+@keyframes m2-respira{0%,100%{transform:scale(1,1)}50%{transform:scale(1.008,1.014)}}
+@keyframes m2-cabeceia{0%,100%{transform:rotate(0)}30%{transform:rotate(-2.6deg)}65%{transform:rotate(2.2deg)}}
+@keyframes m2-nod{0%,100%{transform:rotate(0) translateY(0)}50%{transform:rotate(1.5deg) translateY(1.5px)}}
+@keyframes m2-curiosa{0%,100%{transform:rotate(0)}35%{transform:rotate(-7deg)}70%{transform:rotate(4deg)}}
+@keyframes m2-tranca{from{transform:rotate(-2.4deg)}to{transform:rotate(2.8deg)}}
+@keyframes m2-braco{0%,100%{transform:rotate(0)}50%{transform:rotate(2.4deg)}}
+@keyframes m2-onda{from{transform:rotate(-20deg)}to{transform:rotate(24deg)}}
+@keyframes m2-aponta{from{transform:rotate(-4deg)}to{transform:rotate(6deg)}}
+@keyframes m2-ideia{from{transform:rotate(-146deg)}to{transform:rotate(-158deg)}}
+@keyframes m2-pula{0%,100%{transform:translateY(0) scale(1,1)}15%{transform:translateY(2px) scale(1.02,.98)}45%{transform:translateY(-9px) scale(.99,1.02)}}
+@keyframes m2-boca{from{opacity:.55;transform:scaleY(.35)}to{opacity:1;transform:scaleY(1)}}
+@keyframes m2-toque{0%,100%{transform:rotate(0)}25%,75%{transform:rotate(158deg)}}
+@keyframes m2-danca{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(-4px,-6px) rotate(-3deg)}50%{transform:translate(0,0)}75%{transform:translate(4px,-6px) rotate(3deg)}}
+/* a Mia nova é de cintura para cima, então o rosto pode ficar maior no mesmo espaço */
+.companheiros{--mia-alto:140px;--dupla-largo:156px}
+body[data-publico=adulto] .companheiros{--mia-alto:126px;--tui-alto:80px;--dupla-largo:140px}
+@media(max-width:480px){.companheiros,body[data-publico] .companheiros{--mia-alto:128px;--tui-alto:80px;--dupla-largo:136px}}

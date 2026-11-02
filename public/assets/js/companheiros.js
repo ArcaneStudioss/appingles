@@ -33,7 +33,7 @@ export function duplaPersonagens({ acao = 'inicio', silencioso = false } = {}) {
   const alegre = ['acerto', 'superacao', 'combo', 'fim'].includes(acao), festa = ['combo', 'fim'].includes(acao);
   const dupla = h('div', { class: 'dupla' + (silencioso ? ' dupla--silenciosa' : ''), dados: { acao }, 'aria-hidden': 'true' });
   const humor = festa ? 'festa' : alegre ? 'feliz' : acao === 'apoio' || acao === 'dica' ? 'pensando' : 'oi';
-  dupla.append(h('div', { class: 'dupla__ator dupla__ator--mia', dados: { personagem: 'mia' } }, lou(humor, { mia: true, tamanho: 132, rotulo: '' })));
+  dupla.append(h('div', { class: 'dupla__ator dupla__ator--mia', dados: { personagem: 'mia' } }, lou(humor, { mia: true, tamanho: 132, rotulo: '', pose: festa || acao === 'superacao' ? 'comemora' : acao === 'acerto' || acao === 'inicio' ? 'acena' : acao === 'dica' ? 'aponta' : acao === 'apoio' ? 'consola' : 'senta' })));
   dupla.append(h('div', { class: 'dupla__ator dupla__ator--tuiuiu', dados: { personagem: 'tuiuiu' } },
     h('span', { class: 'dupla__pousado' }, lou(humor, { tamanho: 96, rotulo: '', pose: festa || acao === 'acerto' || acao === 'superacao' ? 'comemora' : acao === 'apoio' ? 'consola' : acao === 'dica' ? 'aponta' : acao === 'inicio' ? 'acena' : 'senta' })),
     h('span', { class: 'dupla__voador' }, louVoando())));

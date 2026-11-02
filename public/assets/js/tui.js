@@ -100,10 +100,10 @@ export function instalarInteracao({ aoToque } = {}) {
   // os olhos acompanham o dedo ou o mouse, num raio pequeno
   const seguir = () => {
     quadro = 0; if (!alvo) return;
-    for (const s of document.querySelectorAll('.lou--tui:not(.tui--dorme) .tui__pupila')) {
+    for (const s of document.querySelectorAll('.lou--tui:not(.tui--dorme) .tui__pupila, .lou--mia2 .m2__pupila')) {
       const svg = s.ownerSVGElement, r = svg.getBoundingClientRect();
       if (!r.width || r.bottom < 0 || r.top > innerHeight) continue;
-      const dx = alvo.x - (r.left + r.width * 0.62), dy = alvo.y - (r.top + r.height * 0.32), d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 120);
+      const mia = svg.classList.contains('lou--mia2'), dx = alvo.x - (r.left + r.width * (mia ? 0.5 : 0.62)), dy = alvo.y - (r.top + r.height * (mia ? 0.32 : 0.32)), d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 120);
       s.style.setProperty('--ox', `${((dx / d) * 2.6 * k).toFixed(2)}px`);
       s.style.setProperty('--oy', `${((dy / d) * 2.2 * k).toFixed(2)}px`);
     }
