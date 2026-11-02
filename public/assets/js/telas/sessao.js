@@ -19,8 +19,11 @@ export async function telaSessao(el, { ir }) {
     if (passo === 0) {
       palco.append(louFala('oi', h('p', {}, s.podeFazer || s.titulo)), h('h1', {}, s.titulo),
         h('p', {}, 'Primeiro veja os exemplos. Depois pratique; pode pedir ajuda sempre que precisar.'),
-        h('ul', { class: 'vocab vocab--sessao' }, s.vocab.map(v => h('li', {}, h('div', {}, h('strong', { lang: 'en', 'data-traducao': v.pt }, v.en), h('span', {class:'vocab__significado'}, v.pt),
-          h('p', { lang: 'en' }, v.ex || v.en)), botao('Ouvir exemplo', () => falar(v.ex || v.en))))),
+        h('ul', { class: 'vocab vocab--sessao' }, s.vocab.map(v => {
+          const ex = v.ex && v.ex.replace(/[.!?]/g, '').trim().toLowerCase() !== v.en.toLowerCase() ? v.ex : null;
+          return h('li', {}, h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir ' + v.en, on: { click: () => falar(ex || v.en) } }, icone('speaker-high')),
+            h('div', {}, h('strong', { lang: 'en', 'data-traducao': v.pt }, v.en), h('span', { class: 'vocab__significado' }, v.pt), ex ? h('em', { lang: 'en', class: 'vocab__exemplo' }, ex) : null));
+        })),
         h('details', { class: 'folha' }, h('summary', {}, 'Entender melhor'), h('p', {}, s.explicacao), botao('Ouvir explicação', () => falarPt(s.explicacao))), botao('Praticar', avancar));
       return;
     }

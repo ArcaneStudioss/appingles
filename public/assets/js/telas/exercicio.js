@@ -88,7 +88,8 @@ export function exercicio(ex, config) {
       a.nota ? h('p', { class: 'ajuda' }, a.nota) : null,
       a.en ? h('button', { type: 'button', class: 'btn btn-sec btn-peq', on: { click: () => falar(a.en, { velocidade: 0.8 }) } }, icone('speaker-high'), 'Ouvir o modelo') : null));
   }
-  raiz.append(companhia.elemento);
+  // adultos veem o apoio da Mia só depois de responder (o enunciado já orienta); crianças e adolescentes mantêm o acompanhamento
+  if (document.body.dataset.publico !== 'adulto') raiz.append(companhia.elemento);
   // debate: a outra pessoa fala primeiro e o aluno escolhe a melhor resposta
   if (ex.oponente) raiz.insertBefore(h('div', { class: 'oponente' }, h('span', { class: 'oponente__nome' }, ex.oponente.nome), h('p', { class: 'oponente__fala', lang: 'en' }, ex.oponente.fala), h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir ' + ex.oponente.nome, on: { click: () => falar(ex.oponente.fala) } }, icone('speaker-high'))), raiz.firstChild);
 
@@ -131,7 +132,8 @@ export function exercicio(ex, config) {
     const corpo = [h('h3', { class: 'folha-resposta__titulo' }, r.ajuda ? (infantil ? 'Vamos aprender juntos!' : 'Veja a resposta e a explicação') : r.correto ? (pratica ? 'Você conseguiu!' : infantil ? ELOGIOS[Math.floor(Math.random() * ELOGIOS.length)] : 'Resposta correta!') : infantil ? 'Vamos aprender com esta!' : 'Vamos entender a resposta')];
     if (ex.tipo !== 'pares') {
       if (!r.correto && resposta && ex.tipo !== 'fala') corpo.push(h('p', { class: 'resposta-anterior' }, 'Você respondeu: ', h('span', {}, resposta)));
-      corpo.push(h('div', { class: 'resposta-modelo' }, h('p', { class: 'rotulo-pequeno' }, r.correto ? 'Resposta' : 'Resposta correta'),
+      // acertou escolhendo: a opção certa já ficou destacada, então não repete a resposta
+      if (!(r.correto && !r.ajuda && ['escolha', 'escuta'].includes(ex.tipo))) corpo.push(h('div', { class: 'resposta-modelo' }, h('p', { class: 'rotulo-pequeno' }, r.correto ? 'Resposta' : 'Resposta correta'),
         h('p', { class: 'resposta-modelo__texto', lang: r.audioResposta ? 'en' : null, 'data-traducao': r.traducao || null }, r.fraseCompleta || r.esperado),
         r.traducao ? h('p', { class: 'resposta-modelo__pt' }, 'Em português: ', r.traducao) : null));
     } else {
@@ -171,7 +173,7 @@ export function exercicio(ex, config) {
     btnConferir.textContent = rotuloProximo;
     btnConferir.disabled = false;
     // acertou de verdade (sem dica, sem revelar a resposta): o Tuiuiú comemora voando por cima da próxima questão
-    const festejar = r.correto && !r.ajuda && !pratica && !silencioso;
+    const festejar = r.correto && !r.ajuda && !pratica && !silencioso && combo;
     btnConferir.onclick = () => { if (festejar && aoProximo) voarComemorando({ companhia: combo, jeito: combo ? 'pirueta' : undefined }); aoProximo?.(); };
     btnConferir.removeEventListener('click', aoConferir);
     if (!silencioso) requestAnimationFrame(() => { folha.focus({ preventScroll: true }); folha.scrollIntoView({ block: 'start', behavior: 'instant' }); });

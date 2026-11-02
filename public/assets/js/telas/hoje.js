@@ -120,7 +120,7 @@ export async function telaHoje(el, { ir, estado }) {
       const b = e.currentTarget; b.disabled = true;
       try { await api('/sessao', { metodo: 'POST', corpo: { minutos } }); ir('#/sessao'); }
       catch (err) { toast(err.message, { tipo: 'erro' }); b.disabled = false; }
-    } } }, `${minutos} minutos`, minutos === recomendado ? h('small', { class: 'tempo-rec', 'aria-hidden': 'true' }, 'recomendado') : null));
+    } } }, h('span', { 'aria-label': `${minutos} minutos` }, `${minutos} min`), minutos === recomendado ? h('small', { class: 'tempo-rec', 'aria-hidden': 'true' }, 'recomendado') : null));
     const salva=ss.sessao, iniciada=salva&&Object.keys(salva.respondidos).length>0;
     principal.append(h('section', { class: 'folha sessao-convite c-azul' }, h('h2', {}, salva?.concluida ? 'Seu treino de hoje está salvo!' : iniciada ? 'Vamos continuar de onde parou?' : 'Quanto tempo você tem hoje?'), h('p', {}, L?.missao?.podeFazer || 'Exemplos, prática e revisão no seu ritmo.'), h('p', {class:'ajuda'}, 'Pode pedir ajuda e sair quando precisar. O progresso fica salvo.'), salva?.concluida || iniciada ? h('a',{class:'btn btn-bloco',href:'#/sessao'},salva.concluida?'Rever minha sessão':'Continuar minha sessão') : tempos));
   }

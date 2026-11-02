@@ -529,9 +529,16 @@ body[data-papel="professor"] .nav{grid-template-columns:repeat(4,1fr)}
 .vocab{list-style:none;padding:0;margin:0;display:grid;gap:.55rem}
 .vocab li{display:flex;gap:.7rem;align-items:flex-start;padding:.65rem .75rem;border-radius:var(--raio-p);background:var(--cartao);border:2px solid var(--borda)}
 .vocab>li>div,.vocab label{min-width:0;overflow-wrap:break-word}
-.vocab--sessao li{display:grid;gap:.6rem}
-.vocab--sessao .vocab__significado{display:block;color:var(--tinta-2)}
-.vocab--sessao p{margin:.2rem 0 0}
+.vocab--sessao li{align-items:center}
+.vocab--sessao li>div{display:grid;gap:.1rem;min-width:0}
+.vocab--sessao .vocab__significado{color:var(--tinta-2)}
+.vocab--sessao .vocab__exemplo{font-style:normal;color:var(--tinta-2);font-size:.92rem}
+.sessao-palco{display:grid;gap:1rem;align-content:start}
+.sessao-palco>h1{margin:.2rem 0 0}
+.sessao-palco>p{margin:0}
+.sessao-palco details.folha summary{cursor:pointer;font-weight:700}
+.sessao-palco details.folha[open] summary{margin-bottom:.6rem}
+.lou-fala{margin-bottom:.4rem}
 .vocab small{color:var(--tinta-2)}
 .vocab em{display:block;color:var(--tinta-2);font-size:.95rem}
 .vocab--marcavel li{align-items:center}
@@ -1501,7 +1508,9 @@ body[data-publico=adolescente] .companheiros{--salto-dupla:8px}
 
 /* Sessões curtas e personalizações mantêm o azul e a legibilidade. */
 .sessao-convite { border: 2px solid var(--azul, #2f5bea); }
-.sessao-convite .linha-acoes { display:flex; flex-wrap:wrap; gap:12px; }
+.sessao-convite .linha-acoes { display:grid; grid-template-columns:repeat(3,1fr); gap:.6rem; margin-top:.4rem; }
+.sessao-convite .linha-acoes .btn { padding-inline:.4rem; text-align:center; display:grid; place-items:center; align-content:center; min-height:3.4rem }
+.sessao-convite>p{margin:.4rem 0}
 .sessao-palco { width:100%; min-width:0; max-width:720px; margin:auto; }
 .sessao-palco > .btn { margin-block:12px; }
 body[data-cenario="cenario-praca"] .casca { background-image:linear-gradient(180deg,transparent 75%,#a9d7c322); }
@@ -1801,3 +1810,12 @@ body.aba-oculta .dupla *,body.aba-oculta .lou *{animation-play-state:paused!impo
   .chama__palco--marco .chama__onda{animation:chama-onda .9s ease-out both}
 }
 @media (max-height:700px){.chama__palco{width:min(44vw,170px);margin-bottom:.6rem}.chama__total{font-size:4.4rem}.chama__rotulo{margin-bottom:.8rem}.chama__semana{margin-bottom:.8rem}}
+
+/* espaçamento mínimo entre botão e bloco recolhível logo abaixo, e entre cartões vizinhos */
+.btn + details,.btn + .btn-texto{margin-top:.8rem}
+.folha + .folha,.folha + details,details + .folha,details + details{margin-top:.8rem}
+.cultura-equivalente{margin-bottom:.8rem}
+
+/* adultos: o título da resposta já diz o que a Mia diria; fica só o desenho, sem repetir a frase */
+body[data-publico="adulto"] .folha-resposta .companheiros__balao{display:none}
+body[data-publico="adulto"] .folha-resposta .companheiros{justify-content:flex-start;margin-bottom:.2rem}

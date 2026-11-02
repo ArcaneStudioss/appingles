@@ -150,10 +150,10 @@ export async function telaLicao(el, { ir }) {
       barraBotao(status === 'concluida' ? 'Rever a aula' : 'Vamos aprender'));
   }
 
-  function desenharPalavra(tela, { v, b }) {
+  function desenharPalavra(tela, { v, b, vi }) {
     const exemplo = b.exemplos?.find(e => e.en === v.ex);
     tela.append(etapa('explicacao', 'Vamos aprender'),
-      companheirosAula({ texto: infantil ? 'Vamos descobrir uma palavra! Ouça o som, veja o significado e repita com a gente.' : 'Associe o som ao significado. Ouça a palavra e observe como ela aparece no exemplo.' }).elemento,
+      vi === 0 ? companheirosAula({ texto: infantil ? 'Vamos descobrir uma palavra! Ouça o som, veja o significado e repita com a gente.' : 'Associe o som ao significado. Ouça a palavra e observe como ela aparece no exemplo.' }).elemento : null,
       h('section', { class: 'palavra-nova' },
         v.imagem ? h('span', { class: 'palavra-nova__imagem', 'aria-hidden': 'true' }, v.imagem) : lou('oi', { tamanho: 90, rotulo: '' }),
         h('p', { class: 'rotulo-pequeno' }, 'Em inglês'),
