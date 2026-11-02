@@ -1589,7 +1589,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
 
   require('./social').registrar({ db, rota, V, social });
   require('./editorial').registrar({ db, rota, q, V, agoraISO, lerJson, perfilDe, conquistar, transacao });
-  require('./sessoes').registrar({ db, rota, q, V, lerJson, perfilDe, planoDe, nivelamentoDe, competenciasDe, tentativasDe, hojeDe, agoraISO, exigirAcessoCompleto, registrarTentativa, somarMinutos, social, transacao, conquistar });
+  require('./sessoes').registrar({ sequenciaDe, db, rota, q, V, lerJson, perfilDe, planoDe, nivelamentoDe, competenciasDe, tentativasDe, hojeDe, agoraISO, exigirAcessoCompleto, registrarTentativa, somarMinutos, social, transacao, conquistar });
 
   // ---------- turmas (professor e aluno) ----------
   const turmasMod = require('./turmas').registrar({ db, rota, q, V, lerJson, transacao, agoraISO, hojeDe, registrarTentativa, somarMinutos });

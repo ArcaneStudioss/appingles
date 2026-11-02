@@ -30,7 +30,7 @@ function montarSessao({ perfil, plano, competencias, tentativas, minutos, nivel 
     exemplo: missao.exemplos?.[0] || null };
 }
 
-function registrar({ db, rota, q, V, lerJson, perfilDe, planoDe, nivelamentoDe, competenciasDe, tentativasDe, hojeDe, agoraISO, exigirAcessoCompleto, registrarTentativa, somarMinutos, social, transacao, conquistar }) {
+function registrar({ sequenciaDe, db, rota, q, V, lerJson, perfilDe, planoDe, nivelamentoDe, competenciasDe, tentativasDe, hojeDe, agoraISO, exigirAcessoCompleto, registrarTentativa, somarMinutos, social, transacao, conquistar }) {
   const ler = uid => q('SELECT * FROM sessoes_guiadas WHERE user_id=? AND data=?').get(uid, hojeDe(uid));
   const dados = r => lerJson(r.dados, {});
   const cliente = r => {
@@ -95,7 +95,7 @@ function registrar({ db, rota, q, V, lerJson, perfilDe, planoDe, nivelamentoDe, 
       const certas = d.itens.filter(e => respostas[e.id].correto).length;
       // Praticar avança a preparação; demonstrar domínio continua exigindo a tarefa independente da missão.
       if (certas >= Math.ceil(d.itens.length * .6) && POR_ID[d.missao]) q("INSERT INTO competencias(user_id,missao,status,partes) VALUES(?,?,'praticando',1) ON CONFLICT(user_id,missao) DO UPDATE SET partes=MIN(?,partes+1) WHERE status NOT IN ('demonstrado','retido')").run(uid, d.missao, d.totalPartes);
-      return { ok: true, certas, total: d.itens.length, proximo: '#/licao', mensagem: 'Seu treino ficou salvo. A tarefa da missão verifica o que você consegue fazer sem ajuda.' };
+      return { ok: true, certas, total: d.itens.length, proximo: '#/licao', sequencia: sequenciaDe(uid, hojeDe(uid)), mensagem: 'Seu treino ficou salvo. A tarefa da missão verifica o que você consegue fazer sem ajuda.' };
     });
   });
 }

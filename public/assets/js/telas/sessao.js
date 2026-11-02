@@ -1,6 +1,7 @@
 import { api } from '../api.js?v=__V__';
 import { h, falar, falarPt, pararVoz, ocupado, toast, icone } from '../ui.js?v=__V__';
 import { exercicio } from './exercicio.js?v=__V__';
+import { celebrarSequencia } from '../chama.js?v=__V__';
 import { louFala, confete, voarComemorando } from '../diversao.js?v=__V__';
 
 export async function telaSessao(el, { ir }) {
@@ -52,7 +53,9 @@ export async function telaSessao(el, { ir }) {
       h('p', {}, 'Seu XP representa participação. O domínio do inglês é verificado nas tarefas feitas sem ajuda e nos retestes.'),
       s.concluida ? h('a', { class: 'btn', href: '#/progresso' }, 'Ver meu progresso') : botao('Salvar conclusão', async e => {
         const b = e.currentTarget; ocupado(b, true);
-        try { const r = await api('/sessao/concluir', { metodo: 'POST' }); s.concluida = true; if (!r.repetida) { confete(); voarComemorando({ companhia: true, jeito: 'sobe', confetes: false }); } desenhar(); }
+        try { const r = await api('/sessao/concluir', { metodo: 'POST' }); s.concluida = true; if (!r.repetida) { confete(); voarComemorando({ companhia: true, jeito: 'sobe', confetes: false }); }
+          if (!r.repetida && r.sequencia?.estudouHoje) { let nome = ''; try { nome = String((await api('/eu')).usuario?.nome || '').split(' ')[0].slice(0, 20); } catch {} await celebrarSequencia(r.sequencia, { nome }); }
+          desenhar(); }
         catch (err) { toast(err.message, { tipo: 'erro' }); ocupado(b, false); }
       }), h('a', { class: 'btn btn-sec', href: '#/licao' }, 'Continuar a missão'), h('a', { class: 'btn btn-texto', href: '#/hoje' }, 'Voltar para Hoje'));
   }
