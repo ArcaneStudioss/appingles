@@ -24,7 +24,7 @@ export async function telaConversar(el, { ir }) {
     h('ul', { class: 'cenarios' }, [...cenarios].sort((a, b) => (b.recomendado || b.id === pre) - (a.recomendado || a.id === pre)).map((c, k) => {
       const rec = c.recomendado || c.id === pre;
       const b = h('button', { type: 'button', class: `cenario c-${rec ? 'menta' : CORES[k % CORES.length]}` + (rec ? ' cenario--rec' : ''), on: { click: () => iniciar(c.id, b) } },
-        rec ? lou('feliz', { tamanho: 64, rotulo: '' }) : h('span', { class: 'bolha' }, icone(iconeCenario(c.titulo))),
+        rec ? lou('feliz', { tamanho: 64, rotulo: '', pose: 'aponta' }) : h('span', { class: 'bolha' }, icone(iconeCenario(c.titulo))),
         h('span', { class: 'cenario__txt' }, rec ? h('small', {}, 'Sugestão do Tuiuiú: combina com a sua missão') : null, h('strong', {}, c.titulo)));
       return h('li', {}, b);
     })),

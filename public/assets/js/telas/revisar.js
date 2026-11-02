@@ -23,7 +23,7 @@ export async function telaRevisar(el) {
     caixa.replaceChildren(
       h('header', { class: 'cabeca c-sol' }, h('span', { class: 'bolha' }, icone('cards')), h('div', {}, h('h1', {}, 'Revisar'))),
       louFala(feitos ? 'festa' : 'feliz', h('p', {}, feitos ? `${plural(feitos, 'cartão revisado', 'cartões revisados')}. Até a próxima!` : 'Nada para revisar agora. Você está em dia!')),
-      h('div', { class: 'folha vazio' }, h('p', {}, 'Os cartões voltam no dia certo para você não esquecer. Eles nascem das lições, dos seus erros nas conversas e dos seus materiais.'),
+      h('div', { class: 'folha vazio' }, lou(feitos ? 'festa' : 'oi', { tamanho: 84, rotulo: '', pose: feitos ? 'comemora' : 'dorme' }), h('p', {}, 'Os cartões voltam no dia certo para você não esquecer. Eles nascem das lições, dos seus erros nas conversas e dos seus materiais.'),
         h('div', { class: 'linha-acoes' }, h('a', { class: 'btn', href: '#/hoje' }, 'Voltar para hoje'), h('button', { class: 'btn btn-sec', on: { click: novo } }, icone('plus'), 'Criar um cartão'), h('button', { class: 'btn btn-texto', on: { click: gerenciar } }, 'Ver todos os cartões'))));
   }
 

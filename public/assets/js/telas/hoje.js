@@ -4,7 +4,7 @@
 import { chamaMini } from '../chama.js?v=__V__';
 import { api } from '../api.js?v=__V__';
 import { h, icone, dataBR, plural, toast, janela, localStorageGet, localStorageSet } from '../ui.js?v=__V__';
-import { lou, louFala } from '../diversao.js?v=__V__';
+import { lou, louFala, reagirCanto } from '../diversao.js?v=__V__';
 import { configurarLembrete, lembreteDeHoje, jaPassouDaHora } from '../lembrete.js?v=__V__';
 
 const CONQ = { 'primeira-sessao': 'Minha primeira sessão guiada', 'primeiro-passo': 'Primeiro passo dado', 'primeira-licao': 'Primeira lição concluída', 'primeira-conversa': 'Primeira conversa', 'primeira-demonstracao': 'Primeira missão demonstrada', retido: 'Missão mantida depois de dias', 'foco-superado': 'Superou uma dificuldade', 'revisoes-50': '50 revisões', material: 'Estudou com material seu', 'licoes-10': '10 lições', 'dias-3': '3 dias de estudo', 'dias-10': '10 dias de estudo', 'dias-30': '30 dias de estudo', 'dias-60': '60 dias de estudo', radio: 'Primeiro episódio da Rádio Tuiuiú', 'estudo-1': 'Primeiro assunto do estudo sob medida', 'estudo-completo': 'Estudo sob medida completo', 'simulado-1': 'Primeiro simulado', 'treino-1': 'Primeiro treino focado', 'treino-7': '7 treinos focados',
@@ -125,7 +125,9 @@ export async function telaHoje(el, { ir, estado }) {
       catch (err) { toast(err.message, { tipo: 'erro' }); b.disabled = false; }
     } } }, h('span', { 'aria-label': `${minutos} minutos` }, `${minutos} min`), minutos === recomendado ? h('small', { class: 'tempo-rec', 'aria-hidden': 'true' }, 'recomendado') : null));
     const salva=ss.sessao, iniciada=salva&&Object.keys(salva.respondidos).length>0;
-    principal.append(h('section', { class: 'folha sessao-convite c-azul' }, h('h2', {}, salva?.concluida ? 'Seu treino de hoje está salvo!' : iniciada ? 'Vamos continuar de onde parou?' : 'Quanto tempo você tem hoje?'), h('p', {}, L?.missao?.podeFazer || 'Exemplos, prática e revisão no seu ritmo.'), h('p', {class:'ajuda'}, 'Pode pedir ajuda e sair quando precisar. O progresso fica salvo.'), salva?.concluida || iniciada ? h('a',{class:'btn btn-bloco',href:'#/sessao'},salva.concluida?'Rever minha sessão':'Continuar minha sessão') : tempos));
+    const noite = new Date().getHours() >= 17, emRisco = !d.sequencia.estudouHoje && d.sequencia.atual > 0 && noite;
+    const espia = salva?.concluida ? lou('feliz', { tamanho: 84, rotulo: '', pose: 'espia' }) : emRisco ? lou('ops', { tamanho: 84, rotulo: '', pose: 'espia' }) : lou(iniciada ? 'oi' : 'feliz', { tamanho: 90, rotulo: '', pose: 'espia', mia: true });
+    principal.append(h('section', { class: 'folha sessao-convite c-azul' }, h('span', { class: 'espia-topo', 'aria-hidden': 'true' }, espia), h('h2', {}, salva?.concluida ? 'Seu treino de hoje está salvo!' : iniciada ? 'Vamos continuar de onde parou?' : 'Quanto tempo você tem hoje?'), h('p', {}, L?.missao?.podeFazer || 'Exemplos, prática e revisão no seu ritmo.'), h('p', {class:'ajuda'}, 'Pode pedir ajuda e sair quando precisar. O progresso fica salvo.'), salva?.concluida || iniciada ? h('a',{class:'btn btn-bloco',href:'#/sessao'},salva.concluida?'Rever minha sessão':'Continuar minha sessão') : tempos));
   }
 
   if (a.status === 'teste' && a.diasRestantes <= 5) principal.append(h('div', { class: 'aviso-suave' }, icone('info'), h('p', {}, `Seu teste grátis termina em ${plural(a.diasRestantes, 'dia', 'dias')} (${dataBR(a.ate)}). Nada é cobrado sozinho. `, h('a', { href: '#/conta' }, 'Ver planos'))));
@@ -205,6 +207,8 @@ export async function telaHoje(el, { ir, estado }) {
   if (pr.acao === 'assinatura') principal.append(h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, pr.texto, ' ', h('a', { href: '#/conta' }, 'Ver planos'))));
   principal.append(h('a', { class: 'treino-card c-lilas social-convite', href: '#/desafios' }, h('span', { class: 'bolha' }, icone('users-three')), h('span', { class: 'treino-card__txt' }, h('strong', {}, 'Desafios com amigos'), h('small', {}, d.economia ? `${d.economia.xp} XP · ${d.economia.moedas} moedas · metas e figurinhas` : 'Figurinhas, metas em grupo, XP e moedas')), icone('caret-right')));
   if (d.novasConquistas?.length) principal.append(h('p', { class: 'conquista-recente' }, h('span', { class: 'medalha medalha--peq' }, icone('medal')), 'Nova figurinha: ', nomeConquista(d.novasConquistas[0])));
+  // acabou de concluir uma aula: o Tuiuiú do cantinho comemora
+  try { const f = sessionStorage.getItem('inglou:festa'); if (f) { sessionStorage.removeItem('inglou:festa'); setTimeout(() => reagirCanto('festa', f === 'conquista' ? 'Nova figurinha!' : 'Aula concluída!'), 1000); } } catch {}
 
   // A aula e as atividades da turma são os próximos passos. As outras opções aparecem sob demanda.
   const aulaEl = principal.querySelector('.aula'), statusEl = principal.querySelector('.status');

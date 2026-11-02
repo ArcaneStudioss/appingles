@@ -3,6 +3,7 @@ import { api } from '../api.js?v=__V__';
 import { h, icone, falar, falarPt, pararVoz, acompanharFala, botaoOuvir, ocupado, toast, confirmar, temMicrofone, ouvirMicrofone, janela } from '../ui.js?v=__V__';
 import { exercicio } from './exercicio.js?v=__V__';
 import { nomeConquista } from './hoje.js?v=__V__';
+import { mudarPose } from '../tui.js?v=__V__';
 import { celebrarSequencia } from '../chama.js?v=__V__';
 import { lou, louFala, som, confete, botaoSom, pontosFlutuantes, contar, vibrar, voarComemorando } from '../diversao.js?v=__V__';
 import { companheirosAula } from '../companheiros.js?v=__V__';
@@ -48,6 +49,7 @@ export async function telaLicao(el, { ir }) {
     const mascote = topo.querySelector('.trilho__lou');
     mascote.classList.remove('trilho__lou--pula', 'trilho__lou--ops'); void mascote.offsetWidth; mascote.classList.add(certo ? 'trilho__lou--pula' : 'trilho__lou--ops');
     if (certo && xp) pontosFlutuantes(mascote, `+${xp} XP`);
+    const tui = mascote.querySelector('.lou--tui'); if (tui) { mudarPose(tui, certo ? 'comemora' : 'consola', certo ? 900 : 1500); }
     chipCombo.querySelector('b').textContent = String(combo);
     chipCombo.classList.remove('combo--pula'); void chipCombo.offsetWidth; chipCombo.classList.add('combo--pula');
   }
@@ -261,6 +263,7 @@ export async function telaLicao(el, { ir }) {
       try {
         const r = await api('/licao/concluir', { metodo: 'POST' });
         for (const c of r.conquistas || []) toast('Conquista: ' + nomeConquista(c), { tipo: 'ok' });
+        try { sessionStorage.setItem('inglou:festa', r.conquistas?.length ? 'conquista' : 'aula'); } catch {}
         if (r.sequencia?.estudouHoje && !r.repetida) {
           let nome = ''; try { nome = String((await api('/eu')).usuario?.nome || '').split(' ')[0].slice(0, 20); } catch {}
           await celebrarSequencia(r.sequencia, { nome });

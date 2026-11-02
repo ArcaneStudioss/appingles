@@ -19,6 +19,7 @@ export function desenharTui(humor = 'oi', { tamanho = 96, rotulo = 'Tuiuiú, a a
   const alto = espia ? Math.round(tamanho * 0.64) : tamanho;
   const s = el('svg', { viewBox: '0 0 120 120', width: tamanho, height: alto, preserveAspectRatio: espia ? 'xMidYMin slice' : 'xMidYMid meet', class: `lou lou--tui lou--${humor} tui--${pose}`, role: rotulo ? 'img' : 'presentation', ...(rotulo ? { 'aria-label': rotulo } : { 'aria-hidden': 'true' }), focusable: 'false' });
   // cada Tuiuiú pisca e se mexe em ritmo próprio, para vários na tela não ficarem sincronizados
+  s.dataset.pose = pose;
   s.style.setProperty('--tui-atraso', `${-(Math.random() * 6).toFixed(2)}s`);
   const traco = (d, cor, larg, extra = {}) => el('path', { d, stroke: cor, 'stroke-width': larg, 'stroke-linecap': 'round', fill: 'none', ...extra });
 
@@ -119,4 +120,56 @@ export function instalarInteracao({ aoToque } = {}) {
     clearTimeout(p._reage); p._reage = setTimeout(() => p.classList.remove(classe), 1300);
     aoToque?.(p);
   });
+}
+
+// ---------- reações a eventos e personalidade ----------
+// Troca a pose por um tempo (e volta sozinha). Serve para o Tuiuiú da barra de progresso e o do cantinho.
+export function mudarPose(svg, pose, ms = 0) {
+  if (!svg || !POSES.includes(pose)) return;
+  const base = svg.dataset.base || svg.dataset.pose || 'senta';
+  svg.dataset.base = base;
+  for (const p of POSES) svg.classList.remove('tui--' + p);
+  svg.classList.add('tui--' + pose); svg.dataset.pose = pose;
+  clearTimeout(svg._volta);
+  if (ms) svg._volta = setTimeout(() => mudarPose(svg, svg.dataset.base, 0), ms);
+}
+const pular = svg => { svg.classList.remove('tui--reage'); void svg.getBoundingClientRect(); svg.classList.add('tui--reage'); clearTimeout(svg._reage); svg._reage = setTimeout(() => svg.classList.remove('tui--reage'), 1300); };
+const canto = () => document.querySelector('.pouso:not(.pouso--espera) .lou--tui');
+
+// O Tuiuiú do cantinho comemora, consola ou acena e solta uma frase curta
+export function reagirCanto(tipo = 'festa', texto = '') {
+  const svg = canto(); if (!svg || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (svg.dataset.dormindo) acordar();
+  mudarPose(svg, tipo === 'consola' ? 'consola' : tipo === 'acena' ? 'acena' : 'comemora', 2800);
+  pular(svg);
+  if (texto) {
+    const pai = svg.closest('.pouso'); pai.querySelector('.pouso__fala')?.remove();
+    const b = document.createElement('div'); b.className = 'pouso__fala'; b.textContent = texto; pai.append(b);
+    setTimeout(() => b.remove(), 3000);
+  }
+}
+
+// Sem toque por um minuto e meio, o Tuiuiú do cantinho tira uma sonequinha; qualquer toque acorda
+let ultimo = Date.now(), dormindo = false;
+function acordar() {
+  const svg = canto(); ultimo = Date.now();
+  if (!dormindo || !svg) { dormindo = false; return; }
+  dormindo = false; delete svg.dataset.dormindo; mudarPose(svg, svg.dataset.base || 'voa'); pular(svg);
+}
+export function iniciarPersonalidade() {
+  if (iniciarPersonalidade.feito || matchMedia('(prefers-reduced-motion: reduce)').matches) return; iniciarPersonalidade.feito = true;
+  for (const ev of ['pointerdown', 'keydown', 'touchstart']) addEventListener(ev, () => { ultimo = Date.now(); if (dormindo) acordar(); }, { passive: true });
+  setInterval(() => {
+    const svg = canto(); if (!svg || document.hidden) return;
+    if (!dormindo && Date.now() - ultimo > 90000) { dormindo = true; svg.dataset.dormindo = '1'; mudarPose(svg, 'dorme'); }
+  }, 8000);
+  // de vez em quando faz uma gracinha por conta própria: pulinho ou aceno
+  const gracinha = () => {
+    setTimeout(() => {
+      const svg = canto();
+      if (svg && !dormindo && !document.hidden) { if (Math.random() < 0.5) pular(svg); else mudarPose(svg, 'acena', 2200); }
+      gracinha();
+    }, 22000 + Math.random() * 20000);
+  };
+  gracinha();
 }

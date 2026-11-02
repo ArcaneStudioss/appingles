@@ -1,6 +1,6 @@
 // Tuiuiú (o mascote: uma arara-azul), sons sintetizados e confete. Tudo respeita "menos movimento"
 // e a preferência de som deste aparelho. Nada aqui pune o aluno: o erro tem um som suave, não um alarme.
-import { desenharTui, instalarInteracao } from './tui.js?v=__V__';
+import { desenharTui, instalarInteracao, iniciarPersonalidade } from './tui.js?v=__V__';
 import { desenharMia } from './mia.js?v=__V__';
 import { h, icone, localStorageGet, localStorageSet, falarPt, pararVoz, reduzirMovimento } from './ui.js?v=__V__';
 
@@ -304,3 +304,5 @@ export function contar(el, ate, { ms = 900, sufixo = '' } = {}) {
 
 // toque no Tuiuiú ou na Mia: reação visual (CSS) e um som curtinho
 instalarInteracao({ aoToque: () => som('toque') });
+iniciarPersonalidade();
+export { reagirCanto, mudarPose } from './tui.js?v=__V__';

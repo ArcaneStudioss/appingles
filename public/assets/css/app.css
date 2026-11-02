@@ -2018,3 +2018,10 @@ main details>summary:focus-visible{outline:3px solid var(--azul);outline-offset:
 .companheiros{--mia-alto:140px;--dupla-largo:156px}
 body[data-publico=adulto] .companheiros{--mia-alto:126px;--tui-alto:80px;--dupla-largo:140px}
 @media(max-width:480px){.companheiros,body[data-publico] .companheiros{--mia-alto:128px;--tui-alto:80px;--dupla-largo:136px}}
+/* personagens espiando por cima de cartões (Hoje, palavra) e frase curta do Tuiuiú do cantinho */
+.sessao-convite{position:relative;margin-top:2.6rem}
+.espia-topo{position:absolute;right:1.2rem;bottom:calc(100% - 2px);line-height:0;z-index:1}
+.espia-topo .lou{display:block}
+.pouso__fala{position:absolute;right:0;top:calc(100% + 4px);white-space:nowrap;padding:.3rem .7rem;border-radius:14px 4px 14px 14px;background:var(--cartao);border:2px solid var(--borda);box-shadow:0 3px 0 var(--borda);font:800 .8rem/1.2 var(--f-corpo,inherit);color:var(--azul-forte);pointer-events:none}
+@media (prefers-reduced-motion:no-preference){.pouso__fala{animation:fala-pop .35s var(--mola,ease) both}}
+@keyframes fala-pop{from{opacity:0;transform:translateX(10px) scale(.7)}to{opacity:1;transform:none}}
