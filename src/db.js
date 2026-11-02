@@ -448,6 +448,8 @@ function abrir(dir) {
     }
   }
   db.exec('PRAGMA foreign_keys = ON; PRAGMA synchronous = NORMAL;');
+  // cache de 16 MB por conexão (o padrão é 2 MB), temporários em memória e leitura mapeada: menos ida ao disco nas telas mais abertas
+  db.exec('PRAGMA cache_size = -16000; PRAGMA temp_store = MEMORY; PRAGMA mmap_size = 134217728;');
   db.exec('CREATE TABLE IF NOT EXISTS _versao (v INTEGER NOT NULL)');
   const atual = db.prepare('SELECT v FROM _versao').get()?.v ?? 0;
   for (let i = atual; i < MIGRACOES.length; i++) {
@@ -462,6 +464,8 @@ function abrir(dir) {
       db.exec('COMMIT');
     } catch (e) { db.exec('ROLLBACK'); throw e; }
   }
+  // atualiza as estatísticas do planejador quando preciso (barato): os índices novos passam a ser bem escolhidos
+  try { db.exec('PRAGMA optimize'); } catch {}
   return db;
 }
 
