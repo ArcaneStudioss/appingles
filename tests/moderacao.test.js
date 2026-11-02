@@ -19,8 +19,8 @@ function mundo(t) {
 const codigoDe=(db,uid)=>db.prepare('SELECT codigo FROM social_perfis WHERE user_id=?').get(uid).codigo;
 
 test('apelido recusa contato, palavrão disfarçado e lixo, mas aceita nomes comuns',()=>{
- for(const ruim of ['me chama 11999998888','joao@gmail.com','www.site.com','P0rr4','f u c k','c4r4lh0','a','x'.repeat(25),'1199999８８８８','Ana\u200b','p\u200borra','\u202eAna','Аna','Ana 😀'])assert.equal(apelidoPermitido(ruim).ok,false,ruim);
- for(const bom of ['Ana','João Pedro','Mia_Fã','Cassandra','Paulo','Computador','Zoë',"O'Brien"])assert.equal(apelidoPermitido(bom).ok,true,bom);
+ for(const ruim of ['me chama 11999998888','joao@gmail.com','www.site.com','P0rr4','f u c k','c4r4lh0','a','x'.repeat(25),'1199999８８８８','Ana\u200b','p\u200borra','\u202eAna','Аna','Ana 😀','Ana\u0301\u0301\u0301','c.u','c.a.r.a.l.h.o','e s t u p r a d o r','Zoe\u0308\u0323'])assert.equal(apelidoPermitido(ruim).ok,false,ruim);
+ for(const bom of ['Ana','João Pedro','Mia_Fã','Cassandra','Paulo','Computador','Zoë',"O'Brien",'Computador Lima','José Ávila'])assert.equal(apelidoPermitido(bom).ok,true,bom);
 });
 
 test('trocar apelido valida o texto e respeita a trava aplicada pela equipe',t=>{
