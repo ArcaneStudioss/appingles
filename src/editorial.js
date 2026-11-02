@@ -29,6 +29,17 @@ function registrar({ db, rota, q, V, agoraISO, lerJson, perfilDe, conquistar, tr
     q('INSERT INTO relatos_conteudo(user_id,tipo,referencia,motivo,criado_em) VALUES(?,?,?,?,?)').run(ctx.u.id,tipo,referencia,motivo,agoraISO());
     return { ok:true, mensagem:'Relato enviado para revisão. Isso não altera automaticamente o conteúdo.' };
   });
+  // Funil de ativação por semana de cadastro, calculado só com dados que o app já guarda (sem rastreadores).
+  rota('GET', '/admin/funil', ctx => {
+    exigir(ctx);
+    const semanas = q(`SELECT strftime('%Y-%W', u.criado_em) semana, MIN(date(u.criado_em)) desde, COUNT(*) cadastros,
+        SUM(EXISTS(SELECT 1 FROM perfis p WHERE p.user_id = u.id)) perfil,
+        SUM(EXISTS(SELECT 1 FROM licoes l WHERE l.user_id = u.id AND l.concluida_em IS NOT NULL)) primeiraAula,
+        SUM((SELECT COUNT(*) FROM dias_estudo d WHERE d.user_id = u.id) >= 2) voltou,
+        SUM((SELECT COUNT(*) FROM dias_estudo d WHERE d.user_id = u.id AND d.data <= date(u.criado_em, '+7 days')) >= 3) tresDiasEm7
+      FROM usuarios u WHERE u.criado_em >= date('now', '-56 days') GROUP BY semana ORDER BY semana DESC`).all();
+    return { semanas, nota: 'Cada coluna conta pessoas distintas que cadastraram naquela semana. "Voltou" = estudou em 2 dias diferentes; "3 dias em 7" = estudou 3 dias na primeira semana.' };
+  });
   rota('GET', '/admin', ctx => {
     exigir(ctx);
     return { relatos:q('SELECT id,tipo,referencia,motivo,estado,criado_em,parecer FROM relatos_conteudo ORDER BY id DESC LIMIT 200').all(),

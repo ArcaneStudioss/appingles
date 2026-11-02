@@ -87,3 +87,12 @@ export function celebrarSequencia(seq, { nome = '' } = {}) {
     }, 1050);
   });
 }
+
+// Foguinho pequeno para a pílula de sequência e para a semana: aceso balança, apagado fica cinza.
+let seqMini = 0;
+export function chamaMini({ acesa = true } = {}) {
+  const n = ++seqMini;
+  const el = h('span', { class: 'chama-mini' + (acesa ? '' : ' chama-mini--apagada'), 'aria-hidden': 'true' });
+  el.innerHTML = FOGO.replace('class="chama__svg"', 'class="chama-mini__svg"').replaceAll('chama-int', 'cm-int-' + n).replaceAll('chama-ext', 'cm-ext-' + n);
+  return el;
+}
