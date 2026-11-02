@@ -7,6 +7,19 @@ export async function telaEntrar(el, { estado, ir, carregarEu }) {
   const est = await api('/auth/estado');
   if (est.logado) { await carregarEu(); return ir(estado.eu?.perfil?.papel === 'professor' ? '#/professor' : '#/hoje'); }
   const config = est.autenticacao || { disponivel: true };
+  if (config.provedor === 'clerk') {
+    // O acesso é feito na página /entrar/, que é a única a carregar o Clerk.
+    el.append(h('div', { class: 'entrar-envoltorio' },
+      lou('feliz', { tamanho: 88, pose: 'acena' }),
+      h('h1', { class: 'entrar-bilhete' }, 'Seu inglês continua aqui'),
+      h('p', { class: 'ajuda centro' }, 'Entre para continuar seus estudos ou crie seu espaço para aprender.'),
+      h('section', { class: 'entrar folha auth-cartao', 'aria-label': 'Acesso à conta' },
+        config.disponivel
+          ? [h('a', { class: 'btn btn-bloco', href: '/entrar/' }, 'Entrar'), h('a', { class: 'btn btn-sec btn-bloco', href: '/entrar/?modo=cadastro' }, 'Criar conta')]
+          : h('p', { class: 'aviso-suave', role: 'status' }, 'O acesso está temporariamente indisponível. Tente novamente mais tarde.')),
+      h('p', { class: 'ajuda centro' }, '30 dias grátis, sem cartão. ', h('a', { href: '/' }, 'Conhecer o Inglou'))));
+    return;
+  }
   let modo = new URLSearchParams(location.hash.split('?')[1] || '').get('modo') === 'cadastro' ? 'cadastro' : 'entrar';
   let etapa = 'inicio', finalidade = '', emailDigitado = '', emailFluxo = '', senhaMigracao = '', aviso = '', proximoEnvio = 0, timer;
   if (new URLSearchParams(location.hash.split('?')[1] || '').get('google') === 'erro') {

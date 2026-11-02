@@ -433,6 +433,9 @@ END;
    CREATE INDEX IF NOT EXISTS focos_user ON focos(user_id, status);
    CREATE INDEX IF NOT EXISTS amostras_user ON amostras(user_id, em);
    CREATE INDEX IF NOT EXISTS materiais_user ON materiais(user_id, id);`,
+  // 16: sessão do Clerk que originou o acesso e última conferência dela (revogação no Clerk encerra o acesso aqui).
+  `ALTER TABLE sessoes ADD COLUMN clerk_sid TEXT;
+   ALTER TABLE sessoes ADD COLUMN clerk_conferida_em INTEGER NOT NULL DEFAULT 0;`,
 ];
 
 function abrir(dir) {

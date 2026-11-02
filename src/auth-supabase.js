@@ -6,7 +6,7 @@ const { ErroHttp } = require('./http');
 
 function criarSupabase({ env = process.env, fetchImpl = fetch, clienteDe } = {}) {
   const modo = env.AUTH_PROVIDER || 'local';
-  if (!['local', 'supabase'].includes(modo)) throw new Error('AUTH_PROVIDER deve ser local ou supabase.');
+  if (!['local', 'supabase', 'clerk'].includes(modo)) throw new Error('AUTH_PROVIDER deve ser local, supabase ou clerk.');
   const ativo = modo === 'supabase';
   let url;
   try { const u = new URL(env.SUPABASE_URL); if (u.protocol === 'https:' && !u.username && !u.password && u.pathname === '/') url = u.origin; } catch {}

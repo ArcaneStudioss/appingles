@@ -9,7 +9,7 @@ const PUBLICA = path.join(__dirname, '..', 'public');
 const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.txt': 'text/plain; charset=utf-8', '.xml': 'application/xml; charset=utf-8', '.webmanifest': 'application/manifest+json', '.mp3': 'audio/mpeg' };
 
 // LISTA BRANCA de caminhos públicos. Nada fora disto é servido (nem server.js, nem banco, nem .git).
-const PUBLICO = /^\/(?:index\.html|sw\.js|404\.html|favicon\.svg|og-image\.png|robots\.txt|sitemap\.xml|manifest\.webmanifest|app\/index\.html|obrigado\/index\.html|politica-de-privacidade\/index\.html|termos\/index\.html|assets\/(?:css|js|js\/telas|fontes|icones|img|figurinhas)\/[\w.-]+)$/;
+const PUBLICO = /^\/(?:index\.html|sw\.js|404\.html|favicon\.svg|og-image\.png|robots\.txt|sitemap\.xml|manifest\.webmanifest|app\/index\.html|entrar\/index\.html|obrigado\/index\.html|politica-de-privacidade\/index\.html|termos\/index\.html|assets\/(?:css|js|js\/telas|fontes|icones|img|figurinhas)\/[\w.-]+)$/;
 
 // Versão dos arquivos estáticos (para ?v=): hash do conteúdo de assets/, calculado na subida.
 function calcularVersao() {
@@ -31,6 +31,12 @@ function cabecalhos(res) {
   // microfone liberado só para a própria origem (prática de fala opcional)
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(self), geolocation=(), payment=(), usb=()');
   res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; font-src 'self'; media-src 'self' blob:; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'");
+}
+
+// A página /entrar/ é a única que carrega o Clerk; só ela recebe esta política, o resto do site continua estrito.
+function cabecalhosEntrar(res, frontendApi) {
+  const fapi = frontendApi ? 'https://' + frontendApi : '';
+  res.setHeader('Content-Security-Policy', `default-src 'self'; img-src 'self' data: https://img.clerk.com; style-src 'self' 'unsafe-inline'; script-src 'self' ${fapi} https://challenges.cloudflare.com; connect-src 'self' ${fapi}; frame-src https://challenges.cloudflare.com; worker-src blob:; font-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'`);
 }
 
 function json(res, status, obj) {
@@ -140,7 +146,7 @@ function servir(req, res, url) {
   // byte nulo, controle, barra invertida e '..' nunca chegam ao disco (lição do CRM: um %00 derrubava o servidor)
   if (/[\u0000-\u001f\u007f\\]/.test(p) || p.split('/').includes('..') || p.includes('//')) return naoAchou(res);
   if (p === '/') p = '/index.html';
-  else if (/^\/(app|obrigado|politica-de-privacidade|termos)\/?$/.test(p)) {
+  else if (/^\/(app|entrar|obrigado|politica-de-privacidade|termos)\/?$/.test(p)) {
     if (!p.endsWith('/')) { res.statusCode = 301; res.setHeader('Location', p + '/'); return res.end(); }
     p += 'index.html';
   }
@@ -172,4 +178,4 @@ function servir(req, res, url) {
   });
 }
 
-module.exports = { lerCookies, cabecalhos, json, erro, ErroHttp, lerCorpo, definirSessao, limparSessao, tokenDaSessao, ip, servir, naoAchou, VERSAO, seguro };
+module.exports = { lerCookies, cabecalhos, cabecalhosEntrar, json, erro, ErroHttp, lerCorpo, definirSessao, limparSessao, tokenDaSessao, ip, servir, naoAchou, VERSAO, seguro };

@@ -96,6 +96,7 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
     if (r) { toast('Apagado.', { tipo: 'ok' }); if (r.refazerNivelamento) { await carregarEu(); ir('#/nivelamento'); } else render(); }
   }
   async function excluirConta() {
+    if (eu.autenticacao?.provedor === 'clerk') return location.assign('/entrar/?modo=excluir');
     const porCodigo = eu.autenticacao?.provedor === 'supabase';
     if (porCodigo && !await pedirCodigo('excluir')) return;
     const r = await formulario({ titulo: 'Excluir conta', enviar: 'Excluir minha conta', texto: 'Apaga a conta e todos os seus dados de estudo, de vez. Se quiser, exporte seus dados antes.',
@@ -110,6 +111,7 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
     catch (err) { toast(err.message); return false; }
   }
   async function trocarSenha() {
+    if (eu.autenticacao?.provedor === 'clerk') return location.assign('/entrar/?modo=perfil');
     const porCodigo = eu.autenticacao?.provedor === 'supabase';
     if (porCodigo && !await pedirCodigo('senha')) return;
     const r = await formulario({ titulo: porCodigo ? 'Criar ou alterar senha' : 'Alterar senha', campos: [
@@ -167,7 +169,7 @@ export async function telaConta(el, { estado, ir, carregarEu }) {
       h('a', { class: 'btn btn-sec btn-peq', href: '#/conversar' }, 'Conversas'), h('a', { class: 'btn btn-sec btn-peq', href: '#/material' }, 'Materiais'), h('a', { class: 'btn btn-sec btn-peq', href: '#/revisar' }, 'Cartões')),
     jaInstalado() ? null : cartao('seal-check', 'Instalar no celular', 'Ícone do Tuiuiú na tela inicial e abre em tela cheia, como um app.', h('button', { class: 'btn btn-sec btn-peq', on: { click: instalarOuGuiar } }, icone('download-simple'), 'Instalar')),
     cartao('gear', 'Preferências', 'Dia ou noite e velocidade do áudio neste aparelho.', h('button', { class: 'btn btn-sec btn-peq', on: { click: preferencias } }, 'Configurar')),
-    cartao('lock-key', 'Segurança', eu.autenticacao?.provedor === 'supabase' ? 'E-mail confirmado. Crie ou altere sua senha com um código enviado para você, inclusive se entra com Google.' : 'Senha da conta.', h('button', { class: 'btn btn-sec btn-peq', on: { click: trocarSenha } }, eu.autenticacao?.provedor === 'supabase' ? 'Gerenciar senha' : 'Alterar senha')),
+    cartao('lock-key', 'Segurança', eu.autenticacao?.provedor === 'clerk' ? 'E-mail, senha e acessos conectados (como o Google) ficam na sua conta de acesso.' : eu.autenticacao?.provedor === 'supabase' ? 'E-mail confirmado. Crie ou altere sua senha com um código enviado para você, inclusive se entra com Google.' : 'Senha da conta.', h('button', { class: 'btn btn-sec btn-peq', on: { click: trocarSenha } }, eu.autenticacao?.provedor === 'clerk' ? 'Gerenciar conta' : eu.autenticacao?.provedor === 'supabase' ? 'Gerenciar senha' : 'Alterar senha')),
     h('div', { class: 'linha-acoes rodape-conta' },
       h('button', { class: 'btn btn-sec', on: { click: async () => { await api('/auth/sair', { metodo: 'POST' }); estado.eu = null; location.hash = '#/entrar'; } } }, icone('sign-out'), 'Sair'),
       h('button', { class: 'btn btn-perigo', on: { click: excluirConta } }, 'Excluir conta')),

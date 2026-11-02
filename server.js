@@ -7,7 +7,7 @@ const path = require('node:path');
 if (process.env.NODE_ENV !== 'test') {
   try { process.loadEnvFile(path.join(__dirname, '.env')); } catch (e) { if (e.code !== 'ENOENT') throw e; }
 }
-const { cabecalhos, erro, servir, ErroHttp, VERSAO } = require('./src/http');
+const { cabecalhos, cabecalhosEntrar, erro, servir, ErroHttp, VERSAO } = require('./src/http');
 const { abrir } = require('./src/db');
 const { criar } = require('./src/api');
 const { criarBackup } = require('./src/backup-lib');
@@ -25,6 +25,7 @@ const servidor = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://x');
     cabecalhos(res);
+    if (/^\/entrar(?:\/(?:index\.html)?)?$/.test(url.pathname) && api.clerkFrontendApi) cabecalhosEntrar(res, api.clerkFrontendApi);
     if (url.pathname.startsWith('/api/v1/') || url.pathname === '/api/v1') return await api.tratar(req, res, url);
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.statusCode = 405; return res.end(); }
     if (url.pathname === '/saude') { res.setHeader('Content-Type', 'text/plain'); return res.end('ok'); }

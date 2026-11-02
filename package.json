@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.135.0",
+    "@clerk/backend": "3.26.5",
     "@supabase/supabase-js": "2.118.0",
     "stripe": "23.0.1"
   },

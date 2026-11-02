@@ -4,6 +4,15 @@ const auth = require('./auth');
 const { ErroHttp, lerCookies, limparSessao } = require('./http');
 const { transacao } = require('./db');
 
+function validarPerfilCom(V, b) {
+  const nome = V.str(b.nome, 80, { min: 2, campo: 'Nome' }), idade = V.int(b.idade, 1, 120, 'Idade');
+  const papel = V.um(b.papel || 'aluno', ['aluno', 'professor', 'ambos'], 'Perfil');
+  const regiao = b.regiao == null || b.regiao === '' ? null : V.um(b.regiao, ['norte', 'nordeste', 'centro-oeste', 'sudeste', 'sul', 'fora'], 'Região');
+  if (b.consentimento !== true) throw new ErroHttp(422, 'Leia e aceite a política de privacidade para criar a conta.');
+  if (idade < 18 && b.responsavel !== true) throw new ErroHttp(422, 'Confirme a autorização do responsável.');
+  return { nome, idade, papel, regiao, responsavel: b.responsavel === true };
+}
+
 function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limparVozes, conferirExclusao=async()=>{} }) {
   const q = sql => db.prepare(sql), renovacoes = new Map();
   const limpeza = setInterval(() => { try { q('DELETE FROM auth_fluxos WHERE expira_em <= ?').run(Date.now()); } catch {} }, 60000);
@@ -43,14 +52,7 @@ function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limpa
   function limitar(ctx, email, enviar = false) {
     if (!limiteIp.tentar(ctx.ip) || (enviar && !limiteEmail.tentar(email))) throw new ErroHttp(429, 'Muitas tentativas. Aguarde alguns minutos e tente novamente.');
   }
-  function validarPerfil(b) {
-    const nome = V.str(b.nome, 80, { min: 2, campo: 'Nome' }), idade = V.int(b.idade, 1, 120, 'Idade');
-    const papel = V.um(b.papel || 'aluno', ['aluno', 'professor', 'ambos'], 'Perfil');
-    const regiao = b.regiao == null || b.regiao === '' ? null : V.um(b.regiao, ['norte', 'nordeste', 'centro-oeste', 'sudeste', 'sul', 'fora'], 'Região');
-    if (b.consentimento !== true) throw new ErroHttp(422, 'Leia e aceite a política de privacidade para criar a conta.');
-    if (idade < 18 && b.responsavel !== true) throw new ErroHttp(422, 'Confirme a autorização do responsável.');
-    return { nome, idade, papel, regiao, responsavel: b.responsavel === true };
-  }
+  const validarPerfil = b => validarPerfilCom(V, b);
   function validarSenha(senha, pessoa) {
     if (typeof senha !== 'string') throw new ErroHttp(422, 'Informe a senha.');
     const fraca = auth.senhaFraca(senha, pessoa); if (fraca) throw new ErroHttp(422, fraca);
@@ -348,4 +350,4 @@ function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limpa
   });
   return { validarSessao, fechar };
 }
-module.exports = { registrarAuth };
+module.exports = { registrarAuth, validarPerfilCom };

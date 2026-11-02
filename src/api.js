@@ -3,7 +3,8 @@
 const { json, erro, ErroHttp, lerCorpo, definirSessao, limparSessao, tokenDaSessao, ip } = require('./http');
 const auth = require('./auth');
 const { criarSupabase } = require('./auth-supabase');
-const { registrarAuth } = require('./auth-contas');
+const { criarClerk, registrarClerk } = require('./auth-clerk');
+const { registrarAuth, validarPerfilCom } = require('./auth-contas');
 const { json: lerJson, transacao } = require('./db');
 const ia = require('./ia');
 const assin = require('./assinatura');
@@ -72,8 +73,9 @@ const limGeral = auth.limitador({ janelaMs: 60e3, max: 600 });
 const limIa = auth.limitador({ janelaMs: 60e3, max: 20 });
 const emAndamento = new Set();   // trava de clique duplo por usuário+ação
 
-function criar(db, { supabase: supabaseInjetado } = {}) {
+function criar(db, { supabase: supabaseInjetado, clerk: clerkInjetado } = {}) {
   const supabase = supabaseInjetado || criarSupabase();
+  const clerk = clerkInjetado || criarClerk();
   const agoraISO = () => new Date().toISOString();
   const q = (sql) => db.prepare(sql);
   const social = require('./social').criarSocial(db);
@@ -251,15 +253,21 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
   const rotas = [];
   const rota = (metodo, padrao, fn, { publica = false } = {}) => rotas.push({ metodo, re: new RegExp('^' + padrao.replace(/:(\w+)/g, '(?<$1>[^/]+)') + '$'), fn, publica });
 
+  const criarUsuarioExterno = b => {
+    const r = q('INSERT INTO usuarios (email,nome,senha_hash,criado_em,consentiu_em) VALUES (?,?,?,?,?)').run(b.email, b.nome, b.senha_hash, agoraISO(), agoraISO());
+    const uid = Number(r.lastInsertRowid);
+    q('INSERT INTO perfis (user_id,idade,papel,regiao,responsavel_em,atualizado_em) VALUES (?,?,?,?,?,?)').run(uid, b.idade, b.papel, b.regiao, b.idade < 18 ? agoraISO() : null, agoraISO());
+    salvarAssinatura(uid, assin.novaAssinatura(hoje())); return uid;
+  };
   const contasAuth = registrarAuth({ db, provedor: supabase, rota, V, abrirSessao,
     conferirExclusao: uid => pagamento.conferirExclusao(uid),
     limparVozes: uid => vozes.limparUsuario(uid),
-    criarUsuario: b => {
-      const r = q('INSERT INTO usuarios (email,nome,senha_hash,criado_em,consentiu_em) VALUES (?,?,?,?,?)').run(b.email, b.nome, b.senha_hash, agoraISO(), agoraISO());
-      const uid = Number(r.lastInsertRowid);
-      q('INSERT INTO perfis (user_id,idade,papel,regiao,responsavel_em,atualizado_em) VALUES (?,?,?,?,?,?)').run(uid, b.idade, b.papel, b.regiao, b.idade < 18 ? agoraISO() : null, agoraISO());
-      salvarAssinatura(uid, assin.novaAssinatura(hoje())); return uid;
-    },
+    criarUsuario: criarUsuarioExterno,
+  });
+  const clerkAuth = registrarClerk({ db, clerk, rota, abrirSessao, criarUsuario: criarUsuarioExterno,
+    validarPerfil: b => validarPerfilCom(V, b),
+    conferirExclusao: uid => pagamento.conferirExclusao(uid),
+    limparVozes: uid => vozes.limparUsuario(uid),
   });
   // Auth
   rota('POST', '/vozes/sintetizar', async ctx => {
@@ -274,7 +282,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     ctx.res.setHeader('Cache-Control', 'private, no-store'); ctx.res.setHeader('X-Audio-Cache', cache ? 'hit' : 'miss');
     ctx.res.end(audio);
   });
-  rota('GET', '/auth/estado', (ctx) => ({ autenticacao: { provedor: supabase.ativo ? 'supabase' : 'local', disponivel: !supabase.ativo || supabase.disponivel, recuperacao: supabase.ativo && supabase.disponivel, google: supabase.google === true }, logado: !!ctx.u, usuario: ctx.u ? { nome: ctx.u.nome, email: ctx.u.email } : null, ia: ia.ativo() }), { publica: true });
+  rota('GET', '/auth/estado', (ctx) => ({ autenticacao: { provedor: clerk.ativo ? 'clerk' : supabase.ativo ? 'supabase' : 'local', disponivel: clerk.ativo ? clerk.disponivel : !supabase.ativo || supabase.disponivel, recuperacao: supabase.ativo && supabase.disponivel, google: supabase.google === true, ...(clerk.ativo && clerk.disponivel ? { clerk: { chavePublica: clerk.chavePublica, frontendApi: clerk.frontendApi } } : {}) }, logado: !!ctx.u, usuario: ctx.u ? { nome: ctx.u.nome, email: ctx.u.email } : null, ia: ia.ativo() }), { publica: true });
 
   rota('POST', '/auth/cadastro', async (ctx) => {
     if (!limCadastro.tentar(ctx.ip)) throw new ErroHttp(429, 'Muitas tentativas. Tente de novo mais tarde.');
@@ -1634,7 +1642,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
       ctx.corpo = await lerCorpo(req);
     }
     const usuario = usuarioDaSessao(req);
-    ctx.u = achou.publica && caminho !== '/auth/estado' ? usuario : await contasAuth.validarSessao(ctx, usuario);
+    ctx.u = achou.publica && caminho !== '/auth/estado' ? usuario : await (usuario?.auth_provider === 'clerk' ? clerkAuth.validarSessao(ctx, usuario) : contasAuth.validarSessao(ctx, usuario));
     if (!achou.publica && !ctx.u) return erro(res, 401, 'Faça login para continuar.');
     const premiavel = ctx.u && metodo === 'POST' && /\/(responder|concluir)$/.test(caminho);
     const marco = premiavel ? {
@@ -1652,7 +1660,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     if (out !== undefined && !res.writableEnded) json(res, 200, out);
   }
 
-  return { tratar, fechar: () => { vozes.fechar(); contasAuth.fechar(); } };
+  return { tratar, clerkFrontendApi: clerk.frontendApi, fechar: () => { vozes.fechar(); contasAuth.fechar(); } };
 }
 
 module.exports = { criar };
