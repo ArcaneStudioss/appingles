@@ -6,14 +6,17 @@ const PALAVRAS = ['porra', 'caralho', 'puta', 'puto', 'merda', 'bosta', 'cu', 'c
 const RADICAIS = ['caralho', 'buceta', 'estupr', 'pedofil', 'nazist', 'hitler', 'fuck', 'nigg', 'faggot', 'porra', 'merda'];
 const CONTATO = /(https?:|www\.|\.com|\.br\b|@|whats|zap\b|insta|telegram|discord|tiktok|snap|facebook|fb\.|\bt\.me)/i;
 
+const PERMITIDO = /^[\p{Script=Latin}\p{M}\p{Nd} _.'-]+$/u;
 const limpar = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 function apelidoPermitido(texto) {
-  const bruto = String(texto ?? '').trim();
+  // NFKC primeiro: dígitos de largura total, ligaduras e formas compatíveis viram o caractere comum antes de qualquer checagem.
+  const bruto = String(texto ?? '').normalize('NFKC').trim();
   if (bruto.length < 2 || bruto.length > 24) return { ok: false, motivo: 'Use de 2 a 24 caracteres.' };
-  if (/[\u0000-\u001f<>]/.test(bruto)) return { ok: false, motivo: 'Há caracteres não permitidos no apelido.' };
+  // Só letras latinas (com acento), números e poucos sinais: bloqueia invisíveis, bidi, emojis e letras de outros alfabetos que imitam o a, e, o.
+  if (!PERMITIDO.test(bruto)) return { ok: false, motivo: 'Use apenas letras do alfabeto latino, números, espaço, ponto, hífen ou apóstrofo.' };
   const base = limpar(bruto);
-  if (CONTATO.test(base) || (base.match(/\d/g) || []).length >= 5) return { ok: false, motivo: 'Não coloque contato, link ou número de telefone no apelido.' };
+  if (CONTATO.test(base) || (base.match(/\p{Nd}/gu) || []).length >= 5) return { ok: false, motivo: 'Não coloque contato, link ou número de telefone no apelido.' };
   const destrocado = base.replace(/[01345 7@$!]/g, c => TROCAS[c] ?? ' ');
   const palavras = destrocado.split(/[^a-z]+/).filter(Boolean);
   const colado = destrocado.replace(/[^a-z]/g, '');
