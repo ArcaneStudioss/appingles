@@ -113,8 +113,8 @@ img,svg{max-width:100%}
 .btn-sec{--b:var(--cartao);--b-sombra:var(--borda);--b-sobre:var(--azul-forte);outline:2px solid var(--borda);outline-offset:-2px}
 @media (hover:hover){.btn-sec:hover{--b:var(--cartao-2);filter:none}}
 .btn-sec:focus-visible{outline:3px solid var(--azul);outline-offset:3px}
-.btn-texto{background:none;color:var(--azul-forte);padding-inline:.7em;box-shadow:none}
-@media (hover:hover){.btn-texto:hover{background:var(--azul-fundo);filter:none}}
+.btn-texto{background:var(--azul-fundo);color:var(--azul-forte);padding-inline:.9em;box-shadow:none}
+@media (hover:hover){.btn-texto:hover{background:color-mix(in srgb,var(--azul-fundo) 70%,var(--azul) 30%);filter:none}}
 .btn-texto:active{transform:scale(.96);box-shadow:none}
 .btn-perigo{--b:var(--cartao);--b-sombra:color-mix(in srgb,var(--perigo) 35%,var(--borda));--b-sobre:var(--perigo);outline:2px solid color-mix(in srgb,var(--perigo) 35%,var(--borda));outline-offset:-2px}
 .btn-perigo-cheio{--b:var(--perigo);--b-sombra:color-mix(in srgb,var(--perigo) 70%,#000);--b-sobre:#FFF8F7}
@@ -1831,3 +1831,12 @@ body[data-publico="adulto"] .folha-resposta .companheiros{justify-content:flex-s
   .chama-mini .chama__camada{transform-box:fill-box;transform-origin:50% 100%}
 }
 .meta-semana{margin:-.2rem 0 .2rem}
+
+/* Blocos que abrem e fecham (Entender melhor, Outras atividades...) precisam parecer botão: seta, área grande e cor de ação */
+main details>summary{display:flex;align-items:center;gap:.5rem;min-height:44px;cursor:pointer;font-weight:800;color:var(--azul-forte)}
+main details>summary::after{content:"";margin-left:auto;flex:none;width:.55rem;height:.55rem;border:solid currentColor;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translateY(-2px);transition:transform .2s;opacity:.75}
+main details[open]>summary::after{transform:rotate(-135deg) translateY(-1px)}
+main details.folha{padding-block:.35rem}
+main details.folha[open]{padding-bottom:1.1rem}
+main details>summary:focus-visible{outline:3px solid var(--azul);outline-offset:3px;border-radius:10px}
+@media (hover:hover){main details>summary:hover{filter:brightness(1.12)}}
