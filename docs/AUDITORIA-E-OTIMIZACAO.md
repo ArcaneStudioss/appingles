@@ -60,9 +60,12 @@ Medi o que existe: `public/` = 8,4 MB, dos quais **7,6 MB são 527 mp3** do Tuiu
 9. **`api.js` tem 104 KB num arquivo só.** Dividir por domínio (conta, lição, turmas, estudo) ajuda a manutenção e a inicialização.
 10. **SQLite**: `PRAGMA optimize` na subida e um `EXPLAIN QUERY PLAN` nas consultas de Hoje, Treino e Revisar (as mais chamadas). Conferir índices em `tentativas(user_id, em)` e `cartoes(user_id, vence)`.
 11. **Cota de IA**: já existe. Acrescentar cache de respostas idênticas (explicações e frases do treino) para reduzir o custo e a latência.
-12. **Áudio**: se os mp3 forem 128 kbps, reencodar em 48 a 64 kbps mono (voz). Ganho estimado de 50 a 60% (7,6 → ~3 MB), sem perda audível em voz falada.
+12. ~~Áudio~~ **Descartado (02/11/2026):** os mp3 do ElevenLabs já estão em 24 kHz, mono, 48 kbps. Baixar para 40 kbps economiza só 16% e arrisca a qualidade da voz. O peso real está na quantidade de arquivos (527), então o ganho vem de baixar só o que for tocado (já é assim).
 
 ### Animações (orçamento de desempenho)
 - Animar só `transform` e `opacity` (já é a regra do projeto). Evitar `box-shadow` animado em listas longas (a `chama` e a `onda` hoje animam sombra).
 - Pausar animações infinitas fora da tela (`IntersectionObserver` ou `content-visibility:auto` nos cartões do álbum).
 - Meta de medição: Lighthouse mobile com LCP < 2,0 s e TBT < 100 ms numa rede 4G lenta; repetir depois de cada fase.
+
+## 4. Lighthouse mobile (02/11/2026, tela de entrada)
+Acessibilidade 100, Boas práticas 100, Agentic 100, SEO 63. O único ponto de SEO é o `noindex` do `/app/`, que é intencional (a página pública é a `index.html`).
