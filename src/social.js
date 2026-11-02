@@ -3,6 +3,7 @@ const { randomBytes, randomInt } = require('node:crypto');
 const { ErroHttp } = require('./http');
 const { transacao } = require('./db');
 const auth = require('./auth');
+const { apelidoPermitido } = require('./motor/apelido');
 const DIA = 864e5, PRAZO = 3 * DIA;
 const CARTAS = {
  'bem-vindo': ['Passaporte para o mundo', '🌎'],
@@ -27,7 +28,7 @@ function criarSocial(db, { agora = () => new Date(), sortear = randomInt } = {})
   if(!p) {
    const nome=q('SELECT nome FROM usuarios WHERE id=?').get(uid)?.nome;
    if(!nome) throw new ErroHttp(404,'Pessoa não encontrada.');
-   q('INSERT OR IGNORE INTO social_perfis(user_id,codigo,apelido) VALUES(?,?,?)').run(uid,'ING-'+randomBytes(6).toString('hex').toUpperCase(),nome.trim().split(/\s+/)[0].slice(0,24)||'Aprendiz');
+   q('INSERT OR IGNORE INTO social_perfis(user_id,codigo,apelido) VALUES(?,?,?)').run(uid,'ING-'+randomBytes(6).toString('hex').toUpperCase(),(apelidoPermitido(nome.trim().split(/\s+/)[0].slice(0,24)).apelido)||'Aprendiz');
    p=q('SELECT * FROM social_perfis WHERE user_id=?').get(uid);
   }
   q('INSERT OR IGNORE INTO colecao_figurinhas(user_id,modelo,origem_chave,criada_em) VALUES(?,?,?,?)').run(uid,'bem-vindo','boas-vindas:'+q('SELECT identidade FROM social_identidades WHERE user_id=?').get(uid).identidade,iso());
@@ -93,7 +94,7 @@ function criarSocial(db, { agora = () => new Date(), sortear = randomInt } = {})
  function painel(uid) {return transacao(db,()=>{
   atualizar(uid);const eu=perfil(uid);
   const ligacoes=q('SELECT * FROM amizades WHERE de=? OR para=? ORDER BY em DESC').all(uid,uid);
-  return {eu:{...eu,podeTrocar:adulto(uid),cenario:q('SELECT cenario FROM social_perfis WHERE user_id=?').get(uid)?.cenario||'padrao'},saldo:saldo(uid),xp:xp(uid),nivel:1+Math.floor(xp(uid)/100),pocaoAte:q('SELECT ate FROM xp_efeitos WHERE user_id=? AND ate>?').get(uid,iso())?.ate||null,inventario:Object.fromEntries(q('SELECT produto,quantidade FROM loja_inventario WHERE user_id=?').all(uid).map(i=>[i.produto,i.quantidade])),raridades:RARIDADES,regras:REGRAS,colecao:colecao(uid),amigos:ligacoes.filter(a=>a.estado==='aceita').map(a=>pessoa(a.de===uid?a.para:a.de)),pedidos:ligacoes.filter(a=>a.estado==='pendente').map(a=>({...pessoa(a.de===uid?a.para:a.de),recebido:a.para===uid})),duelos:q('SELECT * FROM duelos WHERE criador=? OR convidado=? ORDER BY id DESC LIMIT 100').all(uid,uid).map(d=>dueloPublico(d,uid)),grupos:q("SELECT g.* FROM grupos_desafio g JOIN grupos_membros m ON m.grupo_id=g.id WHERE m.user_id=? AND m.estado<>'recusado' ORDER BY g.id DESC LIMIT 100").all(uid).map(g=>grupoPublico(g,uid)),extrato:q('SELECT id,quantidade,motivo,em FROM moedas_extrato WHERE user_id=? ORDER BY id DESC LIMIT 50').all(uid),loja:{disponivel:true,produtos:PRODUTOS}};
+  return {eu:{...eu,podeTrocar:adulto(uid),podeBuscar:adulto(uid),buscaNome:!!q('SELECT busca_nome FROM social_perfis WHERE user_id=?').get(uid)?.busca_nome,cenario:q('SELECT cenario FROM social_perfis WHERE user_id=?').get(uid)?.cenario||'padrao'},saldo:saldo(uid),xp:xp(uid),nivel:1+Math.floor(xp(uid)/100),pocaoAte:q('SELECT ate FROM xp_efeitos WHERE user_id=? AND ate>?').get(uid,iso())?.ate||null,inventario:Object.fromEntries(q('SELECT produto,quantidade FROM loja_inventario WHERE user_id=?').all(uid).map(i=>[i.produto,i.quantidade])),raridades:RARIDADES,regras:REGRAS,colecao:colecao(uid),amigos:ligacoes.filter(a=>a.estado==='aceita').map(a=>pessoa(a.de===uid?a.para:a.de)),pedidos:ligacoes.filter(a=>a.estado==='pendente').map(a=>({...pessoa(a.de===uid?a.para:a.de),recebido:a.para===uid})),duelos:q('SELECT * FROM duelos WHERE criador=? OR convidado=? ORDER BY id DESC LIMIT 100').all(uid,uid).map(d=>dueloPublico(d,uid)),grupos:q("SELECT g.* FROM grupos_desafio g JOIN grupos_membros m ON m.grupo_id=g.id WHERE m.user_id=? AND m.estado<>'recusado' ORDER BY g.id DESC LIMIT 100").all(uid).map(g=>grupoPublico(g,uid)),extrato:q('SELECT id,quantidade,motivo,em FROM moedas_extrato WHERE user_id=? ORDER BY id DESC LIMIT 50').all(uid),loja:{disponivel:true,produtos:PRODUTOS}};
  });}
  function executar(uid,fn) {return transacao(db,()=>{atualizar(uid);return fn();});}
  function pedir(uid,codigo) {return executar(uid,()=>{
@@ -103,6 +104,36 @@ function criarSocial(db, { agora = () => new Date(), sortear = randomInt } = {})
   if(q('SELECT 1 FROM amizades WHERE (de=? AND para=?) OR (de=? AND para=?)').get(uid,p.user_id,p.user_id,uid))throw new ErroHttp(409,'Essa amizade já existe ou aguarda resposta.');
   q("INSERT INTO amizades(de,para,estado,em) VALUES(?,?,'pendente',?)").run(uid,p.user_id,iso());return {ok:true};
  });}
+
+ const DENUNCIA_MOTIVOS=['apelido','comportamento','contato','outro'];
+ function trocarApelido(uid,texto) {
+  perfil(uid);
+  if(q('SELECT apelido_travado t FROM social_perfis WHERE user_id=?').get(uid).t)throw new ErroHttp(403,'Seu apelido foi ajustado pela equipe. Fale com o suporte para trocar.');
+  const r=apelidoPermitido(texto);if(!r.ok)throw new ErroHttp(422,r.motivo);
+  q('UPDATE social_perfis SET apelido=? WHERE user_id=?').run(r.apelido,uid);return {ok:true};
+ }
+ function denunciar(uid,outro,motivo,detalhe,bloquear) {executar(uid,()=>{
+  if(uid===outro||!q('SELECT 1 FROM usuarios WHERE id=?').get(outro))throw new ErroHttp(404,'Pessoa não encontrada.');
+  const conhece=q('SELECT 1 FROM amizades WHERE (de=? AND para=?) OR (de=? AND para=?)').get(uid,outro,outro,uid)||q('SELECT 1 FROM social_bloqueios WHERE user_id=? AND bloqueado_id=?').get(uid,outro);
+  if(!conhece)throw new ErroHttp(404,'Pessoa não encontrada.');
+  if(!q("SELECT 1 FROM denuncias_social WHERE denunciante_id=? AND denunciado_id=? AND estado='pendente'").get(uid,outro))
+   q('INSERT INTO denuncias_social(denunciante_id,denunciado_id,motivo,detalhe,criado_em) VALUES(?,?,?,?,?)').run(uid,outro,motivo,detalhe||null,iso());
+  });
+  if(bloquear)remover(uid,outro,true);
+  return {ok:true};
+ }
+ function definirBusca(uid,ligado) {
+  perfil(uid);if(ligado&&!adulto(uid))throw new ErroHttp(403,'A busca por nome é exclusiva para maiores de 18 anos. Use o código de amizade.');
+  q('UPDATE social_perfis SET busca_nome=? WHERE user_id=?').run(ligado?1:0,uid);return {ok:true};
+ }
+ // Só adultos buscam e só adultos que ativaram "aparecer na busca" são achados. Prefixo, até 10 resultados.
+ function buscar(uid,texto) {
+  perfil(uid);if(!adulto(uid))throw new ErroHttp(403,'A busca por nome é exclusiva para maiores de 18 anos. Use o código de amizade.');
+  const t=String(texto||'').trim();if(t.length<3)throw new ErroHttp(422,'Digite ao menos 3 letras.');
+  const like=t.replace(/[\\%_]/g,m=>'\\'+m)+'%';
+  const rs=q("SELECT user_id,codigo,apelido FROM social_perfis WHERE busca_nome=1 AND apelido_travado=0 AND user_id<>? AND apelido LIKE ? ESCAPE '\\' COLLATE NOCASE ORDER BY apelido LIMIT 50").all(uid,like);
+  return {resultados:rs.filter(r=>adulto(r.user_id)&&!bloqueado(uid,r.user_id)&&!q('SELECT 1 FROM amizades WHERE (de=? AND para=?) OR (de=? AND para=?)').get(uid,r.user_id,r.user_id,uid)).slice(0,10).map(r=>({apelido:r.apelido,codigo:r.codigo}))};
+ }
  function responderAmizade(uid,outro,aceitar) {return executar(uid,()=>{
   if(bloqueado(uid,outro))throw new ErroHttp(404,'Pedido não encontrado.');
   const r=aceitar?q("UPDATE amizades SET estado='aceita' WHERE de=? AND para=? AND estado='pendente'").run(outro,uid):q("DELETE FROM amizades WHERE de=? AND para=? AND estado='pendente'").run(outro,uid);
@@ -200,7 +231,7 @@ function criarSocial(db, { agora = () => new Date(), sortear = randomInt } = {})
   }
   q('INSERT INTO loja_compras(user_id,chave,produto,resultado,em) VALUES(?,?,?,?,?)').run(uid,chave,operacao,JSON.stringify(resultado),iso());return resultado;
  });}
- return {saldo,xp,creditoXp,compra,consumir,perfil,painel,pedir,responderAmizade,remover,colecao,exigirAmigo,novoDuelo,escolher,confirmar,cancelarDuelo,novoGrupo,grupoAcao,apagar,exportar,atualizar,contar};
+ return {saldo,xp,creditoXp,compra,consumir,perfil,painel,pedir,trocarApelido,denunciar,definirBusca,buscar,responderAmizade,remover,colecao,exigirAmigo,novoDuelo,escolher,confirmar,cancelarDuelo,novoGrupo,grupoAcao,apagar,exportar,atualizar,contar};
 }
 function registrar({db,rota,V,social}) {
  const limite=auth.limitadorBanco(db,'social-convites',{janelaMs:15*60e3,max:30});
@@ -209,7 +240,13 @@ function registrar({db,rota,V,social}) {
  rota('POST','/social/loja/comprar',ctx=>social.compra(ctx.u.id,V.um(ctx.corpo.produto,PRODUTOS.map(p=>p.id),'Produto'),chave(ctx)));
  rota('POST','/social/loja/usar',ctx=>social.consumir(ctx.u.id,V.um(ctx.corpo.produto,PRODUTOS.map(p=>p.id),'Produto'),chave(ctx)));
  rota('GET','/social',ctx=>social.painel(ctx.u.id));
- rota('PUT','/social/perfil',ctx=>{const apelido=V.str(ctx.corpo.apelido,24,{min:2,campo:'Apelido'});social.perfil(ctx.u.id);db.prepare('UPDATE social_perfis SET apelido=? WHERE user_id=?').run(apelido,ctx.u.id);return {ok:true};});
+ rota('PUT','/social/perfil',ctx=>social.trocarApelido(ctx.u.id,V.str(ctx.corpo.apelido,24,{min:2,campo:'Apelido'})));
+ const limiteBusca=auth.limitadorBanco(db,'social-busca',{janelaMs:15*60e3,max:30});
+ const limiteDenuncia=auth.limitadorBanco(db,'social-denuncia',{janelaMs:24*3600e3,max:10});
+ rota('PUT','/social/busca',ctx=>social.definirBusca(ctx.u.id,ctx.corpo.ligado===true));
+ rota('POST','/social/buscar',ctx=>{if(!limiteBusca.tentar('u'+ctx.u.id))throw new ErroHttp(429,'Muitas buscas. Tente novamente mais tarde.');return social.buscar(ctx.u.id,ctx.corpo.nome);});
+ rota('POST','/social/denunciar',ctx=>{if(!limiteDenuncia.tentar('u'+ctx.u.id))throw new ErroHttp(429,'Você já enviou muitas denúncias hoje. Nossa equipe vai analisar.');
+  return social.denunciar(ctx.u.id,V.id(ctx.corpo.pessoaId),V.um(ctx.corpo.motivo,['apelido','comportamento','contato','outro'],'Motivo'),ctx.corpo.detalhe?V.str(ctx.corpo.detalhe,500,{min:1,campo:'Detalhes'}):null,ctx.corpo.bloquear===true);});
  rota('POST','/social/amigos',ctx=>{limitar(ctx);return social.pedir(ctx.u.id,V.str(ctx.corpo.codigo,30,{min:1,campo:'Código'}).toUpperCase());});
  rota('POST','/social/amigos/:id/responder',ctx=>social.responderAmizade(ctx.u.id,V.id(ctx.params.id),V.um(ctx.corpo.acao,['aceitar','recusar'],'Resposta')==='aceitar'));
  rota('DELETE','/social/amigos/:id',ctx=>social.remover(ctx.u.id,V.id(ctx.params.id),ctx.corpo.bloquear===true));

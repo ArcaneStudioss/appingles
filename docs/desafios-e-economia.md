@@ -4,7 +4,9 @@ Regras atualizadas em 22/10/2026. Implementação em `src/social.js`, migração
 
 ## Participar
 
-Amizades usam códigos aleatórios e aceite. Não há busca pública por e-mail, idade ou nome. O amigo vê apelido, coleção e placares compartilhados; não vê respostas ou estudo privado. Há bloqueio e limites de convite.
+Amizades usam códigos aleatórios e aceite. Não há busca por e-mail ou idade. **Busca por nome (migração 15):** só maiores de 18 anos buscam, e só aparece quem ativou "aparecer na busca" (desligado por padrão). Busca por prefixo do apelido, mínimo 3 letras, 10 resultados, 30 buscas a cada 15 minutos; o resultado mostra apenas apelido e usa o mesmo pedido por código (com aceite). Menores nunca aparecem e continuam só com o código.
+
+**Moderação:** o apelido passa por filtro (contato externo, links, telefone, palavrões e disfarces simples). Qualquer pessoa pode denunciar contatos (apelido, comportamento, contato externo, outro), com bloqueio opcional; limite de 10 por dia e uma denúncia aberta por par. A equipe (`INGLOU_ADMIN_IDS`) decide em `#/admin`: arquivar, ou trocar o apelido para "Aprendiz" e travá-lo. A denúncia some com a conta de quem a fez. O amigo vê apelido, coleção e placares compartilhados; não vê respostas ou estudo privado. Há bloqueio e limites de convite.
 
 O desafio dura 2, 7 ou 30 dias e começa depois do aceite do convidado e da confirmação do criador. Escolha pontuação por exercícios (até 20 por dia UTC) ou por constância (dias com ao menos um exercício elegível). Somente eventos posteriores ao início e anteriores ao término contam. A poção não altera placares.
 

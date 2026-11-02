@@ -400,6 +400,20 @@ END;
     user_id INTEGER PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
     token TEXT NOT NULL, ate INTEGER NOT NULL
   );`,
+  `
+  CREATE TABLE denuncias_social (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    denunciante_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    denunciado_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    motivo TEXT NOT NULL, detalhe TEXT,
+    estado TEXT NOT NULL DEFAULT 'pendente' CHECK(estado IN ('pendente','arquivada','apelido_trocado')),
+    parecer TEXT, criado_em TEXT NOT NULL, revisado_em TEXT, revisor_id INTEGER,
+    CHECK(denunciante_id <> denunciado_id)
+  );
+  CREATE INDEX denuncias_social_estado ON denuncias_social(estado, id);
+  CREATE UNIQUE INDEX denuncias_social_aberta ON denuncias_social(denunciante_id, denunciado_id) WHERE estado = 'pendente';
+  ALTER TABLE social_perfis ADD COLUMN apelido_travado INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE social_perfis ADD COLUMN busca_nome INTEGER NOT NULL DEFAULT 0;`,
 ];
 
 function abrir(dir) {

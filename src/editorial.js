@@ -42,7 +42,8 @@ function registrar({ db, rota, q, V, agoraISO, lerJson, perfilDe, conquistar, tr
   });
   rota('GET', '/admin', ctx => {
     exigir(ctx);
-    return { relatos:q('SELECT id,tipo,referencia,motivo,estado,criado_em,parecer FROM relatos_conteudo ORDER BY id DESC LIMIT 200').all(),
+    return { denuncias:q("SELECT d.id,d.motivo,d.detalhe,d.estado,d.parecer,d.criado_em,d.denunciado_id,(SELECT apelido FROM social_perfis WHERE user_id=d.denunciado_id) apelido,(SELECT COUNT(*) FROM denuncias_social x WHERE x.denunciado_id=d.denunciado_id) total FROM denuncias_social d ORDER BY (d.estado='pendente') DESC, d.id DESC LIMIT 200").all(),
+      relatos:q('SELECT id,tipo,referencia,motivo,estado,criado_em,parecer FROM relatos_conteudo ORDER BY id DESC LIMIT 200').all(),
       cultura: EXPRESSOES.map(e => culturaRevisada(db,e)),
       metricas: {
         contas:q('SELECT COUNT(*) n FROM usuarios').get().n,
@@ -55,6 +56,15 @@ function registrar({ db, rota, q, V, agoraISO, lerJson, perfilDe, conquistar, tr
         voz:q('SELECT dia,SUM(caracteres) caracteres FROM uso_voz GROUP BY dia ORDER BY dia DESC LIMIT 30').all(),
         diagnosticos:q('SELECT tipo,codigo,COUNT(*) total,ROUND(AVG(duracao_ms)) media_ms FROM diagnosticos GROUP BY tipo,codigo').all(),
       } };
+  });
+  rota('POST', '/admin/denuncias/:id', ctx => {
+    exigir(ctx);
+    const acao=V.um(ctx.corpo.acao,['arquivar','trocar_apelido'],'Decisão'),parecer=V.str(ctx.corpo.parecer,600,{min:5,campo:'Parecer'});
+    const d=q('SELECT * FROM denuncias_social WHERE id=?').get(V.id(ctx.params.id));
+    if(!d)throw new ErroHttp(404,'Denúncia não encontrada.');
+    if(acao==='trocar_apelido')q("UPDATE social_perfis SET apelido='Aprendiz',apelido_travado=1,busca_nome=0 WHERE user_id=?").run(d.denunciado_id);
+    q("UPDATE denuncias_social SET estado=?,parecer=?,revisado_em=?,revisor_id=? WHERE denunciado_id=? AND estado='pendente' AND (id=? OR ?)").run(acao==='arquivar'?'arquivada':'apelido_trocado',parecer,agoraISO(),ctx.u.id,d.denunciado_id,d.id,acao==='trocar_apelido'?1:0);
+    return {ok:true};
   });
   rota('POST', '/admin/relatos/:id', ctx => {
     exigir(ctx);
