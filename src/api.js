@@ -289,7 +289,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     if (fraca) throw new ErroHttp(422, fraca);
     if (b.consentimento !== true) throw new ErroHttp(422, 'Para criar a conta, é preciso concordar com a política de privacidade.');
     const h = hoje();
-    const hash = auth.hashSenha(b.senha);
+    const hash = await auth.hashSenhaAsync(b.senha);
     let uid;
     try {
       uid = transacao(db, () => {
@@ -313,7 +313,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     const email = b.email.trim().toLowerCase();
     if (!limLoginIp.tentar(ctx.ip) || !limLoginConta.tentar(email)) throw new ErroHttp(429, 'Muitas tentativas. Aguarde alguns minutos e tente de novo.');
     const u = q('SELECT id, senha_hash FROM usuarios WHERE email = ?').get(email);
-    const ok = auth.conferirSenha(b.senha, u ? u.senha_hash : auth.HASH_FALSO) && !!u;
+    const ok = await auth.conferirSenhaAsync(b.senha, u ? u.senha_hash : auth.HASH_FALSO) && !!u;
     if (!ok) throw new ErroHttp(401, 'E-mail ou senha incorretos.');
     limLoginConta.limpar(email);
     abrirSessao(ctx.req, ctx.res, u.id);
@@ -326,14 +326,14 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     return { ok: true };
   }, { publica: true });
 
-  rota('POST', '/auth/senha', (ctx) => {
+  rota('POST', '/auth/senha', async (ctx) => {
     const b = ctx.corpo;
     const u = q('SELECT senha_hash, nome, email FROM usuarios WHERE id = ?').get(ctx.u.id);
-    if (typeof b.atual !== 'string' || !auth.conferirSenha(b.atual, u.senha_hash)) throw new ErroHttp(401, 'Senha atual incorreta.');
+    if (typeof b.atual !== 'string' || !await auth.conferirSenhaAsync(b.atual, u.senha_hash)) throw new ErroHttp(401, 'Senha atual incorreta.');
     if (typeof b.nova !== 'string') throw new ErroHttp(422, 'Senha inválida.');
     const fraca = auth.senhaFraca(b.nova, u);
     if (fraca) throw new ErroHttp(422, fraca);
-    q('UPDATE usuarios SET senha_hash = ? WHERE id = ?').run(auth.hashSenha(b.nova), ctx.u.id);
+    q('UPDATE usuarios SET senha_hash = ? WHERE id = ?').run(await auth.hashSenhaAsync(b.nova), ctx.u.id);
     q('DELETE FROM sessoes WHERE user_id = ? AND id_hash <> ?').run(ctx.u.id, ctx.u.tokenHash);   // derruba as outras sessões
     return { ok: true };
   });
@@ -1563,7 +1563,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
   rota('POST', '/conta/excluir', async (ctx) => {
     const uid = ctx.u.id;
     const u = q('SELECT senha_hash FROM usuarios WHERE id = ?').get(uid);
-    if (typeof ctx.corpo.senha !== 'string' || !auth.conferirSenha(ctx.corpo.senha, u.senha_hash)) throw new ErroHttp(401, 'Senha incorreta.');
+    if (typeof ctx.corpo.senha !== 'string' || !await auth.conferirSenhaAsync(ctx.corpo.senha, u.senha_hash)) throw new ErroHttp(401, 'Senha incorreta.');
     await vozes.limparUsuario(uid);
     q('DELETE FROM usuarios WHERE id = ?').run(uid);   // ON DELETE CASCADE apaga todo o resto
     limparSessao(ctx.req, ctx.res);

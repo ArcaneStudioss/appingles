@@ -152,7 +152,7 @@ function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limpa
       limitar(ctx, f.email);
       if (!limiteCredenciais.tentar(f.email)) throw new ErroHttp(429, 'Muitas tentativas. Aguarde alguns minutos.');
       const u = q('SELECT * FROM usuarios WHERE id = ?').get(f.conteudo.uid);
-      if (!u || u.auth_provider !== 'local' || u.email !== f.email || typeof ctx.corpo.senha !== 'string' || ctx.corpo.senha.length > 200 || !auth.conferirSenha(ctx.corpo.senha, u.senha_hash)) throw new ErroHttp(401, 'Senha atual incorreta. Você também pode voltar e recuperar sua senha.');
+      if (!u || u.auth_provider !== 'local' || u.email !== f.email || typeof ctx.corpo.senha !== 'string' || ctx.corpo.senha.length > 200 || !await auth.conferirSenhaAsync(ctx.corpo.senha, u.senha_hash)) throw new ErroHttp(401, 'Senha atual incorreta. Você também pode voltar e recuperar sua senha.');
       const remoto = await provedor.identidade(f.conteudo.tokens);
       if (!remoto.google || remoto.id !== f.conteudo.usuario.id || remoto.email !== f.email) throw new ErroHttp(401, 'Confirme o Google novamente.');
       const tokens = await provedor.alterarSenha(f.conteudo.tokens, ctx.corpo.senha, { permitirAtual: true });
@@ -184,7 +184,7 @@ function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limpa
     const u = q('SELECT * FROM usuarios WHERE email = ?').get(email);
     // Uma conta antiga só é migrada depois de provar a senha antiga E receber o código no e-mail.
     if (u?.auth_provider === 'local') {
-      if (!auth.conferirSenha(b.senha, u.senha_hash)) throw new ErroHttp(401, 'E-mail ou senha incorretos.');
+      if (!await auth.conferirSenhaAsync(b.senha, u.senha_hash)) throw new ErroHttp(401, 'E-mail ou senha incorretos.');
       limiteCredenciais.limpar(email); limitar(ctx, email, true); await provedor.enviarCodigo(email, true);
       return novoFluxo(ctx, 'migrar', email, { uid: u.id });
     }
@@ -228,7 +228,7 @@ function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limpa
       let antigo;
       if (f.finalidade === 'migrar') {
         antigo = q('SELECT * FROM usuarios WHERE id = ?').get(f.conteudo.uid);
-        if (!antigo || typeof ctx.corpo.senha !== 'string' || !auth.conferirSenha(ctx.corpo.senha, antigo.senha_hash)) throw new ErroHttp(401, 'Confirme a senha que você já usa no Inglou.');
+        if (!antigo || typeof ctx.corpo.senha !== 'string' || !await auth.conferirSenhaAsync(ctx.corpo.senha, antigo.senha_hash)) throw new ErroHttp(401, 'Confirme a senha que você já usa no Inglou.');
       }
       q('UPDATE auth_fluxos SET tentativas = tentativas + 1 WHERE id_hash = ?').run(f.id_hash);
       let resultado = await provedor.confirmar(f.email, ctx.corpo.codigo, f.finalidade === 'cadastro' ? f.conteudo.tipo || 'signup' : 'email');
@@ -336,7 +336,7 @@ function registrarAuth({ db, provedor, rota, V, abrirSessao, criarUsuario, limpa
     const u = q('SELECT * FROM usuarios WHERE id = ?').get(ctx.u.id);
     if (u.auth_provider === 'supabase') {
       await reautenticar(ctx, u, 'excluir', ctx.corpo.senha);
-    } else if (typeof ctx.corpo.senha !== 'string' || ctx.corpo.senha.length > 200 || !auth.conferirSenha(ctx.corpo.senha, u.senha_hash)) throw new ErroHttp(401, 'Senha incorreta.');
+    } else if (typeof ctx.corpo.senha !== 'string' || ctx.corpo.senha.length > 200 || !await auth.conferirSenhaAsync(ctx.corpo.senha, u.senha_hash)) throw new ErroHttp(401, 'Senha incorreta.');
     q('UPDATE usuarios SET excluindo_em=? WHERE id=?').run(new Date().toISOString(),u.id);
     try {
       await conferirExclusao(u.id);

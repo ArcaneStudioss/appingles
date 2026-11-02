@@ -17,6 +17,20 @@ function conferirSenha(senha, guardado) {
   const esp = Buffer.from(h, 'base64');
   return esp.length === calc.length && crypto.timingSafeEqual(calc, esp);
 }
+// Versões assíncronas: o scrypt roda no pool de threads e o servidor segue atendendo os outros alunos (a síncrona trava tudo por ~70 ms).
+const scryptAsync = (senha, sal, tam, opc) => new Promise((ok, falha) => crypto.scrypt(senha, sal, tam, opc, (e, k) => (e ? falha(e) : ok(k))));
+async function hashSenhaAsync(senha) {
+  const sal = crypto.randomBytes(16);
+  const h = await scryptAsync(senha.normalize('NFKC'), sal, 32, SCRYPT);
+  return `scrypt$${SCRYPT.N}$${sal.toString('base64')}$${h.toString('base64')}`;
+}
+async function conferirSenhaAsync(senha, guardado) {
+  const [alg, n, sal, h] = String(guardado || '').split('$');
+  if (alg !== 'scrypt' || !sal || !h) return false;
+  const calc = await scryptAsync(String(senha).normalize('NFKC'), Buffer.from(sal, 'base64'), 32, { ...SCRYPT, N: Number(n) });
+  const esp = Buffer.from(h, 'base64');
+  return esp.length === calc.length && crypto.timingSafeEqual(calc, esp);
+}
 // hash falso para gastar o mesmo tempo quando o e-mail não existe (não revela quem tem conta)
 const HASH_FALSO = hashSenha(crypto.randomBytes(12).toString('hex'));
 
@@ -76,4 +90,4 @@ function limitadorBanco(db, nome, { janelaMs, max }) {
   };
 }
 
-module.exports = { limitadorBanco, hashSenha, conferirSenha, HASH_FALSO, senhaFraca, novoToken, hashToken, limitador, SESSAO_DIAS };
+module.exports = { limitadorBanco, hashSenha, conferirSenha, hashSenhaAsync, conferirSenhaAsync, HASH_FALSO, senhaFraca, novoToken, hashToken, limitador, SESSAO_DIAS };
