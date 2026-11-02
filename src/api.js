@@ -726,7 +726,7 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
     conq.push(...somarMinutos(uid, h, minutos));
     const total = q("SELECT COUNT(*) n FROM licoes WHERE user_id = ? AND status = 'concluida'").get(uid).n;
     if (total >= 10 && conquistar(uid, 'licoes-10')) conq.push('licoes-10');
-    return { ok: true, minutos, conquistas: conq, revisoesPendentes: pendentesDe(uid, h) };
+    return { ok: true, minutos, conquistas: conq, revisoesPendentes: pendentesDe(uid, h), sequencia: sequenciaDe(uid, h) };
   });
 
   // Cartões

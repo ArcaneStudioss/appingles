@@ -71,6 +71,9 @@ function montarBaseIniciante(ctx, atual, adaptada) {
       explica: `${anterior.en} = ${anterior.pt}.`,
     }] });
   }
+  // Fala opcional no fim da aula: não é exercício (não conta para concluir nem vale nota).
+  const f = vocab[vocab.length - 1];
+  blocos.push({ tipo: 'fala-opcional', titulo: 'Experimente falar', frase: f.en, pt: f.pt });
   return { data: ctx.hojeISO, minutos: 5, guiada: true, inicianteGuiado: true,
     missao: { id: def.id, titulo: def.titulo, podeFazer: def.podeFazer, parte, total },
     porque: ['Vamos aprender só duas expressões e praticar cada uma três vezes.',

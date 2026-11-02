@@ -220,3 +220,5 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) agen
 addEventListener('hashchange', render);
 addEventListener('online', () => toast('Conexão de volta.'));
 render();
+// Abre o app sem internet e acelera as próximas visitas. Falhar aqui não atrapalha nada.
+if ('serviceWorker' in navigator && location.protocol !== 'file:') addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));

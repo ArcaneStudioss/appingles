@@ -1,8 +1,9 @@
 // Lição do dia: um passo por tela. Começa explicando o PORQUÊ da aula de hoje.
 import { api } from '../api.js?v=__V__';
-import { h, icone, falar, falarPt, botaoOuvir, ocupado, toast, confirmar, temMicrofone, ouvirMicrofone, janela } from '../ui.js?v=__V__';
+import { h, icone, falar, falarPt, pararVoz, acompanharFala, botaoOuvir, ocupado, toast, confirmar, temMicrofone, ouvirMicrofone, janela } from '../ui.js?v=__V__';
 import { exercicio } from './exercicio.js?v=__V__';
 import { nomeConquista } from './hoje.js?v=__V__';
+import { celebrarSequencia } from '../chama.js?v=__V__';
 import { lou, louFala, som, confete, botaoSom, pontosFlutuantes, contar, vibrar, voarComemorando } from '../diversao.js?v=__V__';
 import { companheirosAula } from '../companheiros.js?v=__V__';
 
@@ -31,6 +32,7 @@ export async function telaLicao(el, { ir }) {
     if (!licao.guiada && ['exercicios', 'escuta', 'retomada', 'rapidas'].includes(b.tipo)) passos.push({ tipo: 'abre', b, bi });
     for (const ex of b.exercicios || []) passos.push({ tipo: 'ex', ex, b, bi });
     if (b.tipo === 'producao') passos.push({ tipo: 'producao', b, bi });
+    if (b.tipo === 'fala-opcional') passos.push({ tipo: 'falar', b, bi });
   });
   passos.push({ tipo: 'fim' });
   let i = 0;
@@ -94,7 +96,8 @@ export async function telaLicao(el, { ir }) {
         barraFixa: true,
         permitirTreino: true,
       }));
-    } else if (p.tipo === 'producao') desenharProducao(tela, p.b, p.bi);
+    } else if (p.tipo === 'falar') desenharFalar(tela, p.b);
+    else if (p.tipo === 'producao') desenharProducao(tela, p.b, p.bi);
     else desenharFim(tela);
     if (p.tipo === 'bloco' && p.b.guia) {
       const g = p.b.guia;
@@ -103,6 +106,37 @@ export async function telaLicao(el, { ir }) {
     tela.querySelector('h1,h2')?.setAttribute('tabindex', '-1');
     if (p.tipo !== 'ex') tela.querySelector('h1,h2')?.focus({ preventScroll: true });
     scrollTo(0, 0);
+  }
+
+  // Prática de fala opcional: não vale nota, não dá XP e não bloqueia a aula. Sem microfone, é só ouvir e repetir.
+  function desenharFalar(tela, b) {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const leitura = acompanharFala(b.frase);
+    const eco = h('p', { class: 'fala-eco', 'aria-live': 'polite' }, '');
+    let rec = null, ouvido = '';
+    const parar = () => { try { rec?.stop(); } catch {} btn?.setAttribute('aria-pressed', 'false'); };
+    const btn = SR ? h('button', { type: 'button', class: 'btn btn-ouvir-grande btn-falar', 'aria-pressed': 'false', 'aria-label': 'Falar no microfone', on: { click: () => {
+      if (btn.getAttribute('aria-pressed') === 'true') { parar(); return; }
+      try {
+        pararVoz(); ouvido = ''; leitura.atualizar('');
+        eco.textContent = 'Estou ouvindo... pode falar, sem pressa.';
+        btn.setAttribute('aria-pressed', 'true');
+        rec = ouvirMicrofone({
+          alvo: b.frase,
+          aoTexto: t => { ouvido = t; const r = leitura.atualizar(t); eco.textContent = r.reconhecidas ? `Reconheci ${r.reconhecidas} de ${r.total} palavras.` : 'Estou ouvindo...'; },
+          aoFim: () => { btn.setAttribute('aria-pressed', 'false'); rec = null; eco.textContent = ouvido ? 'Muito bem! Pode tentar de novo ou continuar.' : 'Não consegui ouvir. Tente mais perto do microfone, ou pule esta parte.'; },
+        });
+      } catch { toast('O microfone não abriu. Você pode pular esta parte.'); parar(); }
+    } } }, icone('microphone')) : null;
+    tela.append(etapa('intro'),
+      h('p', { class: 'rotulo-pequeno' }, 'Opcional'),
+      h('h2', {}, b.titulo || 'Experimente falar'),
+      h('p', {}, 'Ouça e repita em voz alta. Esta parte é só para você treinar: não vale nota e não é preciso para concluir a aula.'),
+      h('div', { class: 'frase-fala' }, h('p', { class: 'frase-fala__en', lang: 'en' }, leitura.elemento), b.pt ? h('p', { class: 'ajuda' }, b.pt) : null),
+      h('div', { class: 'escuta-caixa' },
+        h('button', { type: 'button', class: 'btn btn-sec', 'aria-label': 'Ouvir como se fala', on: { click: () => falar(b.frase, { velocidade: 0.8 }) } }, icone('speaker-high'), 'Ouvir'), btn),
+      eco,
+      barraBotao('Continuar', () => { parar(); avancar(); }));
   }
 
   function desenharIntro(tela) {
@@ -226,6 +260,10 @@ export async function telaLicao(el, { ir }) {
       try {
         const r = await api('/licao/concluir', { metodo: 'POST' });
         for (const c of r.conquistas || []) toast('Conquista: ' + nomeConquista(c), { tipo: 'ok' });
+        if (r.sequencia?.estudouHoje && !r.repetida) {
+          let nome = ''; try { nome = String((await api('/eu')).usuario?.nome || '').split(' ')[0].slice(0, 20); } catch {}
+          await celebrarSequencia(r.sequencia, { nome });
+        }
         ir(licao.guiada ? '#/hoje' : r.revisoesPendentes ? '#/revisar' : '#/hoje');
       } catch (e) { toast(e.message, { tipo: 'erro' }); ocupado(btn, false); }
     } } }, status === 'concluida' ? 'Voltar para o início' : 'Concluir aula');
