@@ -6,6 +6,7 @@ import { api } from '../api.js?v=__V__';
 import { h, icone, dataBR, plural, toast, janela, localStorageGet, localStorageSet } from '../ui.js?v=__V__';
 import { lou, louFala, reagirCanto } from '../diversao.js?v=__V__';
 import { configurarLembrete, lembreteDeHoje, jaPassouDaHora } from '../lembrete.js?v=__V__';
+import { jaInstalado, instalarApp, podeInstalarDireto, ehIphone } from '../instalar.js?v=__V__';
 
 const CONQ = { 'primeira-sessao': 'Minha primeira sessão guiada', 'primeiro-passo': 'Primeiro passo dado', 'primeira-licao': 'Primeira lição concluída', 'primeira-conversa': 'Primeira conversa', 'primeira-demonstracao': 'Primeira missão demonstrada', retido: 'Missão mantida depois de dias', 'foco-superado': 'Superou uma dificuldade', 'revisoes-50': '50 revisões', material: 'Estudou com material seu', 'licoes-10': '10 lições', 'dias-3': '3 dias de estudo', 'dias-10': '10 dias de estudo', 'dias-30': '30 dias de estudo', 'dias-60': '60 dias de estudo', radio: 'Primeiro episódio da Rádio Tuiuiú', 'estudo-1': 'Primeiro assunto do estudo sob medida', 'estudo-completo': 'Estudo sob medida completo', 'simulado-1': 'Primeiro simulado', 'treino-1': 'Primeiro treino focado', 'treino-7': '7 treinos focados',
   'seq-3': '3 dias seguidos', 'seq-7': '1 semana seguida', 'seq-14': '2 semanas seguidas', 'seq-30': '30 dias seguidos', 'seq-60': '60 dias seguidos', 'seq-100': '100 dias seguidos', 'seq-200': '200 dias seguidos', 'seq-365': '1 ano seguido' };
@@ -144,6 +145,15 @@ export async function telaHoje(el, { ir, estado }) {
   } else if (lem && lembreteDeHoje(lem) && jaPassouDaHora(lem) && !d.sequencia.estudouHoje && !feita && a.acesso === 'completo') {
     principal.append(h('div', { class: 'aviso-suave aviso-lembrete' }, icone('bell'), h('p', {}, `Hora do exercício de hoje! Seu lembrete era às ${lem.hora}. Uns minutinhos já contam.`),
       h('a', { class: 'btn btn-peq', href: '#/licao' }, L?.iniciada ? 'Continuar a aula' : 'Começar agora')));
+  }
+
+  // depois da primeira aula feita, convite (uma vez) para ter o Inglou na tela inicial
+  if (feita && !jaInstalado() && (podeInstalarDireto() || ehIphone()) && localStorageGet('instalar-dispensado') !== 'sim') {
+    const caixa = h('div', { class: 'aviso-suave aviso-lembrete' }, icone('info'), h('p', {}, 'Aula feita! Que tal deixar o Inglou na tela inicial do celular para estudar com um toque?'),
+      h('div', { class: 'linha-acoes' },
+        h('button', { type: 'button', class: 'btn btn-sec btn-peq', on: { click: async () => { if (podeInstalarDireto()) { if (await instalarApp()) caixa.remove(); } else location.hash = '#/conta'; } } }, 'Instalar'),
+        h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => { localStorageSet('instalar-dispensado', 'sim'); caixa.remove(); } } }, 'Agora não')));
+    principal.append(caixa);
   }
 
   let balao = null;
