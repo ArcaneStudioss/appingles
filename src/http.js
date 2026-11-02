@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const zlib = require('node:zlib');
 
 const PUBLICA = path.join(__dirname, '..', 'public');
 const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.txt': 'text/plain; charset=utf-8', '.xml': 'application/xml; charset=utf-8', '.webmanifest': 'application/manifest+json', '.mp3': 'audio/mpeg' };
@@ -98,15 +99,38 @@ function naoAchou(res) {
   enviarTexto(res, path.join(PUBLICA, '404.html'), true);
 }
 
-function enviarTexto(res, abs, jaComStatus) {
+// Texto (html, css, js, svg...) vai comprimido (brotli ou gzip, o que o navegador aceitar) e com ETag.
+// Em produção o resultado fica em memória por arquivo e codificação: a compressão roda uma vez só.
+const cacheEnvio = new Map();
+function preparar(abs, enc, txt) {
+  const chave = abs + '|' + enc;
+  let e = cacheEnvio.get(chave);
+  if (e) return e;
+  const bruto = Buffer.from(txt, 'utf8');
+  const corpo = enc === 'br' ? zlib.brotliCompressSync(bruto, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: process.env.NODE_ENV === 'production' ? 9 : 4, [zlib.constants.BROTLI_PARAM_SIZE_HINT]: bruto.length } })
+    : enc === 'gzip' ? zlib.gzipSync(bruto, { level: 9 }) : bruto;
+  e = { corpo, etag: '"' + crypto.createHash('sha1').update(bruto).digest('base64url').slice(0, 20) + (enc ? '-' + enc : '') + '"' };
+  if (process.env.NODE_ENV === 'production') cacheEnvio.set(chave, e);
+  return e;
+}
+function enviarTexto(res, abs, jaComStatus, req) {
   try {
     let txt = cacheTexto.get(abs);
     if (txt === undefined) {
-      txt = fs.readFileSync(abs, 'utf8').replaceAll('__V__', VERSAO).replace('__CATALOGO_PLANOS__',require('./catalogo-planos').htmlPlanos()).replace('__OFERTAS_PLANOS__',JSON.stringify(require('./catalogo-planos').CATALOGO.flatMap(p=>p.mensal?['mensal','anual'].map(periodo=>({'@type':'Offer',name:p.nome+' '+periodo,price:(p[periodo]/100).toFixed(2),priceCurrency:'BRL'})):[])));
+      txt = fs.readFileSync(abs, 'utf8').replaceAll('__V__', VERSAO);
       if (process.env.NODE_ENV === 'production') cacheTexto.set(abs, txt);
     }
     if (!jaComStatus) res.statusCode = 200;
-    res.end(txt);
+    if (!req) return res.end(txt);
+    const aceita = String(req.headers['accept-encoding'] || '');
+    const enc = /\bbr\b/.test(aceita) ? 'br' : /\bgzip\b/.test(aceita) ? 'gzip' : '';
+    const { corpo, etag } = preparar(abs, enc, txt);
+    res.setHeader('Vary', 'Accept-Encoding');
+    res.setHeader('ETag', etag);
+    if (enc) res.setHeader('Content-Encoding', enc);
+    if (!jaComStatus && req.headers['if-none-match'] === etag) { res.statusCode = 304; return res.end(); }
+    res.setHeader('Content-Length', corpo.length);
+    res.end(req.method === 'HEAD' ? undefined : corpo);
   } catch { if (!res.headersSent) res.statusCode = 404; res.end('404'); }
 }
 
@@ -130,7 +154,7 @@ function servir(req, res, url) {
       const versionado = url.searchParams.get('v') === VERSAO;
       res.setHeader('Cache-Control', ext === '.html' || p === '/sw.js' ? 'no-cache' : versionado ? 'public, max-age=31536000, immutable' : 'public, max-age=300');
       if (req.method === 'HEAD') return res.end();
-      if (ext === '.html' || ext === '.js' || ext === '.css' || ext === '.webmanifest') return enviarTexto(res, abs);
+      if (['.html', '.js', '.css', '.webmanifest', '.svg', '.json', '.xml', '.txt'].includes(ext)) return enviarTexto(res, abs, false, req);
       // áudio: Safari do iPhone só toca mp3 se o servidor aceitar pedido por faixa de bytes (Range)
       const m = ext === '.mp3' && /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
       if (ext === '.mp3') res.setHeader('Accept-Ranges', 'bytes');

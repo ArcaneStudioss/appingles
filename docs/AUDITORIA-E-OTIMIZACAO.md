@@ -44,10 +44,10 @@
 ## 3. Plano de otimização (para o app não ficar pesado)
 Medi o que existe: `public/` = 8,4 MB, dos quais **7,6 MB são 527 mp3** do Tuiuiú. JS 352 KB (27 módulos sem bundle), CSS 140 KB, fontes 124 KB. O servidor **não comprime** nada.
 
-### Fase 1: rápido e de baixo risco (1 dia)
-1. **Compressão no servidor** (brotli/gzip com `node:zlib`) para html, css, js, json e svg, em cache de memória por arquivo e versão. Esperado: CSS 140 → ~22 KB, JS 352 → ~85 KB.
-2. **Áudio sob demanda**: o app já usa `mapa.json`. Garantir que nenhum mp3 é baixado antes do toque em "Ouvir" (`preload="none"`) e pré-carregar só a próxima frase da lição.
-3. **Cache**: o `max-age` de 1 ano com `?v=` já está certo. Adicionar `ETag` para os arquivos sem `?v=` (hoje 5 min).
+### Fase 1: rápido e de baixo risco (FEITA em 02/11/2026: itens 1 a 3)
+1. ✅ **Compressão no servidor** (brotli/gzip com `node:zlib`) para html, css, js, json e svg, em cache de memória por arquivo e versão. Medido: `app.css` 105 KB → 20,8 KB (brotli); `app.js` 8,7 KB → 3 KB (gzip); sprite 35 KB → 10,7 KB.
+2. ✅ **Áudio sob demanda** (`preload = 'none'` nos `new Audio`): o app já usa `mapa.json`. Garantir que nenhum mp3 é baixado antes do toque em "Ouvir" (`preload="none"`) e pré-carregar só a próxima frase da lição.
+3. ✅ **Cache** (ETag + 304 nos textos): o `max-age` de 1 ano com `?v=` já está certo. Adicionar `ETag` para os arquivos sem `?v=` (hoje 5 min).
 4. **Fontes**: conferir se Caveat (51 KB) é usada. Se for só num título, trocar por Fredoka e economizar 51 KB.
 
 ### Fase 2: carga inicial (2 a 3 dias)
