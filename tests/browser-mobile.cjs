@@ -16,7 +16,7 @@ async function medir(page){return page.evaluate(()=>{
 });}
 async function main(){for(let i=0;i<100;i++){try{await fetch(BASE+'/saude');break;}catch{await new Promise(r=>setTimeout(r,50));}}
  const resultados=[],engines=process.env.AUDIT_ENGINES?.split(',')||['chromium','webkit'];
- for(const motor of engines){const browser=await({chromium,webkit}[motor]).launch({headless:true});try{
+ for(const motor of engines){const browser=await({chromium,webkit}[motor]).launch({headless:true,...(motor==="chromium"&&process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{})});try{
  const c=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce',baseURL:BASE});
  const R=async(method,url,data)=>{const r=await c.request.fetch('/api/v1'+url,{method,headers:{'X-Inglou':'1','Content-Type':'application/json'},data});if(r.status()!==200)throw Error(url+' '+r.status()+' '+await r.text());return r.json();};
  await R('POST','/auth/cadastro',{nome:'Ana Carolina dos Santos',email:motor+'@mobile.test',idade:32,papel:'ambos',senha:'frase de cadastro para o celular 2026',consentimento:true});await R('PUT','/perfil',{objetivo:'zero',minutos_dia:15,dias_semana:5,interesses:[]});await R('POST','/nivelamento',{nunca:true});

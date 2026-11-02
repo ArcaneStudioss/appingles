@@ -34,7 +34,7 @@ let browser;
   const poses = await page.evaluate(() => {
     for (const a of document.querySelector('.dupla').getAnimations({ subtree: true })) { a.pause(); a.currentTime = 1000; }
     const style = s => getComputedStyle(document.querySelector(s));
-    return { asa: style('.dupla__voador').opacity, pousado: style('.dupla__pousado').opacity, perna: style('.mia__perna--esquerda').transform, braco: style('.mia__braco--direito').transform };
+    return { asa: style('.dupla__voador').opacity, pousado: style('.dupla__pousado').opacity, perna: style('.m2__braco--esquerdo').transform, braco: style('.m2__braco--direito').transform };
   });
   assert.equal(poses.asa, '1'); assert.equal(poses.pousado, '0');
   assert.notEqual(poses.perna, 'none'); assert.notEqual(poses.braco, 'none');

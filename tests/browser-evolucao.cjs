@@ -13,7 +13,7 @@ async function main(){
  fs.mkdirSync(artefatos,{recursive:true});
  for(let i=0;i<100;i++){try{await fetch(BASE+'/saude');break;}catch{await new Promise(r=>setTimeout(r,75));}}
  for(const [nome,motor]of Object.entries({chromium,webkit})){
-  const browser=await motor.launch({headless:true});
+  const browser=await motor.launch({headless:true,...(motor.name()==="chromium"&&process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{})});
   try{for(const mobile of [false,true]){
    const context=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1280,height:900},reducedMotion:'reduce',...(mobile?{isMobile:true,hasTouch:true}:{}),baseURL:BASE});
    const post=async(url,data)=>{const r=await context.request.post('/api/v1'+url,{headers:H,data});assert.equal(r.status(),200,await r.text());return r.json();};
