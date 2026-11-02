@@ -1,4 +1,4 @@
-/* ==========================================================================
+/* ===================================================================
    Inglou · área do aluno · "O álbum do Lou"
    Metáfora: um álbum de figurinhas. Cada missão é uma página, cada aula feita cola uma figurinha,
    a tarefa final vira figurinha brilhante. Cada atividade tem SEMPRE a mesma cor e o mesmo ícone
@@ -2026,3 +2026,35 @@ body[data-publico=adulto] .companheiros{--mia-alto:126px;--tui-alto:80px;--dupla
 @media (prefers-reduced-motion:no-preference){.pouso__fala{animation:fala-pop .35s var(--mola,ease) both}}
 @keyframes fala-pop{from{opacity:0;transform:translateX(10px) scale(.7)}to{opacity:1;transform:none}}
 .social-opcao{display:flex;align-items:center;gap:.6rem;margin-top:1rem;min-height:44px;cursor:pointer}.social-opcao input{width:1.3rem;height:1.3rem}
+=======
+/* ==========================================================================
+   Vida dos personagens (mascote.js): olhar que segue, toque, cochilo, chegada
+   ========================================================================== */
+.lou__olhos{translate:var(--ox,0px) var(--oy,0px);transition:translate .18s var(--ease)}
+.lou:not(.lou--mia){cursor:pointer}
+.lou--mia{cursor:pointer}
+.lou{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+@media (prefers-reduced-motion:no-preference){
+  .lou{animation:lou-chega .55s var(--mola) both}
+  .msg__avatar .lou,.nav .lou{animation:none}
+  .lou--pula .lou__corpo{animation:lou-t-pula .6s var(--mola) 1}
+  .lou--balanca .lou__corpo{animation:lou-t-balanca .7s var(--ease) 1}
+  .lou--gira .lou__corpo{animation:lou-t-gira .7s var(--ease) 1}
+  .lou--tonto .lou__corpo{animation:lou-t-tonto 1.1s ease-in-out 1}
+  .lou--dorme .lou__corpo{animation:lou-flutua 5.5s ease-in-out infinite}
+  .lou--dorme .lou__olhos{animation:none;transform:scaleY(.12);transition:transform .5s var(--ease)}
+}
+@keyframes lou-chega{from{opacity:0;transform:translateY(10px) scale(.86)}}
+@keyframes lou-t-pula{0%{transform:scale(1.08,.9)}35%{transform:translateY(-16px) scale(.96,1.06)}70%{transform:translateY(0) scale(1.05,.95)}100%{transform:none}}
+@keyframes lou-t-balanca{15%{transform:rotate(-9deg)}40%{transform:rotate(8deg)}65%{transform:rotate(-5deg)}85%{transform:rotate(3deg)}100%{transform:none}}
+@keyframes lou-t-gira{50%{transform:translateY(-10px) rotate(180deg) scale(.92)}100%{transform:rotate(360deg)}}
+@keyframes lou-t-tonto{10%{transform:rotate(-14deg)}30%{transform:rotate(12deg)}50%{transform:rotate(-10deg)}70%{transform:rotate(7deg)}90%{transform:rotate(-3deg)}100%{transform:none}}
+
+/* ---------- acabamento: toque mais leve e mais limpo ---------- */
+:focus-visible{outline:3px solid color-mix(in srgb,var(--azul) 70%,transparent);outline-offset:3px;border-radius:8px}
+.folha{transition:box-shadow .25s var(--ease),transform .25s var(--ease)}
+@media (hover:hover){a.folha:hover,.aula:hover{transform:translateY(-2px)}}
+@media (prefers-reduced-motion:no-preference){
+  .btn:not(:disabled):hover{filter:brightness(1.04)}
+  .opcao{transition:transform .15s var(--mola),border-color .15s,background .15s}
+}
