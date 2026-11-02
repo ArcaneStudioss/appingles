@@ -19,7 +19,7 @@ export async function telaEntrar(el, { estado, ir, carregarEu }) {
   }
   const caixa = h('section', { class: 'entrar folha auth-cartao', 'aria-label': 'Acesso à conta' });
   el.append(h('div', { class: 'entrar-envoltorio' },
-    lou('oi', { tamanho: 88 }),
+    lou('feliz', { tamanho: 88, pose: 'acena' }),
     h('h1', { class: 'entrar-bilhete' }, 'Seu inglês continua aqui'),
     h('p', { class: 'ajuda centro' }, 'Entre para continuar seus estudos ou crie seu espaço para aprender.'), caixa,
     h('p', { class: 'ajuda centro' }, '30 dias grátis, sem cartão. ', h('a', { href: '/' }, 'Conhecer o Inglou'))));

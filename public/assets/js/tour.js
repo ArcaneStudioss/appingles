@@ -54,7 +54,7 @@ export function iniciarTour({ chave } = {}) {
     const p = lista[k], ultimo = k === lista.length - 1;
     p.alvo?.scrollIntoView?.({ block: 'nearest' });
     cartao.replaceChildren(
-      h('div', { class: 'tour__topo' }, lou(ultimo || !k ? 'feliz' : 'oi', { tamanho: 46, rotulo: '' }), h('h2', { id: 'tour-t' }, p.titulo)),
+      h('div', { class: 'tour__topo' }, lou(ultimo || !k ? 'feliz' : 'oi', { tamanho: 52, rotulo: '', pose: ultimo ? 'comemora' : !k ? 'acena' : 'aponta' }), h('h2', { id: 'tour-t' }, p.titulo)),
       h('p', {}, p.texto),
       h('div', { class: 'tour__rodape' },
         h('span', { class: 'tour__pontos', 'aria-label': `Passo ${k + 1} de ${lista.length}` }, lista.map((_, i) => h('i', { class: i === k ? 'agora' : '' }))),

@@ -70,7 +70,7 @@ export async function telaMinhaTurma(el, { param, ir }) {
     atividades.length ? h('ul', { class: 'turma-lista' }, atividades.map(a => h('li', {}, h('a', { class: 'turma-item', href: `#/atividade/${a.id}` },
       h('span', {}, h('strong', {}, a.titulo), h('small', {}, `${plural(a.total, 'pergunta', 'perguntas')} · ${prazoTxt(a.prazo)}`), a.descricao ? h('small', {}, a.descricao) : null),
       a.concluida ? h('span', { class: 'chip chip-ok' }, icone('check'), `${a.certas}/${a.total}`) : a.feitas ? h('span', { class: 'chip c-sol' }, `${a.feitas}/${a.total}`) : h('span', { class: 'chip' }, 'Começar'))))) :
-      h('div', { class: 'folha vazio' }, lou('oi', { tamanho: 80 }), h('p', {}, 'O professor ainda não publicou atividades. Quando publicar, elas aparecem aqui.')),
+      h('div', { class: 'folha vazio' }, lou('oi', { tamanho: 80, pose: 'dorme' }), h('p', {}, 'O professor ainda não publicou atividades. Quando publicar, elas aparecem aqui.')),
     h('details', { class: 'folha' }, h('summary', {}, icone('info'), ' O que o professor vê'), h('ul', { class: 'lista-check' }, AVISO_PROFESSOR.map(t => h('li', {}, t)))),
     h('div', { class: 'linha-acoes' },
       h('a', { class: 'btn btn-sec', href: '#/turmas' }, 'Voltar às minhas turmas'),

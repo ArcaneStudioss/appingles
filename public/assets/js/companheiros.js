@@ -35,7 +35,7 @@ export function duplaPersonagens({ acao = 'inicio', silencioso = false } = {}) {
   const humor = festa ? 'festa' : alegre ? 'feliz' : acao === 'apoio' || acao === 'dica' ? 'pensando' : 'oi';
   dupla.append(h('div', { class: 'dupla__ator dupla__ator--mia', dados: { personagem: 'mia' } }, lou(humor, { mia: true, tamanho: 132, rotulo: '' })));
   dupla.append(h('div', { class: 'dupla__ator dupla__ator--tuiuiu', dados: { personagem: 'tuiuiu' } },
-    h('span', { class: 'dupla__pousado' }, lou(humor, { tamanho: 96, rotulo: '' })),
+    h('span', { class: 'dupla__pousado' }, lou(humor, { tamanho: 96, rotulo: '', pose: festa || acao === 'acerto' || acao === 'superacao' ? 'comemora' : acao === 'apoio' ? 'consola' : acao === 'dica' ? 'aponta' : acao === 'inicio' ? 'acena' : 'senta' })),
     h('span', { class: 'dupla__voador' }, louVoando())));
   if (festa || acao === 'superacao') dupla.append(h('span', { class: 'dupla__notas' }, '♪ ♫ ✦'));
 

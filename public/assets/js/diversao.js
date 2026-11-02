@@ -1,5 +1,6 @@
 // Tuiuiú (o mascote: uma arara-azul), sons sintetizados e confete. Tudo respeita "menos movimento"
 // e a preferência de som deste aparelho. Nada aqui pune o aluno: o erro tem um som suave, não um alarme.
+import { desenharTui, instalarInteracao } from './tui.js?v=__V__';
 import { h, icone, localStorageGet, localStorageSet, falarPt, pararVoz, reduzirMovimento } from './ui.js?v=__V__';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -18,6 +19,7 @@ let desenhoSequencia = 0;
 function tutora(humor, { tamanho, rotulo }) {
   const pequeno = tamanho <= 60;
   const s = el('svg', { viewBox: pequeno ? (humor === 'festa' ? '18 -18 84 84' : '22 -2 76 76') : '0 -18 120 264', width: pequeno ? tamanho : Math.round(tamanho * 120 / 264), height: tamanho, class: `lou lou--${humor} lou--mia` + (pequeno && humor !== 'festa' ? ' lou--busto' : ''), role: 'img', 'aria-label': rotulo });
+  s.style.setProperty('--tui-atraso', `${-(Math.random() * 6).toFixed(2)}s`);
   const corpo = el('g', { class: 'lou__corpo' });
   const traco = (d, cor, larg, extra = {}) => el('path', { d, stroke: cor, 'stroke-width': larg, 'stroke-linecap': 'round', fill: 'none', ...extra });
   const PELE = '#6B4430', PELE_SOMBRA = '#55351F', CABELO = '#1B1210', TINTA = '#1A0F0B', BOCA = '#2A130C', AZUL = '#2E73D9', AZUL_ESC = '#1F55A8', JEANS = '#2B3350';
@@ -109,46 +111,9 @@ function tutora(humor, { tamanho, rotulo }) {
   return s;
 }
 
-export function lou(humor = 'oi', { tamanho = 96, rotulo = 'Tuiuiú, a arara-azul do Inglou', mia = false } = {}) {
+export function lou(humor = 'oi', { tamanho = 96, rotulo = 'Tuiuiú, a arara-azul do Inglou', mia = false, pose } = {}) {
   if (mia) return tutora(humor, { tamanho, rotulo: rotulo === 'Tuiuiú, a arara-azul do Inglou' ? 'Mia, a tutora do Tuiuiú' : rotulo });
-  const P = PALETA_TUI;
-  const s = el('svg', { viewBox: '0 0 120 120', width: tamanho, height: tamanho, class: `lou lou--${humor}`, role: 'img', 'aria-label': rotulo });
-  const corpo = el('g', { class: 'lou__corpo' });
-  const traco = (d, cor, larg, extra = {}) => el('path', { d, stroke: cor, 'stroke-width': larg, 'stroke-linecap': 'round', fill: 'none', ...extra });
-  const feliz = humor === 'feliz' || humor === 'festa';
-
-  // galho e cauda longa
-  corpo.append(traco('M6 112 Q60 108 114 113', '#7A5538', 6), traco('M18 111 Q38 108 50 109', '#A07C58', 2, { opacity: '.7' }),
-    el('path', { d: 'M46 92 Q32 108 28 118 L40 118 Q46 108 54 96 Z', fill: P.sombra }), el('path', { d: 'M54 94 Q46 110 44 119 L54 118 Q58 108 62 98 Z', fill: P.corpo }));
-  // corpo, barriga clara, asa com penas, patas
-  corpo.append(el('ellipse', { cx: 62, cy: 76, rx: 24, ry: 34, fill: P.corpo, transform: 'rotate(8 62 76)' }),
-    el('ellipse', { cx: 70, cy: 80, rx: 10, ry: 22, fill: P.luz, opacity: '.3', transform: 'rotate(8 70 80)' }),
-    el('g', { class: 'tui__asa' }, el('path', { d: 'M44 60 Q35 86 44 104 Q57 98 63 78 Q59 60 44 60 Z', fill: P.sombra }),
-      traco('M47 74 Q50 88 52 100', P.luz, 2, { opacity: '.45' }), traco('M52 70 Q56 84 57 96', P.luz, 2, { opacity: '.35' })),
-    traco('M56 106 Q54 112 50 112', '#5B6275', 3), traco('M64 107 Q64 113 68 113', '#5B6275', 3));
-  // cabeça
-  corpo.append(el('circle', { cx: 68, cy: 40, r: 19, fill: P.corpo }), traco('M54 30 Q58 22 66 21', '#fff', 3, { opacity: '.3' }));
-  // olho com anel amarelo
-  const olhos = el('g', { class: 'lou__olhos' }); olhos.style.transformOrigin = '75px 38px';
-  olhos.append(el('circle', { cx: 74, cy: 38, r: 8.5, fill: P.anel }));
-  if (feliz) olhos.append(traco('M69 40 Q75 32 81 40', TINTA_OLHO, 3.6));
-  else {
-    const dx = humor === 'pensando' ? -1.5 : 0, dy = humor === 'pensando' ? -2.5 : humor === 'ops' ? 1.5 : 0, r = humor === 'ops' ? 3.2 : 4.4;
-    olhos.append(el('circle', { cx: 75 + dx, cy: 38 + dy, r, fill: TINTA_OLHO }), el('circle', { cx: 76.4 + dx, cy: 36.6 + dy, r: 1.3, fill: '#fff' }));
-  }
-  corpo.append(olhos,
-    // bico grosso e curvo, com a mancha amarela na base
-    el('path', { d: 'M82 32 Q106 28 106 54 Q104 64 96 58 Q98 48 86 46 Q80 42 82 32 Z', fill: P.bico }),
-    traco('M86 33 Q98 32 103 42', P.bicoLuz, 2.5, { opacity: '.75' }),
-    el('ellipse', { cx: 87, cy: 49, rx: 6, ry: 3.6, fill: P.anel }));
-  if (feliz) corpo.append(traco('M89 55 Q95 59 100 55', P.sombra, 2, { opacity: '.5' }));
-
-  if (humor === 'pensando') corpo.append(el('circle', { cx: 100, cy: 18, r: 2.4, fill: 'var(--tinta-2,#46557A)' }), el('circle', { cx: 105, cy: 10, r: 3.4, fill: 'var(--tinta-2,#46557A)' }), el('circle', { cx: 110, cy: 1, r: 4.6, fill: 'var(--tinta-2,#46557A)' }));
-  if (humor === 'ops') corpo.append(el('path', { d: 'M54 16 Q59 24 54 29 Q49 24 54 16 Z', fill: '#7FD3F5' }));
-  if (humor === 'festa') corpo.append(el('path', { d: 'M56 24 L66 -2 L78 24 Z', fill: 'var(--sol,#FFC83D)' }), traco('M60 16 L74 16', '#FF6FA5', 3), traco('M63 8 L70 8', '#FF6FA5', 3), el('circle', { cx: 66, cy: -3, r: 4.5, fill: '#FF6FA5' }));
-  s.append(corpo);
-  if (humor === 'festa') for (const [x, y, r] of [[10, 22, 6], [112, 14, 5], [14, 62, 4]]) s.append(el('path', { class: 'lou__estrela', d: `M${x} ${y - r} L${x + r * .3} ${y - r * .3} L${x + r} ${y} L${x + r * .3} ${y + r * .3} L${x} ${y + r} L${x - r * .3} ${y + r * .3} L${x - r} ${y} L${x - r * .3} ${y - r * .3} Z`, fill: 'var(--sol,#FFC83D)' }));
-  return s;
+  return desenharTui(humor, { tamanho, rotulo, pose: pose || (humor === 'festa' ? 'comemora' : humor === 'ops' ? 'consola' : 'senta') });
 }
 
 // Tuiuiú de frente: asas contínuas, com ombro, dobra e penas sobrepostas na borda.
@@ -434,3 +399,6 @@ export function contar(el, ate, { ms = 900, sufixo = '' } = {}) {
   const passo = t => { const k = Math.min(1, (t - t0) / ms), v = Math.round(ate * (1 - Math.pow(1 - k, 3))); el.textContent = v + sufixo; if (k < 1 && el.isConnected) requestAnimationFrame(passo); };
   el.textContent = '0' + sufixo; requestAnimationFrame(passo);
 }
+
+// toque no Tuiuiú ou na Mia: reação visual (CSS) e um som curtinho
+instalarInteracao({ aoToque: () => som('toque') });

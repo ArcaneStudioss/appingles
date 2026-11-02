@@ -56,7 +56,7 @@ export async function telaLicao(el, { ir }) {
 
   const topo = h('div', { class: 'licao-topo' },
     h('button', { type: 'button', class: 'btn btn-texto btn-peq', 'aria-label': 'Sair da lição', on: { click: async () => { if (i === 0 || await confirmar({ titulo: 'Sair da lição?', texto: 'Seu progresso fica salvo e você continua de onde parou.', ok: 'Sair', cancelar: 'Continuar a lição' })) ir('#/hoje'); } } }, icone('x')),
-    h('div', { class: 'trilho', role: 'progressbar', 'aria-label': 'Progresso da aula', 'aria-valuemin': 0, 'aria-valuemax': passos.length - 1 }, h('span', { class: 'trilho__cheio' }), h('span', { class: 'trilho__lou' }, lou('feliz', { tamanho: 38, rotulo: '' }))),
+    h('div', { class: 'trilho', role: 'progressbar', 'aria-label': 'Progresso da aula', 'aria-valuemin': 0, 'aria-valuemax': passos.length - 1 }, h('span', { class: 'trilho__cheio' }), h('span', { class: 'trilho__lou' }, lou('feliz', { tamanho: 38, rotulo: '', pose: 'voa' }))),
     chipCombo,
     botaoSom());
   const palco = h('div', { class: 'licao-palco' });
@@ -155,7 +155,8 @@ export async function telaLicao(el, { ir }) {
     tela.append(etapa('explicacao', 'Vamos aprender'),
       vi === 0 ? companheirosAula({ texto: infantil ? 'Vamos descobrir uma palavra! Ouça o som, veja o significado e repita com a gente.' : 'Associe o som ao significado. Ouça a palavra e observe como ela aparece no exemplo.' }).elemento : null,
       h('section', { class: 'palavra-nova' },
-        v.imagem ? h('span', { class: 'palavra-nova__imagem', 'aria-hidden': 'true' }, v.imagem) : lou('oi', { tamanho: 90, rotulo: '' }),
+        h('span', { class: 'palavra-nova__espia', 'aria-hidden': 'true' }, lou('oi', { tamanho: 76, rotulo: '', pose: 'espia' })),
+        v.imagem ? h('span', { class: 'palavra-nova__imagem', 'aria-hidden': 'true' }, v.imagem) : null,
         h('p', { class: 'rotulo-pequeno' }, 'Em inglês'),
         h('h1', { lang: 'en', 'data-traducao': v.pt }, v.en),
         h('p', { class: 'palavra-nova__significado' }, v.pt),
