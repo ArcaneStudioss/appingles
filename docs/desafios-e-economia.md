@@ -42,6 +42,6 @@ Para impedir renovação artificial de recompensas, o servidor guarda um registr
 | Praça brasileira | 25 | Fundo permanente; não altera o aprendizado |
 | Pôr do sol | 25 | Fundo permanente; não altera o aprendizado |
 
-A compra guarda o item. Abrir, ativar ou equipar são ações posteriores. Dentro da raridade sorteada, a caixa prioriza os seis modelos de prática ainda não possuídos; quando todos estão na coleção, pode repetir. Isso não muda as probabilidades de raridade. Preço e chances aparecem antes da compra e abertura.
+A compra guarda o item. Abrir, ativar ou equipar são ações posteriores. Dentro da raridade sorteada, a caixa prioriza os 24 modelos de prática ainda não possuídos; quando todos estão na coleção, pode repetir. Isso não muda as probabilidades de raridade. Preço e chances aparecem antes da compra e abertura.
 
 Os fundos são comprados uma única vez. Usar novamente o fundo ativo restaura o original. O servidor valida propriedade, saldo, inventário e identificador do pedido. Compra, débito e entrega são atômicos; a repetição do mesmo pedido devolve o recibo anterior. Não há compra de moedas com dinheiro real.

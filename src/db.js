@@ -414,6 +414,16 @@ END;
   CREATE UNIQUE INDEX denuncias_social_aberta ON denuncias_social(denunciante_id, denunciado_id) WHERE estado = 'pendente';
   ALTER TABLE social_perfis ADD COLUMN apelido_travado INTEGER NOT NULL DEFAULT 0;
   ALTER TABLE social_perfis ADD COLUMN busca_nome INTEGER NOT NULL DEFAULT 0;`,
+  `
+  DROP TRIGGER pontos_recompensa;
+  CREATE TRIGGER pontos_recompensa AFTER INSERT ON pontos_estudo BEGIN
+   INSERT OR IGNORE INTO moedas_extrato(user_id,quantidade,motivo,chave,em)
+   VALUES(NEW.user_id,1,'Exercício correto','exercicio:' || NEW.id,NEW.em);
+   INSERT OR IGNORE INTO colecao_figurinhas(user_id,modelo,raridade,origem_chave,criada_em)
+   SELECT NEW.user_id,'pratica-' || (((COUNT(*) / 5 - 1) % 24) + 1),CASE WHEN COUNT(*) % 100 = 0 THEN 'epica' WHEN COUNT(*) % 25 = 0 THEN 'rara' ELSE 'comum' END,'pratica:' || (SELECT identidade FROM social_identidades WHERE user_id=NEW.user_id) || ':' || COUNT(*),NEW.em
+   FROM pontos_estudo WHERE user_id = NEW.user_id HAVING COUNT(*) % 5 = 0;
+  END;
+  `,
 ];
 
 function abrir(dir) {

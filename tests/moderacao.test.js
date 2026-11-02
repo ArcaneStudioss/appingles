@@ -59,3 +59,13 @@ test('busca por nome: só adultos buscam, só quem ativou aparece, sem bloqueado
  s.pedir(1,s.buscar(1,'marina').resultados[0].codigo);assert.equal(s.buscar(1,'marina').resultados.length,0);
  assert.equal(JSON.stringify(s.buscar(1,'mar')).includes('user_id'),false);
 });
+
+test('24 modelos de prática: o gatilho percorre todos e o catálogo tem nome e imagem para cada um',t=>{
+ const {db,s}=mundo(t);const {CARTAS}=require('../src/social');
+ for(let i=1;i<=24;i++)assert.ok(CARTAS['pratica-'+i],'pratica-'+i);
+ db.prepare("DELETE FROM colecao_figurinhas WHERE user_id=1").run();
+ for(let i=0;i<24*5;i++)db.prepare('INSERT INTO tentativas(user_id,em,item_id,correto,dica,origem) VALUES(1,?,?,1,0,?)').run(new Date().toISOString(),'item-'+i,'biblioteca');
+ const modelos=new Set(db.prepare("SELECT modelo FROM colecao_figurinhas WHERE user_id=1 AND modelo LIKE 'pratica-%'").all().map(r=>r.modelo));
+ assert.equal(modelos.size,24);
+ assert.ok(s.colecao(1).every(c=>c.nome&&c.imagem));
+});

@@ -10,8 +10,18 @@ const CARTAS = {
  'pratica-1': ['Tuiuiú explorador', '🦜'], 'pratica-2': ['Mia em viagem', '🧳'],
  'pratica-3': ['Conversa na praça', '💬'], 'pratica-4': ['Sabores do Brasil', '🍊'],
  'pratica-5': ['Ponte de palavras', '🌉'], 'pratica-6': ['Música sem fronteiras', '🎵'],
+ 'pratica-7': ['Café com pão de queijo', '☕'], 'pratica-8': ['Futebol na várzea', '⚽'],
+ 'pratica-9': ['Carnaval em inglês', '🎭'], 'pratica-10': ['Praia ensolarada', '🏖️'],
+ 'pratica-11': ['Feira livre', '🥭'], 'pratica-12': ['Chimarrão e prosa', '🧉'],
+ 'pratica-13': ['Roda de capoeira', '🥁'], 'pratica-14': ['Boto-cor-de-rosa', '🐬'],
+ 'pratica-15': ['Onça-pintada', '🐆'], 'pratica-16': ['Pena de arara', '🪶'],
+ 'pratica-17': ['Cidade grande', '🏙️'], 'pratica-18': ['Viagem de ônibus', '🚌'],
+ 'pratica-19': ['No aeroporto', '🛫'], 'pratica-20': ['Check-in no hotel', '🏨'],
+ 'pratica-21': ['Entrevista de emprego', '💼'], 'pratica-22': ['Cinema e pipoca', '🎬'],
+ 'pratica-23': ['Festa junina', '🎇'], 'pratica-24': ['Céu estrelado', '🌌'],
  'grupo-exercicios': ['Time que aprende junto', '🤝'], 'grupo-sequencia': ['Constância em equipe', '🔥'],
 };
+const MODELOS_PRATICA=24;
 const LIMITE_PLACAR = 20;
 const REGRAS = 'Cada exercício correto na primeira tentativa, sem dica ou resposta revelada, rende 1 moeda e 1 ponto. A mesma questão conta uma vez por dia, em UTC. Repetições, cartões com nota própria e nivelamento não pontuam. A cada 5 pontos você ganha uma figurinha. Só conta o que for feito depois do início e antes do fim do desafio. Nos desafios contam no máximo 20 exercícios por dia UTC, ou um dia de constância. Desafios amistosos não retiram itens. Só adultos podem combinar troca de cópias repetidas; conquistas pessoais não são transferidas. Empate conserva as cópias.';
 const RARIDADES = { comum: {nome:'Comum',chance:65,valor:1}, rara: {nome:'Rara',chance:25,valor:3}, epica: {nome:'Épica',chance:9,valor:8}, lendaria: {nome:'Lendária',chance:1,valor:25} };
@@ -224,7 +234,7 @@ function criarSocial(db, { agora = () => new Date(), sortear = randomInt } = {})
    q('UPDATE loja_inventario SET quantidade=quantidade+1 WHERE user_id=? AND produto=?').run(uid,produto);perfil(uid);const cenario=q('SELECT cenario FROM social_perfis WHERE user_id=?').get(uid).cenario===produto?'padrao':produto;q('UPDATE social_perfis SET cenario=? WHERE user_id=?').run(cenario,uid);resultado={ok:true,cenario};
   } else {
    const n=sortear(100),raridade=n<65?'comum':n<90?'rara':n<99?'epica':'lendaria';
-   const todos=Array.from({length:6},(_,i)=>'pratica-'+(i+1)),faltantes=todos.filter(m=>!q('SELECT 1 FROM colecao_figurinhas WHERE user_id=? AND modelo=? AND raridade=?').get(uid,m,raridade));
+   const todos=Array.from({length:MODELOS_PRATICA},(_,i)=>'pratica-'+(i+1)),faltantes=todos.filter(m=>!q('SELECT 1 FROM colecao_figurinhas WHERE user_id=? AND modelo=? AND raridade=?').get(uid,m,raridade));
    const opcoes=faltantes.length?faltantes:todos,modelo=opcoes[sortear(opcoes.length)];
    const f=q('INSERT INTO colecao_figurinhas(user_id,modelo,raridade,origem_chave,criada_em) VALUES(?,?,?,?,?)').run(uid,modelo,raridade,'caixa:'+uid+':'+chave,iso());
    resultado={ok:true,figurinha:carta(q('SELECT * FROM colecao_figurinhas WHERE id=?').get(Number(f.lastInsertRowid)))};
