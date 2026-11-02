@@ -2,13 +2,24 @@
 import { api } from '../api.js?v=__V__';
 import { h, icone, dataBR, toast, plural } from '../ui.js?v=__V__';
 import { nomeConquista, album } from './hoje.js?v=__V__';
+import { figurinhaBrasil } from '../figurinha.js?v=__V__';
 
 const NOMES = { gramatica: 'Gramática', vocabulario: 'Vocabulário', leitura: 'Leitura', escuta: 'Escuta', escrita: 'Escrita', fala: 'Fala' };
 const CONF = { baixa: 'confiança baixa', media: 'confiança média', alta: 'confiança alta' };
 const STATUS_H = { hipotese: 'hipótese', confirmando: 'as atividades recentes confirmam', melhorando: 'já está melhorando' };
 
+// Álbum Brasil: as 10 figurinhas temáticas; cada uma vem de uma missão (animais ameaçados e gente que faz o Brasil)
+function secaoBrasil(lista) {
+  const coladas = lista.filter(f => f.conquistada).length;
+  const grupo = (titulo, g) => [h('h3', { class: 'fig-grupo' }, titulo), h('ul', { class: 'fig-grade' }, lista.filter(f => f.grupo === g).map(f => h('li', {}, figurinhaBrasil(f, { conquistada: f.conquistada }))))];
+  return h('section', { class: 'folha c-sol fig-brasil', 'aria-labelledby': 'fig-brasil-t' },
+    h('h2', { id: 'fig-brasil-t' }, 'Figurinhas do Brasil'),
+    h('p', { class: 'ajuda' }, `${coladas} de ${lista.length} coladas. Cada uma vem de uma missão: você aprende inglês e conhece um pedacinho do Brasil.`),
+    ...grupo('Animais ameaçados', 'animal'), ...grupo('Gente que faz o Brasil', 'gente'));
+}
+
 export async function telaProgresso(el) {
-  const [p, pl] = await Promise.all([api('/progresso'), api('/plano').catch(() => null)]);
+  const [p, pl, fb] = await Promise.all([api('/progresso'), api('/plano').catch(() => null), api('/figurinhas').catch(() => null)]);
   const c = p.concluido, d = p.demonstrado;
   const hab = Object.entries(p.habilidades).filter(([, v]) => v.n > 0 || v.nivel);
 
@@ -17,6 +28,7 @@ export async function telaProgresso(el) {
     h('a', { class: 'treino-card c-sol', href: '#/colecao' }, h('span', { class: 'bolha' }, icone('cards')), h('span', { class: 'treino-card__txt' }, h('strong', {}, 'Coleção de figurinhas'), h('small', {}, 'Suas figurinhas, raridades e desafios com amigos')), icone('caret-right')),
     h('a', { class: 'treino-card c-limao', href: '#/aprender' }, h('span', { class: 'bolha' }, icone('compass')), h('span', { class: 'treino-card__txt' }, h('strong', {}, 'Meu jeito de aprender'), h('small', {}, 'como você vai ao ler, escrever e ouvir, e onde mais erra')), icone('caret-right')),
     pl?.plano ? album(pl.plano, { titulo: 'Páginas do álbum', classe: 'album--todo' }) : null,
+    fb?.figurinhas?.length ? secaoBrasil(fb.figurinhas) : null,
     p.conquistas.length ? h('section', { class: 'folha c-sol' }, h('h2', {}, 'Figurinhas especiais'), h('ul', { class: 'conquistas' }, p.conquistas.map(x => h('li', {}, h('span', { class: 'medalha' }, icone('medal')), nomeConquista(x.codigo))))) : null,
 
     h('div', { class: 'duas' },

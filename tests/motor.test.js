@@ -47,10 +47,10 @@ test('nenhum tracinho longo em textos visíveis', () => {
 
 test('plano: prazo curto prioriza essenciais e avisa; nunca promete fluência', () => {
   const longo = montarPlano({ objetivo: 'entrevista', prazo: '2027-04-18', minutos_dia: 15, dias_semana: 5 }, 'A2', '2026-10-18');
-  assert.equal(longo.missoes.length, OBJETIVOS.entrevista.missoes.length);
+  assert.equal(longo.missoes.filter(m => !m.brasil).length, OBJETIVOS.entrevista.missoes.length);
   const curto = montarPlano({ objetivo: 'entrevista', prazo: '2026-11-01', minutos_dia: 10, dias_semana: 3 }, 'A2', '2026-10-18');
-  assert.ok(curto.missoes.length < longo.missoes.length);
-  assert.ok(curto.missoes.every(m => OBJETIVOS.entrevista.essenciais.includes(m.id)));
+  assert.ok(curto.missoes.filter(m => !m.brasil).length < longo.missoes.filter(m => !m.brasil).length);
+  assert.ok(curto.missoes.filter(m => !m.brasil).every(m => OBJETIVOS.entrevista.essenciais.includes(m.id)));
   assert.ok(curto.avisos.length >= 2);
   assert.doesNotMatch(JSON.stringify(longo), /fluente em|fluência em \d|garant/i);
   assert.match(longo.compromisso, /não uma promessa de fluência/);

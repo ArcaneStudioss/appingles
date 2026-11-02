@@ -25,6 +25,7 @@ const { agendar } = require('./motor/srs');
 const { turnoOffline } = require('./motor/conversa');
 const { processarOffline } = require('./motor/material');
 const { hoje, somarDias, diasEntre, embaralhar, palavras, normalizar } = require('./motor/util');
+const { FIGURINHAS, POR_MISSAO: FIG_POR_MISSAO, codigoConquista } = require('./conteudo/figurinhas');
 const { calcularSequencia, premiosAlcancados } = require('./motor/sequencia');
 const radio = require('./motor/podcast');
 const { avaliarNivel, vizinho } = require('./motor/ajuste-nivel');
@@ -688,6 +689,8 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
       });
       const conq = [];
       if (res.evento === 'demonstrado' && conquistar(uid, 'primeira-demonstracao')) conq.push('primeira-demonstracao');
+      const fig = res.evento === 'demonstrado' ? FIG_POR_MISSAO[bloco.missao] : null;   // Álbum Brasil: a missão temática demonstrada cola a figurinha
+      if (fig && conquistar(uid, codigoConquista(fig))) conq.push(codigoConquista(fig));
       if (res.evento === 'retido' && conquistar(uid, 'retido')) conq.push('retido');
       if (res.evento === 'foco_superado' && conquistar(uid, 'foco-superado')) conq.push('foco-superado');
       return { avaliacao: av, evento: res.evento, aviso, conquistas: conq, exemplo: bloco.semDicas ? null : POR_ID[bloco.missao]?.tarefa?.modelo || null };
@@ -1434,6 +1437,11 @@ function criar(db, { supabase: supabaseInjetado } = {}) {
   });
 
   // Progresso
+  // Álbum Brasil: catálogo de figurinhas com o que a pessoa já colou ("conferido" é controle interno do conteúdo)
+  rota('GET', '/figurinhas', (ctx) => {
+    const coladas = new Map(q("SELECT codigo, em FROM conquistas WHERE user_id = ? AND codigo LIKE 'fig-%'").all(ctx.u.id).map(r => [r.codigo, r.em]));
+    return { figurinhas: FIGURINHAS.map(({ conferido, ...f }) => ({ ...f, conquistada: coladas.has(codigoConquista(f)), em: coladas.get(codigoConquista(f)) || null })) };
+  });
   rota('GET', '/progresso', (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid);
     const n = nivelamentoDe(uid), plano = planoDe(uid), comp = competenciasDe(uid);

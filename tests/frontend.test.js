@@ -29,3 +29,10 @@ test('todo import relativo do app aponta para um arquivo que existe', () => {
     }
   }
 });
+
+test('Álbum Brasil: o app tem o componente da figurinha e nomeia qualquer conquista fig-*', () => {
+  const lerJs = rel => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
+  assert.ok(fs.existsSync(path.join(RAIZ, 'figurinha.js')), 'falta public/assets/js/figurinha.js');
+  assert.match(lerJs('telas/hoje.js'), /startsWith\('fig-'\)/, 'nomeConquista não trata o prefixo fig-');
+  assert.match(lerJs('telas/progresso.js'), /figurinhaBrasil/, 'o Progresso não mostra as figurinhas do Brasil');
+});

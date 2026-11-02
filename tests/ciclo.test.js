@@ -244,3 +244,49 @@ test('nível: aluno sobe e desce na mão, desfaz uma vez, e o app desce sozinho 
   assert.equal(JSON.parse(nivelAtual().resultado).nivel, 'A1');
   assert.equal((await R('GET', '/hoje')).nivel.atual, 'A1', 'não desce de novo na hora');
 });
+
+test('Álbum Brasil: lista de figurinhas vazia no começo; demonstrar a missão cola a figurinha, uma vez só', async () => {
+  const antes = await R('GET', '/figurinhas');
+  assert.equal(antes.figurinhas.length, 10);
+  assert.ok(antes.figurinhas.every(f => f.conquistada === false && f.em === null && !('conferido' in f)));
+  assert.deepEqual(antes.figurinhas.map(f => f.id).slice(0, 3), ['arara', 'mico', 'onca']);
+  // as fotos precisam ser servidas (a lista de arquivos públicos de src/http.js é fechada)
+  for (const f of antes.figurinhas) {
+    const img = await fetch(BASE + '/assets/figurinhas/' + f.arquivo);
+    assert.equal(img.status, 200, f.arquivo + ' não é servida');
+    assert.equal(img.headers.get('content-type'), 'image/jpeg');
+  }
+  // o plano do aluno passa a ter a missão da arara como a atual
+  const reg = db.prepare('SELECT id, dados FROM planos WHERE user_id = ? AND ativo = 1').get(uid);
+  const dados = JSON.parse(reg.dados);
+  dados.missoes = [{ id: 'brasil-arara', titulo: 'Brasil: arara-azul-grande', podeFazer: 'x', licoes: 1, semana: 1, essencial: false, brasil: true }];
+  db.prepare('UPDATE planos SET dados = ? WHERE id = ?').run(JSON.stringify(dados), reg.id);
+  const { plano } = await R('GET', '/plano');
+  const total = plano.missoes[0].total;
+  db.prepare("INSERT INTO competencias (user_id, missao, status, partes) VALUES (?, 'brasil-arara', 'praticando', ?) ON CONFLICT(user_id, missao) DO UPDATE SET status = 'praticando', partes = ?").run(uid, total, total);
+  db.prepare("UPDATE focos SET status = 'superado' WHERE user_id = ?").run(uid);
+  novoDia();
+  let { licao } = await R('GET', '/licao');
+  let bi = licao.blocos.findIndex(b => b.tipo === 'producao' && !b.reteste && b.missao === 'brasil-arara');
+  assert.ok(bi >= 0, 'a lição traz a tarefa final da arara');
+  const modelo = require('../src/conteudo/missoes').POR_ID['brasil-arara'].tarefa.modelo;
+  // a IA simulada (IA_FAKE) só dá a tarefa por cumprida com 20 palavras ou mais
+  const texto = modelo + ' The forest is getting smaller, so people must protect it.';
+  const r = await R('POST', '/licao/producao', { bloco: bi, texto, usouAjuda: false });
+  assert.equal(r.evento, 'demonstrado');
+  assert.ok(r.conquistas.includes('fig-arara'), 'a figurinha da arara foi concedida');
+  const depois = await R('GET', '/figurinhas');
+  const arara = depois.figurinhas.find(f => f.id === 'arara');
+  assert.equal(arara.conquistada, true); assert.ok(arara.em);
+  assert.equal(depois.figurinhas.filter(f => f.conquistada).length, 1);
+  // dias depois, o reteste mantém a missão e NÃO repete a figurinha
+  db.prepare("UPDATE competencias SET demonstrado_em = '2026-01-01T10:00:00.000Z' WHERE user_id = ? AND missao = 'brasil-arara'").run(uid);
+  novoDia();
+  ({ licao } = await R('GET', '/licao'));
+  bi = licao.blocos.findIndex(b => b.tipo === 'producao' && b.reteste && b.missao === 'brasil-arara');
+  assert.ok(bi >= 0, 'reteste da arara');
+  const r2 = await R('POST', '/licao/producao', { bloco: bi, texto: 'The macaw is a big bird. It lives in the forest and it is in danger. The forest is getting smaller and many birds need our help.', usouAjuda: false });
+  assert.equal(r2.evento, 'retido');
+  assert.ok(!r2.conquistas.includes('fig-arara'), 'figurinha não se repete no reteste');
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM conquistas WHERE user_id = ? AND codigo = 'fig-arara'").get(uid).n, 1);
+});

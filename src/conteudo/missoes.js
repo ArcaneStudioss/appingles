@@ -873,6 +873,7 @@ require('./missoes-cotidiano').MISSOES_COTIDIANO.forEach(m => M.push(m));
 require('./missoes-b-trabalho').MISSOES_B_TRABALHO.forEach(m => M.push(m));
 require('./missoes-b-cotidiano').MISSOES_B_COTIDIANO.forEach(m => M.push(m));
 require('./missoes-b-conversacao').MISSOES_B_CONVERSACAO.forEach(m => M.push(m));
+require('./missoes-brasil').MISSOES_BRASIL.forEach(m => M.push(m));
 require('./trilha-zero').TRILHA_ZERO.forEach(m => M.push(m));
 require('./trilha-debate').TRILHA_DEBATE.forEach(m => M.push(m));
 // "Caça ao erro": um exercício de detetive por missão antiga (as missões de debate trazem os seus)
