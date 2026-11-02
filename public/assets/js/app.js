@@ -1,6 +1,3 @@
-import { telaAdmin } from './telas/admin.js?v=__V__';
-import { telaPassaporte } from './telas/passaporte.js?v=__V__';
-import { telaSessao } from './telas/sessao.js?v=__V__';
 // Inglou · casca do app: rotas por hash, estado do aluno e navegação.
 import './abertura.js?v=__V__';
 import { api } from './api.js?v=__V__';
@@ -8,35 +5,9 @@ import { h, limpar, toast, icone, janela, localStorageGet, localStorageSet } fro
 import { som, lou, passearVoando } from './diversao.js?v=__V__';
 import './instalar.js?v=__V__';
 import './mascote.js?v=__V__';
-import { telaEntrar } from './telas/entrar.js?v=__V__';
-import { telaPerfil } from './telas/perfil.js?v=__V__';
-import { telaNivelamento } from './telas/nivelamento.js?v=__V__';
-import { telaHoje } from './telas/hoje.js?v=__V__';
-import { telaPlano } from './telas/plano.js?v=__V__';
-import { telaLicao } from './telas/licao.js?v=__V__';
-import { telaRevisar } from './telas/revisar.js?v=__V__';
-import { telaConversar, telaConversa } from './telas/conversar.js?v=__V__';
-import { telaProgresso } from './telas/progresso.js?v=__V__';
-import { telaMaterial, telaMaterialItem } from './telas/material.js?v=__V__';
-import { telaDuvidas } from './telas/duvidas.js?v=__V__';
-import { telaConta } from './telas/conta.js?v=__V__';
-import { telaPodcast } from './telas/podcast.js?v=__V__';
-import { telaSobMedida, telaEstudo, telaAssunto, telaSimulado } from './telas/sobmedida.js?v=__V__';
-import { telaNivel } from './telas/nivel.js?v=__V__';
-import { telaAprender } from './telas/aprender.js?v=__V__';
-import { telaTreino } from './telas/treino.js?v=__V__';
-import { telaTurmas, telaMinhaTurma, telaAtividade } from './telas/turmas.js?v=__V__';
-import { telaTurma } from './telas/professor.js?v=__V__';
 import { iniciarTour, chaveDoTour } from './tour.js?v=__V__';
 import { agendarAviso } from './lembrete.js?v=__V__';
 import { iniciarTraducoes } from './traducao.js?v=__V__';
-import { telaPublico } from './telas/publico.js?v=__V__';
-import { telaBiblioteca, telaUnidade } from './telas/biblioteca.js?v=__V__';
-import { telaBrasil } from './telas/brasil.js?v=__V__';
-import { telaSons } from './telas/sons.js?v=__V__';
-import { telaParecidas } from './telas/parecidas.js?v=__V__';
-import { telaVocabulario } from './telas/vocabulario.js?v=__V__';
-import { telaSocial, telaColecao, telaLoja } from './telas/social.js?v=__V__';
 
 const palco = document.getElementById('conteudo');
 // Mantém a escala da área de estudo; a rolagem continua livre no celular.
@@ -117,16 +88,17 @@ function abrirMais() {
 }
 btnMais?.addEventListener('click', abrirMais);
 
-const ROTAS = { admin: telaAdmin, passaporte: telaPassaporte, sessao: telaSessao,
-  desafios: telaSocial, colecao: telaColecao, loja: telaLoja,
-  brasil: telaBrasil, sons: telaSons, parecidas: telaParecidas, vocabulario: telaVocabulario,
-  biblioteca: telaBiblioteca, unidade: telaUnidade,
-  publico: telaPublico, professor: telaTurmas,
-  entrar: telaEntrar, perfil: telaPerfil, nivelamento: telaNivelamento, hoje: telaHoje, plano: telaPlano,
-  licao: telaLicao, revisar: telaRevisar, conversar: telaConversar, conversa: telaConversa, progresso: telaProgresso,
-  material: telaMaterial, 'material-item': telaMaterialItem, duvidas: telaDuvidas, conta: telaConta, podcast: telaPodcast,
-  turmas: telaTurmas, minhaturma: telaMinhaTurma, atividade: telaAtividade, turma: telaTurma,
-  nivel: telaNivel, aprender: telaAprender, treino: telaTreino, sobmedida: telaSobMedida, estudo: telaEstudo, assunto: telaAssunto, simulado: telaSimulado,
+// Cada tela só é baixada quando a rota abre: [arquivo, nome exportado]. O resto fica fora da primeira carga.
+const ROTAS = { admin: ['admin.js', 'telaAdmin'], passaporte: ['passaporte.js', 'telaPassaporte'], sessao: ['sessao.js', 'telaSessao'],
+  desafios: ['social.js', 'telaSocial'], colecao: ['social.js', 'telaColecao'], loja: ['social.js', 'telaLoja'],
+  brasil: ['brasil.js', 'telaBrasil'], sons: ['sons.js', 'telaSons'], parecidas: ['parecidas.js', 'telaParecidas'], vocabulario: ['vocabulario.js', 'telaVocabulario'],
+  biblioteca: ['biblioteca.js', 'telaBiblioteca'], unidade: ['biblioteca.js', 'telaUnidade'],
+  publico: ['publico.js', 'telaPublico'], professor: ['turmas.js', 'telaTurmas'],
+  entrar: ['entrar.js', 'telaEntrar'], perfil: ['perfil.js', 'telaPerfil'], nivelamento: ['nivelamento.js', 'telaNivelamento'], hoje: ['hoje.js', 'telaHoje'], plano: ['plano.js', 'telaPlano'],
+  licao: ['licao.js', 'telaLicao'], revisar: ['revisar.js', 'telaRevisar'], conversar: ['conversar.js', 'telaConversar'], conversa: ['conversar.js', 'telaConversa'], progresso: ['progresso.js', 'telaProgresso'],
+  material: ['material.js', 'telaMaterial'], 'material-item': ['material.js', 'telaMaterialItem'], duvidas: ['duvidas.js', 'telaDuvidas'], conta: ['conta.js', 'telaConta'], podcast: ['podcast.js', 'telaPodcast'],
+  turmas: ['turmas.js', 'telaTurmas'], minhaturma: ['turmas.js', 'telaMinhaTurma'], atividade: ['turmas.js', 'telaAtividade'], turma: ['professor.js', 'telaTurma'],
+  nivel: ['nivel.js', 'telaNivel'], aprender: ['aprender.js', 'telaAprender'], treino: ['treino.js', 'telaTreino'], sobmedida: ['sobmedida.js', 'telaSobMedida'], estudo: ['sobmedida.js', 'telaEstudo'], assunto: ['sobmedida.js', 'telaAssunto'], simulado: ['sobmedida.js', 'telaSimulado'],
 };
 const LIVRES = new Set(['entrar']);
 const ONBOARDING = new Set(['perfil', 'nivelamento', 'plano', 'publico']);
@@ -192,7 +164,10 @@ async function render() {
   const alvo = h('div', { class: 'tela' });
   limpar(palco).append(alvo);
   try {
-    await ROTAS[rota](alvo, { param, param2, estado, ir, carregarEu });
+    const [arq, nomeTela] = ROTAS[rota];
+    const tela = (await import(`./telas/${arq}?v=__V__`))[nomeTela];
+    if (meu !== renderizando) return;
+    await tela(alvo, { param, param2, estado, ir, carregarEu });
   } catch (e) {
     console.error(e);
     if (meu !== renderizando) return;
@@ -221,5 +196,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) agen
 addEventListener('hashchange', render);
 addEventListener('online', () => toast('Conexão de volta.'));
 render();
+// com o navegador parado, já traz as telas mais usadas (a primeira aula e o Hoje) para abrirem na hora
+(window.requestIdleCallback || (f => setTimeout(f, 2500)))(() => ['hoje.js', 'licao.js'].forEach(a => import(`./telas/${a}?v=__V__`).catch(() => {})));
 // Abre o app sem internet e acelera as próximas visitas. Falhar aqui não atrapalha nada.
 if ('serviceWorker' in navigator && location.protocol !== 'file:') addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));

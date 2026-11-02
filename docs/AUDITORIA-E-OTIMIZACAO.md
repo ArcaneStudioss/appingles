@@ -50,8 +50,8 @@ Medi o que existe: `public/` = 8,4 MB, dos quais **7,6 MB são 527 mp3** do Tuiu
 3. ✅ **Cache** (ETag + 304 nos textos): o `max-age` de 1 ano com `?v=` já está certo. Adicionar `ETag` para os arquivos sem `?v=` (hoje 5 min).
 4. **Fontes**: conferir se Caveat (51 KB) é usada. Se for só num título, trocar por Fredoka e economizar 51 KB.
 
-### Fase 2: carga inicial (2 a 3 dias)
-5. **Carregar as telas sob demanda** com `import()` dinâmico por rota. Hoje o `app.js` importa as 17 telas de uma vez; só a de Hoje e a de entrada precisam vir antes. Meta: JS inicial abaixo de 60 KB (sem compressão).
+### Fase 2: carga inicial (item 5 feito em 02/11/2026: o app só baixa a tela da rota aberta e, parado, já traz Hoje e Lição)
+5. ✅ **Carregar as telas sob demanda** com `import()` dinâmico por rota. Hoje o `app.js` importa as 17 telas de uma vez; só a de Hoje e a de entrada precisam vir antes. Meta: JS inicial abaixo de 60 KB (sem compressão).
 6. **Dividir o `app.css`** (103 KB): núcleo + telas (lição, podcast, turmas, professor) em arquivos próprios, carregados com a rota. O professor e a Rádio quase nunca abrem na primeira visita.
 7. **Sprite de ícones** (35 KB): gerar só com os ícones usados (hoje inclui o conjunto inteiro?). Conferir com um script que cruza `#i-...` do código com o sprite.
 8. **Service worker** (o app já é PWA instalável): cache dos arquivos estáticos e dos mp3 já ouvidos, para abrir offline e rápido.
