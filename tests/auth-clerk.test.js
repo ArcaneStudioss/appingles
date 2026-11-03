@@ -23,7 +23,7 @@ function criarFake() {
   const usuarios = new Map(), sessoes = new Map(), estado = { excluidos: [], revogadas: [] };
   const novo = (n, email, extra = {}) => {
     const id = 'user_' + String(n).padStart(12, 'a');
-    usuarios.set(id, { id, primaryEmailAddressId: 'idn_' + n, emailAddresses: [{ id: 'idn_' + n, emailAddress: email, verification: { status: 'verified' } }], externalAccounts: [], banned: false, locked: false, ...extra });
+    usuarios.set(id, { id, primaryEmailAddressId: 'idn_' + n, emailAddresses: [{ id: 'idn_' + n, emailAddress: email, verification: { status: 'verified', strategy: 'email_code' } }], externalAccounts: [], banned: false, locked: false, ...extra });
     return id;
   };
   const sessao = (n, status = 'active') => { const id = 'sess_' + String(n).padStart(12, 'b'); sessoes.set(id, { id, status }); return id; };
@@ -209,4 +209,12 @@ test('"esqueci a senha" não vale com e-mail não verificado no Clerk', async t 
   const u = a.fake.novo(8, 'naover@example.com'); a.fake.usuarios.get(u).emailAddresses[0].verification.status = 'unverified';
   assert.equal((await n.r('POST', '/auth/clerk', { token: a.fake.token(u, a.fake.sessao(8)), esqueci: true })).status, 401);
   assert.equal(a.db.prepare("SELECT auth_provider p FROM usuarios WHERE email='naover@example.com'").get().p, 'local');
+});
+
+test('"esqueci a senha" é recusado quando o e-mail foi verificado por login social', async t => {
+  const a = await ambiente(t), n = a.navegador();
+  a.db.prepare('INSERT INTO usuarios (email,nome,senha_hash,criado_em,consentiu_em) VALUES (?,?,?,?,?)').run('social@example.com', 'S', auth.hashSenha('janela girassol frase segura 2026'), 'x', 'x');
+  const u = a.fake.novo(9, 'social@example.com'); a.fake.usuarios.get(u).emailAddresses[0].verification.strategy = 'from_oauth_google';
+  assert.equal((await n.r('POST', '/auth/clerk', { token: a.fake.token(u, a.fake.sessao(9)), esqueci: true })).status, 403);
+  assert.equal(a.db.prepare("SELECT auth_provider p FROM usuarios WHERE email='social@example.com'").get().p, 'local');
 });

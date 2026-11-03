@@ -54,7 +54,7 @@ function criarClerk({ env = process.env, clienteDe, verificarToken } = {}) {
     if (!u || u.id !== id || u.banned || u.locked || !principal?.emailAddress || principal.verification?.status !== 'verified') throw new ErroHttp(401, 'Confirme seu e-mail para continuar.');
     const email = principal.emailAddress.trim().toLowerCase();
     if (email.length > 160) throw new ErroHttp(401, 'Confirme seu e-mail para continuar.');
-    return { id: u.id, email, google: (u.externalAccounts || []).some(c => /google/.test(c.provider) && c.verification?.status === 'verified') };
+    return { id: u.id, email, porCodigo: ['email_code', 'email_link'].includes(principal.verification?.strategy), google: (u.externalAccounts || []).some(c => /google/.test(c.provider) && c.verification?.status === 'verified') };
   }
   async function sessaoAtiva(sid) {
     try { const s = await clerk().sessions.getSession(sid); return s?.id === sid && s.status === 'active'; }
@@ -105,7 +105,8 @@ function registrarClerk({ db, clerk, rota, abrirSessao, criarUsuario, validarPer
       if (existente.auth_provider === 'local') {
         // "Esqueci a senha": o Clerk já provou agora que a pessoa controla essa caixa de e-mail (principal e verificado), o mesmo
         // que uma recuperação por e-mail provaria. A senha antiga deixa de valer e as sessões antigas caem na transação abaixo.
-        if (b.esqueci === true) { if (!limiteSenha.tentar(remoto.email)) throw new ErroHttp(429, 'Muitas tentativas. Aguarde alguns minutos.'); }
+        // Só vale se o Clerk verificou o e-mail por código ou link enviado à caixa (não por login social, onde o e-mail vem do provedor).
+        if (b.esqueci === true) { if (!remoto.porCodigo) throw new ErroHttp(403, 'Para recuperar a conta antiga, saia e entre usando o código enviado ao seu e-mail (sem o Google).'); if (!limiteSenha.tentar(remoto.email)) throw new ErroHttp(429, 'Muitas tentativas. Aguarde alguns minutos.'); }
         else {
         if (typeof b.senha !== 'string') return { ok: true, etapa: 'vincular', email: remoto.email };
         if (b.senha.length > 200 || !limiteSenha.tentar(remoto.email)) throw new ErroHttp(429, 'Muitas tentativas. Aguarde alguns minutos.');
