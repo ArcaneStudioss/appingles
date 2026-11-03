@@ -30,7 +30,14 @@
       document.head.append(s);
     });
     const clerk = window.Clerk; await clerk.load();
-    const base = { signInUrl: '/entrar/', signUpUrl: '/entrar/?modo=cadastro', signInForceRedirectUrl: '/entrar/', signUpForceRedirectUrl: '/entrar/' };
+    // Visual do Inglou dentro do Clerk: cores e fonte vêm das variáveis do tema (claro/escuro) já aplicadas na página.
+    const css = getComputedStyle(document.documentElement), v = n => css.getPropertyValue(n).trim();
+    const aparencia = { variables: {
+      colorPrimary: v('--azul'), colorText: v('--tinta'), colorTextSecondary: v('--tinta-2'), colorBackground: v('--cartao'),
+      colorInputBackground: v('--cartao'), colorInputText: v('--tinta'), colorNeutral: v('--tinta'), colorDanger: v('--perigo'),
+      colorTextOnPrimaryBackground: v('--azul-sobre'), fontFamily: v('--f-texto'), fontFamilyButtons: v('--f-texto'), fontWeight: { normal: 600, medium: 700, bold: 800 }, borderRadius: v('--raio-p') || '14px'
+    }, layout: { socialButtonsVariant: 'blockButton', shimmer: false } };
+    const base = { appearance: aparencia, signInUrl: '/entrar/', signUpUrl: '/entrar/?modo=cadastro', signInForceRedirectUrl: '/entrar/', signUpForceRedirectUrl: '/entrar/' };
     const token = () => clerk.session.getToken({ skipCache: true });
     const sair = () => clerk.signOut().then(() => location.assign('/entrar/'));
 

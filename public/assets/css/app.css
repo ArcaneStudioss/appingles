@@ -2081,3 +2081,33 @@ body[data-publico=adulto] .companheiros{--mia-alto:126px;--tui-alto:80px;--dupla
 .fig__dica{margin:0;font-size:.8rem;color:var(--apagado)}
 .fig--vazia .fig__nome{color:var(--apagado)}
 
+
+/* Clerk dentro do Inglou: o cartão do Clerk some e o do Inglou (.folha) fica como único contêiner. */
+.clerk-montagem{display:block;min-width:0}
+.clerk-montagem .cl-rootBox,.clerk-montagem .cl-cardBox{width:100%;max-width:100%;box-shadow:none;border:0;background:transparent;border-radius:0;overflow:visible}
+.clerk-montagem .cl-card{background:transparent;box-shadow:none;border:0;padding:0;gap:1.1rem;width:100%;max-width:100%}
+.clerk-montagem .cl-header{display:none}
+.clerk-montagem .cl-main{gap:1rem}
+.clerk-montagem .cl-footer{background:transparent;border:0;box-shadow:none;margin:0;padding:.4rem 0 0}
+.clerk-montagem .cl-footer>*{background:transparent;border:0}
+.clerk-montagem .cl-footerAction{padding:0;justify-content:center}
+.clerk-montagem .cl-footerActionText{color:var(--tinta-2);font-weight:700}
+.clerk-montagem .cl-footerActionLink,.clerk-montagem .cl-formFieldAction,.clerk-montagem .cl-formResendCodeLink,.clerk-montagem .cl-backLink,.clerk-montagem .cl-identityPreviewEditButton{color:var(--azul-forte);font-weight:800}
+.clerk-montagem .cl-footerPages,.clerk-montagem [class*="cl-internal-"][class*="footer"]{color:var(--tinta-3)}
+.clerk-montagem .cl-formFieldLabel{color:var(--tinta);font-weight:800;font-size:1rem}
+.clerk-montagem .cl-formFieldInput,.clerk-montagem .cl-otpCodeFieldInput{min-height:52px;background:var(--cartao);color:var(--tinta);border:2px solid var(--borda-forte);border-radius:var(--raio-p);font:700 1rem var(--f-texto);box-shadow:none}
+.clerk-montagem .cl-formFieldInput:focus,.clerk-montagem .cl-otpCodeFieldInput:focus{border-color:var(--azul);box-shadow:0 0 0 5px color-mix(in srgb,var(--azul) 20%,transparent);outline:none}
+.clerk-montagem .cl-formButtonPrimary{min-height:52px;background:var(--azul);color:var(--azul-sobre);border:0;border-radius:var(--raio-p);font:800 1.02rem var(--f-texto);text-transform:none;letter-spacing:.01em;box-shadow:0 5px 0 var(--azul-sombra);transition:transform .1s var(--ease),box-shadow .1s var(--ease)}
+.clerk-montagem .cl-formButtonPrimary:hover{background:var(--azul);filter:brightness(1.07)}
+.clerk-montagem .cl-formButtonPrimary:active{transform:translateY(5px);box-shadow:0 0 0 var(--azul-sombra)}
+.clerk-montagem .cl-formButtonPrimary:focus-visible{outline:3px solid var(--azul);outline-offset:3px;box-shadow:0 5px 0 var(--azul-sombra)}
+.clerk-montagem .cl-socialButtonsBlockButton{min-height:52px;background:var(--cartao);color:var(--tinta);border:2px solid var(--borda-forte);border-radius:var(--raio-p);box-shadow:0 4px 0 var(--borda)}
+.clerk-montagem .cl-socialButtonsBlockButtonText{font:800 1rem var(--f-texto);color:var(--tinta)}
+.clerk-montagem .cl-socialButtonsBlockButton:hover{background:var(--cartao-2)}
+.clerk-montagem .cl-dividerLine{background:var(--borda)}
+.clerk-montagem .cl-dividerText{color:var(--tinta-3);font-weight:700}
+.clerk-montagem .cl-formFieldErrorText,.clerk-montagem .cl-alertText{color:var(--perigo);font-weight:800}
+.clerk-montagem .cl-badge{display:none}
+.auth-cartao.folha{padding:1.4rem 1.2rem}
+.auth-cartao .auth-titulo{font-family:var(--f-titulo);font-weight:600;font-size:1.6rem;line-height:1.2;outline:none}
+.auth-cartao .auth-titulo:focus{outline:none}
