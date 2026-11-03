@@ -59,7 +59,7 @@
     function formularioPerfil() {
       const nome = h('input', { id: 'c-nome', type: 'text', autocomplete: 'name', maxlength: 80, required: true, value: clerk.user?.firstName || '' });
       const idade = h('input', { id: 'c-idade', type: 'number', inputmode: 'numeric', min: 1, max: 120, step: 1, required: true });
-      const papel = h('select', { id: 'c-papel' }, h('option', { value: 'aluno' }, 'Aluno(a): estudar e participar de turmas'), h('option', { value: 'professor' }, 'Professor(a): criar aulas e acompanhar turmas'), h('option', { value: 'ambos' }, 'Os dois'));
+      const papel = h('select', { id: 'c-papel' }, h('option', { value: 'aluno' }, 'Aluno(a): quero estudar'), h('option', { value: 'professor' }, 'Professor(a): quero ensinar'), h('option', { value: 'ambos' }, 'Os dois'));
       const regiao = h('select', { id: 'c-regiao' }, h('option', { value: '' }, 'Prefiro não informar'), ...[['norte', 'Norte'], ['nordeste', 'Nordeste'], ['centro-oeste', 'Centro-Oeste'], ['sudeste', 'Sudeste'], ['sul', 'Sul'], ['fora', 'Moro fora do Brasil']].map(([v, r]) => h('option', { value: v }, r)));
       const resp = h('input', { type: 'checkbox', id: 'c-resp' }), consent = h('input', { type: 'checkbox', id: 'c-consent' });
       const menor = h('div', { class: 'consentimento', hidden: true }, resp, h('label', { for: 'c-resp' }, 'O responsável autorizou o estudo nesta conta.'));
@@ -87,13 +87,21 @@
         msg.textContent = ''; btn.disabled = true;
         try { await concluir(extra); } catch (err) { msg.textContent = err.message; btn.disabled = false; }
       };
-      const esqueci = h('button', { type: 'button', class: 'btn btn-sec btn-bloco', on: { click: () => {
-        if (confirm(`Vamos ligar a sua conta antiga do Inglou ao e-mail ${email}, que você acabou de confirmar. A senha antiga deixa de valer e você passa a entrar só pelo novo acesso. Continuar?`)) tentar({ esqueci: true });
-      } } }, 'Esqueci minha senha antiga');
-      const outra = h('button', { type: 'button', class: 'btn btn-texto btn-bloco', on: { click: sair } }, 'Entrar com outra conta');
+      const esqueci = h('button', { type: 'button', class: 'btn btn-sec btn-bloco', on: { click: () => confirmarEsqueci(email) } }, 'Esqueci minha senha antiga');
       return h('form', { novalidate: true, on: { submit: e => { e.preventDefault(); tentar({ senha: senha.value }); } } },
         h('p', { class: 'ajuda' }, `Já existe uma conta do Inglou com ${email}. Confirme a senha que você usava antes para manter seus estudos, assinatura e turmas.`),
-        h('div', { class: 'campo' }, h('label', { for: 'c-senha' }, 'Senha atual do Inglou'), senha), msg, btn, esqueci, outra);
+        h('div', { class: 'campo' }, h('label', { for: 'c-senha' }, 'Senha atual do Inglou'), senha), msg,
+        h('div', { class: 'auth-acoes' }, btn, esqueci),
+        h('p', { class: 'ajuda centro' }, h('a', { href: '/entrar/', on: { click: e => { e.preventDefault(); sair(); } } }, 'Entrar com outra conta')));
+    }
+    // Confirmação na própria página (mesmo padrão das outras telas daqui), sem a caixa nativa do navegador.
+    function confirmarEsqueci(email) {
+      const msg = h('p', { class: 'erro-campo', role: 'alert' }), btn = h('button', { type: 'button', class: 'btn btn-bloco', on: { click: async () => {
+        msg.textContent = ''; btn.disabled = true;
+        try { await concluir({ esqueci: true }); } catch (err) { msg.textContent = err.message; btn.disabled = false; }
+      } } }, 'Sim, ligar minha conta');
+      tela('Ligar sua conta antiga', h('p', { class: 'ajuda' }, `Vamos ligar a conta antiga do Inglou ao e-mail ${email}, que você acabou de confirmar. A senha antiga deixa de valer e você passa a entrar só por este acesso. Seus estudos, assinatura e turmas continuam.`), msg,
+        h('div', { class: 'auth-acoes' }, btn, h('button', { type: 'button', class: 'btn btn-sec btn-bloco', on: { click: () => concluir().catch(err => falha(err.message)) } }, 'Voltar')));
     }
     async function concluir(extra = {}) {
       const r = await api('/auth/clerk', { token: await token(), ...extra });

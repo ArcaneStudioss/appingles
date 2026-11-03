@@ -2145,6 +2145,10 @@ body[data-publico=adulto] .companheiros{--mia-alto:126px;--tui-alto:80px;--dupla
 .entrar.auth-cartao>*{margin:0;min-width:0}
 .entrar.auth-cartao .auth-titulo{font-family:var(--f-titulo);font-weight:600;font-size:1.6rem;line-height:1.2;outline:none}
 #clerk-raiz :is(.cl-rootBox,.cl-cardBox,.cl-card,.cl-main,.cl-form,.cl-form>div,.cl-form>div>div,.cl-formField,.cl-formFieldRow,.cl-socialButtonsRoot,.cl-socialButtons,.cl-footer){width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box}
+/* grupos de botões do Inglou: o botão "tecla" tem 5px de sombra, então o espaço entre eles é de pelo menos 1.25rem */
+.auth-acoes{display:grid;gap:1.25rem}
+.auth-cartao .auth-acoes{margin:.1rem 0 .2rem}
+#clerk-raiz form>.campo{margin-bottom:0}
 #clerk-raiz .cl-card{gap:1.4rem!important}
 #clerk-raiz .cl-main{gap:1.4rem!important}
 #clerk-raiz .cl-form{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:1.1rem!important}
