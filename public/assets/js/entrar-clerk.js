@@ -37,7 +37,21 @@
       colorPrimary: v('--azul'), colorText: v('--tinta'), colorTextSecondary: v('--tinta-2'), colorBackground: v('--cartao'),
       colorInputBackground: v('--cartao'), colorInputText: v('--tinta'), colorNeutral: v('--tinta'), colorDanger: v('--perigo'),
       colorTextOnPrimaryBackground: v('--azul-sobre'), fontFamily: v('--f-texto'), fontFamilyButtons: v('--f-texto'), fontWeight: { normal: 600, medium: 700, bold: 800 }, borderRadius: v('--raio-p') || '14px'
-    }, layout: { socialButtonsVariant: 'blockButton', shimmer: false } };
+    }, layout: { socialButtonsVariant: 'blockButton', shimmer: false }, elements: (() => {
+      // Estilos aplicados pelo próprio Clerk (não dependem de seletores de CSS); !important garante a vitória sobre o tema padrão.
+      const i = o => Object.fromEntries(Object.entries(o).map(([k, x]) => [k, typeof x === 'string' ? x + ' !important' : x]));
+      const solto = i({ width: '100%', maxWidth: '100%', minWidth: '0', margin: '0', padding: '0', background: 'transparent', backgroundImage: 'none', border: '0', boxShadow: 'none', borderRadius: '0' });
+      const campo = i({ width: '100%', maxWidth: '100%', minHeight: '52px', background: v('--cartao'), color: v('--tinta'), border: `2px solid ${v('--borda-forte')}`, borderRadius: v('--raio-p') || '14px', boxShadow: 'none', fontWeight: '700', fontSize: '1rem' });
+      return {
+        rootBox: i({ width: '100%', maxWidth: '100%', margin: '0', padding: '0' }), cardBox: solto, card: { ...solto, gap: '1.25rem' },
+        header: i({ display: 'none' }), main: i({ gap: '1.25rem', width: '100%' }), form: i({ width: '100%', gap: '1.1rem' }), formFieldRow: i({ width: '100%' }), formField: i({ width: '100%' }),
+        footer: solto, footerAction: { ...solto, justifyContent: 'center' }, footerPages: solto, footerActionText: i({ color: v('--tinta-2'), fontWeight: '700' }), footerActionLink: i({ color: v('--azul-forte'), fontWeight: '800' }),
+        formFieldLabel: i({ color: v('--tinta'), fontWeight: '800', fontSize: '1rem' }), formFieldInput: campo, otpCodeFieldInput: campo,
+        formButtonPrimary: i({ width: '100%', minHeight: '52px', background: v('--azul'), backgroundImage: 'none', color: v('--azul-sobre'), border: '0', borderRadius: v('--raio-p') || '14px', fontWeight: '800', fontSize: '1.02rem', textTransform: 'none', boxShadow: `0 5px 0 ${v('--azul-sombra')}`, marginBottom: '5px' }),
+        socialButtonsBlockButton: i({ width: '100%', minHeight: '52px', background: v('--cartao'), color: v('--tinta'), border: `2px solid ${v('--borda-forte')}`, borderRadius: v('--raio-p') || '14px', boxShadow: `0 4px 0 ${v('--borda')}`, marginBottom: '4px' }),
+        socialButtonsBlockButtonText: i({ color: v('--tinta'), fontWeight: '800', fontSize: '1rem' }), dividerLine: i({ background: v('--borda') }), dividerText: i({ color: v('--tinta-3'), fontWeight: '700' })
+      };
+    })() };
     const base = { appearance: aparencia, localization: ptBR, signInUrl: '/entrar/', signUpUrl: '/entrar/?modo=cadastro', signInForceRedirectUrl: '/entrar/', signUpForceRedirectUrl: '/entrar/' };
     const token = () => clerk.session.getToken({ skipCache: true });
     const sair = () => clerk.signOut().then(() => location.assign('/entrar/'));
