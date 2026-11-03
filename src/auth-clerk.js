@@ -103,10 +103,15 @@ function registrarClerk({ db, clerk, rota, abrirSessao, criarUsuario, validarPer
     if (existente) {
       // Conta antiga com senha própria: o e-mail verificado não basta, a senha atual prova que a conta é dessa pessoa.
       if (existente.auth_provider === 'local') {
+        // "Esqueci a senha": o Clerk já provou agora que a pessoa controla essa caixa de e-mail (principal e verificado), o mesmo
+        // que uma recuperação por e-mail provaria. A senha antiga deixa de valer e as sessões antigas caem na transação abaixo.
+        if (b.esqueci === true) { if (!limiteSenha.tentar(remoto.email)) throw new ErroHttp(429, 'Muitas tentativas. Aguarde alguns minutos.'); }
+        else {
         if (typeof b.senha !== 'string') return { ok: true, etapa: 'vincular', email: remoto.email };
         if (b.senha.length > 200 || !limiteSenha.tentar(remoto.email)) throw new ErroHttp(429, 'Muitas tentativas. Aguarde alguns minutos.');
         if (!await auth.conferirSenhaAsync(b.senha, existente.senha_hash)) throw new ErroHttp(401, 'Senha atual incorreta.');
         limiteSenha.limpar(remoto.email);
+        }
       }
       return transacao(db, () => {
         // Outra identidade pode ter vinculado a conta enquanto a senha era conferida: reconfere dentro da transação.

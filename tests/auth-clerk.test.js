@@ -187,3 +187,26 @@ test('rota do Clerk exige o cabeçalho anti-CSRF e o provedor sem configuração
   const desligado = criarClerk({ env: { AUTH_PROVIDER: 'clerk', SITE_URL: SITE } });
   await assert.rejects(() => desligado.verificar('x'.repeat(30)), e => e.status === 503);
 });
+
+test('conta antiga: "esqueci a senha" vincula pelo e-mail verificado no Clerk e invalida a senha antiga', async t => {
+  const a = await ambiente(t), n = a.navegador();
+  const hash = auth.hashSenha('janela girassol frase segura 2026');
+  const uid = Number(a.db.prepare('INSERT INTO usuarios (email,nome,senha_hash,criado_em,consentiu_em) VALUES (?,?,?,?,?)').run('esqueci@example.com', 'Esqueci', hash, 'x', 'x').lastInsertRowid);
+  a.db.prepare('INSERT INTO perfis (user_id,idade,papel,regiao,atualizado_em) VALUES (?,?,?,?,?)').run(uid, 30, 'aluno', null, 'x');
+  a.db.prepare('INSERT INTO sessoes (id_hash,user_id,criado_em,expira_em) VALUES (?,?,?,?)').run('esqueci-hash', uid, 1, Date.now() + 1e6);
+  const u = a.fake.novo(7, 'esqueci@example.com'), tk = a.fake.token(u, a.fake.sessao(7));
+  assert.equal((await n.r('POST', '/auth/clerk', { token: tk })).dados.etapa, 'vincular');
+  assert.equal((await n.r('POST', '/auth/clerk', { token: tk, esqueci: true })).dados.etapa, 'concluido');
+  const reg = a.db.prepare('SELECT * FROM usuarios WHERE id=?').get(uid);
+  assert.equal(reg.auth_provider, 'clerk'); assert.equal(reg.senha_hash, 'clerk');
+  assert.equal(a.db.prepare("SELECT COUNT(*) n FROM sessoes WHERE id_hash='esqueci-hash'").get().n, 0);
+  assert.equal((await n.r('GET', '/eu')).dados.usuario.email, 'esqueci@example.com');
+});
+
+test('"esqueci a senha" não vale com e-mail não verificado no Clerk', async t => {
+  const a = await ambiente(t), n = a.navegador();
+  a.db.prepare('INSERT INTO usuarios (email,nome,senha_hash,criado_em,consentiu_em) VALUES (?,?,?,?,?)').run('naover@example.com', 'N', auth.hashSenha('janela girassol frase segura 2026'), 'x', 'x');
+  const u = a.fake.novo(8, 'naover@example.com'); a.fake.usuarios.get(u).emailAddresses[0].verification.status = 'unverified';
+  assert.equal((await n.r('POST', '/auth/clerk', { token: a.fake.token(u, a.fake.sessao(8)), esqueci: true })).status, 401);
+  assert.equal(a.db.prepare("SELECT auth_provider p FROM usuarios WHERE email='naover@example.com'").get().p, 'local');
+});
