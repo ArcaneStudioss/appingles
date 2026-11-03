@@ -1849,6 +1849,7 @@ main details>summary:focus-visible{outline:3px solid var(--azul);outline-offset:
 .lou--tui{overflow:visible;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .lou--tui.tui--espia{overflow:hidden}
 .lou--tui .lou__corpo{animation:none}
+@media (prefers-reduced-motion:no-preference){.lou--tui .lou__corpo{transform-origin:60px 74px}}
 .lou--tui .tui__resp{transform-origin:62px 110px}
 .lou--tui .tui__cabeca{transform-origin:66px 54px;transition:transform .5s var(--mola,ease)}
 .lou--tui .tui__cauda{transform-origin:54px 88px}

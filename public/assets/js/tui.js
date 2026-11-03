@@ -45,6 +45,8 @@ export function desenharTui(humor = 'oi', { tamanho = 96, rotulo = 'Tuiuiú, a a
 
   const corpo = el('g', { class: 'lou__corpo' });
   const resp = el('g', { class: 'tui__resp' });
+  // a asa do outro lado, a cauda e as patas fazem parte do corpo: pulo, giro e balanço levam tudo junto (só a sombra fica no chão)
+  for (const c of ['tui__asa-longe', 'tui__cauda', 'tui__pernas']) corpo.append(s.querySelector('.' + c));
   corpo.append(resp);
   // tronco, barriga clara e penas do peito
   resp.append(el('ellipse', { cx: 62, cy: 74, rx: 25, ry: 34, fill: `url(#${grad})`, transform: 'rotate(7 62 74)' }),
