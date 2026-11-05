@@ -36,7 +36,7 @@ function cabecalhos(res) {
 // A página /entrar/ é a única que carrega o Clerk; só ela recebe esta política, o resto do site continua estrito.
 function cabecalhosEntrar(res, frontendApi) {
   const fapi = frontendApi ? 'https://' + frontendApi : '';
-  res.setHeader('Content-Security-Policy', `default-src 'self'; img-src 'self' data: https://img.clerk.com; style-src 'self' 'unsafe-inline'; script-src 'self' ${fapi} https://challenges.cloudflare.com; connect-src 'self' ${fapi}; frame-src https://challenges.cloudflare.com; worker-src blob:; font-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'`);
+  res.setHeader('Content-Security-Policy', `default-src 'self'; img-src 'self' data: https://img.clerk.com; style-src 'self' 'unsafe-inline'; script-src 'self' ${fapi} https://challenges.cloudflare.com https://cdn.protect.clerk.com; connect-src 'self' ${fapi}; frame-src https://challenges.cloudflare.com; worker-src blob:; font-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'`);
 }
 
 function json(res, status, obj) {
