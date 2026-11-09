@@ -124,6 +124,13 @@ function enviarTexto(res, abs, jaComStatus, req) {
     let txt = cacheTexto.get(abs);
     if (txt === undefined) {
       txt = fs.readFileSync(abs, 'utf8').replaceAll('__V__', VERSAO);
+      // Página pública: os cartões de planos e as ofertas (dados estruturados) vêm do catálogo único.
+      // A troca tinha se perdido na otimização de compressão e a página mostrava o texto "__CATALOGO_PLANOS__".
+      if (txt.includes('__CATALOGO_PLANOS__') || txt.includes('__OFERTAS_PLANOS__')) {
+        const planos = require('./catalogo-planos');
+        txt = txt.replace('__CATALOGO_PLANOS__', planos.htmlPlanos())
+          .replace('__OFERTAS_PLANOS__', JSON.stringify(planos.CATALOGO.flatMap(p => p.mensal ? ['mensal', 'anual'].map(periodo => ({ '@type': 'Offer', name: p.nome + ' ' + periodo, price: (p[periodo] / 100).toFixed(2), priceCurrency: 'BRL' })) : [])));
+      }
       if (process.env.NODE_ENV === 'production') cacheTexto.set(abs, txt);
     }
     if (!jaComStatus) res.statusCode = 200;

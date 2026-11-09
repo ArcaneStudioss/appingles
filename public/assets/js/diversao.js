@@ -234,6 +234,12 @@ export function voarComemorando({ jeito, tamanho, confetes = true, companhia = f
     { transform: T(vw * (sentido > 0 ? .3 : .7), vh * .3, 1, -6 * sentido), offset: .35 },
     { transform: T(mx, vh * .22, 1.12, 0), offset: .55 },
     { transform: T(xb, vh * .12, .8, -10 * sentido), offset: 1 },
+  ] : j === 'rasante' ? [
+    // passa só pela faixa de cima da tela: comemora sem cobrir a pergunta nem as respostas
+    { transform: T(xa, vh * .2, .8, 8 * sentido), offset: 0, easing: 'cubic-bezier(.3,.6,.4,1)' },
+    { transform: T(vw * (sentido > 0 ? .3 : .7), vh * .1, 1, -6 * sentido), offset: .4 },
+    { transform: T(mx, vh * .13, 1.06, 0), offset: .6 },
+    { transform: T(xb, vh * .05, .8, -10 * sentido), offset: 1 },
   ] : j === 'pirueta' ? [
     { transform: T(mx, -H, .7, 0), offset: 0, easing: 'cubic-bezier(.2,.7,.3,1)' },
     { transform: T(mx, vh * .36, 1.25, 0), offset: .38 },
@@ -251,7 +257,7 @@ export function voarComemorando({ jeito, tamanho, confetes = true, companhia = f
     const notas = document.createElement('span'); notas.className = 'festa-notas'; notas.textContent = '♪ ♫ ✦';
     mia.append(notas); camada.append(mia);
   }
-  const ms = companhia ? 3000 : j === 'cruza' ? 1500 : 1700;
+  const ms = companhia ? 3000 : j === 'rasante' ? 1300 : j === 'cruza' ? 1500 : 1700;
   const anim = caixa.animate(quadros, { duration: ms, fill: 'forwards' });
   let timer, confeteTimer, encerrado = false;
   const fim = () => {
@@ -295,11 +301,11 @@ export function pontosFlutuantes(alvo, texto = '+10') {
 }
 
 // número que conta de 0 até o valor (placar do fim da lição)
-export function contar(el, ate, { ms = 900, sufixo = '' } = {}) {
-  if (reduzirMovimento() || !(ate > 0)) { el.textContent = ate + sufixo; return; }
+export function contar(el, ate, { ms = 900, sufixo = '', prefixo = '' } = {}) {
+  if (reduzirMovimento() || !(ate > 0)) { el.textContent = prefixo + ate + sufixo; return; }
   const t0 = performance.now();
-  const passo = t => { const k = Math.min(1, (t - t0) / ms), v = Math.round(ate * (1 - Math.pow(1 - k, 3))); el.textContent = v + sufixo; if (k < 1 && el.isConnected) requestAnimationFrame(passo); };
-  el.textContent = '0' + sufixo; requestAnimationFrame(passo);
+  const passo = t => { const k = Math.min(1, (t - t0) / ms), v = Math.round(ate * (1 - Math.pow(1 - k, 3))); el.textContent = prefixo + v + sufixo; if (k < 1 && el.isConnected) requestAnimationFrame(passo); };
+  el.textContent = prefixo + '0' + sufixo; requestAnimationFrame(passo);
 }
 
 // toque no Tuiuiú ou na Mia: reação visual (CSS) e um som curtinho

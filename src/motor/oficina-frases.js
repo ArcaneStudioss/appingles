@@ -10,10 +10,13 @@ function montarOficina(def, rodada, missao, ctx) {
   const modelo = modelos[indice];
   const outro = modelos[1 - indice];
   const ensino = { ...modelo, nota: def.guia?.nota || def.explicacao.texto };
+  // Quem vem acertando tudo vê o modelo só no primeiro exercício; nos outros, a dica continua a um toque.
+  const recentes = (ctx.tentativas || []).filter(t => t.origem === 'licao').slice(-6);
+  const embalado = recentes.length >= 6 && recentes.every(t => t.correto);
   const criar = (n, extra, comApoio = true) => ({
     id: `oficina:${def.id}:${indice}:${repetir ? 'rever' : 'aprender'}:${n}`,
     missao: def.id, habilidade: 'vocabulario', dif: 1, guiado: true,
-    explica: `${modelo.en} = ${modelo.pt}`, ...(comApoio ? { ensino } : {}), ...extra,
+    explica: `${modelo.en} = ${modelo.pt}`, ...(comApoio && !(embalado && n > 1) ? { ensino } : {}), ...extra,
   });
   const exercicios = [
     criar(1, { tipo: 'escolha', enunciado: 'Veja o exemplo. Qual é o significado da frase?', opcoes: [modelo.pt, outro.pt], resposta: 0 }),
@@ -23,7 +26,7 @@ function montarOficina(def, rodada, missao, ctx) {
     criar(5, { tipo: 'ordenar', enunciado: `Sem o modelo desta vez: monte “${modelo.pt}”.`, palavras: modelo.en.split(/\s+/), resposta: modelo.en }, false),
   ];
   return {
-    data: ctx.hojeISO, guiada: true, inicianteGuiado: true, oficina: true, minutos: 5, missao,
+    data: ctx.hojeISO, guiada: true, inicianteGuiado: true, oficina: true, minutos: 5, missao, ...(embalado ? { embalado: true } : {}),
     revisoesPendentes: ctx.cartoesPendentes || 0,
     porque: [repetir ? 'Vamos repetir a mesma frase e retirar o modelo aos poucos.' : 'Hoje vamos aprender uma frase, entender cada pedaço e praticar antes de escrever sozinho.'],
     blocos: [

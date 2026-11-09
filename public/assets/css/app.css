@@ -2120,7 +2120,6 @@ body[data-publico=adulto] .companheiros{--mia-alto:126px;--tui-alto:80px;--dupla
   .btn:not(:disabled):hover{filter:brightness(1.04)}
   .opcao{transition:transform .15s var(--mola),border-color .15s,background .15s}
 }
-=======
 /* Álbum Brasil: figurinhas de adesivo redondo (foto, nome, estado, legenda em inglês que traduz ao toque) */
 .fig-brasil .ajuda{margin:.2rem 0 .6rem}
 .fig-grupo{font-size:.8rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--grafite);margin:1.1rem 0 .6rem}
@@ -2168,3 +2167,52 @@ body[data-publico=adulto] .companheiros{--mia-alto:126px;--tui-alto:80px;--dupla
 #clerk-raiz .cl-footer>div:last-child *{color:inherit}
 #clerk-raiz .cl-formFieldInput::placeholder{color:var(--tinta-3);opacity:1}
 #clerk-raiz .cl-formFieldErrorText,#clerk-raiz .cl-alertText{color:var(--perigo);font-weight:800}
+
+/* ---------- revisão de 11/2026: menos peso visual, mais recompensa ---------- */
+/* Fim da aula: o placar aceita de 2 a 4 itens (acertos, XP, combo, tempo) sem espremer */
+.placar{grid-template-columns:repeat(auto-fit,minmax(min(84px,28%),1fr))}
+.passo--fim .nivel-aviso{text-align:left;width:100%;max-width:460px;box-sizing:border-box}
+.placar{text-align:center;margin-inline:auto}
+.placar__item strong b{font-weight:inherit}
+.placar__item strong small{font-family:var(--f-texto,inherit);font-size:.8rem;font-weight:800;opacity:.8}
+.ritmo-chip{justify-self:start}
+/* Elogio em inglês com a tradução ao lado */
+.elogio-en{font-size:1.15em}
+.elogio-pt{font-family:var(--f-texto,inherit);font-size:.8em;font-weight:800;color:var(--tinta-2);white-space:nowrap}
+/* "Reportar problema" é raro: vira um link discreto, não mais um botão do tamanho das ações principais */
+.relatar-questao{display:inline-flex;align-items:center;gap:.35rem;min-height:44px;padding:.2rem 0;margin-top:.1rem;border:0;background:none;font:inherit;font-size:.85rem;font-weight:700;color:var(--tinta-2);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--tinta-2) 45%,transparent);text-underline-offset:3px;cursor:pointer;justify-self:start}
+.relatar-questao .ico{width:1rem;height:1rem;opacity:.8}
+.relatar-questao:focus-visible{outline:3px solid var(--azul);outline-offset:2px;border-radius:8px}
+@media (hover:hover){.relatar-questao:hover{color:var(--tinta)}}
+/* Retorno do exercício no celular: "Ler explicação" e "Tentar de novo" cabem na mesma linha (o painel fica ~50px mais baixo) */
+@media (max-width:440px){.retorno-exercicio__acoes .btn{padding-inline:.65rem}.retorno-exercicio .relatar-questao{min-height:40px;margin-top:0}}
+/* Álbum Brasil no celular: as que faltam ficam em duas colunas e menores; a figurinha colada ocupa a linha toda */
+@media (max-width:560px){
+  .fig-grade{grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem .7rem}
+  .fig-grade>li:has(.fig:not(.fig--vazia)){grid-column:1/-1}
+  .fig--vazia .fig__foto{width:min(100%,108px);border-width:5px}
+  .fig--vazia .fig__nome{font-size:.95rem}
+  .fig--vazia .fig__dica{display:none}
+}
+/* Loja: o aviso "Faltam N moedas" não encosta mais na sombra do botão */
+.loja-produtos article>.btn{margin-bottom:.35rem}
+.loja-produtos article>.btn+.ajuda{margin-top:.75rem}
+/* Barras de XP e de desafio com a cara do app (antes: barra cinza padrão do navegador) */
+.social-carteira progress,.social-desafio progress{appearance:none;-webkit-appearance:none;height:12px;border-radius:99px;overflow:hidden;background:color-mix(in srgb,var(--lilas) 18%,var(--cartao))}
+.social-carteira progress::-webkit-progress-bar,.social-desafio progress::-webkit-progress-bar{background:color-mix(in srgb,var(--lilas) 18%,var(--cartao));border-radius:99px}
+.social-carteira progress::-webkit-progress-value,.social-desafio progress::-webkit-progress-value{background:linear-gradient(90deg,var(--lilas),var(--azul));border-radius:99px;transition:width .6s var(--ease)}
+.social-carteira progress::-moz-progress-bar,.social-desafio progress::-moz-progress-bar{background:linear-gradient(90deg,var(--lilas),var(--azul));border-radius:99px}
+@media (prefers-reduced-motion:no-preference){
+  /* acerto: o elogio "pula" e um brilho atravessa a alternativa certa */
+  .retorno-exercicio--certo .folha-resposta__titulo{animation:selo-pop .5s var(--mola) both;transform-origin:0 60%}
+  .is-certo .opcao.escolhida{position:relative;overflow:hidden}
+  .is-certo .opcao.escolhida::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.55) 50%,transparent 65%);transform:translateX(-120%);animation:rev-brilho .7s .12s var(--ease) both;pointer-events:none}
+  /* a barra da aula dá um pulso de luz cada vez que avança */
+  .trilho__cheio::before{content:"";position:absolute;right:0;top:0;bottom:0;width:26px;border-radius:99px;background:radial-gradient(circle at 70% 50%,rgba(255,255,255,.85),transparent 70%);opacity:0}
+  .trilho.is-avanca .trilho__cheio::before{animation:rev-pulso .7s var(--ease)}
+  /* chama apagada na tela inicial: balança de leve, chamando para a primeira aula do dia */
+  .status__item--seq:not(.acesa) .chama-mini{animation:rev-chama 2.8s ease-in-out infinite;transform-origin:50% 90%}
+}
+@keyframes rev-brilho{to{transform:translateX(120%)}}
+@keyframes rev-pulso{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
+@keyframes rev-chama{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}

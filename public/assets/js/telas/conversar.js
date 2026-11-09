@@ -20,7 +20,7 @@ export async function telaConversar(el, { ir }) {
   };
   el.append(
     h('header', { class: 'cabeca c-menta' }, h('span', { class: 'bolha' }, icone('chats')), h('div', {}, h('h1', {}, 'Conversar'), h('p', { class: 'ajuda' }, 'Escolha uma situação e converse com o Tuiuiú em inglês. O que travar vira a sua próxima aula.'))),
-    ia ? null : h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, 'Modo de prática: o tutor segue um roteiro do cenário e aponta os erros mais comuns. Com a IA ligada, a conversa fica livre e a correção, completa.')),
+    ia ? null : h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, 'Modo de prática: a conversa segue o roteiro da situação e aponta os erros mais comuns.')),
     h('ul', { class: 'cenarios' }, [...cenarios].sort((a, b) => (b.recomendado || b.id === pre) - (a.recomendado || a.id === pre)).map((c, k) => {
       const rec = c.recomendado || c.id === pre;
       const b = h('button', { type: 'button', class: `cenario c-${rec ? 'menta' : CORES[k % CORES.length]}` + (rec ? ' cenario--rec' : ''), on: { click: () => iniciar(c.id, b) } },

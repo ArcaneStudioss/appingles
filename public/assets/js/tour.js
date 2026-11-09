@@ -34,7 +34,10 @@ export function iniciarTour({ chave } = {}) {
   const foco = h('div', { class: 'tour__foco' });
   const cartao = h('div', { class: 'tour__cartao', role: 'document' });
   const raiz = h('div', { class: 'tour', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'tour-t' }, foco, cartao);
-  const terminar = () => { if (chave) localStorageSet(chave, 'sim'); removeEventListener('resize', posicionar); removeEventListener('keydown', teclas, true); raiz.remove(); retorno?.focus?.({ preventScroll: true }); };
+  const terminar = (visto = true) => { if (chave && visto) localStorageSet(chave, 'sim'); removeEventListener('resize', posicionar); removeEventListener('keydown', teclas, true); removeEventListener('hashchange', aoTrocarTela); raiz.remove(); if (visto) retorno?.focus?.({ preventScroll: true }); };
+  // Se a pessoa já saiu da tela (tocou em "5 min" enquanto o tour abria), o tour sai junto em vez de ficar por cima da aula bloqueando os toques.
+  // Não conta como visto: ele volta na próxima visita à tela inicial.
+  const aoTrocarTela = () => terminar(false);
   const ir = d => { k = Math.max(0, Math.min(lista.length - 1, k + d)); desenhar(); };
 
   function posicionar() {
@@ -74,6 +77,6 @@ export function iniciarTour({ chave } = {}) {
       else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primeiro.focus(); }
     }
   }
-  addEventListener('resize', posicionar); addEventListener('keydown', teclas, true);
+  addEventListener('resize', posicionar); addEventListener('keydown', teclas, true); addEventListener('hashchange', aoTrocarTela);
   document.body.append(raiz); desenhar();
 }

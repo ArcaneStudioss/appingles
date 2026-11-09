@@ -14,7 +14,7 @@ function det(id, frase, errada, certa, explica, extra = {}) {
 
 // Uma frase por missão antiga (a trilha de debate traz as suas dentro do próprio arquivo).
 const BANCO = {
-  'apresentar': [det('apresentar-d1', 'I have 30 years and I work at a hospital.', 'have', "am (I'm 30)", 'Idade usa o verbo "to be": I am 30, não "I have 30 years".', { tag: 'idade-have' })],
+  'apresentar': [det('apresentar-d1', 'I have 30 years old and I work at a hospital.', 'have', 'am', 'Idade usa o verbo "to be": I am 30 years old, não "I have 30 years".', { tag: 'idade-have' })],
   'trajetoria': [det('trajetoria-d1', 'I work here since 2019.', 'work', "have worked (I've worked here since 2019)", 'Começou no passado e continua: present perfect com since.', { tag: 'tempo-desde' })],
   'projeto': [det('projeto-d1', 'Last month I buyed a new laptop for the project.', 'buyed', 'bought', '"Buy" é irregular: buy, bought, bought.', { tag: 'passado-irregular' })],
   'perguntas-entrevista': [det('perguntas-entrevista-d1', 'Did you went to the interview yesterday?', 'went', 'go', 'Depois de "did", o verbo volta ao infinitivo: Did you go...?', { tag: 'perguntas-do' })],
@@ -32,7 +32,7 @@ const BANCO = {
   'planos': [det('planos-d1', 'I pretend to change careers next year.', 'pretend', 'plan', 'Falso amigo: "pretend" é fingir. "Pretendo" = I plan to / I intend to.', { tag: 'falsos-cognatos' })],
   'zero-oi-tchau': [det('zero-oi-tchau-d1', 'Good morning! How is you?', 'is', 'are', 'Com "you" usamos "are": How are you?', { dif: 1 })],
   'zero-nome-origem': [det('zero-nome-origem-d1', 'My name are Ana and I am from Brazil.', 'are', 'is', '"My name" é uma coisa só: is.', { dif: 1 })],
-  'zero-numeros': [det('zero-numeros-d1', 'I have twenty years.', 'have', 'am (I am twenty)', 'Idade usa "to be": I am twenty.', { dif: 1, tag: 'idade-have' })],
+  'zero-numeros': [det('zero-numeros-d1', 'I have twenty years old.', 'have', 'am', 'Idade usa "to be": I am twenty years old. Também pode ser só "I am twenty".', { dif: 1, tag: 'idade-have' })],
   'zero-to-be': [det('zero-to-be-d1', 'She are my sister.', 'are', 'is', 'She = is. Com she/he/it usamos "is".', { dif: 1 })],
   'zero-familia': [det('zero-familia-d1', 'This is my mother. He name is Rita.', 'He', 'Her', 'Mulher: her name. Homem: his name.', { dif: 1 })],
   'zero-cores-casa': [det('zero-cores-casa-d1', 'There is three chairs in the kitchen.', 'is', 'are', 'Mais de um: there are.', { dif: 1 })],

@@ -107,10 +107,12 @@ export async function telaHoje(el, { ir, estado }) {
   // Tela enxuta, pensada para uma criança: Tuiuiú + saudação, UM cartão grande com a aula, e atalhos só com ícone e nome.
   // O que é detalhe (meta em minutos, "no fim você vai conseguir", sob medida, dúvidas) fica nas outras telas.
   const principal = h('div', { class: 'hoje__col' });
+  const a_completo = a.acesso === 'completo';
   principal.append(
     h('header', { class: 'saudacao' },
       h('h1', {}, `${saud}, ${d.nome}!`),
-      d.sequencia.atual || d.sequencia.recorde ? h('button', { type: 'button', class: 'status__item status__item--seq c-coral' + (d.sequencia.estudouHoje ? ' acesa' : ''), 'aria-label': `Sequência: ${d.sequencia.atual} dias seguidos. Ver detalhes`, on: { click: () => verSequencia(d.sequencia, d.diasNoMes) } },
+      // a chama aparece desde o primeiro dia (apagada): é o convite para começar a sequência
+      a_completo ? h('button', { type: 'button', class: 'status__item status__item--seq c-coral' + (d.sequencia.estudouHoje ? ' acesa' : ''), 'aria-label': d.sequencia.atual ? `Sequência: ${d.sequencia.atual} dias seguidos. Ver detalhes` : 'Sequência ainda não começou. Ver como funciona', on: { click: () => verSequencia(d.sequencia, d.diasNoMes) } },
         chamaMini({ acesa: d.sequencia.estudouHoje }), h('strong', {}, String(d.sequencia.atual))) : null,
       d.nivel?.atual ? h('a', { class: 'chip nivel-chip', href: '#/nivel', 'aria-label': `Meu nível: ${d.nivel.atual}. Ver ou ajustar` }, icone('chart-line-up'), d.nivel.atual) : null));
   const metaDias = estado?.eu?.perfil?.dias_semana, feitosSemana = d.sequencia.semana.filter(x => x.estado === 'estudou' || x.estado === 'escudo').length;

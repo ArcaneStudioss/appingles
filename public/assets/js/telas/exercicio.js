@@ -9,6 +9,15 @@ import { fraseConhecida } from '../traducao.js?v=__V__';
 
 const ehIngles = s => /^[\x20-\x7E’‘]+$/.test(s || '');
 const ELOGIOS = ['Mandou bem!', 'Isso aí!', 'Perfeito!', 'Boa!', 'Certinho!'];
+// Elogio em inglês com a tradução do lado: comemora e, de quebra, ensina o que se ouve numa aula de verdade.
+const ELOGIOS_EN = [['Nice!', 'Boa!'], ['Great job!', 'Ótimo trabalho!'], ['Well done!', 'Muito bem!'], ['Exactly!', 'Isso mesmo!'], ['Perfect!', 'Perfeito!'], ['You got it!', 'Você conseguiu!'], ['Awesome!', 'Demais!']];
+let ultimoElogio = -1;
+function elogioEn() {
+  let i; do { i = Math.floor(Math.random() * ELOGIOS_EN.length); } while (i === ultimoElogio);
+  ultimoElogio = i;
+  const [en, pt] = ELOGIOS_EN[i];
+  return [h('span', { lang: 'en', class: 'elogio-en' }, en), ' ', h('small', { class: 'elogio-pt' }, pt)];
+}
 // Caixa de escuta: botão grande que pulsa, ondinhas enquanto o áudio toca e (na aula) a velocidade ajustável
 // com "devagar" e "rápido". Nunca toca sozinho. Serve para as perguntas de escuta da aula e do teste de nível.
 // simples: só o botão grande (sem velocidade, sem legenda). Usado no teste de nível, onde a tela já tem pouca coisa.
@@ -66,7 +75,7 @@ export function exercicio(ex, config) {
     (ex.apoio || []).map(v => h('p', { class: 'apoio-palavra' }, h('span', {}, h('strong', { lang: 'en', 'data-traducao': v.pt }, v.en), ' = ', v.pt), h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir ' + v.en, on: { click: () => falar(v.en, { velocidade: 0.8 }) } }, icone('speaker-high')))));
   const verResposta = permitirTreino ? h('button', { type: 'button', class: 'btn btn-texto ajuda-resposta', on: { click: () => conferir(true) } }, icone('eye'), 'Ver resposta e aprender') : null;
   const ajuda = h('div', { class: 'ajudas-exercicio' }, dica, verResposta);
-  const relatar=h('button',{type:'button',class:'btn btn-texto btn-peq',on:{click:async()=>{try{await api('/conteudo/relatar',{metodo:'POST',corpo:{tipo:'questao',referencia:config.referenciaRelato||ex.origemId||ex.id,motivo:'Questão sinalizada para conferir enunciado, resposta e explicação.'}});toast('Questão enviada para revisão.');}catch(e){toast(e.message,{tipo:'erro'});}}}},'Reportar problema nesta questão');
+  const relatar=h('button',{type:'button',class:'relatar-questao',on:{click:async()=>{try{await api('/conteudo/relatar',{metodo:'POST',corpo:{tipo:'questao',referencia:config.referenciaRelato||ex.origemId||ex.id,motivo:'Questão sinalizada para conferir enunciado, resposta e explicação.'}});toast('Questão enviada para revisão.');}catch(e){toast(e.message,{tipo:'erro'});}}}},icone('warning-circle'),'Reportar problema');
 
   if (ex.tipo === 'escuta' || ex.tipo === 'ditado') {
     area.append(caixaEscuta(ex.audio, { vozFem: ex.vozFem, dica: null, ajustavel: true, devagar }));
@@ -129,7 +138,7 @@ export function exercicio(ex, config) {
       if (o.lastElementChild?.textContent === r.esperado) o.classList.add('certa');
       if (o.lastElementChild?.textContent === resposta) { o.classList.add('escolhida'); o.setAttribute('aria-checked', 'true'); }
     });
-    const corpo = [h('h3', { class: 'folha-resposta__titulo' }, r.ajuda ? (infantil ? 'Vamos aprender juntos!' : 'Veja a resposta e a explicação') : r.correto ? (pratica ? 'Você conseguiu!' : infantil ? ELOGIOS[Math.floor(Math.random() * ELOGIOS.length)] : 'Resposta correta!') : infantil ? 'Vamos aprender com esta!' : 'Vamos entender a resposta')];
+    const corpo = [h('h3', { class: 'folha-resposta__titulo' }, r.ajuda ? (infantil ? 'Vamos aprender juntos!' : 'Veja a resposta e a explicação') : r.correto ? (pratica ? 'Você conseguiu!' : infantil ? ELOGIOS[Math.floor(Math.random() * ELOGIOS.length)] : elogioEn()) : infantil ? 'Vamos aprender com esta!' : 'Vamos entender a resposta')];
     if (ex.tipo !== 'pares') {
       if (!r.correto && resposta && ex.tipo !== 'fala') corpo.push(h('p', { class: 'resposta-anterior' }, 'Você respondeu: ', h('span', {}, resposta)));
       // acertou escolhendo: a opção certa já ficou destacada, então não repete a resposta
@@ -174,7 +183,8 @@ export function exercicio(ex, config) {
     btnConferir.disabled = false;
     // acertou de verdade (sem dica, sem revelar a resposta): o Tuiuiú comemora voando por cima da próxima questão
     const festejar = r.correto && !r.ajuda && !pratica && !silencioso && combo;
-    btnConferir.onclick = () => { if (festejar && aoProximo) voarComemorando({ companhia: combo, jeito: combo ? 'pirueta' : undefined }); aoProximo?.(); };
+    // O voo passa só pela faixa de cima e sem a Mia grande: antes ele ficava 3 s por cima das respostas da pergunta seguinte.
+    btnConferir.onclick = () => { if (festejar && aoProximo) voarComemorando({ jeito: 'rasante', tamanho: 92, confetes: false }); aoProximo?.(); };
     btnConferir.removeEventListener('click', aoConferir);
     if (!silencioso) requestAnimationFrame(() => { folha.focus({ preventScroll: true }); folha.scrollIntoView({ block: 'start', behavior: 'instant' }); });
   }

@@ -71,10 +71,11 @@ export function celebrarSequencia(seq, { nome = '' } = {}) {
       h('p', { class: 'chama__msg' }, msg),
       seq.escudos > 0 ? h('p', { class: 'chama__escudo' }, icone('shield-check'), `${seq.escudos} ${seq.escudos === 1 ? 'escudo protege' : 'escudos protegem'} a sua sequência`) : null,
       h('div', { class: 'chama__acao' }, botao));
-    const fechar = () => { removeEventListener('keydown', tecla, true); raiz.classList.add('chama--saindo'); setTimeout(() => { raiz.remove(); resolver(); }, parado ? 0 : 220); };
+    // trocar de tela (voltar do navegador, link) também fecha: a comemoração não fica por cima da tela seguinte
+    const fechar = () => { removeEventListener('keydown', tecla, true); removeEventListener('hashchange', fechar); raiz.classList.add('chama--saindo'); setTimeout(() => { raiz.remove(); resolver(); }, parado ? 0 : 220); };
     const tecla = e => { if (e.key === 'Escape') { e.stopPropagation(); fechar(); } };
     botao.addEventListener('click', fechar);
-    addEventListener('keydown', tecla, true);
+    addEventListener('keydown', tecla, true); addEventListener('hashchange', fechar);
     document.body.append(raiz);
     botao.focus({ preventScroll: true });
     if (parado) return;

@@ -63,3 +63,10 @@ Lições salvas continuam disponíveis. O plano usa a duração atual ao avança
 mesmo quando uma versão antiga guardou apenas três partes. Missões já
 demonstradas preservam seu estado. A duração da sessão curta é calculada com
 o vocabulário completo da missão, não com o recorte exibido naquele dia.
+
+## Ritmo e apoio (revisão de 09/11/2026)
+
+- Na aula de palavras, o modelo escrito aparece só no primeiro contato (reconhecer) e ao montar. Na escuta ele não aparece mais: mostrava a resposta e o ouvido não era treinado. A dica e "Ver resposta e aprender" continuam a um toque.
+- Quem acertou as seis últimas atividades de aula segue sem o modelo na tela (`embalado` em `src/motor/licao-iniciante.js` e `src/motor/oficina-frases.js`); na oficina, só o primeiro exercício mantém o modelo. Um erro devolve o apoio completo na aula seguinte.
+- No fim de uma aula guiada com tudo certo de primeira, a tela oferece o atalho para `#/nivel`.
+- Limite conhecido: o ajuste automático de nível (`src/motor/ajuste-nivel.js`) conta exercício com modelo como "com dica". Com o apoio completo, o aluno do A1 não chega aos 88% com até 25% de dica; sem o modelo (ritmo acima), passa a ser possível.

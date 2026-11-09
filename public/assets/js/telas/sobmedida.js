@@ -57,7 +57,7 @@ export async function telaSobMedida(el, { ir }) {
   el.append(
     h('header', { class: 'cabeca c-turquesa' }, h('span', { class: 'bolha' }, icone('graduation-cap')), h('div', {}, h('h1', {}, 'Estudo sob medida'), h('p', { class: 'ajuda' }, 'Tem uma prova, uma entrevista ou uma viagem? Conte para o Tuiuiú e ele monta o caminho.'))),
     h('button', { type: 'button', class: 'btn btn-cor c-turquesa btn-grande', on: { click: () => novoEstudo(ir) } }, icone('plus'), 'Novo estudo'),
-    ia ? null : h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, 'Modo de prática: eu separo os assuntos do que você escreve e uso nosso catálogo e o seu material. Com a IA ligada, cada assunto é escrito sob medida.')),
+    ia ? null : h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, 'Modo de prática: eu separo os assuntos do que você escrever e monto as aulas com o nosso catálogo e o seu material.')),
     ativos.length ? h('section', { class: 'tela' }, h('h2', {}, 'Em andamento'), ativos.map(cartao)) : h('section', { class: 'vazio folha c-turquesa' },
       louFala('oi', h('p', {}, 'Ainda não tem nenhum estudo. Escolha um exemplo ou conte o seu.')),
       h('div', { class: 'escolhas' }, EXEMPLOS.map(ex => h('button', { type: 'button', class: 'chip c-turquesa chip-botao', on: { click: () => novoEstudo(ir, ex) } }, icone(iconeTipo(ex.tipo)), ex.titulo)))),

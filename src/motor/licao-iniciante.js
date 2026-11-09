@@ -15,10 +15,16 @@ function montarBaseIniciante(ctx, atual, adaptada) {
   if (parte > aulasVocab) return montarOficina(def, parte - aulasVocab, { id: def.id, titulo: def.titulo, podeFazer: def.podeFazer, parte, total }, ctx);
   const grupo = parte - 1;
   const vocab = def.vocab.slice(grupo * 2, grupo * 2 + 2);
+  // Ritmo: quem acertou as seis últimas atividades de aula segue sem o modelo na tela (a dica continua a um toque).
+  // Assim a aula não fica parada para quem aprende rápido, e o acerto passa a contar como acerto sem ajuda.
+  const recentes = (ctx.tentativas || []).filter(t => t.origem === 'licao').slice(-6);
+  const embalado = recentes.length >= 6 && recentes.every(t => t.correto);
+  // O modelo escrito aparece só no primeiro contato (ler) e ao montar. Na escuta ele entregaria a resposta: ali o treino é o ouvido.
+  const comModelo = modo => !embalado && (modo === 'ler' || modo === 'montar');
   const base = (v, i, modo) => ({
     id: `base:${def.id}:${grupo * 2 + i}:${modo}`, missao: def.id,
     habilidade: modo === 'ouvir' ? 'escuta' : 'vocabulario', dif: 1,
-    ...(modo === 'ler' || modo === 'ouvir' || modo === 'montar' ? { ensino: { en: v.en, pt: v.pt, nota: 'Olhe o significado e use o modelo. Esta é uma atividade para aprender.' } } : {}),
+    ...(comModelo(modo) ? { ensino: { en: v.en, pt: v.pt, nota: 'Olhe o significado e use o modelo. Esta é uma atividade para aprender.' } } : {}),
     explica: `${v.en} = ${v.pt}. Ouça e repita quantas vezes precisar.`,
   });
   const cap = t => (t ? t[0].toUpperCase() + t.slice(1) : t);
@@ -74,9 +80,9 @@ function montarBaseIniciante(ctx, atual, adaptada) {
   // Fala opcional no fim da aula: não é exercício (não conta para concluir nem vale nota).
   const f = vocab[vocab.length - 1];
   blocos.push({ tipo: 'fala-opcional', titulo: 'Experimente falar', frase: f.en, pt: f.pt });
-  return { data: ctx.hojeISO, minutos: 5, guiada: true, inicianteGuiado: true,
+  return { data: ctx.hojeISO, minutos: 5, guiada: true, inicianteGuiado: true, ...(embalado ? { embalado: true } : {}),
     missao: { id: def.id, titulo: def.titulo, podeFazer: def.podeFazer, parte, total },
-    porque: ['Vamos aprender só duas expressões e praticar cada uma três vezes.',
+    porque: [embalado ? 'Você acertou tudo nas últimas atividades: hoje o modelo sai da tela. A dica continua a um toque.' : 'Vamos aprender só duas expressões e praticar cada uma três vezes.',
       'Depois de repetir o vocabulário, vamos montar frases e só então escrever.'],
     revisoesPendentes: ctx.cartoesPendentes || 0, blocos };
 }
