@@ -54,7 +54,7 @@ function criarClerk({ env = process.env, clienteDe, verificarToken } = {}) {
     if (!u || u.id !== id || u.banned || u.locked || !principal?.emailAddress || principal.verification?.status !== 'verified') throw new ErroHttp(401, 'Confirme seu e-mail para continuar.');
     const email = principal.emailAddress.trim().toLowerCase();
     if (email.length > 160) throw new ErroHttp(401, 'Confirme seu e-mail para continuar.');
-    return { id: u.id, email, porCodigo: ['email_code', 'email_link'].includes(principal.verification?.strategy), google: (u.externalAccounts || []).some(c => /google/.test(c.provider) && c.verification?.status === 'verified') };
+    return { id: u.id, email, google: (u.externalAccounts || []).some(c => /google/.test(c.provider) && c.verification?.status === 'verified') };
   }
   async function sessaoAtiva(sid) {
     try { const s = await clerk().sessions.getSession(sid); return s?.id === sid && s.status === 'active'; }
@@ -68,7 +68,6 @@ function criarClerk({ env = process.env, clienteDe, verificarToken } = {}) {
 function registrarClerk({ db, clerk, rota, abrirSessao, criarUsuario, validarPerfil, limparVozes, conferirExclusao = async () => {} }) {
   const q = sql => db.prepare(sql);
   const limiteIp = auth.limitadorBanco(db, 'clerk-ip', { janelaMs: 15 * 60e3, max: 30 });
-  const limiteSenha = auth.limitadorBanco(db, 'clerk-vinculo', { janelaMs: 15 * 60e3, max: 8 });
   const limitar = ctx => { if (!limiteIp.tentar(ctx.ip)) throw new ErroHttp(429, 'Muitas tentativas. Aguarde alguns minutos e tente novamente.'); };
   const porSubject = sub => q("SELECT * FROM usuarios WHERE auth_provider = 'clerk' AND auth_subject = ?").get(sub);
 
@@ -101,21 +100,10 @@ function registrarClerk({ db, clerk, rota, abrirSessao, criarUsuario, validarPer
     const existente = q('SELECT * FROM usuarios WHERE email = ?').get(remoto.email);
     if (existente?.auth_provider === 'clerk') throw new ErroHttp(409, 'Essa conta já tem outro vínculo de acesso.');
     if (existente) {
-      // Conta antiga com senha própria: o e-mail verificado não basta, a senha atual prova que a conta é dessa pessoa.
-      if (existente.auth_provider === 'local') {
-        // "Esqueci a senha": o Clerk já provou agora que a pessoa controla essa caixa de e-mail (principal e verificado), o mesmo
-        // que uma recuperação por e-mail provaria. A senha antiga deixa de valer e as sessões antigas caem na transação abaixo.
-        // Só vale se o Clerk verificou o e-mail por código ou link enviado à caixa (não por login social, onde o e-mail vem do provedor).
-        if (b.esqueci === true) { if (!remoto.porCodigo) throw new ErroHttp(403, 'Para recuperar a conta antiga, saia e entre usando o código enviado ao seu e-mail (sem o Google).'); if (!limiteSenha.tentar(remoto.email)) throw new ErroHttp(429, 'Muitas tentativas. Aguarde alguns minutos.'); }
-        else {
-        if (typeof b.senha !== 'string') return { ok: true, etapa: 'vincular', email: remoto.email };
-        if (b.senha.length > 200 || !limiteSenha.tentar(remoto.email)) throw new ErroHttp(429, 'Muitas tentativas. Aguarde alguns minutos.');
-        if (!await auth.conferirSenhaAsync(b.senha, existente.senha_hash)) throw new ErroHttp(401, 'Senha atual incorreta.');
-        limiteSenha.limpar(remoto.email);
-        }
-      }
+      // Conta antiga: o Clerk já provou que a pessoa controla o e-mail (principal verificado), então vinculamos sem pedir a senha antiga.
+      // A senha antiga deixa de valer e as sessões antigas caem na transação abaixo.
       return transacao(db, () => {
-        // Outra identidade pode ter vinculado a conta enquanto a senha era conferida: reconfere dentro da transação.
+        // Outra identidade pode ter vinculado a conta nesse meio tempo: reconfere dentro da transação.
         const atual = q('SELECT auth_provider FROM usuarios WHERE id = ?').get(existente.id);
         if (!atual || atual.auth_provider === 'clerk') throw new ErroHttp(409, 'Essa conta já tem outro vínculo de acesso.');
         const r = q("UPDATE usuarios SET auth_provider = 'clerk', auth_subject = ?, senha_hash = 'clerk' WHERE id = ? AND auth_provider <> 'clerk'").run(id, existente.id);

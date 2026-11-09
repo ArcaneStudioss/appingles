@@ -116,24 +116,6 @@ test('e-mail não verificado, origem errada, token inválido e conta bloqueada s
   assert.equal(a.db.prepare('SELECT COUNT(*) n FROM usuarios').get().n, 0);
 });
 
-test('conta antiga com senha só é vinculada com a senha atual; mantém o mesmo ID e derruba as sessões antigas', async t => {
-  const a = await ambiente(t), n = a.navegador();
-  const hash = auth.hashSenha('janela girassol frase segura 2026');
-  const uid = Number(a.db.prepare('INSERT INTO usuarios (email,nome,senha_hash,criado_em,consentiu_em) VALUES (?,?,?,?,?)').run('antiga@example.com', 'Antiga', hash, 'x', 'x').lastInsertRowid);
-  a.db.prepare('INSERT INTO perfis (user_id,idade,papel,regiao,atualizado_em) VALUES (?,?,?,?,?)').run(uid, 30, 'aluno', null, 'x');
-  a.db.prepare('INSERT INTO sessoes (id_hash,user_id,criado_em,expira_em) VALUES (?,?,?,?)').run('antiga-hash', uid, 1, Date.now() + 1e6);
-  const u = a.fake.novo(4, 'antiga@example.com'), tk = a.fake.token(u, a.fake.sessao(4));
-  const inicio = await n.r('POST', '/auth/clerk', { token: tk });
-  assert.equal(inicio.dados.etapa, 'vincular'); assert.equal((await n.r('GET', '/eu')).status, 401);
-  assert.equal((await n.r('POST', '/auth/clerk', { token: tk, senha: 'senha errada qualquer 2026' })).status, 401);
-  assert.equal(a.db.prepare("SELECT auth_provider p FROM usuarios WHERE id=?").get(uid).p, 'local');
-  assert.equal((await n.r('POST', '/auth/clerk', { token: tk, senha: 'janela girassol frase segura 2026' })).dados.etapa, 'concluido');
-  const reg = a.db.prepare('SELECT * FROM usuarios WHERE id=?').get(uid);
-  assert.equal(reg.auth_provider, 'clerk'); assert.equal(reg.auth_subject, u); assert.equal(reg.senha_hash, 'clerk');
-  assert.equal(a.db.prepare("SELECT COUNT(*) n FROM sessoes WHERE id_hash='antiga-hash'").get().n, 0);
-  assert.equal((await n.r('GET', '/eu')).dados.usuario.email, 'antiga@example.com');
-});
-
 test('outra identidade do Clerk não assume uma conta já vinculada', async t => {
   const a = await ambiente(t), n = a.navegador();
   const u1 = a.fake.novo(5, 'dono@example.com'); await n.r('POST', '/auth/clerk', { token: a.fake.token(u1, a.fake.sessao(5)), ...a.perfil() });
@@ -188,33 +170,30 @@ test('rota do Clerk exige o cabeçalho anti-CSRF e o provedor sem configuração
   await assert.rejects(() => desligado.verificar('x'.repeat(30)), e => e.status === 503);
 });
 
-test('conta antiga: "esqueci a senha" vincula pelo e-mail verificado no Clerk e invalida a senha antiga', async t => {
+test('conta antiga é vinculada pelo e-mail verificado no Clerk, sem senha: mantém o ID, invalida a senha antiga e derruba as sessões antigas', async t => {
   const a = await ambiente(t), n = a.navegador();
-  const hash = auth.hashSenha('janela girassol frase segura 2026');
-  const uid = Number(a.db.prepare('INSERT INTO usuarios (email,nome,senha_hash,criado_em,consentiu_em) VALUES (?,?,?,?,?)').run('esqueci@example.com', 'Esqueci', hash, 'x', 'x').lastInsertRowid);
+  const uid = Number(a.db.prepare('INSERT INTO usuarios (email,nome,senha_hash,criado_em,consentiu_em) VALUES (?,?,?,?,?)').run('antiga@example.com', 'Antiga', auth.hashSenha('janela girassol frase segura 2026'), 'x', 'x').lastInsertRowid);
   a.db.prepare('INSERT INTO perfis (user_id,idade,papel,regiao,atualizado_em) VALUES (?,?,?,?,?)').run(uid, 30, 'aluno', null, 'x');
-  a.db.prepare('INSERT INTO sessoes (id_hash,user_id,criado_em,expira_em) VALUES (?,?,?,?)').run('esqueci-hash', uid, 1, Date.now() + 1e6);
-  const u = a.fake.novo(7, 'esqueci@example.com'), tk = a.fake.token(u, a.fake.sessao(7));
-  assert.equal((await n.r('POST', '/auth/clerk', { token: tk })).dados.etapa, 'vincular');
-  assert.equal((await n.r('POST', '/auth/clerk', { token: tk, esqueci: true })).dados.etapa, 'concluido');
+  a.db.prepare('INSERT INTO sessoes (id_hash,user_id,criado_em,expira_em) VALUES (?,?,?,?)').run('antiga-hash', uid, 1, Date.now() + 1e6);
+  const u = a.fake.novo(4, 'antiga@example.com');
+  assert.equal((await n.r('POST', '/auth/clerk', { token: a.fake.token(u, a.fake.sessao(4)) })).dados.etapa, 'concluido');
   const reg = a.db.prepare('SELECT * FROM usuarios WHERE id=?').get(uid);
-  assert.equal(reg.auth_provider, 'clerk'); assert.equal(reg.senha_hash, 'clerk');
-  assert.equal(a.db.prepare("SELECT COUNT(*) n FROM sessoes WHERE id_hash='esqueci-hash'").get().n, 0);
-  assert.equal((await n.r('GET', '/eu')).dados.usuario.email, 'esqueci@example.com');
+  assert.equal(reg.auth_provider, 'clerk'); assert.equal(reg.auth_subject, u); assert.equal(reg.senha_hash, 'clerk');
+  assert.equal(a.db.prepare("SELECT COUNT(*) n FROM sessoes WHERE id_hash='antiga-hash'").get().n, 0);
+  assert.equal((await n.r('GET', '/eu')).dados.usuario.email, 'antiga@example.com');
 });
 
-test('"esqueci a senha" não vale com e-mail não verificado no Clerk', async t => {
-  const a = await ambiente(t), n = a.navegador();
-  a.db.prepare('INSERT INTO usuarios (email,nome,senha_hash,criado_em,consentiu_em) VALUES (?,?,?,?,?)').run('naover@example.com', 'N', auth.hashSenha('janela girassol frase segura 2026'), 'x', 'x');
-  const u = a.fake.novo(8, 'naover@example.com'); a.fake.usuarios.get(u).emailAddresses[0].verification.status = 'unverified';
-  assert.equal((await n.r('POST', '/auth/clerk', { token: a.fake.token(u, a.fake.sessao(8)), esqueci: true })).status, 401);
-  assert.equal(a.db.prepare("SELECT auth_provider p FROM usuarios WHERE email='naover@example.com'").get().p, 'local');
-});
-
-test('"esqueci a senha" é recusado quando o e-mail foi verificado por login social', async t => {
+test('conta antiga também é vinculada quando o e-mail vem verificado do Google', async t => {
   const a = await ambiente(t), n = a.navegador();
   a.db.prepare('INSERT INTO usuarios (email,nome,senha_hash,criado_em,consentiu_em) VALUES (?,?,?,?,?)').run('social@example.com', 'S', auth.hashSenha('janela girassol frase segura 2026'), 'x', 'x');
   const u = a.fake.novo(9, 'social@example.com'); a.fake.usuarios.get(u).emailAddresses[0].verification.strategy = 'from_oauth_google';
-  assert.equal((await n.r('POST', '/auth/clerk', { token: a.fake.token(u, a.fake.sessao(9)), esqueci: true })).status, 403);
-  assert.equal(a.db.prepare("SELECT auth_provider p FROM usuarios WHERE email='social@example.com'").get().p, 'local');
+  assert.equal((await n.r('POST', '/auth/clerk', { token: a.fake.token(u, a.fake.sessao(9)) })).dados.etapa, 'concluido');
+});
+
+test('conta antiga não é vinculada com e-mail não verificado no Clerk', async t => {
+  const a = await ambiente(t), n = a.navegador();
+  a.db.prepare('INSERT INTO usuarios (email,nome,senha_hash,criado_em,consentiu_em) VALUES (?,?,?,?,?)').run('naover@example.com', 'N', auth.hashSenha('janela girassol frase segura 2026'), 'x', 'x');
+  const u = a.fake.novo(8, 'naover@example.com'); a.fake.usuarios.get(u).emailAddresses[0].verification.status = 'unverified';
+  assert.equal((await n.r('POST', '/auth/clerk', { token: a.fake.token(u, a.fake.sessao(8)) })).status, 401);
+  assert.equal(a.db.prepare("SELECT auth_provider p FROM usuarios WHERE email='naover@example.com'").get().p, 'local');
 });

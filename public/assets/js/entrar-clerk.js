@@ -80,33 +80,9 @@
       h('div', { class: 'consentimento' }, consent, h('label', { for: 'c-consent' }, 'Li e concordo com a ', h('a', { href: '/politica-de-privacidade/', target: '_blank', rel: 'noopener' }, 'política de privacidade'), '.')), msg, btn);
       return form;
     }
-    function formularioSenha(email) {
-      const senha = h('input', { id: 'c-senha', type: 'password', autocomplete: 'current-password', maxlength: 200, required: true });
-      const msg = h('p', { class: 'erro-campo', role: 'alert' }), btn = h('button', { type: 'submit', class: 'btn btn-bloco' }, 'Confirmar e continuar');
-      const tentar = async extra => {
-        msg.textContent = ''; btn.disabled = true;
-        try { await concluir(extra); } catch (err) { msg.textContent = err.message; btn.disabled = false; }
-      };
-      const esqueci = h('button', { type: 'button', class: 'btn btn-sec btn-bloco', on: { click: () => confirmarEsqueci(email) } }, 'Esqueci minha senha antiga');
-      return h('form', { novalidate: true, on: { submit: e => { e.preventDefault(); tentar({ senha: senha.value }); } } },
-        h('p', { class: 'ajuda' }, `Já existe uma conta do Inglou com ${email}. Confirme a senha que você usava antes para manter seus estudos, assinatura e turmas.`),
-        h('div', { class: 'campo' }, h('label', { for: 'c-senha' }, 'Senha atual do Inglou'), senha), msg,
-        h('div', { class: 'auth-acoes' }, btn, esqueci),
-        h('p', { class: 'ajuda centro' }, h('a', { href: '/entrar/', on: { click: e => { e.preventDefault(); sair(); } } }, 'Entrar com outra conta')));
-    }
-    // Confirmação na própria página (mesmo padrão das outras telas daqui), sem a caixa nativa do navegador.
-    function confirmarEsqueci(email) {
-      const msg = h('p', { class: 'erro-campo', role: 'alert' }), btn = h('button', { type: 'button', class: 'btn btn-bloco', on: { click: async () => {
-        msg.textContent = ''; btn.disabled = true;
-        try { await concluir({ esqueci: true }); } catch (err) { msg.textContent = err.message; btn.disabled = false; }
-      } } }, 'Sim, ligar minha conta');
-      tela('Ligar sua conta antiga', h('p', { class: 'ajuda' }, `Vamos ligar a conta antiga do Inglou ao e-mail ${email}, que você acabou de confirmar. A senha antiga deixa de valer e você passa a entrar só por este acesso. Seus estudos, assinatura e turmas continuam.`), msg,
-        h('div', { class: 'auth-acoes' }, btn, h('button', { type: 'button', class: 'btn btn-sec btn-bloco', on: { click: () => concluir().catch(err => falha(err.message)) } }, 'Voltar')));
-    }
     async function concluir(extra = {}) {
       const r = await api('/auth/clerk', { token: await token(), ...extra });
       if (r.etapa === 'completar') return tela('Vamos preparar seu espaço', h('p', { class: 'ajuda' }, 'Seu e-mail já foi confirmado: ' + r.email + '. Falta contar como quer usar o Inglou.'), formularioPerfil());
-      if (r.etapa === 'vincular') return tela('Seus estudos continuam aqui', formularioSenha(r.email));
       location.replace('/app/#/entrar');
     }
 
