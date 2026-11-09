@@ -183,11 +183,15 @@ test('conta antiga é vinculada pelo e-mail verificado no Clerk, sem senha: mant
   assert.equal((await n.r('GET', '/eu')).dados.usuario.email, 'antiga@example.com');
 });
 
-test('conta antiga também é vinculada quando o e-mail vem verificado do Google', async t => {
+test('conta antiga: Google só liga sozinho com @gmail.com; outro domínio vindo do Google é recusado', async t => {
   const a = await ambiente(t), n = a.navegador();
-  a.db.prepare('INSERT INTO usuarios (email,nome,senha_hash,criado_em,consentiu_em) VALUES (?,?,?,?,?)').run('social@example.com', 'S', auth.hashSenha('janela girassol frase segura 2026'), 'x', 'x');
-  const u = a.fake.novo(9, 'social@example.com'); a.fake.usuarios.get(u).emailAddresses[0].verification.strategy = 'from_oauth_google';
-  assert.equal((await n.r('POST', '/auth/clerk', { token: a.fake.token(u, a.fake.sessao(9)) })).dados.etapa, 'concluido');
+  for (const [i, email] of [[9, 'social@gmail.com'], [10, 'social@empresa.example']]) {
+    a.db.prepare('INSERT INTO usuarios (email,nome,senha_hash,criado_em,consentiu_em) VALUES (?,?,?,?,?)').run(email, 'S', auth.hashSenha('janela girassol frase segura 2026'), 'x', 'x');
+    const u = a.fake.novo(i, email); a.fake.usuarios.get(u).emailAddresses[0].verification.strategy = 'from_oauth_google';
+    const r = await n.r('POST', '/auth/clerk', { token: a.fake.token(u, a.fake.sessao(i)) });
+    if (i === 9) assert.equal(r.dados.etapa, 'concluido');
+    else { assert.equal(r.status, 403); assert.equal(a.db.prepare('SELECT auth_provider p FROM usuarios WHERE email=?').get(email).p, 'local'); }
+  }
 });
 
 test('conta antiga não é vinculada com e-mail não verificado no Clerk', async t => {

@@ -54,7 +54,11 @@ function criarClerk({ env = process.env, clienteDe, verificarToken } = {}) {
     if (!u || u.id !== id || u.banned || u.locked || !principal?.emailAddress || principal.verification?.status !== 'verified') throw new ErroHttp(401, 'Confirme seu e-mail para continuar.');
     const email = principal.emailAddress.trim().toLowerCase();
     if (email.length > 160) throw new ErroHttp(401, 'Confirme seu e-mail para continuar.');
-    return { id: u.id, email, google: (u.externalAccounts || []).some(c => /google/.test(c.provider) && c.verification?.status === 'verified') };
+    // Prova de posse do e-mail: código/link enviado à caixa, ou Google com endereço @gmail.com (o Google é quem emite esse endereço).
+    // Outros domínios vindos do Google não bastam para ligar uma conta antiga.
+    const estrategia = principal.verification?.strategy;
+    const provado = ['email_code', 'email_link'].includes(estrategia) || (estrategia === 'from_oauth_google' && /@(gmail|googlemail)\.com$/.test(email));
+    return { id: u.id, email, provado, google: (u.externalAccounts || []).some(c => /google/.test(c.provider) && c.verification?.status === 'verified') };
   }
   async function sessaoAtiva(sid) {
     try { const s = await clerk().sessions.getSession(sid); return s?.id === sid && s.status === 'active'; }
@@ -100,7 +104,8 @@ function registrarClerk({ db, clerk, rota, abrirSessao, criarUsuario, validarPer
     const existente = q('SELECT * FROM usuarios WHERE email = ?').get(remoto.email);
     if (existente?.auth_provider === 'clerk') throw new ErroHttp(409, 'Essa conta já tem outro vínculo de acesso.');
     if (existente) {
-      // Conta antiga: o Clerk já provou que a pessoa controla o e-mail (principal verificado), então vinculamos sem pedir a senha antiga.
+      // Conta antiga: sem senha, mas só se o Clerk provou a posse do e-mail (código na caixa ou Google @gmail.com).
+      if (!remoto.provado) throw new ErroHttp(403, 'Para ligar sua conta antiga, saia e entre pelo código enviado ao seu e-mail.');
       // A senha antiga deixa de valer e as sessões antigas caem na transação abaixo.
       return transacao(db, () => {
         // Outra identidade pode ter vinculado a conta nesse meio tempo: reconfere dentro da transação.
