@@ -42,11 +42,13 @@ export async function telaPerfil(el, { estado, ir, carregarEu }) {
       } catch (e) { msg.textContent = e.message; }
       finally { ocupado(avancar, false); }
     } } }, rotuloAvancar, icone('arrow-right'));
-    return [msg, h('div', { class: 'onboarding-nav' }, voltar, avancar)];
+    // o aviso fica junto dos botões: com a barra presa embaixo, a pessoa vê o motivo de não avançar
+    return [h('div', { class: 'onboarding-nav' }, msg, voltar, avancar)];
   };
 
   function desenhar() {
     caixa.replaceChildren(barra());
+    scrollTo({ top: 0 }); // cada passo começa do topo (o botão de avançar fica preso embaixo, longe do título)
     if (passo === 0) {
       caixa.append(
         louFala('oi', h('p', {}, editando ? 'Mudou alguma coisa? Sem problema, o plano se ajusta.' : `Oi, ${estado.eu.usuario.nome.split(' ')[0]}! Eu sou o Tuiuiú. Escolha o que quer aprender. Eu ajudo você!`)),

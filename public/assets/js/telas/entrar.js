@@ -13,7 +13,9 @@ export async function telaEntrar(el, { estado, ir, carregarEu }) {
   if (est.logado) { await carregarEu(); return ir(estado.eu?.perfil?.papel === 'professor' ? '#/professor' : '#/hoje'); }
   const config = est.autenticacao || { disponivel: true };
   if (config.provedor === 'clerk') {
-    // O acesso é feito na página /entrar/, que é a única a carregar o Clerk.
+    // O acesso é feito na página /entrar/, que é a única a carregar o Clerk: quem chega aqui vai direto para lá
+    // (os links "Começar grátis" da página pública trazem ?modo=cadastro e caem na aba Criar conta).
+    if (config.disponivel) return location.replace(new URLSearchParams(location.hash.split('?')[1] || '').get('modo') === 'cadastro' ? '/entrar/?modo=cadastro' : '/entrar/');
     el.append(h('div', { class: 'entrar-envoltorio' },
       introEntrar(),
       h('section', { class: 'entrar folha auth-cartao', 'aria-label': 'Acesso à conta' },

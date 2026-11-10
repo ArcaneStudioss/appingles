@@ -2421,7 +2421,7 @@ body{background:var(--fundo)}
 .onboarding-nav .btn-sec{flex:none;box-shadow:none;border:1.5px solid var(--borda-forte);background:var(--cartao)}
 .onboarding-nav .btn:last-child{flex:1 1 auto;margin-left:0}
 @media (max-width:959.98px){
-  .onboarding-nav{position:sticky;bottom:0;z-index:5;margin:.3rem -1rem 0;padding:1.2rem 1rem calc(.8rem + env(safe-area-inset-bottom));background:linear-gradient(to bottom,transparent,var(--fundo) 38%)}
+  .onboarding-nav{position:sticky;bottom:0;z-index:5;margin:.3rem -1rem 0;padding:1.2rem 1rem calc(.8rem + env(safe-area-inset-bottom));background:linear-gradient(to bottom,transparent,var(--fundo) 1.1rem)}
 }
 
 /* teste de nível */
@@ -2444,3 +2444,6 @@ body{background:var(--fundo)}
 #clerk-raiz .cl-footerAction{display:none!important}
 #clerk-raiz .cl-footer>div:last-child{text-align:center;justify-content:center}
 .auth-cartao>.abas{order:-1}
+.onboarding-nav{flex-wrap:wrap}
+.onboarding-nav .erro-campo{flex-basis:100%;margin:0}
+.onboarding-nav .erro-campo:empty{display:none}
