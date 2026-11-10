@@ -2362,3 +2362,85 @@ body{background:var(--fundo)}
 .acompanha__frase{margin:0;font-weight:700}
 .acompanha__frase--subindo{color:var(--menta-forte)}
 .acompanha .rotulo-pequeno{margin-bottom:.35rem}
+
+/* ==========================================================================
+   Início (11/2026): entrar, criar conta, primeiros passos e teste de nível no mesmo "Caderno limpo" da área do aluno:
+   cartão liso com borda fina, campos de 1.5px, listas compactas em vez de cartões soltos, ações presas embaixo.
+   Fica no fim do arquivo para valer sobre o resto.
+   ========================================================================== */
+.entrar-envoltorio{width:100%;max-width:460px;margin:.4rem auto 0;gap:1rem;justify-items:stretch}
+.entrar-intro{display:flex;align-items:center;gap:.75rem}
+.entrar-intro__titulo{margin:0;font:600 clamp(1.35rem,5.6vw,1.75rem)/1.1 var(--f-titulo);letter-spacing:-.005em}
+.entrar-intro .saudacao__data{margin-bottom:.1rem}
+.entrar-bilhete{text-align:left;font-size:clamp(1.35rem,5.6vw,1.75rem);line-height:1.1;margin:0}
+.entrar-envoltorio>.ajuda{text-align:center;margin:0}
+
+.entrar.auth-cartao,.entrar-envoltorio>.folha{background:var(--cartao);border:1.5px solid var(--borda);border-radius:24px;box-shadow:none;padding:1.25rem 1.1rem 1.1rem;overflow:visible}
+.entrar.auth-cartao{gap:1.1rem}
+.entrar.auth-cartao .auth-titulo{font-size:1.45rem;line-height:1.15}
+.auth-cartao .auth-titulo+*{margin-top:0}
+.auth-abas{order:-1;margin:0}
+.auth-abas.abas-aprender{grid-template-columns:1fr 1fr}
+.auth-abas a[aria-current],.abas .aba[aria-selected="true"]{background:var(--azul-fundo);color:var(--azul-forte);box-shadow:none}
+.abas{background:color-mix(in srgb,var(--tinta) 8%,transparent);border:0;border-radius:14px;padding:.25rem;gap:.2rem;margin-bottom:.2rem}
+.aba{min-height:42px;border-radius:11px;font-size:.95rem}
+.aba[aria-selected="true"]{box-shadow:none}
+.auth-cartao :where(input:not([type=checkbox]):not([type=radio]),select,textarea),.onboarding :where(input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea){border-width:1.5px;border-color:var(--borda-forte);border-radius:14px}
+.auth-cartao .btn-sec,.auth-google{box-shadow:none;border:1.5px solid var(--borda-forte);background:var(--cartao);color:var(--tinta)}
+.auth-cartao .btn-sec:active,.auth-google:active{transform:scale(.98)}
+.auth-ou{display:flex;align-items:center;gap:.8rem;margin:.9rem 0 1rem;color:var(--tinta-3);font-weight:700}
+.auth-ou::before,.auth-ou::after{content:"";flex:1;height:1.5px;background:var(--borda)}
+#clerk-raiz .cl-socialButtonsBlockButton{box-shadow:none!important;margin:0!important;border-width:1.5px!important}
+#clerk-raiz .cl-footer{border-top:0!important;padding:.2rem 0 0!important;margin:.2rem 0 0!important}
+#clerk-raiz .cl-card,#clerk-raiz .cl-main{gap:1.2rem!important}
+#clerk-raiz .cl-socialButtonsRoot{padding-top:.5rem}
+.entrar.auth-cartao>.ajuda.centro{margin:0;padding-top:1rem;border-top:1.5px solid var(--borda);font-weight:600}
+
+/* primeiros passos (objetivo, prazo, interesses, tempo) */
+.onboarding,.nivelamento{max-width:560px;gap:1rem}
+.passos{gap:.35rem}
+.passos span{height:8px;border-radius:4px}
+.onboarding h1,.nivelamento h1{font-size:clamp(1.5rem,6vw,1.9rem)}
+.onboarding .lou-fala__ouvir,.nivelamento .lou-fala__ouvir{border-width:1.5px}
+.opcoes-grandes{gap:0;background:var(--cartao);border:1.5px solid var(--borda);border-radius:18px;overflow:hidden}
+.opcao-grande+.opcao-grande{border-top:1.5px solid var(--borda)}
+.opcao-grande .caixa{min-height:64px;padding:.6rem .9rem;gap:.75rem;border:0;border-radius:0;background:none;box-shadow:none}
+.opcao-grande .caixa>span:last-child{flex:1;min-width:0}
+.opcao-grande .caixa .bolha{flex:none;width:38px;height:38px;border-radius:11px}
+.opcao-grande .caixa strong{font-family:var(--f-texto);font-weight:800;font-size:.98rem;line-height:1.25}
+.opcao-grande .caixa small{font-size:.85rem;line-height:1.3;font-weight:600}
+.opcao-grande .caixa::after{content:"";flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--borda-forte);transition:border-color .15s,background .15s}
+.opcao-grande input:checked+.caixa{background:var(--c-fundo);box-shadow:none}
+.opcao-grande input:checked+.caixa::after{border-color:var(--c);background:radial-gradient(circle,var(--c-sobre) 0 30%,var(--c) 34%)}
+.opcao-grande input:active+.caixa{transform:none;box-shadow:none;background:var(--cartao-2)}
+.opcao-grande input:checked:active+.caixa{background:var(--c-fundo)}
+@media (hover:hover){.opcao-grande:hover input:not(:checked)+.caixa{background:var(--cartao-2)}}
+.escolha span{min-height:42px;border-width:1.5px;border-color:var(--borda);transform:none}
+.escolha input:checked+span{background:var(--tinta);border-color:var(--tinta);color:var(--fundo);transform:none}
+@media (hover:hover){.escolha:hover input:not(:checked)+span{border-color:var(--borda-forte)}}
+.onboarding-nav .btn-sec{flex:none;box-shadow:none;border:1.5px solid var(--borda-forte);background:var(--cartao)}
+.onboarding-nav .btn:last-child{flex:1 1 auto;margin-left:0}
+@media (max-width:959.98px){
+  .onboarding-nav{position:sticky;bottom:0;z-index:5;margin:.3rem -1rem 0;padding:1.2rem 1rem calc(.8rem + env(safe-area-inset-bottom));background:linear-gradient(to bottom,transparent,var(--fundo) 38%)}
+}
+
+/* teste de nível */
+.nivelamento .lista-check{background:var(--cartao);border:1.5px solid var(--borda);border-radius:18px;overflow:hidden;gap:0}
+.nivelamento .lista-check li{padding:.75rem .9rem .75rem 2.9rem;font-weight:600;line-height:1.4}
+.nivelamento .lista-check li+li{border-top:1.5px solid var(--borda)}
+.nivelamento .lista-check li::before{left:.9rem;top:.8rem}
+.nivelamento .folha.teste-audio{border-radius:18px;box-shadow:none;border-width:1.5px;justify-items:stretch}
+.nivelamento .teste-audio .btn{box-shadow:none;border:1.5px solid var(--borda-forte)}
+.nivelamento .btn-bloco:not(.btn-sec):not(.btn-texto){margin-top:.2rem}
+.nivelamento .btn-texto.btn-bloco{background:var(--azul-fundo);color:var(--azul-forte);border-color:transparent}
+.trilho{height:12px;margin-inline:20px}
+.trilho__cheio::after{display:none}
+.nivelamento .opcao{border-width:1.5px;box-shadow:none;min-height:58px}
+.nivelamento .opcao:active:not(:disabled){transform:scale(.985);box-shadow:none}
+@media (hover:hover){.nivelamento .opcao:hover:not(:disabled):not(.escolhida){transform:none;box-shadow:none;background:var(--cartao-2)}}
+.nivelamento .opcao.escolhida,.nivelamento .is-certo .opcao.escolhida,.nivelamento .is-errado .opcao.escolhida{box-shadow:none}
+.nivelamento .pergunta__corpo .texto-leitura{border-width:1.5px;border-radius:18px}
+.nivelamento__palco{gap:1rem}
+#clerk-raiz .cl-footerAction{display:none!important}
+#clerk-raiz .cl-footer>div:last-child{text-align:center;justify-content:center}
+.auth-cartao>.abas{order:-1}

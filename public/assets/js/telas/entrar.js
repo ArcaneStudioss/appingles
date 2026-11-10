@@ -3,6 +3,11 @@ import { h, ocupado, icone } from '../ui.js?v=__V__';
 import { lou } from '../diversao.js?v=__V__';
 import { camposPublico } from './publico.js?v=__V__';
 
+// Mesmo cabeçalho da página /entrar/: o Tuiuiú num círculo e a saudação, no padrão da tela Hoje.
+const introEntrar = () => h('div', { class: 'entrar-intro' },
+  h('span', { class: 'saudacao__lou', 'aria-hidden': 'true' }, lou('oi', { tamanho: 48, rotulo: '' })),
+  h('div', {}, h('p', { class: 'saudacao__data' }, 'Bem-vindo de volta'), h('h1', { class: 'entrar-bilhete' }, 'Seu inglês continua aqui')));
+
 export async function telaEntrar(el, { estado, ir, carregarEu }) {
   const est = await api('/auth/estado');
   if (est.logado) { await carregarEu(); return ir(estado.eu?.perfil?.papel === 'professor' ? '#/professor' : '#/hoje'); }
@@ -10,9 +15,7 @@ export async function telaEntrar(el, { estado, ir, carregarEu }) {
   if (config.provedor === 'clerk') {
     // O acesso é feito na página /entrar/, que é a única a carregar o Clerk.
     el.append(h('div', { class: 'entrar-envoltorio' },
-      lou('feliz', { tamanho: 88, pose: 'acena' }),
-      h('h1', { class: 'entrar-bilhete' }, 'Seu inglês continua aqui'),
-      h('p', { class: 'ajuda centro' }, 'Entre para continuar seus estudos ou crie seu espaço para aprender.'),
+      introEntrar(),
       h('section', { class: 'entrar folha auth-cartao', 'aria-label': 'Acesso à conta' },
         config.disponivel
           ? [h('a', { class: 'btn btn-bloco', href: '/entrar/' }, 'Entrar'), h('a', { class: 'btn btn-sec btn-bloco', href: '/entrar/?modo=cadastro' }, 'Criar conta')]
@@ -32,9 +35,7 @@ export async function telaEntrar(el, { estado, ir, carregarEu }) {
   }
   const caixa = h('section', { class: 'entrar folha auth-cartao', 'aria-label': 'Acesso à conta' });
   el.append(h('div', { class: 'entrar-envoltorio' },
-    lou('feliz', { tamanho: 88, pose: 'acena' }),
-    h('h1', { class: 'entrar-bilhete' }, 'Seu inglês continua aqui'),
-    h('p', { class: 'ajuda centro' }, 'Entre para continuar seus estudos ou crie seu espaço para aprender.'), caixa,
+    introEntrar(), caixa,
     h('p', { class: 'ajuda centro' }, '30 dias grátis, sem cartão. ', h('a', { href: '/' }, 'Conhecer o Inglou'))));
   addEventListener('hashchange', () => clearInterval(timer), { once: true });
   const campo = (id, rotulo, input, ajuda) => h('div', { class: 'campo' }, h('label', { for: id }, rotulo), input, ajuda ? h('small', {}, ajuda) : null);

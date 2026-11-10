@@ -16,6 +16,11 @@
     if (!r.ok) throw new Error(d.erro || 'Não foi possível continuar. Tente novamente.');
     return d;
   };
+  // Cabeçalho do acesso: o mesmo Tuiuiú e a mesma saudação da área do aluno (o mascote é opcional: sem ele, fica o círculo).
+  const intro = (data, titulo) => { document.getElementById('entrar-data').textContent = data; document.getElementById('entrar-titulo').textContent = titulo; };
+  if (modo === 'cadastro') intro('Vamos começar', 'Crie seu espaço de estudo');
+  else if (modo !== 'entrar') document.getElementById('entrar-intro').hidden = true;
+  import('/assets/js/diversao.js?v=__V__').then(m => document.getElementById('entrar-lou').append(m.lou('oi', { tamanho: 48, rotulo: '' }))).catch(() => {});
   const tela = (titulo, ...conteudo) => { raiz.replaceChildren(h('h1', { class: 'auth-titulo', tabindex: '-1' }, titulo), ...conteudo); raiz.querySelector('h1').focus(); };
   const voltar = h('p', { class: 'ajuda centro' }, h('a', { href: '/app/#/hoje' }, 'Voltar para o Inglou'));
   const falha = (msg) => tela('Não foi possível continuar', h('p', { class: 'erro-campo', role: 'alert' }, msg), h('p', {}, h('a', { class: 'btn btn-bloco', href: '/entrar/' }, 'Tentar novamente')));
@@ -41,14 +46,14 @@
       // Estilos aplicados pelo próprio Clerk (não dependem de seletores de CSS); !important garante a vitória sobre o tema padrão.
       const i = o => Object.fromEntries(Object.entries(o).map(([k, x]) => [k, typeof x === 'string' ? x + ' !important' : x]));
       const solto = i({ width: '100%', maxWidth: '100%', minWidth: '0', margin: '0', padding: '0', background: 'transparent', backgroundImage: 'none', border: '0', boxShadow: 'none', borderRadius: '0' });
-      const campo = i({ width: '100%', maxWidth: '100%', minHeight: '52px', background: v('--cartao'), color: v('--tinta'), border: `2px solid ${v('--borda-forte')}`, borderRadius: v('--raio-p') || '14px', boxShadow: 'none', fontWeight: '700', fontSize: '1rem' });
+      const campo = i({ width: '100%', maxWidth: '100%', minHeight: '52px', background: v('--cartao'), color: v('--tinta'), border: `1.5px solid ${v('--borda-forte')}`, borderRadius: v('--raio-p') || '14px', boxShadow: 'none', fontWeight: '700', fontSize: '1rem' });
       return {
         rootBox: i({ width: '100%', maxWidth: '100%', margin: '0', padding: '0' }), cardBox: solto, card: { ...solto, gap: '1.25rem' },
         header: i({ display: 'none' }), main: i({ gap: '1.25rem', width: '100%' }), form: i({ width: '100%', gap: '1.1rem' }), formFieldRow: i({ width: '100%' }), formField: i({ width: '100%' }),
-        footer: solto, footerAction: { ...solto, justifyContent: 'center' }, footerPages: solto, footerActionText: i({ color: v('--tinta-2'), fontWeight: '700' }), footerActionLink: i({ color: v('--azul-forte'), fontWeight: '800' }),
+        footer: solto, footerAction: i({ display: 'none' }), footerPages: solto, footerActionText: i({ color: v('--tinta-2'), fontWeight: '700' }), footerActionLink: i({ color: v('--azul-forte'), fontWeight: '800' }),
         formFieldLabel: i({ color: v('--tinta'), fontWeight: '800', fontSize: '1rem' }), formFieldInput: campo, otpCodeFieldInput: campo,
-        formButtonPrimary: i({ width: '100%', minHeight: '52px', background: v('--azul'), backgroundImage: 'none', color: v('--azul-sobre'), border: '0', borderRadius: v('--raio-p') || '14px', fontWeight: '800', fontSize: '1.02rem', textTransform: 'none', boxShadow: `0 5px 0 ${v('--azul-sombra')}`, marginBottom: '5px' }),
-        socialButtonsBlockButton: i({ width: '100%', minHeight: '52px', background: v('--cartao'), color: v('--tinta'), border: `2px solid ${v('--borda-forte')}`, borderRadius: v('--raio-p') || '14px', boxShadow: `0 4px 0 ${v('--borda')}`, marginBottom: '4px' }),
+        formButtonPrimary: i({ width: '100%', minHeight: '52px', background: v('--azul'), backgroundImage: 'none', color: v('--azul-sobre'), border: '0', borderRadius: v('--raio-p') || '14px', fontWeight: '800', fontSize: '1.02rem', textTransform: 'none', boxShadow: `0 4px 0 ${v('--azul-sombra')}`, marginBottom: '4px' }),
+        socialButtonsBlockButton: i({ width: '100%', minHeight: '52px', background: v('--cartao'), color: v('--tinta'), border: `1.5px solid ${v('--borda-forte')}`, borderRadius: v('--raio-p') || '14px', boxShadow: 'none', marginBottom: '0' }),
         socialButtonsBlockButtonText: i({ color: v('--tinta'), fontWeight: '800', fontSize: '1rem' }), dividerLine: i({ background: v('--borda') }), dividerText: i({ color: v('--tinta-3'), fontWeight: '700' })
       };
     })() };
@@ -102,7 +107,9 @@
     }
     if (clerk.session && clerk.user) { tela('Entrando…', h('p', { class: 'ajuda', role: 'status' }, 'Só um instante.')); try { return await concluir(); } catch (err) { return tela('Não foi possível continuar', h('p', { class: 'erro-campo', role: 'alert' }, err.message), h('button', { type: 'button', class: 'btn btn-bloco', on: { click: sair } }, 'Entrar com outra conta')); } }
     const caixa = h('div', { class: 'clerk-montagem' });
-    tela(modo === 'cadastro' ? 'Crie sua conta' : 'Entre na sua conta', caixa, h('p', { class: 'ajuda centro' }, '30 dias grátis, sem cartão. ', h('a', { href: '/' }, 'Conhecer o Inglou')));
+    const aba = (m, r, href) => h('a', { href, 'aria-current': modo === m ? 'page' : null }, r);
+    const abas = h('nav', { class: 'abas-aprender auth-abas', 'aria-label': 'Entrar ou criar conta' }, aba('entrar', 'Entrar', '/entrar/'), aba('cadastro', 'Criar conta', '/entrar/?modo=cadastro'));
+    tela(modo === 'cadastro' ? 'Crie sua conta' : 'Entre na sua conta', abas, caixa, h('p', { class: 'ajuda centro' }, '30 dias grátis, sem cartão. ', h('a', { href: '/' }, 'Conhecer o Inglou')));
     let trocando = false;
     clerk.addListener(({ session }) => { if (session && !trocando) { trocando = true; concluir().catch(err => falha(err.message)); } });
     if (modo === 'cadastro') clerk.mountSignUp(caixa, base); else clerk.mountSignIn(caixa, base);
