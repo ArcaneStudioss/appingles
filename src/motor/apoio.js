@@ -23,6 +23,21 @@ const INSTRUCOES = {
   pares: 'Toque em uma palavra em inglês e depois no significado em português.',
 };
 
+// Pista de estrutura para quando a questão não tem dica própria: diz o tamanho e o caminho, nunca o conteúdo da resposta.
+const palavrasDe = t => String(t || '').replace(/[.,!?;:]+/g, ' ').trim().split(/\s+/).filter(Boolean);
+function pistaDeEstrutura(ex) {
+  if (ex.tipo === 'lacuna' && Array.isArray(ex.resposta) && ex.frase) {
+    const n = ex.frase.split('___').length - 1, r = String(ex.resposta[0] || '');
+    if (n === 1 && r && !/\s/.test(r)) return `A palavra que falta tem ${r.length} ${r.length === 1 ? 'letra' : 'letras'}. Leia a frase inteira e pense no que combina com as palavras ao redor.`;
+    if (n > 1) return `Faltam ${n} palavras, uma em cada espaço, na ordem da frase.`;
+  }
+  if (ex.tipo === 'ordenar' && typeof ex.resposta === 'string') return `A frase tem ${palavrasDe(ex.resposta).length} palavras. Em inglês a ordem costuma ser: quem faz, a ação e depois o resto.`;
+  if (ex.tipo === 'ditado' && ex.audio) return `São ${palavrasDe(ex.audio).length} palavras. Ouça no modo devagar e escreva uma de cada vez; depois confira a frase toda.`;
+  if (ex.tipo === 'traduzir' && Array.isArray(ex.aceitas) && ex.aceitas[0]) { const n = palavrasDe(ex.aceitas[0]).length; return `Dá para responder com umas ${n} palavras. Comece por quem faz a ação e o verbo.`; }
+  if (ex.tipo === 'escuta') return 'Ouça uma vez inteira, depois no modo devagar, prestando atenção nas palavras principais.';
+  return null;
+}
+
 function apoioDoExercicio(ex) {
   const missao = POR_ID[ex.missao] || DONOS.get(ex.id);
   const texto = normalizar([ex.enunciado, ex.frase, ex.pt, ex.audio, ...(ex.palavras || [])].filter(Boolean).join(' '));
@@ -34,6 +49,8 @@ function apoioDoExercicio(ex) {
   let dica = ex.dica;
   if (!dica && vocab.length) dica = 'Lembre das palavras que aprendemos. Você pode ouvir e olhar o significado abaixo.';
   if (!dica) dica = regra || missao?.explicacao.texto || INSTRUCOES[ex.tipo] || 'Vá com calma. Você pode consultar a resposta para aprender.';
+  const pista = !ex.dica ? pistaDeEstrutura(ex) : null;
+  if (pista) dica = `${dica} ${pista}`;
   return { instrucao: INSTRUCOES[ex.tipo], dica, apoio: vocab };
 }
 
@@ -97,4 +114,4 @@ function retornoDidatico(ex, esperado) {
   return { explica, fraseCompleta, traducao, audioResposta: fraseCompleta || null, ...(ex.tipo === 'pares' ? { pares: ex.pares } : {}) };
 }
 
-module.exports = { apoioDoExercicio, retornoDidatico };
+module.exports = { apoioDoExercicio, retornoDidatico, pistaDeEstrutura };

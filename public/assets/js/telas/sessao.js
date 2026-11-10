@@ -38,6 +38,7 @@ export async function telaSessao(el, { ir }) {
     if (passo === 0) {
       palco.append(louFala('oi', h('p', {}, s.podeFazer || s.titulo)), h('h1', {}, s.titulo),
         h('p', {}, 'Primeiro veja os exemplos. Depois pratique; pode pedir ajuda sempre que precisar.'),
+        s.porque?.length ? h('section', { class: 'folha sessao-porque', 'aria-labelledby': 'sessao-porque-t' }, h('h2', { id: 'sessao-porque-t' }, icone('compass'), 'Ajustada para você'), h('ul', { class: 'lista-check' }, s.porque.map(t => h('li', {}, t)))) : null,
         h('ul', { class: 'vocab vocab--sessao' }, s.vocab.map(v => {
           const ex = v.ex && v.ex.replace(/[.!?]/g, '').trim().toLowerCase() !== v.en.toLowerCase() ? v.ex : null;
           return h('li', {}, h('button', { type: 'button', class: 'btn-icone', 'aria-label': 'Ouvir ' + v.en, on: { click: () => falar(ex || v.en) } }, icone('speaker-high')),
@@ -59,8 +60,8 @@ export async function telaSessao(el, { ir }) {
         return apoioPendente;
       };
       const caixa = exercicio(ex, {
-        ja: s.respondidos[ex.id], permitirTreino: true,
-        responder: async (resposta, extra = {}) => { await apoioPendente.catch(() => {}); const r = await api('/sessao/responder', { metodo: 'POST', corpo: { itemId: ex.id, resposta, ...extra, dica: extra.dica || pediuApoio } }); if (!r.pratica) { s.respondidos[ex.id] = r; outroApoio.hidden = true; if (!r.repetida) marcarCombo(r.correto && !r.ajuda && !r.dica, r.recompensa?.xp || 0); } return { ...r, sequencia: !r.pratica && !r.repetida ? combo : 0 }; },
+        ja: s.respondidos[ex.id], permitirTreino: true, devagar: !!s.adaptacao?.ouvirDevagar,
+        responder: async (resposta, extra = {}) => { await apoioPendente.catch(() => {}); const r = await api('/sessao/responder', { metodo: 'POST', corpo: { itemId: ex.id, resposta, ...extra, dica: extra.dica || pediuApoio } }); if (!r.pratica) { s.respondidos[ex.id] = r; outroApoio.hidden = true; if (!r.repetida) marcarCombo(r.correto && !r.ajuda && !r.dica, r.recompensa?.xp || 0); if (r.itens) { s.itens = r.itens; segunda.hidden = false; setTimeout(() => caixa.querySelector('.retorno-exercicio')?.append(segunda), 0); progresso.textContent = `Atividade ${passo} de ${s.itens.length}`; } } return { ...r, sequencia: !r.pratica && !r.repetida ? combo : 0 }; },
         aoProximo: avancar,
       });
       caixa.addEventListener('inglou:traducao', () => { marcar().catch(e => toast(e.message)); });
@@ -69,17 +70,24 @@ export async function telaSessao(el, { ir }) {
           try { const r = await marcar(); apoio.hidden = false; apoio.replaceChildren(h('p', {}, r.dica), r.textoAudio ? h('p', {lang:'en'}, r.textoAudio) : null, r.exemplo ? h('p', {}, h('span', { lang: 'en' }, r.exemplo.en), ' — ', r.exemplo.pt) : null, r.vocab.map(v => h('p', {}, h('strong', { lang: 'en' }, v.en), ' = ', v.pt)), h('p', { class: 'ajuda' }, 'Este apoio fica registrado como prática com ajuda.')); }
           catch (e) { toast(e.message, { tipo: 'erro' }); }
         } } }, icone('question'), 'Não entendi: mostrar outro apoio');
-      palco.append(h('h1', {}, ex.etapa || 'Praticar'), caixa, outroApoio, apoio);
+      // errou: a questão volta no fim da sessão (o aviso aparece junto da explicação)
+      const segunda = h('p', { class: 'aviso-suave sessao-segunda', role: 'status', hidden: true }, icone('repeat'), h('span', {}, 'Sem problema: essa questão volta no fim para você tentar de novo, já sabendo a explicação.'));
+      palco.append(h('h1', {}, ex.etapa || 'Praticar'), ex.segundaChance ? h('p', { class: 'ajuda' }, 'Você viu a explicação desta questão há pouco. Agora é com você.') : null, caixa, segunda, outroApoio, apoio);
       return;
     }
     // Fim da sessão: placar com contagem e festa (uma vez). XP é participação; o domínio continua sendo medido nas tarefas sem ajuda.
-    const feitos = s.itens.map(e => s.respondidos[e.id]).filter(Boolean);
-    const certos = feitos.filter(r => r.correto).length, xp = feitos.reduce((t, r) => t + (r.recompensa?.xp || 0), 0);
+    // conta por questão original; acertar na segunda chance também conta (e aparece separado)
+    const originais = s.itens.filter(e => !e.segundaChance && s.respondidos[e.id]);
+    const recuperou = e => !s.respondidos[e.id].correto && s.itens.some(x => x.origemId === e.id && s.respondidos[x.id]?.correto);
+    const feitos = originais.map(e => s.respondidos[e.id]);
+    const recuperadas = originais.filter(recuperou).length;
+    const certos = feitos.filter(r => r.correto).length + recuperadas, xp = s.itens.map(e => s.respondidos[e.id]).filter(Boolean).reduce((t, r) => t + (r.recompensa?.xp || 0), 0);
     palco.append(louFala(s.concluida ? 'feliz' : 'festa', h('p', {}, s.concluida ? 'Seu treino de hoje está salvo!' : certos === feitos.length && feitos.length ? 'Acertou tudo! Que sessão.' : 'Você chegou ao fim. Cada prática é um passo.')), h('h1', {}, 'Sessão concluída'),
       feitos.length ? h('div', { class: 'placar' },
         h('div', { class: 'placar__item' }, h('span', {}, 'Acertos'), h('strong', {}, h('b', { 'data-conta': certos }, String(certos)), h('small', {}, ` de ${feitos.length}`))),
         xp ? h('div', { class: 'placar__item placar__item--sol' }, h('span', {}, 'XP ganho'), h('strong', { 'data-conta': xp, 'data-prefixo': '+' }, `+${xp}`)) : null,
         melhorCombo >= 3 ? h('div', { class: 'placar__item placar__item--coral' }, h('span', {}, 'Melhor combo'), h('strong', {}, `x${melhorCombo}`)) : null) : null,
+      recuperadas ? h('p', { class: 'aviso-suave' }, icone('repeat'), h('span', {}, recuperadas === 1 ? 'Uma questão que você errou saiu certa na segunda chance.' : `${recuperadas} questões que você errou saíram certas na segunda chance.`)) : null,
       h('p', { class: 'ajuda' }, 'XP mostra participação. O domínio do inglês é verificado nas tarefas feitas sem ajuda e nos retestes.'),
       s.concluida ? h('a', { class: 'btn', href: '#/progresso' }, 'Ver meu progresso') : botao('Concluir sessão', async e => {
         const b = e.currentTarget; ocupado(b, true);

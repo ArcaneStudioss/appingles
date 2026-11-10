@@ -113,6 +113,8 @@ export async function carregarEu() {
   document.body.dataset.cenario = estado.eu?.cenario || 'padrao';
   document.body.dataset.publico = estado.eu?.publico?.id || 'adulto';
   document.body.dataset.papel = estado.eu?.perfil?.papel || 'aluno';
+  // apoio que acompanha o desempenho: quem está acertando pouco ouvindo recebe o áudio começando mais devagar
+  document.body.toggleAttribute('data-ouvir-devagar', !!estado.eu?.apoios?.ouvirDevagar);
   const prof = estado.eu?.perfil?.papel === 'professor';
   const inicio = nav.querySelector('[data-nav="inicio"]');
   if (inicio) { inicio.href = prof ? '#/professor' : '#/hoje'; inicio.dataset.rota = prof ? 'professor' : 'hoje'; inicio.lastElementChild.textContent = prof ? 'Painel' : 'Hoje'; }

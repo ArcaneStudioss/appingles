@@ -360,11 +360,13 @@ function criar(db, { supabase: supabaseInjetado, clerk: clerkInjetado } = {}) {
   }, { publica: true });
 
   // Quem sou eu + em que passo estou
+  // apoios que acompanham o desempenho (áudio mais devagar para quem acerta pouco ouvindo); valem em todas as telas de exercício
+  const apoiosDe = uid => { if (!perfilDe(uid)?.objetivo) return { ouvirDevagar: false }; const a = require('./motor/sessao-adaptativa').adaptacao({ tentativas: tentativasDe(uid), nivel: nivelamentoDe(uid)?.nivel || 'A1' }); return { ouvirDevagar: a.ouvirDevagar }; };
   rota('GET', '/eu', (ctx) => {
     const uid = ctx.u.id, h = hojeDe(uid);
     const p = perfilDe(uid), n = nivelamentoDe(uid), plano = planoDe(uid);
     const passo = !p?.objetivo ? 'perfil' : !n ? 'nivelamento' : !plano ? 'plano' : 'app';
-    return { admin: require('./editorial').ehAdmin(uid), cenario: q('SELECT cenario FROM social_perfis WHERE user_id=?').get(uid)?.cenario || 'padrao', autenticacao: { provedor: ctx.u.auth_provider }, usuario: { nome: ctx.u.nome, email: ctx.u.email }, perfil: p, publico: publicoDe(p), nivel: n?.nivel || null, passo, assinatura: estadoAssinatura(uid, h), ia: ia.ativo(), hoje: h };
+    return { admin: require('./editorial').ehAdmin(uid), cenario: q('SELECT cenario FROM social_perfis WHERE user_id=?').get(uid)?.cenario || 'padrao', autenticacao: { provedor: ctx.u.auth_provider }, usuario: { nome: ctx.u.nome, email: ctx.u.email }, perfil: p, publico: publicoDe(p), nivel: n?.nivel || null, passo, assinatura: estadoAssinatura(uid, h), ia: ia.ativo(), hoje: h, apoios: apoiosDe(uid) };
   });
 
   rota('PUT', '/perfil/publico', (ctx) => {
@@ -1474,6 +1476,7 @@ function criar(db, { supabase: supabaseInjetado, clerk: clerkInjetado } = {}) {
     return {
       nivel: n?.nivel || null, nivelamentoEm: n?.feito_em || null,
       habilidades: hab,
+      evolucao: require('./motor/sessao-adaptativa').resumoEvolucao(tent, { nivel: n?.nivel || 'A1' }),
       concluido: {
         licoes: q("SELECT COUNT(*) n FROM licoes WHERE user_id = ? AND status = 'concluida'").get(uid).n,
         sessoes: q('SELECT COUNT(*) n FROM sessoes_guiadas WHERE user_id=? AND concluida_em IS NOT NULL').get(uid).n,

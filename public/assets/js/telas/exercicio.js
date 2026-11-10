@@ -57,7 +57,7 @@ export function caixaEscuta(texto, { velocidade = 1, vozFem = false, simples = f
 
 export function exercicio(ex, config) {
   const infantil = document.body.dataset.publico === 'crianca';
-  const { responder, contestar, ja, devagar = false, aoProximo, rotuloProximo = 'Continuar', barraFixa = false, permitirTreino = false, pratica = false } = config;
+  const { responder, contestar, ja, devagar = document.body.hasAttribute('data-ouvir-devagar'), aoProximo, rotuloProximo = 'Continuar', barraFixa = false, permitirTreino = false, pratica = false } = config;
   const t0 = performance.now();
   let usouDica = pratica || !!ex.ensino, conferido = false, enviando = false, rec = null, pegarResposta = () => null;
   const raiz = h('article', { class: 'exercicio', dados: { tipo: ex.tipo } });

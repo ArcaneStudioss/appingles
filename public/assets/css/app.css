@@ -2351,3 +2351,14 @@ body{background:var(--fundo)}
 /* nas telas com abas de Aprender, o cabeçalho fica mais enxuto */
 .abas-aprender~.cabeca .bolha{display:none}
 .abas-aprender~.cabeca h1{font-size:clamp(1.5rem,6vw,1.9rem)}
+.sessao-porque{display:grid;gap:.5rem;margin:.4rem 0 1rem}
+.sessao-porque h2{display:flex;align-items:center;gap:.45rem;margin:0;font-size:1.05rem}
+.sessao-porque h2 .ico{color:var(--azul)}
+.sessao-porque .lista-check{font-size:.95rem}
+.sessao-segunda{margin-top:.8rem}
+.acompanha{display:grid;gap:.6rem}
+.acompanha h2{display:flex;align-items:center;gap:.5rem;margin:0;font-size:1.15rem}
+.acompanha h2 .ico{color:var(--azul)}
+.acompanha__frase{margin:0;font-weight:700}
+.acompanha__frase--subindo{color:var(--menta-forte)}
+.acompanha .rotulo-pequeno{margin-bottom:.35rem}

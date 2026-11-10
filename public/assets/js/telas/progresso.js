@@ -18,6 +18,22 @@ function secaoBrasil(lista) {
     ...grupo('Animais ameaçados', 'animal'), ...grupo('Gente que faz o Brasil', 'gente'));
 }
 
+// Como o app está acompanhando a pessoa: a tendência do acerto sem ajuda e os apoios que estão ligados agora.
+function acompanhamento(ev) {
+  if (!ev) return null;
+  const r = ev.recente, a = ev.anterior;
+  const frase = r.n < 8 ? 'Ainda tenho poucas respostas suas destas duas semanas. Cada exercício me ajuda a ajustar o que vem a seguir.'
+    : ev.tendencia === 'subindo' ? `Você está evoluindo: acertou ${r.pct}% sem ajuda nas últimas duas semanas, contra ${a.pct}% nas duas anteriores.`
+    : ev.tendencia === 'caindo' ? `O acerto sem ajuda caiu para ${r.pct}% (antes, ${a.pct}%). É comum quando a matéria fica mais nova; por isso aumentei o apoio.`
+    : ev.tendencia === 'estavel' ? `Seu acerto sem ajuda está firme em ${r.pct}% nas últimas duas semanas.`
+    : `Nas últimas duas semanas você acertou ${r.pct}% sem ajuda.`;
+  return h('section', { class: 'folha acompanha', 'aria-labelledby': 'acompanha-t' },
+    h('h2', { id: 'acompanha-t' }, icone(ev.tendencia === 'caindo' ? 'compass' : 'chart-line-up'), 'Como estou te acompanhando'),
+    h('p', { class: 'acompanha__frase' + (ev.tendencia ? ' acompanha__frase--' + ev.tendencia : '') }, frase),
+    ev.apoios.length ? h('div', {}, h('p', { class: 'rotulo-pequeno' }, 'Ajustes ligados agora'), h('ul', { class: 'lista-check' }, ev.apoios.map(t => h('li', {}, t)))) : null,
+    h('p', { class: 'ajuda' }, 'Os ajustes mudam sozinhos conforme você responde. ', h('a', { href: '#/aprender' }, 'Ver meu jeito de aprender')));
+}
+
 export async function telaProgresso(el) {
   const [p, pl, fb] = await Promise.all([api('/progresso'), api('/plano').catch(() => null), api('/figurinhas').catch(() => null)]);
   const c = p.concluido, d = p.demonstrado;
@@ -25,6 +41,7 @@ export async function telaProgresso(el) {
 
   el.append(
     h('header', { class: 'cabeca c-lilas' }, h('span', { class: 'bolha' }, icone('book-open-text')), h('div', {}, h('h1', {}, 'Meu álbum'), p.objetivo ? h('p', { class: 'ajuda' }, icone('target'), ' ', p.objetivo.nome, p.objetivo.prazo ? ` · até ${dataBR(p.objetivo.prazo)}` : '') : null)),
+    acompanhamento(p.evolucao),
     h('a', { class: 'treino-card c-sol', href: '#/colecao' }, h('span', { class: 'bolha' }, icone('cards')), h('span', { class: 'treino-card__txt' }, h('strong', {}, 'Coleção de figurinhas'), h('small', {}, 'Suas figurinhas, raridades e desafios com amigos')), icone('caret-right')),
     h('a', { class: 'treino-card c-limao', href: '#/aprender' }, h('span', { class: 'bolha' }, icone('compass')), h('span', { class: 'treino-card__txt' }, h('strong', {}, 'Meu jeito de aprender'), h('small', {}, 'como você vai ao ler, escrever e ouvir, e onde mais erra')), icone('caret-right')),
     pl?.plano ? album(pl.plano, { titulo: 'Páginas do álbum', classe: 'album--todo' }) : null,

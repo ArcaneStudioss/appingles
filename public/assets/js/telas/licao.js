@@ -92,7 +92,7 @@ export async function telaLicao(el, { ir }) {
       tela.append(etapa(p.b, p.b.tipo !== 'exercicios' || p.ex.tag ? p.b.titulo : null));
       tela.append(exercicio(p.ex, {
         ja: respondidos[p.ex.id],
-        devagar: !!p.b.devagar,
+        devagar: !!p.b.devagar || document.body.hasAttribute('data-ouvir-devagar'),
         responder: async (resposta, meta) => { const r = await api('/licao/responder', { metodo: 'POST', corpo: { itemId: p.ex.id, resposta, ...meta } }); if (!r.pratica) { respondidos[p.ex.id] = { ...r, resposta }; if (!r.repetida) marcarCombo(r.correto && !r.ajuda, r.recompensa?.xp || 0); } return { ...r, sequencia: !r.pratica && !r.repetida ? combo : 0 }; },
         contestar: async () => (await api('/licao/contestar', { metodo: 'POST', corpo: { itemId: p.ex.id } })).mensagem,
         aoProximo: avancar,

@@ -32,7 +32,7 @@ async function main(){
     if(respostas>10)throw Error('A sessão não chegou ao fim.');
    }
    await page.getByRole('button',{name:'Concluir sessão',exact:true}).click();await page.getByRole('link',{name:'Ver meu progresso',exact:true}).waitFor();
-   const sessao=await (await context.request.get('/api/v1/sessao')).json();assert.ok(sessao.sessao.concluida);assert.equal(Object.keys(sessao.sessao.respondidos).length,3);
+   const sessao=await (await context.request.get('/api/v1/sessao')).json();assert.ok(sessao.sessao.concluida);assert.equal(Object.keys(sessao.sessao.respondidos).length,sessao.sessao.itens.length);assert.equal(sessao.sessao.itens.filter(e=>!e.segundaChance).length,3,'três questões da sessão de 5 minutos; erros voltam como segunda chance');
    const turma=(await post('/turmas',{nome:'Turma de teste da interface'})).turma;
    await page.goto(`/app/#/turma/${turma.id}/nova`);await page.getByRole('heading',{name:'Montar aula',exact:true}).waitFor();
    await page.locator('#at-titulo').fill('Aula criada pela interface');
