@@ -172,7 +172,7 @@ async function render() {
   }
   if (btnMais) { const noMais = !naBarra && itensMais().some(m => m.rota === nome || (nome === 'minhaturma' && m.rota === 'turmas')); btnMais.toggleAttribute('aria-current', noMais); if (noMais) btnMais.setAttribute('aria-current', 'page'); }
   document.body.dataset.rota = rota;
-  atualizarChatFlutuante(rota, !nav.hidden);
+  atualizarChatFlutuante(rota, !nav.hidden, estado.eu?.usuario?.email || null);
   const alvo = h('div', { class: 'tela' });
   limpar(palco).append(alvo);
   try {

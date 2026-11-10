@@ -5,7 +5,7 @@ import { montarChatTutor } from './chat-tutor.js?v=__V__';
 
 const SEM_BOTAO = new Set(['duvidas', 'sessao', 'licao', 'unidade', 'simulado', 'treino', 'atividade', 'nivelamento', 'perfil', 'plano', 'publico', 'entrar', 'conversa']);
 const historico = [];
-let painel = null, botao = null, aoEsc = null;
+let painel = null, botao = null, aoEsc = null, dono = null;   // dono: de quem é o histórico (some ao sair ou trocar de conta)
 
 function abrir() {
   if (painel) return;
@@ -32,7 +32,11 @@ export function montarChatFlutuante() {
     on: { click: () => (painel ? painel.querySelector('[aria-label="Fechar o chat"]').click() : abrir()) } }, lou('pensando', { tamanho: 40, rotulo: '' }));
   document.body.append(botao);
   // chamado a cada troca de tela: some nas telas de foco e nas de entrada
-  return (rota, navVisivel) => {
+  return (rota, navVisivel, usuario = null) => {
+    if (usuario !== dono) {
+      dono = usuario; historico.length = 0;
+      if (painel) { document.removeEventListener('keydown', aoEsc); painel.remove(); painel = null; botao.setAttribute('aria-expanded', 'false'); }
+    }
     const mostrar = navVisivel && !SEM_BOTAO.has(rota);
     botao.hidden = !mostrar;
     if (!mostrar && painel) { document.removeEventListener('keydown', aoEsc); painel.remove(); painel = null; botao.setAttribute('aria-expanded', 'false'); }
