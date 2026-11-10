@@ -57,7 +57,7 @@ const MAIS = [
   { grupo: 'Ajuda e conta', acao: 'tour', cor: 'azul', ic: 'compass', t: 'Tour pelo app', s: 'um passeio rápido pelas telas', k: 'ajuda tutorial guia comecar' },
   { grupo: 'Ajuda e conta', rota: 'conta', cor: 'azul', ic: 'user-circle', t: 'Minha conta', s: 'plano, idade, lembretes e dados', k: 'assinatura pagamento senha lembrete privacidade', aluno: true },
   { grupo: 'Ajuda e conta', rota: 'professor', cor: 'menta', ic: 'users-three', t: 'Área do professor', s: 'turmas, aulas e alunos', k: 'turma ensinar', aluno: true },
-  { grupo: 'Ajuda e conta', rota: 'turmas', cor: 'lilas', ic: 'users-three', t: 'Minhas turmas como aluno', s: 'aulas de outros professores', k: 'codigo professor', professor: true },
+  { grupo: 'Ajuda e conta', rota: 'turmas', cor: 'lilas', ic: 'users-three', t: 'Minhas turmas', s: 'atividades do professor e entrar com código', k: 'codigo professor turma escola' },
   { grupo: 'Ajuda e conta', rota: 'admin', cor: 'azul', ic: 'gear', t: 'Revisão e qualidade', s: 'conteúdo e métricas', k: 'admin', admin: true },
 ];
 const btnMais = document.querySelector('.nav__mais');
@@ -101,6 +101,11 @@ const ROTAS = { admin: ['admin.js', 'telaAdmin'], passaporte: ['passaporte.js', 
   nivel: ['nivel.js', 'telaNivel'], aprender: ['aprender.js', 'telaAprender'], treino: ['treino.js', 'telaTreino'], sobmedida: ['sobmedida.js', 'telaSobMedida'], estudo: ['sobmedida.js', 'telaEstudo'], assunto: ['sobmedida.js', 'telaAssunto'], simulado: ['sobmedida.js', 'telaSimulado'],
 };
 const LIVRES = new Set(['entrar']);
+// telas que moram na aba "Aprender" da barra; as três primeiras ganham abas no topo para pular de uma para outra
+const APRENDER = new Set(['biblioteca', 'unidade', 'brasil', 'conversar', 'conversa', 'revisar']);
+const ABAS_APRENDER = [['biblioteca', 'Biblioteca'], ['conversar', 'Conversar'], ['revisar', 'Revisar']];
+const abasAprender = atual => h('nav', { class: 'abas-aprender', 'aria-label': 'Aprender' },
+  ABAS_APRENDER.map(([r, t]) => h('a', { href: '#/' + r, 'aria-current': r === atual ? 'page' : null }, t)));
 const ONBOARDING = new Set(['perfil', 'nivelamento', 'plano', 'publico']);
 
 export async function carregarEu() {
@@ -117,7 +122,6 @@ export async function carregarEu() {
     progresso.lastElementChild.textContent = prof ? 'Conta' : estado.eu?.publico?.id === 'crianca' ? 'Álbum' : 'Progresso';
     progresso.querySelector('use').setAttribute('href', '/assets/icones/sprite.svg?v=__V__#i-' + (prof ? 'user-circle' : estado.eu?.publico?.id === 'crianca' ? 'medal' : 'chart-line-up'));
   }
-  nav.querySelector('[data-nav="turmas"]').hidden = prof;
   agendarAviso(estado.eu?.perfil?.lembrete);
   return estado.eu;
 }
@@ -154,12 +158,15 @@ async function render() {
   const editandoAula = rota === 'turma' && (param2 === 'nova' || /^e\d+$/.test(param2 || ''));
   nav.hidden = !estado.eu || ONBOARDING.has(rota) || LIVRES.has(rota) || editandoAula || ['sessao', 'licao', 'unidade', 'simulado', 'treino', 'atividade'].includes(rota);
   document.body.classList.toggle('foco-total', editandoAula || ['sessao', 'licao', 'unidade', 'nivelamento', 'simulado', 'treino', 'atividade'].includes(rota));
+  // "Aprender" reúne Biblioteca, Conversar e Revisar (com abas no topo dessas telas)
+  const pai = APRENDER.has(rota) ? 'biblioteca' : ['turma', 'professor'].includes(rota) ? 'professor' : nome;
+  let naBarra = false;
   for (const a of nav.querySelectorAll('a')) {
-    const pai = ['unidade', 'biblioteca', 'brasil'].includes(rota) ? 'biblioteca' : ['turma', 'professor'].includes(rota) ? 'professor' : ['minhaturma', 'atividade'].includes(rota) ? 'turmas' : nome;
     const ativo = !a.hidden && a.dataset.rota === pai;
+    naBarra ||= ativo;
     a.toggleAttribute('aria-current', ativo); if (ativo) a.setAttribute('aria-current', 'page');
   }
-  if (btnMais) { const noMais = itensMais().some(m => m.rota === nome || (nome === 'conversa' && m.rota === 'conversar') || (nome === 'minhaturma' && m.rota === 'turmas')); btnMais.toggleAttribute('aria-current', noMais); if (noMais) btnMais.setAttribute('aria-current', 'page'); }
+  if (btnMais) { const noMais = !naBarra && itensMais().some(m => m.rota === nome || (nome === 'minhaturma' && m.rota === 'turmas')); btnMais.toggleAttribute('aria-current', noMais); if (noMais) btnMais.setAttribute('aria-current', 'page'); }
   document.body.dataset.rota = rota;
   const alvo = h('div', { class: 'tela' });
   limpar(palco).append(alvo);
@@ -168,6 +175,7 @@ async function render() {
     const tela = (await import(`./telas/${arq}?v=__V__`))[nomeTela];
     if (meu !== renderizando) return;
     await tela(alvo, { param, param2, estado, ir, carregarEu });
+    if (ABAS_APRENDER.some(([r]) => r === rota)) alvo.prepend(abasAprender(rota));
   } catch (e) {
     console.error(e);
     if (meu !== renderizando) return;

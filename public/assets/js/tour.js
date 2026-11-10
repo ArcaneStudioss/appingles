@@ -1,20 +1,20 @@
 // Tour de boas-vindas: um passo por vez, com a parte do app em destaque e o Tuiuiú explicando.
-// Aparece sozinho na primeira vez (por conta, neste aparelho) e pode ser repetido em Mais > Tour pelo app.
+// Aparece sozinho na primeira vez (por conta, neste aparelho) e pode ser repetido em Você > Tour pelo app.
 import { h, icone, localStorageGet, localStorageSet } from './ui.js?v=__V__';
 import { lou } from './diversao.js?v=__V__';
 
 const NAV = {
   hoje: ['Hoje', 'A sua aula do dia começa aqui. Escolha 5, 10 ou 20 minutos e o Tuiuiú monta o treino para você.'],
   professor: ['Painel', 'Suas turmas, aulas e alunos ficam aqui.'],
-  biblioteca: ['Biblioteca', 'Capítulos, textos e expressões do Brasil pro mundo para estudar no seu tempo.'],
+  biblioteca: ['Aprender', 'Biblioteca de capítulos, conversas com o Tuiuiú e revisão de palavras. As abas no topo trocam entre eles.'],
   progresso: ['Progresso', 'Seus dias de voo, o que você já domina e onde ainda tropeça.'],
   conta: ['Conta', 'Seus dados, o plano e os lembretes.'],
   turmas: ['Turmas', 'Atividades do professor. Entre com o código que ele passar.'],
-  mais: ['Mais', 'Tudo o resto mora aqui: revisar, conversar, ouvir a Rádio, biblioteca, mudar de nível ou de tema e tirar dúvidas. Tem um campo de busca para achar rápido.'],
+  mais: ['Você', 'Sua conta, turmas, figurinhas e tudo o resto: Rádio, nível, tema e dúvidas. Tem um campo de busca para achar rápido.'],
 };
 
 // Passeio curto: só o que a pessoa precisa para começar a primeira aula. O resto ela descobre em Mais.
-const ESSENCIAIS = new Set(['hoje', 'professor', 'turmas', 'progresso', 'mais']);
+const ESSENCIAIS = new Set(['hoje', 'professor', 'biblioteca', 'progresso', 'mais']);
 
 export const chaveDoTour = eu => `tour-feito:${eu?.usuario?.email || 'x'}`;
 
@@ -23,7 +23,7 @@ function passos() {
   for (const el of document.querySelectorAll('.nav a:not([hidden]), .nav .nav__mais')) {
     const info = ESSENCIAIS.has(el.dataset.rota) && NAV[el.dataset.rota]; if (info && el.getClientRects().length) lista.push({ alvo: el, titulo: info[0], texto: info[1] });
   }
-  lista.push({ titulo: 'Pronto, é só começar!', texto: 'Para rever este passeio, abra Mais e toque em Tour pelo app.' });
+  lista.push({ titulo: 'Pronto, é só começar!', texto: 'Para rever este passeio, abra Você e toque em Tour pelo app.' });
   return lista;
 }
 

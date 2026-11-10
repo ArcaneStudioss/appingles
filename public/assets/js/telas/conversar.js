@@ -10,6 +10,16 @@ const ICONE_CENARIO = [[/entrevista/i, 'briefcase'], [/reuni|equipe/i, 'users-th
 const iconeCenario = t => (ICONE_CENARIO.find(([r]) => r.test(t)) || [0, 'chats'])[1];
 const CORES = ['menta', 'turquesa', 'lilas', 'sol', 'coral', 'azul'];
 
+const TEMAS = [['dia', 'Dia a dia'], ['viagem', 'Viagem'], ['trabalho', 'Trabalho'], ['debate', 'Debate']];
+const semAcento = t => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+function temaDoCenario(titulo) {
+  const t = semAcento(titulo);
+  if (/debate/.test(t)) return 'debate';
+  if (/hotel|cidade|reserva|aeroporto|viag|restaurante|turis/.test(t)) return 'viagem';
+  if (/entrevista|reuniao|cliente|copa|colega|prioridade|segunda-feira|galho|trabalho|projeto|imagem/.test(t)) return 'trabalho';
+  return 'dia';
+}
+
 export async function telaConversar(el, { ir }) {
   const [{ cenarios, ia }, { conversas }] = await Promise.all([api('/conversas/cenarios'), api('/conversas')]);
   const pre = new URLSearchParams(location.hash.split('?')[1] || '').get('c');
@@ -18,16 +28,29 @@ export async function telaConversar(el, { ir }) {
     try { const c = await api('/conversas', { metodo: 'POST', corpo: { cenario: id, materialId: new URLSearchParams(location.hash.split('?')[1] || '').get('material') || null } }); ir('#/conversa/' + c.id); }
     catch (e) { toast(e.message, { tipo: 'erro' }); ocupado(btn, false); }
   };
-  el.append(
-    h('header', { class: 'cabeca c-menta' }, h('span', { class: 'bolha' }, icone('chats')), h('div', {}, h('h1', {}, 'Conversar'), h('p', { class: 'ajuda' }, 'Escolha uma situação e converse com o Tuiuiú em inglês. O que travar vira a sua próxima aula.'))),
-    ia ? null : h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, 'Modo de prática: a conversa segue o roteiro da situação e aponta os erros mais comuns.')),
-    h('ul', { class: 'cenarios' }, [...cenarios].sort((a, b) => (b.recomendado || b.id === pre) - (a.recomendado || a.id === pre)).map((c, k) => {
+  // Temas para filtrar a lista (tirados do título; a sugestão do Tuiuiú aparece sempre no topo)
+  const ordenados = [...cenarios].sort((a, b) => (b.recomendado || b.id === pre) - (a.recomendado || a.id === pre));
+  const temas = ordenados.map(c => temaDoCenario(c.titulo));
+  let filtro = '';
+  const lista = h('ul', { class: 'cenarios' });
+  const filtros = h('div', { class: 'filtro-chips', role: 'group', 'aria-label': 'Filtrar por tema' });
+  const desenhar = () => {
+    lista.replaceChildren(...ordenados.map((c, k) => {
       const rec = c.recomendado || c.id === pre;
+      if (filtro && !rec && temas[k] !== filtro) return null;
       const b = h('button', { type: 'button', class: `cenario c-${rec ? 'menta' : CORES[k % CORES.length]}` + (rec ? ' cenario--rec' : ''), on: { click: () => iniciar(c.id, b) } },
         rec ? lou('feliz', { tamanho: 64, rotulo: '', pose: 'aponta' }) : h('span', { class: 'bolha' }, icone(iconeCenario(c.titulo))),
         h('span', { class: 'cenario__txt' }, rec ? h('small', {}, 'Sugestão do Tuiuiú: combina com a sua missão') : null, h('strong', {}, c.titulo)));
       return h('li', {}, b);
-    })),
+    }).filter(Boolean));
+    for (const btn of filtros.children) btn.setAttribute('aria-pressed', String(btn.dataset.tema === filtro));
+  };
+  for (const [tema, nome] of [['', 'Todas'], ...TEMAS.filter(([t]) => temas.includes(t))]) filtros.append(h('button', { type: 'button', class: 'filtro-chip', dados: { tema }, on: { click: () => { filtro = tema; desenhar(); } } }, nome));
+  desenhar();
+  el.append(
+    h('header', { class: 'cabeca c-menta' }, h('span', { class: 'bolha' }, icone('chats')), h('div', {}, h('h1', {}, 'Conversar'), h('p', { class: 'ajuda' }, 'Escolha uma situação e converse com o Tuiuiú em inglês. O que travar vira a sua próxima aula.'))),
+    ia ? null : h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, 'Modo de prática: a conversa segue o roteiro da situação e aponta os erros mais comuns.')),
+    filtros, lista,
     conversas.length ? h('section', { class: 'tela' }, h('h2', {}, 'Conversas anteriores'), h('ul', { class: 'lista-simples' }, conversas.slice(0, 15).map(c => h('li', {}, h('a', { href: '#/conversa/' + c.id }, c.titulo), h('small', {}, ` ${dataBR(c.iniciada_em)}${c.terminada_em ? '' : ' · em aberto'}`))))) : null);
 }
 

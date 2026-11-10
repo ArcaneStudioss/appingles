@@ -1,5 +1,5 @@
-// Tela principal: saudação, medidores do dia, Tuiuiú com o porquê da aula, a aula de hoje (o "pacotinho"),
-// quatro atalhos grandes (cada um com a cor da sua atividade) e o álbum de missões.
+// Tela principal: saudação com dias de voo e nível, UM cartão de destaque (o treino ou a aula do dia),
+// atalhos em grade ("quando sobrar um tempinho"), linhas curtas (missão, turma, desafios) e o álbum de missões.
 // Sem vidas e sem "ofensiva" que se perde: os dias do mês só somam.
 import { penaMini } from '../penas.js?v=__V__';
 import { api } from '../api.js?v=__V__';
@@ -104,47 +104,71 @@ export async function telaHoje(el, { ir, estado }) {
   const iniciante = !!L?.guiada || estado?.eu?.perfil?.objetivo === 'zero';
   const infantil = estado?.eu?.publico?.id === 'crianca';
 
-  // Tela enxuta, pensada para uma criança: Tuiuiú + saudação, UM cartão grande com a aula, e atalhos só com ícone e nome.
-  // O que é detalhe (meta em minutos, "no fim você vai conseguir", sob medida, dúvidas) fica nas outras telas.
+  // Visual "caderno limpo": UMA ação principal (o cartão azul de destaque), atalhos em grade e o resto em linhas curtas.
   const principal = h('div', { class: 'hoje__col' });
-  const a_completo = a.acesso === 'completo';
+  const completo = a.acesso === 'completo';
+  const dataHoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
   principal.append(
     h('header', { class: 'saudacao' },
-      h('h1', {}, `${saud}, ${d.nome}!`),
-      // a pena aparece desde o primeiro dia (ainda sem cor): é o convite para começar os dias de voo
-      a_completo ? h('button', { type: 'button', class: 'status__item status__item--seq c-azul' + (d.sequencia.estudouHoje ? ' acesa' : ''), 'aria-label': d.sequencia.atual ? `Dias de voo: ${d.sequencia.atual} seguidos. Ver detalhes` : 'Seus dias de voo ainda não começaram. Ver como funciona', on: { click: () => verSequencia(d.sequencia, d.diasNoMes) } },
-        penaMini({ acesa: d.sequencia.estudouHoje }), h('strong', {}, String(d.sequencia.atual))) : null,
-      d.nivel?.atual ? h('a', { class: 'chip nivel-chip', href: '#/nivel', 'aria-label': `Meu nível: ${d.nivel.atual}. Ver ou ajustar` }, icone('chart-line-up'), d.nivel.atual) : null));
+      h('span', { class: 'saudacao__lou', 'aria-hidden': 'true' }, lou(feita ? 'feliz' : 'oi', { tamanho: 48, rotulo: '' })),
+      h('div', { class: 'saudacao__txt' }, h('p', { class: 'saudacao__data' }, dataHoje.charAt(0).toUpperCase() + dataHoje.slice(1)), h('h1', {}, `${saud}, ${d.nome}!`)),
+      completo || d.nivel?.atual ? h('div', { class: 'saudacao__status' },
+        // a pena aparece desde o primeiro dia (ainda sem cor): é o convite para começar os dias de voo
+        completo ? h('button', { type: 'button', class: 'status__item status__item--seq' + (d.sequencia.estudouHoje ? ' acesa' : ''), 'aria-label': d.sequencia.atual ? `Dias de voo: ${d.sequencia.atual} seguidos. Ver detalhes` : 'Seus dias de voo ainda não começaram. Ver como funciona', on: { click: () => verSequencia(d.sequencia, d.diasNoMes) } },
+          penaMini({ acesa: d.sequencia.estudouHoje }), h('strong', {}, String(d.sequencia.atual))) : null,
+        d.nivel?.atual ? h('a', { class: 'status__nivel', href: '#/nivel', 'aria-label': `Meu nível: ${d.nivel.atual}. Ver ou ajustar` }, d.nivel.atual) : null) : null));
   const metaDias = estado?.eu?.perfil?.dias_semana, feitosSemana = d.sequencia.semana.filter(x => x.estado === 'estudou' || x.estado === 'escudo').length;
   if (metaDias && (d.sequencia.atual || d.sequencia.recorde)) principal.append(h('p', { class: 'ajuda meta-semana' }, feitosSemana >= metaDias ? `Meta da semana cumprida: ${feitosSemana} dias de estudo nos últimos 7. Parabéns!` : `Meta da semana: ${feitosSemana} de ${metaDias} dias de estudo nos últimos 7.`));
   avisosDeNivel(principal, d.nivel);
 
-  if (a.acesso === 'completo') {
-    const tempos = h('div', { class: 'linha-acoes' });
+  // ---------- o destaque: a sessão do dia (plano completo) ou a aula
+  const salva = ss.sessao, iniciada = salva && Object.keys(salva.respondidos).length > 0;
+  const progressoAula = L?.missao ? h('div', { class: 'destaque__passos', role: 'img', 'aria-label': `Parte ${L.missao.parte} de ${L.missao.total} da missão` },
+    Array.from({ length: L.missao.total }, (_, k) => h('span', { class: k < (feita ? L.missao.parte : L.missao.parte - 1) ? 'feito' : '' })),
+    h('small', { 'aria-hidden': 'true' }, `${L.missao.parte} de ${L.missao.total}`)) : null;
+  let destaque = null, aulaComoLinha = false;
+  if (completo) {
+    const tempos = h('div', { class: 'destaque__tempos' });
     const meta = estado?.eu?.perfil?.minutos_dia, recomendado = iniciante ? 5 : [5, 10, 20].reduce((m, x) => Math.abs(x - (meta || 10)) < Math.abs(m - (meta || 10)) ? x : m);
-    for (const minutos of [5, 10, 20]) tempos.append(h('button', { type: 'button', class: minutos === recomendado ? 'btn' : 'btn btn-sec', 'aria-description': minutos === recomendado ? 'Tempo recomendado' : null, on: { click: async e => {
+    for (const minutos of [5, 10, 20]) tempos.append(h('button', { type: 'button', class: minutos === recomendado ? 'btn btn-sol' : 'btn btn-vidro', 'aria-description': minutos === recomendado ? 'Tempo recomendado' : null, on: { click: async e => {
       const b = e.currentTarget; b.disabled = true;
       try { await api('/sessao', { metodo: 'POST', corpo: { minutos } }); ir('#/sessao'); }
       catch (err) { toast(err.message, { tipo: 'erro' }); b.disabled = false; }
     } } }, h('span', { 'aria-label': `${minutos} minutos` }, `${minutos} min`), minutos === recomendado ? h('small', { class: 'tempo-rec', 'aria-hidden': 'true' }, 'recomendado') : null));
-    const salva=ss.sessao, iniciada=salva&&Object.keys(salva.respondidos).length>0;
-    const noite = new Date().getHours() >= 17, emRisco = !d.sequencia.estudouHoje && d.sequencia.atual > 0 && noite;
-    const espia = salva?.concluida ? lou('feliz', { tamanho: 84, rotulo: '', pose: 'espia' }) : emRisco ? lou('ops', { tamanho: 84, rotulo: '', pose: 'espia' }) : lou(iniciada ? 'oi' : 'feliz', { tamanho: 90, rotulo: '', pose: 'espia', mia: true });
-    principal.append(h('section', { class: 'folha sessao-convite c-azul' }, h('span', { class: 'espia-topo', 'aria-hidden': 'true' }, espia), h('h2', {}, salva?.concluida ? 'Seu treino de hoje está salvo!' : iniciada ? 'Vamos continuar de onde parou?' : 'Quanto tempo você tem hoje?'), h('p', {}, L?.missao?.podeFazer || 'Exemplos, prática e revisão no seu ritmo.'), h('p', {class:'ajuda'}, 'Pode pedir ajuda e sair quando precisar. O progresso fica salvo.'), salva?.concluida || iniciada ? h('a',{class:'btn btn-bloco',href:'#/sessao'},salva.concluida?'Rever minha sessão':'Continuar minha sessão') : tempos));
+    destaque = h('section', { class: 'destaque sessao-convite', 'aria-labelledby': 'destaque-t' },
+      h('p', { class: 'destaque__rotulo' }, salva?.concluida ? 'Feito hoje' : 'Treino de hoje'),
+      h('h2', { id: 'destaque-t' }, salva?.concluida ? 'Seu treino de hoje está salvo!' : iniciada ? 'Vamos continuar de onde parou?' : 'Quanto tempo você tem hoje?'),
+      h('p', { class: 'destaque__texto' }, L?.missao?.podeFazer || 'Exemplos, prática e revisão no seu ritmo.'),
+      salva?.concluida || iniciada ? h('a', { class: 'btn btn-sol btn-bloco', href: '#/sessao' }, salva.concluida ? 'Rever minha sessão' : 'Continuar minha sessão', icone('arrow-right')) : tempos,
+      h('p', { class: 'destaque__nota' }, 'Pode pedir ajuda e sair quando precisar. O progresso fica salvo.'));
+    aulaComoLinha = !!L;
+  } else if (L) {
+    destaque = h('section', { class: 'destaque aula' + (feita ? ' destaque--feito' : ''), 'aria-labelledby': 'destaque-t' },
+      h('p', { class: 'destaque__rotulo' }, feita ? 'Aula de hoje · feita' : `Aula de hoje · ${L.minutos} min`),
+      h('h2', { id: 'destaque-t' }, L.missao ? L.missao.titulo : 'Manter e ampliar'),
+      iniciante ? h('p', { class: 'destaque__texto' }, infantil ? 'Áudio, tradução e jogos curtinhos. Uma palavra de cada vez.' : 'Expressões essenciais, áudio, tradução e prática com explicações.')
+        : L.missao ? h('p', { class: 'destaque__texto' }, `No fim da missão você vai conseguir: “${L.missao.podeFazer}”`) : null,
+      progressoAula,
+      feita ? h('a', { class: 'btn btn-vidro btn-bloco', href: '#/licao' }, icone('repeat'), 'Rever a aula')
+        : h('a', { class: 'btn btn-sol btn-bloco btn-grande', href: '#/licao' }, L.iniciada ? 'Continuar aula' : 'Começar minha aula', icone('arrow-right')));
   }
+  if (destaque) principal.append(destaque);
+  if (L && !completo) principal.append(louFala(feita ? 'feliz' : 'oi', h('p', {}, iniciante ? (feita ? 'Aula concluída. Você pode rever as palavras ou explorar um capítulo da biblioteca.' : infantil ? 'Eu ajudo você! Ouça as palavras e descubra o significado. Depois vamos brincar de responder.' : 'Comece com as expressões da aula. Há áudio, tradução e explicações para estudar com autonomia.') : feita ? 'Aula de hoje feita! Que tal revisar uns cartões ou conversar um pouco?' : (L.porque?.[0] || 'Sua aula de hoje está pronta.'))));
 
   if (a.status === 'teste' && a.diasRestantes <= 5) principal.append(h('div', { class: 'aviso-suave' }, icone('info'), h('p', {}, `Seu teste grátis termina em ${plural(a.diasRestantes, 'dia', 'dias')} (${dataBR(a.ate)}). Nada é cobrado sozinho. `, h('a', { href: '#/conta' }, 'Ver planos'))));
   if (a.acesso === 'livre') principal.append(h('div', { class: 'aviso-suave' }, icone('info'), h('p', {}, 'Você está no acesso livre: seus cartões e seu progresso continuam aqui. ', h('a', { href: '#/conta' }, 'Voltar ao plano completo'))));
+  const pr = d.proximo;
+  if (pr.acao === 'assinatura') principal.append(h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, pr.texto, ' ', h('a', { href: '#/conta' }, 'Ver planos'))));
 
   // lembrete diário: convite (uma vez, dá para dispensar) ou, no horário combinado, o chamado para o exercício do dia
   const lem = estado?.eu?.perfil?.lembrete;
-  if (lem && !lem.ativo && localStorageGet('lembrete-dispensado') !== 'sim' && a.acesso === 'completo') {
+  if (lem && !lem.ativo && localStorageGet('lembrete-dispensado') !== 'sim' && completo) {
     const caixa = h('div', { class: 'aviso-suave aviso-lembrete' }, icone('bell'), h('p', {}, 'Quer um lembrete para fazer o exercício todo dia? Escolha o horário e o Tuiuiú te chama.'),
       h('div', { class: 'linha-acoes' },
         h('button', { type: 'button', class: 'btn btn-sec btn-peq', on: { click: () => configurarLembrete(lem, { aoSalvar: novo => { estado.eu.perfil.lembrete = novo; caixa.remove(); } }) } }, 'Escolher horário'),
         h('button', { type: 'button', class: 'btn btn-texto btn-peq', on: { click: () => { localStorageSet('lembrete-dispensado', 'sim'); caixa.remove(); } } }, 'Agora não')));
     principal.append(caixa);
-  } else if (lem && lembreteDeHoje(lem) && jaPassouDaHora(lem) && !d.sequencia.estudouHoje && !feita && a.acesso === 'completo') {
+  } else if (lem && lembreteDeHoje(lem) && jaPassouDaHora(lem) && !d.sequencia.estudouHoje && !feita && completo) {
     principal.append(h('div', { class: 'aviso-suave aviso-lembrete' }, icone('bell'), h('p', {}, `Hora do exercício de hoje! Seu lembrete era às ${lem.hora}. Uns minutinhos já contam.`),
       h('a', { class: 'btn btn-peq', href: '#/licao' }, L?.iniciada ? 'Continuar a aula' : 'Começar agora')));
   }
@@ -158,85 +182,33 @@ export async function telaHoje(el, { ir, estado }) {
     principal.append(caixa);
   }
 
-  let balao = null;
-  if (L) {
-    balao = louFala(feita ? 'feliz' : 'oi', h('p', {}, iniciante ? (feita ? 'Aula concluída. Você pode rever as palavras ou explorar um capítulo da biblioteca.' : infantil ? 'Eu ajudo você! Ouça as palavras e descubra o significado. Depois vamos brincar de responder.' : 'Comece com as expressões da aula. Há áudio, tradução e explicações para estudar com autonomia.') : feita ? 'Aula de hoje feita! Que tal revisar uns cartões ou conversar um pouco?' : (L.porque?.[0] || 'Sua aula de hoje está pronta.')));
-    principal.append(h('section', { class: 'aula' + (feita ? ' aula--feita' : ''), 'aria-labelledby': 'aula-t' },
-      feita ? null : h('span', { class: 'aula__pacote', 'aria-hidden': 'true' }, L.missao ? String(L.missao.parte) : '+'),
-      h('div', { class: 'aula__topo' }, h('span', { class: 'chip chip-sol' }, icone('clock'), `${L.minutos} min`), feita ? h('span', { class: 'chip' }, icone('check'), 'Feita') : L.missao ? h('span', { class: 'chip' }, `Figurinha ${L.missao.parte} de ${L.missao.total}`) : null),
-      h('p', { class: 'rotulo-pequeno' }, 'Aula de hoje'),
-      h('h2', { id: 'aula-t' }, L.missao ? L.missao.titulo : 'Manter e ampliar'),
-      iniciante ? h('p', { class: 'aula__meta' }, infantil ? 'Áudio, tradução e jogos curtinhos. Uma palavra de cada vez.' : 'Expressões essenciais, áudio, tradução e prática com explicações.') : null,
-      L.missao ? h('p', { class: 'aula__meta' }, icone('target'), h('span', {}, 'No fim da missão você vai conseguir: ', h('strong', {}, `“${L.missao.podeFazer}”`))) : null,
-      feita ? h('a', { class: 'btn btn-sec btn-bloco', href: '#/licao' }, icone('repeat'), 'Rever a aula')
-        : h('a', { class: 'btn btn-bloco btn-grande', href: '#/licao' }, icone('play'), L.iniciada ? 'Continuar a aula' : 'Começar minha aula')));
-  }
-
-  // Treino focado: 100% nas dificuldades da pessoa (sem dificuldade registrada ainda, o cartão leva ao "Meu jeito de aprender")
-  if (d.treino && a.acesso === 'completo') {
-    const t = d.treino, pronto = t.pronto || t.tags.length;
-    principal.append(h('a', { class: 'treino-card c-limao' + (t.concluido ? ' treino-card--feito' : ''), href: pronto ? '#/treino' : '#/aprender' },
-      h('span', { class: 'bolha' }, icone(pronto ? 'target' : 'compass')),
-      h('span', { class: 'treino-card__txt' }, h('strong', {}, t.concluido ? 'Treino de hoje feito' : pronto ? 'Meu treino de hoje' : 'Meu jeito de aprender'),
-        h('small', {}, t.concluido ? 'Quer mais um? Dá para fazer outro.' : pronto ? (t.tags.length ? `Foco: ${t.tags.join('; ').toLowerCase()}${t.quantos ? ` · ${t.quantos} perguntas` : ''}` : `${t.quantos} perguntas só para você`) : 'veja como você aprende, pelos seus acertos')),
-      h('span', { class: 'radio-card__play', 'aria-hidden': 'true' }, icone(t.concluido ? 'check' : 'play'))));
-  }
-
-  // Turma: atividades do professor esperando o aluno (só aparece para quem está em alguma turma)
-  if (d.turmas) {
-    const t = d.turmas;
-    principal.append(h('a', { class: 'treino-card turma-atalho c-lilas', href: '#/turmas' },
-      h('span', { class: 'bolha' }, icone('users-three')),
-      h('span', { class: 'treino-card__txt' }, h('strong', {}, t.pendentes ? plural(t.pendentes, 'atividade da turma', 'atividades da turma') : 'Turma em dia'),
-        h('small', {}, t.pendentes && t.proxima ? `${t.proxima.titulo}${t.proxima.prazo ? ' · até ' + dataBR(t.proxima.prazo) : ''}` : 'Nenhuma atividade esperando')),
-      h('span', { class: 'radio-card__play', 'aria-hidden': 'true' }, icone(t.pendentes ? 'play' : 'check'))));
-  }
-
-  // Rádio Tuiuiú: o episódio de hoje, feito com os tropeços da pessoa
-  if (d.radio && a.acesso === 'completo') {
-    const r = d.radio;
-    const sub = r.ouvido ? 'Ouvido hoje. Dá para ouvir de novo.' : r.pronto ? `${r.minutos} min · ${r.titulo}` : r.tropecos ? `Feito com ${plural(r.tropecos, 'tropeço seu', 'tropeços seus')} · uns 3 min` : 'Sobre a sua missão · uns 3 min';
-    principal.append(h('a', { class: 'radio-card c-rosa' + (r.ouvido ? ' radio-card--ouvido' : ''), href: '#/podcast' },
-      h('span', { class: 'radio-card__dupla', 'aria-hidden': 'true' }, lou('feliz', { tamanho: 46, rotulo: '' }), lou('oi', { tamanho: 46, rotulo: '', mia: true })),
-      h('span', { class: 'radio-card__txt' }, h('strong', {}, 'Rádio Tuiuiú'), h('small', {}, sub)),
-      h('span', { class: 'radio-card__play', 'aria-hidden': 'true' }, icone(r.ouvido ? 'check' : 'play'))));
-  }
-
-  // atalhos: o próximo passo recomendado ganha o selo "Sugestão do Tuiuiú"
-  const pr = d.proximo;
+  // ---------- "quando sobrar um tempinho": atalhos em grade, com uma linha que diz o que tem lá
   const sugere = pr.acao === 'revisar' || pr.acao === 'conversar' ? pr.acao : null;
-  const atalho = (chave, cor, href, ic, titulo, num) => h('a', { class: `atalho c-${cor}` + (sugere === chave || num ? ' atalho--vivo' : ''), href },
-    h('span', { class: 'bolha' }, icone(ic)), num ? h('span', { class: 'atalho__num', 'aria-hidden': 'true' }, String(num)) : null,
-    h('strong', {}, titulo));
-  const completo = a.acesso === 'completo';
-  const treinoPronto = d.treino && completo ? (d.treino.pronto || d.treino.tags.length) : false;
-  principal.append(h('nav', { class: 'atalhos', 'aria-label': 'Atividades' },
-    atalho('revisar', 'sol', '#/revisar', 'cards', 'Revisar', d.revisoesPendentes),
-    atalho('conversar', 'menta', pr.acao === 'conversar' && pr.cenario ? `#/conversar?c=${pr.cenario}` : '#/conversar', 'chats', 'Conversar'),
-    d.turmas ? atalho('turma', 'lilas', '#/turmas', 'users-three', 'Turma', d.turmas.pendentes) : null,
-    d.radio && completo ? atalho('radio', 'rosa', '#/podcast', 'headphones', 'Rádio Tuiuiú') : null,
-    d.treino && completo ? atalho('treino', 'limao', treinoPronto ? '#/treino' : '#/aprender', treinoPronto ? 'target' : 'compass', treinoPronto ? 'Meu treino' : 'Meu jeito') : null));
-  if (pr.acao === 'assinatura') principal.append(h('p', { class: 'aviso-suave' }, icone('info'), h('span', {}, pr.texto, ' ', h('a', { href: '#/conta' }, 'Ver planos'))));
-  principal.append(h('a', { class: 'treino-card c-lilas social-convite', href: '#/desafios' }, h('span', { class: 'bolha' }, icone('users-three')), h('span', { class: 'treino-card__txt' }, h('strong', {}, 'Desafios com amigos'), h('small', {}, d.economia ? `${d.economia.xp} XP · ${d.economia.moedas} moedas · metas e figurinhas` : 'Figurinhas, metas em grupo, XP e moedas')), icone('caret-right')));
-  if (d.novasConquistas?.length) principal.append(h('p', { class: 'conquista-recente' }, h('span', { class: 'medalha medalha--peq' }, icone('medal')), 'Nova figurinha: ', nomeConquista(d.novasConquistas[0])));
+  const bloco = (chave, cor, href, ic, titulo, sub, num) => h('a', { class: `bloco c-${cor}` + (sugere === chave ? ' bloco--sugerido' : ''), href },
+    h('span', { class: 'bolha bolha--peq' }, icone(ic)), num ? h('span', { class: 'bloco__num', 'aria-label': plural(num, 'pendente', 'pendentes') }, String(num)) : null,
+    h('strong', {}, titulo), sub ? h('small', {}, sub) : null);
+  const t = d.treino && completo ? d.treino : null, treinoPronto = t && (t.pronto || t.tags.length);
+  const r = d.radio && completo ? d.radio : null;
+  principal.append(h('section', { class: 'tempinho', 'aria-labelledby': 'tempinho-t' },
+    h('h2', { id: 'tempinho-t' }, 'Quando sobrar um tempinho'),
+    h('nav', { class: 'blocos', 'aria-label': 'Atividades' },
+      bloco('conversar', 'menta', pr.acao === 'conversar' && pr.cenario ? `#/conversar?c=${pr.cenario}` : '#/conversar', 'chats', 'Conversar', sugere === 'conversar' ? 'sugestão do Tuiuiú' : 'situações do dia a dia'),
+      bloco('revisar', 'sol', '#/revisar', 'cards', 'Revisar', d.revisoesPendentes ? plural(d.revisoesPendentes, 'cartão', 'cartões') : 'cartões em dia', d.revisoesPendentes),
+      t ? bloco('treino', 'limao', treinoPronto ? '#/treino' : '#/aprender', treinoPronto ? 'target' : 'compass', t.concluido ? 'Treino feito' : treinoPronto ? 'Meu treino' : 'Meu jeito', t.concluido ? 'dá para fazer outro' : treinoPronto ? (t.quantos ? `${t.quantos} perguntas para você` : 'só o que você erra') : 'como você aprende') : null,
+      r ? bloco('radio', 'rosa', '#/podcast', 'headphones', 'Rádio Tuiuiú', r.ouvido ? 'ouvido hoje' : r.pronto ? `${r.minutos} min` : 'uns 3 min') : null)));
+
+  // ---------- linhas curtas: missão (quando o destaque é a sessão), turma, desafios, figurinha nova
+  const linha = (cor, href, ic, titulo, sub, extra = {}) => h('li', {}, h('a', { class: `linha c-${cor}`, href, ...extra }, h('span', { class: 'bolha bolha--peq' }, icone(ic)), h('span', { class: 'linha__txt' }, h('strong', {}, titulo), sub ? h('small', {}, sub) : null), icone('caret-right')));
+  const linhas = h('ul', { class: 'linhas', 'aria-label': 'Mais para você' });
+  if (aulaComoLinha) linhas.append(linha('azul', '#/licao', feita ? 'check' : 'path', feita ? 'Missão: aula de hoje feita' : 'Continuar minha missão', L.missao ? `${L.missao.titulo} · parte ${L.missao.parte} de ${L.missao.total}` : 'Manter e ampliar'));
+  if (d.turmas) { const tu = d.turmas; linhas.append(linha('lilas', '#/turmas', 'users-three', tu.pendentes ? plural(tu.pendentes, 'atividade da turma', 'atividades da turma') : 'Turma em dia', tu.pendentes && tu.proxima ? `${tu.proxima.titulo}${tu.proxima.prazo ? ' · até ' + dataBR(tu.proxima.prazo) : ''}` : 'Nenhuma atividade esperando', { 'data-turma': '' })); }
+  if (d.novasConquistas?.length) linhas.append(linha('sol', '#/colecao', 'medal', 'Figurinha nova!', nomeConquista(d.novasConquistas[0])));
+  linhas.append(linha('lilas', '#/desafios', 'users-three', 'Desafios com amigos', d.economia ? `${d.economia.xp} XP · ${d.economia.moedas} moedas` : 'Figurinhas, metas em grupo, XP e moedas'));
+  principal.append(linhas);
   // acabou de concluir uma aula: o Tuiuiú do cantinho comemora
   try { const f = sessionStorage.getItem('inglou:festa'); if (f) { sessionStorage.removeItem('inglou:festa'); setTimeout(() => reagirCanto('festa', f === 'conquista' ? 'Nova figurinha!' : 'Aula concluída!'), 1000); } } catch {}
 
-  // A aula e as atividades da turma são os próximos passos. As outras opções aparecem sob demanda.
-  const aulaEl = principal.querySelector('.aula'), statusEl = principal.querySelector('.status');
-  const sessaoEl=principal.querySelector('.sessao-convite');
-  if (sessaoEl) {
-    principal.querySelector('.saudacao').after(sessaoEl);
-    if(aulaEl) sessaoEl.after(h('details',{class:'outras-atividades'},h('summary',{},icone('path'),'Continuar minha missão'),aulaEl,balao));
-    const turmaEl=principal.querySelector('.turma-atalho');if(turmaEl)sessaoEl.after(turmaEl);
-  } else if (aulaEl) {
-    principal.querySelector('.saudacao').after(aulaEl, ...[balao, principal.querySelector('.turma-atalho')].filter(Boolean));
-  }
-
   const lado = h('div', { class: 'hoje__col hoje__col--lado' });
-  const extras = [...principal.querySelectorAll('.treino-card:not(.turma-atalho):not(.social-convite),.radio-card,.atalhos,.aviso-lembrete')];
-  if (iniciante && statusEl) extras.unshift(statusEl);
-  principal.append(h('details', { class: 'outras-atividades' }, h('summary', {}, icone('dots-three'), iniciante ? 'Outras atividades e meu progresso' : 'Mais maneiras de praticar'), h('div', { class: 'outras-atividades__conteudo' }, extras)));
   if (p?.plano) lado.append(h('details', { class: 'outras-atividades' }, h('summary', {}, icone('path'), 'Meu caminho de aprendizagem'), album(p.plano, { licaoFeita: feita })));
   el.append(h('div', { class: 'hoje' + (iniciante ? ' hoje--guiada' : '') }, principal, lado));
 }
