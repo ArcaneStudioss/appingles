@@ -79,7 +79,7 @@ test('iniciante adulto recebe base acessível; criança tem temas próprios sem 
     assert.ok(itens.length > 0 && itens.length <= 7);
     assert.ok(itens.every(e => ['pares', 'escolha', 'escuta'].includes(e.tipo)), 'não começa exigindo ditado ou escrita livre');
     assert.ok(itens.every(e => e.dica && e.instrucao));
-    assert.equal(licao.blocos.find(b => b.tipo === 'explicacao').vocab.length, 2);
+    assert.equal(licao.blocos.find(b => b.tipo === 'explicacao').vocab.length, 3);
     assert.ok(!licao.blocos.some(b => b.personalizado), 'IA não aumenta a dificuldade inicial');
     assert.doesNotMatch(JSON.stringify(licao), /"(?:resposta|aceitas)":/);
   }

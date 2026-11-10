@@ -2465,3 +2465,7 @@ body{background:var(--fundo)}
   .chat-flut__painel{left:auto;right:1.4rem;width:400px;bottom:1.4rem;height:min(620px,80dvh)}
 }
 @media (prefers-reduced-motion:reduce){.chat-flut__painel{animation:none}}
+
+/* desenho da palavra nova na aula (as mesmas cenas de Palavras em desenho) */
+.palavra-nova__desenho{width:min(100%,300px);border-radius:20px;overflow:hidden;border:2px solid var(--borda)}
+.palavra-nova__desenho svg{display:block;width:100%;height:auto}

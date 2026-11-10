@@ -9,32 +9,32 @@ const { dificuldadeAlvo, dominioPorTag } = require('../src/motor/modelo');
 const { montarSessao } = require('../src/sessoes');
 const montar = (m, partes, idade = 30) => ({ perfil: { idade, minutos_dia: 10 }, nivel: 'A1', plano: { nivelInicial: 'A1', objetivoNome: 'Aprender', missoes: [{ id: m.id, licoes: 3 }] }, competencias: { [m.id]: { status: 'praticando', partes } }, tentativas: [], hojeISO: '2026-10-25' });
 
-test('quatro oficinas acrescentam vinte práticas, ensinam o modelo e retiram apoio aos poucos', () => {
+test('duas oficinas com frases diferentes: modelo primeiro, lacuna e montagem sem apoio, frase anterior de memória', () => {
   for (const m of MISSOES) {
-    const inicio = Math.ceil(m.vocab.length / 2);
+    const inicio = Math.ceil(m.vocab.length / 3);
     const modelos = [];
-    for (let rodada = 0; rodada < 4; rodada++) {
+    for (let rodada = 0; rodada < 2; rodada++) {
       const l = montarLicao(montar(m, inicio + rodada));
       assert.equal(l.oficina, true, m.id);
       assert.ok(!l.blocos.some(b => b.tipo === 'producao'));
       const itens = l.blocos.flatMap(b => b.exercicios || []);
-      assert.equal(itens.length, 5);
-      assert.equal(itens.filter(e => e.ensino).length, rodada % 2 ? 3 : 4);
+      assert.ok(itens.length >= 4 && itens.length <= 7, m.id);
+      assert.equal(new Set(itens.map(e => e.id)).size, itens.length);
+      assert.equal(itens.filter(e => e.ensino).length, 2, m.id);
+      assert.ok(!itens.some(e => e.tipo === 'escuta' && e.ensino), 'escuta sem o texto na tela');
       const en = itens[0].ensino.en;
       modelos.push(en);
       for (const e of itens) {
         const resposta = e.opcoes ? e.opcoes[e.resposta] : e.resposta;
-        assert.ok(corrigirExercicio(e, resposta).correto, e.id);
+        assert.ok(corrigirExercicio(e, Array.isArray(resposta) ? resposta[0] : resposta).correto, e.id);
         if (e.opcoes) assert.equal(new Set(e.opcoes).size, e.opcoes.length, e.id);
-        if (e.tipo === 'ordenar') assert.equal(e.palavras.join(' '), en);
       }
+      if (rodada === 1) assert.ok(itens.some(e => e.enunciado?.startsWith('Lembra da frase')), m.id);
       const cliente = paraCliente(l, 'qa');
       assert.ok(cliente.blocos[1].exercicios[0].ensino.en);
-      assert.equal(cliente.blocos[1].exercicios[4].ensino, undefined);
-      assert.equal(cliente.blocos[1].exercicios[4].resposta, undefined);
+      for (const e of cliente.blocos[1].exercicios) assert.equal(e.resposta, undefined);
     }
-    assert.equal(modelos[0], modelos[1]);
-    assert.equal(modelos[2], modelos[3]);
+    if (m.id.startsWith('zero-')) assert.notEqual(modelos[0], modelos[1], m.id);
   }
 });
 
@@ -43,7 +43,7 @@ test('vocabulário e alternativas da base ficam no que foi apresentado', () => {
   const l = montarLicao(montar(m, 0));
   const aprendidas = l.blocos[0].vocab.flatMap(v => [v.pt, v.en]);
   for (const e of l.blocos.flatMap(b => b.exercicios || [])) {
-    assert.ok(e.opcoes.every(o => aprendidas.includes(o)));
+    if (e.opcoes) assert.ok(e.opcoes.every(o => aprendidas.includes(o)));
   }
 });
 

@@ -13,20 +13,21 @@ function aula(m, feitas = 0, nivel = 'A1') {
     hojeISO: '2026-10-24', cartoesPendentes: 2 });
 }
 
-test('A1: duas expressões, três práticas por expressão, retomada da aula anterior', () => {
+test('A1: até três expressões por aula, duas ou três práticas por expressão, retomada da aula anterior', () => {
   for (const m of MISSOES) {
     const total = licoesPorMissao(m, 'A1');
-    for (let feitas = 0; feitas < total - 7; feitas++) {
+    for (let feitas = 0; feitas < total - 4; feitas++) {
       const l = aula(m, feitas);
       const vocab = l.blocos[0].vocab;
       const itens = l.blocos.flatMap(b => b.exercicios || []);
-      assert.ok(vocab.length <= 2 && vocab.length > 0, m.id);
+      assert.ok(vocab.length <= 3 && vocab.length >= 2 || m.vocab.length < 2, m.id);
       assert.ok(itens.length <= 7, m.id);
       assert.equal(new Set(itens.map(e => e.id)).size, itens.length);
       assert.equal(l.revisoesPendentes, 2);
       assert.ok(!l.blocos.some(b => ['producao', 'foco', 'rapidas'].includes(b.tipo)));
       for (const v of vocab) {
-        assert.equal(itens.filter(e => e.explica === `${v.en} = ${v.pt}. Ouça e repita quantas vezes precisar.`).length, 3);
+        const n = itens.filter(e => e.explica === `${v.en} = ${v.pt}. Ouça e repita quantas vezes precisar.`).length;
+        assert.ok(n >= 2 && n <= 3, `${m.id} ${v.en}: ${n}`);
       }
       for (const e of itens) {
         const resposta = e.opcoes ? e.opcoes[e.resposta] : e.resposta;
@@ -37,9 +38,9 @@ test('A1: duas expressões, três práticas por expressão, retomada da aula ant
       }
       const cliente = paraCliente(l, 'teste');
       for (const e of cliente.blocos.flatMap(b => b.exercicios || [])) assert.equal(e.resposta, undefined);
-      if (feitas >= 2) assert.ok(l.blocos.some(b => b.tipo === 'retomada'));
+      if (feitas >= 1) assert.ok(l.blocos.some(b => b.tipo === 'retomada'));
     }
-    const transicao = aula(m, total - 3);
+    const transicao = aula(m, total - 2);
     assert.ok(transicao.blocos.some(b => b.tipo === 'explicacao'));
     assert.ok(!transicao.blocos.some(b => b.titulo === 'Treino extra'));
     assert.ok(!transicao.blocos.flatMap(b => b.exercicios || []).some(e => ['traduzir', 'ditado'].includes(e.tipo)));

@@ -162,7 +162,7 @@ function montarLicao(ctx) {
     const parte = Math.min(total, feitas + 1);
     missaoInfo = { id: def.id, titulo: def.titulo, podeFazer: def.podeFazer, parte, total };
     const resta = Math.max(4, orcamento - gasto);
-    const primeira = nivel === 'A1' ? parte === total - 2 : parte === 1;
+    const primeira = nivel === 'A1' ? parte === total - 1 : parte === 1;
     const ultima = parte === total;
     porque.push(`${primeira ? "Começamos" : "Seguimos com"} a missão “${def.titulo}” (parte ${parte} de ${total}), um passo do seu objetivo: ${plano.objetivoNome.toLowerCase()}.`);
 
@@ -186,7 +186,7 @@ function montarLicao(ctx) {
     const escuta = permitidos.filter(e => e.tipo === 'escuta' || e.tipo === 'ditado');
     const nEscuta = Math.min(escuta.length, hip.has('escuta-x-leitura') ? 3 : primeira ? 1 : 2);
     // cada parte usa sua fatia dos exercícios da missão (senão a parte 1 gasta tudo)
-    const fatia = Math.ceil(naoEscuta.length / (nivel === 'A1' ? 3 : total)) + (primeira ? 0 : 1);
+    const fatia = Math.ceil(naoEscuta.length / (nivel === 'A1' ? 2 : total)) + (primeira ? 0 : 1);
     const exs = escolherExercicios(naoEscuta, { quantos: Math.max(1, Math.min(vagas - nEscuta, fatia)), alvo: primeira ? Math.min(alvo, 2) : alvo, vistos, preferirProducao, excluir: usados });
     exs.forEach(e => usados.add(e.id));
     if (exs.length) blocos.push({ tipo: 'exercicios', titulo: primeira ? 'Primeira prática' : 'Prática', exercicios: exs.map(e => ({ ...e, missao: def.id })) });

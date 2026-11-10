@@ -6,9 +6,11 @@ A trilha inicial funciona para crianças, adolescentes e adultos. A idade muda o
 
 1. Idade e perfil de aluno ou professor no cadastro. Contas existentes completam esses dados uma vez. Quem é menor de idade confirma a autorização do responsável.
 2. Quem escolhe começar do zero entra direto na primeira aula, sem teste e sem perguntas sobre carreira ou prazo.
-3. A primeira missão ensina Hello, Bye e Thank you, duas expressões por aula: uma expressão por tela, com significado e áudio lento opcional.
-4. Até sete atividades curtas por aula: combinar até três pares, reconhecer significados e ouvir. Completar e montar frases entram depois. Ditado e escrita livre não são exigidos no primeiro contato.
-5. Toda resposta mostra o resultado e uma explicação. Há dicas, tradução ao toque, consulta da resposta e nova tentativa de prática.
+3. A primeira missão ensina Hello, Bye e Thank you na mesma aula: até três expressões por aula (o vocabulário é dividido em grupos parecidos, 6 = 3+3), uma por tela, com desenho, significado e áudio lento opcional.
+4. Até sete atividades curtas por aula: reconhecer (só a primeira expressão vem com o modelo na tela; as outras são lembradas), ouvir sem o texto e dizer em inglês. Montar frases entra a partir da segunda aula. Ditado e escrita livre não são exigidos no primeiro contato.
+5. Cada missão A1 tem `ceil(vocabulário/3) + 4` aulas: as de vocabulário, duas oficinas de frase (frases diferentes; a segunda retoma a primeira de memória, com lacuna e montagem sem apoio) e duas aulas de aplicação (a última com a tarefa). Antes eram 9 a 10 aulas por missão, com a mesma frase em dias seguidos.
+6. Quem conclui a aula do dia pode adiantar a próxima parte ("Fazer mais uma aula"), até 3 aulas por dia (`POST /licao/proxima`). Para o iniciante, a aula da trilha é o destaque da tela Hoje até ser feita; a sessão rápida vem depois.
+7. Toda resposta mostra o resultado e uma explicação. Há dicas, tradução ao toque, consulta da resposta e nova tentativa de prática.
 
 ## Ajuda e progresso
 

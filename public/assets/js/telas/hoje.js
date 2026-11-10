@@ -3,7 +3,7 @@
 // Sem vidas e sem "ofensiva" que se perde: os dias do mês só somam.
 import { penaMini } from '../penas.js?v=__V__';
 import { api } from '../api.js?v=__V__';
-import { h, icone, dataBR, plural, toast, janela, localStorageGet, localStorageSet } from '../ui.js?v=__V__';
+import { h, icone, dataBR, plural, toast, janela, localStorageGet, localStorageSet, ocupado } from '../ui.js?v=__V__';
 import { lou, louFala, reagirCanto } from '../diversao.js?v=__V__';
 import { configurarLembrete, lembreteDeHoje, jaPassouDaHora } from '../lembrete.js?v=__V__';
 import { jaInstalado, instalarOuGuiar, podeInstalarDireto, ehIphone } from '../instalar.js?v=__V__';
@@ -127,7 +127,9 @@ export async function telaHoje(el, { ir, estado }) {
     Array.from({ length: L.missao.total }, (_, k) => h('span', { class: k < (feita ? L.missao.parte : L.missao.parte - 1) ? 'feito' : '' })),
     h('small', { 'aria-hidden': 'true' }, `${L.missao.parte} de ${L.missao.total}`)) : null;
   let destaque = null, aulaComoLinha = false;
-  if (completo) {
+  // Quem está começando do zero aprende pela trilha: enquanto a aula do dia não foi feita, ela é o destaque (a sessão rápida vem depois).
+  const aulaPrimeiro = iniciante && L && !feita;
+  if (completo && !aulaPrimeiro) {
     const tempos = h('div', { class: 'destaque__tempos' });
     const meta = estado?.eu?.perfil?.minutos_dia, recomendado = iniciante ? 5 : [5, 10, 20].reduce((m, x) => Math.abs(x - (meta || 10)) < Math.abs(m - (meta || 10)) ? x : m);
     for (const minutos of [5, 10, 20]) tempos.append(h('button', { type: 'button', class: minutos === recomendado ? 'btn btn-sol' : 'btn btn-vidro', 'aria-description': minutos === recomendado ? 'Tempo recomendado' : null, on: { click: async e => {
@@ -149,6 +151,7 @@ export async function telaHoje(el, { ir, estado }) {
       iniciante ? h('p', { class: 'destaque__texto' }, infantil ? 'Áudio, tradução e jogos curtinhos. Uma palavra de cada vez.' : 'Expressões essenciais, áudio, tradução e prática com explicações.')
         : L.missao ? h('p', { class: 'destaque__texto' }, `No fim da missão você vai conseguir: “${L.missao.podeFazer}”`) : null,
       progressoAula,
+      feita && L.proximaDisponivel ? botaoProximaAula(ir, { classe: 'btn btn-sol btn-bloco' }) : null,
       feita ? h('a', { class: 'btn btn-vidro btn-bloco', href: '#/licao' }, icone('repeat'), 'Rever a aula')
         : h('a', { class: 'btn btn-sol btn-bloco btn-grande', href: '#/licao' }, L.iniciada ? 'Continuar aula' : 'Começar minha aula', icone('arrow-right')));
   }
@@ -201,6 +204,12 @@ export async function telaHoje(el, { ir, estado }) {
   const linha = (cor, href, ic, titulo, sub, extra = {}) => h('li', {}, h('a', { class: `linha c-${cor}`, href, ...extra }, h('span', { class: 'bolha bolha--peq' }, icone(ic)), h('span', { class: 'linha__txt' }, h('strong', {}, titulo), sub ? h('small', {}, sub) : null), icone('caret-right')));
   const linhas = h('ul', { class: 'linhas', 'aria-label': 'Mais para você' });
   if (aulaComoLinha) linhas.append(linha('azul', '#/licao', feita ? 'check' : 'path', feita ? 'Missão: aula de hoje feita' : 'Continuar minha missão', L.missao ? `${L.missao.titulo} · parte ${L.missao.parte} de ${L.missao.total}` : 'Manter e ampliar'));
+  if (aulaComoLinha && feita && L.proximaDisponivel) {
+    const li = linha('azul', '#/licao', 'arrow-right', 'Fazer mais uma aula', L.missao ? `Adiante a parte ${Math.min(L.missao.parte + 1, L.missao.total)} de ${L.missao.total} de ${L.missao.titulo}` : 'Siga na sua trilha');
+    const bot = botaoProximaAula(ir);
+    li.querySelector('a').addEventListener('click', e => { e.preventDefault(); bot.click(); });
+    linhas.append(li);
+  }
   if (d.turmas) { const tu = d.turmas; linhas.append(linha('lilas', '#/turmas', 'users-three', tu.pendentes ? plural(tu.pendentes, 'atividade da turma', 'atividades da turma') : 'Turma em dia', tu.pendentes && tu.proxima ? `${tu.proxima.titulo}${tu.proxima.prazo ? ' · até ' + dataBR(tu.proxima.prazo) : ''}` : 'Nenhuma atividade esperando', { 'data-turma': '' })); }
   if (d.novasConquistas?.length) linhas.append(linha('sol', '#/colecao', 'medal', 'Figurinha nova!', nomeConquista(d.novasConquistas[0])));
   linhas.append(linha('lilas', '#/desafios', 'users-three', 'Desafios com amigos', d.economia ? `${d.economia.xp} XP · ${d.economia.moedas} moedas` : 'Figurinhas, metas em grupo, XP e moedas'));
@@ -211,4 +220,14 @@ export async function telaHoje(el, { ir, estado }) {
   const lado = h('div', { class: 'hoje__col hoje__col--lado' });
   if (p?.plano) lado.append(h('details', { class: 'outras-atividades' }, h('summary', {}, icone('path'), 'Meu caminho de aprendizagem'), album(p.plano, { licaoFeita: feita })));
   el.append(h('div', { class: 'hoje' + (iniciante ? ' hoje--guiada' : '') }, principal, lado));
+}
+
+// Adianta a próxima parte da missão (o servidor limita a 3 aulas por dia).
+export function botaoProximaAula(ir, { classe = 'btn btn-sec btn-bloco', texto = 'Fazer mais uma aula' } = {}) {
+  const b = h('button', { type: 'button', class: classe, on: { click: async () => {
+    ocupado(b, true);
+    try { await api('/licao/proxima', { metodo: 'POST' }); ir('#/licao'); }
+    catch (e) { toast(e.message, { tipo: 'erro' }); ocupado(b, false); }
+  } } }, icone('arrow-right'), texto);
+  return b;
 }

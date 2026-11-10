@@ -1,6 +1,13 @@
 // Vocabulário em desenho: palavra, tradução e uma cena que mostra o significado. Conteúdo fixo, sem IA e sem dados do aluno.
 // O desenho de cada palavra (en) está em vocabulario-desenhos.js. frase: exemplo curto e usado de verdade.
 export const GRUPOS = [
+  { id: 'cumprimentos', titulo: 'Cumprimentos do dia a dia', pergunta: 'O que a pessoa está dizendo?', itens: [
+    { en: 'hello', pt: 'olá', frase: 'Hello! How are you?', fraseTr: 'Olá! Como vai?' },
+    { en: 'bye', pt: 'tchau', frase: 'Bye! See you tomorrow.', fraseTr: 'Tchau! Até amanhã.' },
+    { en: 'thank you', pt: 'obrigado, obrigada', frase: 'Thank you for the gift!', fraseTr: 'Obrigada pelo presente!' },
+    { en: 'sorry', pt: 'desculpe', frase: 'Sorry, I dropped your cup.', fraseTr: 'Desculpe, derrubei o seu copo.' },
+    { en: 'good morning', pt: 'bom dia', frase: 'Good morning! It is a sunny day.', fraseTr: 'Bom dia! Está um dia de sol.' },
+    { en: 'good night', pt: 'boa noite (ao dormir)', frase: 'Good night! Sleep well.', fraseTr: 'Boa noite! Durma bem.' } ] },
   { id: 'verbos1', titulo: 'Verbos que você mais vai usar', pergunta: 'Qual verbo combina com o desenho?', itens: [
     { en: 'be', pt: 'estar, ser', frase: 'I am at the door.', fraseTr: 'Eu estou na porta.' },
     { en: 'have', pt: 'ter', frase: 'I have apples.', fraseTr: 'Eu tenho maçãs.' },

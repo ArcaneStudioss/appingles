@@ -4,9 +4,14 @@ import { lou } from '../diversao.js?v=__V__';
 import { camposPublico } from './publico.js?v=__V__';
 
 // Mesmo cabeçalho da página /entrar/: o Tuiuiú num círculo e a saudação, no padrão da tela Hoje.
-const introEntrar = () => h('div', { class: 'entrar-intro' },
-  h('span', { class: 'saudacao__lou', 'aria-hidden': 'true' }, lou('oi', { tamanho: 48, rotulo: '' })),
-  h('div', {}, h('p', { class: 'saudacao__data' }, 'Bem-vindo de volta'), h('h1', { class: 'entrar-bilhete' }, 'Seu inglês continua aqui')));
+// Quem chega para criar conta não é recebido com "de volta": o texto acompanha a aba escolhida.
+const TEXTO_INTRO = { entrar: ['Bem-vindo de volta', 'Seu inglês continua aqui'], cadastro: ['Vamos começar', 'Crie seu espaço de estudo'] };
+const introEntrar = (modo = 'entrar') => {
+  const [sub, titulo] = TEXTO_INTRO[modo] || TEXTO_INTRO.entrar;
+  return h('div', { class: 'entrar-intro' },
+    h('span', { class: 'saudacao__lou', 'aria-hidden': 'true' }, lou('oi', { tamanho: 48, rotulo: '' })),
+    h('div', {}, h('p', { class: 'saudacao__data' }, sub), h('h1', { class: 'entrar-bilhete' }, titulo)));
+};
 
 export async function telaEntrar(el, { estado, ir, carregarEu }) {
   const est = await api('/auth/estado');
@@ -36,8 +41,9 @@ export async function telaEntrar(el, { estado, ir, carregarEu }) {
     if (fluxo.etapa) { etapa = fluxo.etapa; finalidade = fluxo.finalidade; emailFluxo = fluxo.email; }
   }
   const caixa = h('section', { class: 'entrar folha auth-cartao', 'aria-label': 'Acesso à conta' });
+  let intro = introEntrar(modo);
   el.append(h('div', { class: 'entrar-envoltorio' },
-    introEntrar(), caixa,
+    intro, caixa,
     h('p', { class: 'ajuda centro' }, '30 dias grátis, sem cartão. ', h('a', { href: '/' }, 'Conhecer o Inglou'))));
   addEventListener('hashchange', () => clearInterval(timer), { once: true });
   const campo = (id, rotulo, input, ajuda) => h('div', { class: 'campo' }, h('label', { for: id }, rotulo), input, ajuda ? h('small', {}, ajuda) : null);
@@ -61,6 +67,7 @@ export async function telaEntrar(el, { estado, ir, carregarEu }) {
   }
   function desenhar() {
     clearInterval(timer); caixa.replaceChildren();
+    const novaIntro = introEntrar(modo); intro.replaceWith(novaIntro); intro = novaIntro;
     const inicio = etapa === 'inicio', cadastro = inicio && modo === 'cadastro', completar = etapa === 'completar';
     const titulo = inicio ? cadastro ? 'Crie sua conta' : 'Entre na sua conta' : ({ recuperar: 'Esqueceu a senha?', codigo: 'Confira seu e-mail', 'nova-senha': 'Escolha sua nova senha', completar: 'Vamos preparar seu espaço', vincular: 'Seus estudos continuam aqui' })[etapa];
     caixa.append(h('h2', { class: 'auth-titulo', tabindex: '-1' }, titulo));

@@ -2,11 +2,12 @@
 import { api } from '../api.js?v=__V__';
 import { h, icone, falar, falarPt, pararVoz, acompanharFala, botaoOuvir, ocupado, toast, confirmar, temMicrofone, ouvirMicrofone, janela } from '../ui.js?v=__V__';
 import { exercicio } from './exercicio.js?v=__V__';
-import { nomeConquista } from './hoje.js?v=__V__';
+import { nomeConquista, botaoProximaAula } from './hoje.js?v=__V__';
 import { mudarPose } from '../tui.js?v=__V__';
 import { celebrarSequencia } from '../penas.js?v=__V__';
 import { lou, louFala, som, confete, botaoSom, pontosFlutuantes, contar, vibrar, voarComemorando } from '../diversao.js?v=__V__';
 import { companheirosAula } from '../companheiros.js?v=__V__';
+import { svgDe } from '../vocabulario-desenhos.js?v=__V__';
 
 // cada tipo de passo tem cor e ícone fixos: a pessoa enxerga a estrutura da aula (entender, praticar, ouvir, sua vez)
 const ETAPAS = {
@@ -24,7 +25,7 @@ const ABORDAGEM = { regra: 'A regra direta', contraste: 'Comparando com o portug
 
 export async function telaLicao(el, { ir }) {
   const infantil = document.body.dataset.publico === 'crianca';
-  const { licao, respondidos, status } = await api('/licao');
+  const { licao, respondidos, status, proximaDisponivel } = await api('/licao');
   // monta a sequência de passos
   const passos = [{ tipo: 'intro' }];
   licao.blocos.forEach((b, bi) => {
@@ -154,13 +155,22 @@ export async function telaLicao(el, { ir }) {
       barraBotao(status === 'concluida' ? 'Rever a aula' : 'Vamos aprender'));
   }
 
+  // Palavras com desenho próprio (cumprimentos, verbos e objetos) mostram a cena; as outras seguem com o ícone da aula.
+  function desenhoDe(en) {
+    const svg = svgDe(String(en || '').toLowerCase().replace(/[!?.,]/g, '').trim());
+    if (!svg) return null;
+    const f = h('div', { class: 'palavra-nova__desenho', 'aria-hidden': 'true' });
+    f.innerHTML = svg;
+    return f;
+  }
+
   function desenharPalavra(tela, { v, b, vi }) {
     const exemplo = b.exemplos?.find(e => e.en === v.ex);
     tela.append(etapa('explicacao', 'Vamos aprender'),
       vi === 0 ? companheirosAula({ texto: infantil ? 'Vamos descobrir uma palavra! Ouça o som, veja o significado e repita com a gente.' : 'Associe o som ao significado. Ouça a palavra e observe como ela aparece no exemplo.' }).elemento : null,
       h('section', { class: 'palavra-nova' },
         h('span', { class: 'palavra-nova__espia', 'aria-hidden': 'true' }, lou('oi', { tamanho: 76, rotulo: '', pose: 'espia' })),
-        v.imagem ? h('span', { class: 'palavra-nova__imagem', 'aria-hidden': 'true' }, v.imagem) : null,
+        desenhoDe(v.en) || (v.imagem ? h('span', { class: 'palavra-nova__imagem', 'aria-hidden': 'true' }, v.imagem) : null),
         h('p', { class: 'rotulo-pequeno' }, 'Em inglês'),
         h('h1', { lang: 'en', 'data-traducao': v.pt }, v.en),
         h('p', { class: 'palavra-nova__significado' }, v.pt),
@@ -273,6 +283,8 @@ export async function telaLicao(el, { ir }) {
         ir(licao.guiada ? '#/hoje' : r.revisoesPendentes ? '#/revisar' : '#/hoje');
       } catch (e) { toast(e.message, { tipo: 'erro' }); ocupado(btn, false); }
     } } }, status === 'concluida' ? 'Voltar para o início' : 'Concluir aula');
+    // aula já concluída e ainda há fôlego: dá para adiantar a próxima parte da missão no mesmo dia
+    const maisUma = status === 'concluida' && proximaDisponivel ? botaoProximaAula(ir) : null;
     const pct = total ? Math.round(100 * certos / total) : 100;
     const feitos = passos.filter(p => p.tipo === 'ex').map(p => respondidos[p.ex.id]).filter(Boolean);
     const xpGanho = feitos.reduce((s, r) => s + (r.recompensa?.xp || 0), 0);
@@ -292,11 +304,11 @@ export async function telaLicao(el, { ir }) {
         melhorCombo >= 3 ? h('div', { class: 'placar__item placar__item--coral' }, h('span', {}, 'Melhor combo'), h('strong', {}, `x${melhorCombo}`)) : null,
         // no máximo três quadros: com XP e combo na tela, o tempo sai (é o menos interessante)
         xpGanho && melhorCombo >= 3 ? null : h('div', { class: 'placar__item placar__item--azul' }, h('span', {}, 'Tempo'), h('strong', {}, `${minutos} min`))) : null,
-      tudoDePrimeira && licao.guiada ? h('a', { class: 'aviso-suave nivel-aviso nivel-aviso--reforco', href: '#/nivel' }, icone('chart-line-up'), h('p', {}, 'Tudo certo de primeira! Se as aulas estão fáceis para você, dá para subir de nível quando quiser.'), icone('caret-right')) : null,
+      tudoDePrimeira && licao.guiada && licao.embalado ? h('a', { class: 'aviso-suave nivel-aviso nivel-aviso--reforco', href: '#/nivel' }, icone('chart-line-up'), h('p', {}, 'Tudo certo de primeira! Se as aulas estão fáceis para você, dá para subir de nível quando quiser.'), icone('caret-right')) : null,
       palavras.length ? h('section', { class: 'relembre-aula' }, h('h3', {}, infantil ? 'Olha o que você aprendeu!' : 'Vocabulário para usar no dia a dia'), exemplos(palavras)) : null,
       certos < total ? h('details', { class: 'ajuda-exercicio' }, h('summary', {}, 'Rever as respostas para aprender mais'), passos.filter(p => p.tipo === 'ex' && respondidos[p.ex.id] && !respondidos[p.ex.id].correto).map(p => { const r = respondidos[p.ex.id]; return h('div', { class: 'resumo-resposta' }, h('strong', {}, p.ex.enunciado || p.ex.pergunta || 'Prática de palavras'), h('p', { lang: r.audioResposta ? 'en' : null, 'data-traducao': r.traducao || null }, r.fraseCompleta || r.esperado), h('p', {}, r.explica)); })) : null,
       licao.guiada ? null : h('p', { class: 'ajuda' }, 'Lição concluída é prática. Aprendizado demonstrado é usar sozinho numa tarefa ou conversa.'),
-      h('div', { class: 'barra-acao barra-acao--fixa' }, h('div', { class: 'barra-acao__in' }, btn)));
+      h('div', { class: 'barra-acao barra-acao--fixa' }, h('div', { class: 'barra-acao__in' }, maisUma, btn)));
     for (const n of tela.querySelectorAll('[data-conta]')) contar(n, Number(n.dataset.conta), { sufixo: n.dataset.sufixo || '', prefixo: n.dataset.prefixo || '' });
     if (status !== 'concluida') { som('fim'); vibrar([30, 40, 30, 40, 60]); confete(); setTimeout(() => confete(document.body, 30), 450); voarComemorando({ jeito: 'cruza', confetes: false }); }
   }
@@ -322,3 +334,4 @@ export function mostrarAvaliacao(alvo, r) {
       r.evento === 'foco_superado' ? h('p', { class: 'chip chip-ok' }, icone('seal-check'), ' Dificuldade superada nesta situação') : null,
       r.evento === 'voltou_pratica' ? h('p', { class: 'ajuda' }, 'Ainda não firmou, e tudo bem. A missão volta para a prática com outro caminho.') : null));
 }
+

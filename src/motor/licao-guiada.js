@@ -20,7 +20,7 @@ function montarGuiada(ctx, atual) {
   if (base) return { ...base, publico: publico.id };
   const total = licoesPorMissao(def, nivel);
   const parte = Math.min(total, (competencias[atual.id]?.partes || 0) + 1);
-  const primeira = nivel === 'A1' ? parte === total - 2 : parte === 1;
+  const primeira = nivel === 'A1' ? parte === total - 1 : parte === 1;
   const recentes = tentativas.filter(t => t.missao === def.id && t.origem === 'licao').slice(-6);
   const reforco = recentes.length >= 2 && recentes.filter(t => t.correto).length / recentes.length < 0.6;
   const vistos = new Map(tentativas.map(t => [t.item_id, t]));
@@ -45,7 +45,8 @@ function montarGuiada(ctx, atual) {
       const outras = [...def.exercicios.filter(e => e.tipo === 'lacuna').map(e => e.resposta[0]), ...def.vocab.map(v => v.en), 'Hello', 'Bye'];
       base.bancoPalavras = [...new Set([ex.resposta[0], ...outras.filter(p => p !== ex.resposta[0] && !/\s/.test(p))])].slice(0, 3);
     }
-    if (primeira || reforco) {
+    // Na escuta o modelo escrito entregaria a resposta: o apoio fica no botão de dica.
+    if ((primeira || reforco) && ex.tipo !== 'escuta') {
       const { respostaCerta, corrigirExercicio } = require('./correcao');
       const modelo = ex.tipo === 'escuta' ? ex.audio : ex.tipo === 'ordenar' ? ex.resposta : ex.tipo === 'lacuna' ? ex.frase.replace('___', ex.resposta[0]) : null;
       base.ensino = { en: modelo, pt: ex.pt || ex.traducao || (ex.tipo === 'escolha' ? respostaCerta(ex) : ''), nota: corrigirExercicio(ex, respostaCerta(ex)).explica };

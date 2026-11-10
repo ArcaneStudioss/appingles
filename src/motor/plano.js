@@ -10,8 +10,9 @@ const { publicoDe } = require('./publico');
 const { UNIDADES } = require('../conteudo/biblioteca');
 
 function licoesPorMissao(missao, nivelAluno) {
-  // Vocabulário em pares (uma aula por par), quatro oficinas de frases e três aulas de aplicação.
-  if (nivelAluno === 'A1') return Math.ceil(missao.vocab.length / 2) + 7;
+  // Vocabulário em grupos de até três (uma aula por grupo), duas oficinas de frases e duas aulas de aplicação.
+  // Antes eram pares, quatro oficinas e três aplicações: 9 a 10 aulas para cada missão, com a mesma frase repetida em dias seguidos.
+  if (nivelAluno === 'A1') return Math.ceil(missao.vocab.length / 3) + 4;
   const diff = NIVEIS.indexOf(nivelAluno) - NIVEIS.indexOf(missao.nivel);
   if (diff >= 2) return 1;      // bem abaixo do nível do aluno: revisão rápida
   if (diff >= 1) return 2;

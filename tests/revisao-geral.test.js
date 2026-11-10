@@ -22,7 +22,9 @@ test('escuta da aula inicial não mostra a resposta escrita; o modelo fica só n
   const escutas = itens(l).filter(e => e.tipo === 'escuta');
   assert.ok(escutas.length >= 2);
   for (const e of escutas) assert.equal(e.ensino, undefined, e.id);
-  assert.ok(itens(l).filter(e => /:ler$/.test(e.id)).every(e => e.ensino), 'reconhecer continua com modelo');
+  const ler = itens(l).filter(e => /:ler$/.test(e.id));
+  assert.ok(ler[0].ensino, 'a primeira expressão é reconhecida com o modelo');
+  assert.ok(ler.slice(1).every(e => !e.ensino), 'as outras acabaram de aparecer nos cartões: o aluno lembra sem copiar');
   assert.equal(l.embalado, undefined);
 });
 
@@ -35,11 +37,11 @@ test('quem acertou as seis últimas atividades segue sem modelo na tela (aula de
   assert.equal(aula(m, 1, [...acertos(5), ...acertos(1, false)]).embalado, undefined);
   assert.equal(aula(m, 1, acertos(5)).embalado, undefined);
   // oficina de frases: só o primeiro exercício mantém o modelo
-  const parteOficina = Math.ceil(m.vocab.length / 2);
+  const parteOficina = Math.ceil(m.vocab.length / 3);
   const oficina = aula(m, parteOficina, acertos(6));
   assert.equal(oficina.oficina, true);
   assert.equal(itens(oficina).filter(e => e.ensino).length, 1);
-  assert.ok(itens(aula(m, parteOficina)).filter(e => e.ensino).length >= 3, 'sem histórico o apoio completo continua');
+  assert.ok(itens(aula(m, parteOficina)).filter(e => e.ensino).length >= 2, 'sem histórico o apoio completo continua');
 });
 
 test('caça ao erro: trocar a palavra errada pela correção deixa a frase certa (idade com years old)', () => {

@@ -249,6 +249,12 @@ function criar(db, { supabase: supabaseInjetado, clerk: clerkInjetado } = {}) {
     return { ...row, dados: lerJson(row.dados, null), respondidos: lerJson(row.respondidos, {}) };
   }
 
+  // Quem está embalado pode adiantar a trilha: até AULAS_POR_DIA aulas no mesmo dia. A aula concluída é arquivada
+  // com a data "AAAA-MM-DD#id" (a coluna data continua única por aluno) e a próxima parte da missão é montada na hora.
+  const AULAS_POR_DIA = 3;
+  const aulasConcluidasHoje = (uid, h) => q("SELECT COUNT(*) n FROM licoes WHERE user_id = ? AND (data = ? OR data LIKE ?) AND status = 'concluida'").get(uid, h, h + '#%').n;
+  const proximaDisponivel = (uid, h, lic) => !!lic && lic.status === 'concluida' && aulasConcluidasHoje(uid, h) < AULAS_POR_DIA && !!missaoAtual(planoDe(uid), competenciasDe(uid));
+
   // ---------- rotas ----------
   const rotas = [];
   const rota = (metodo, padrao, fn, { publica = false } = {}) => rotas.push({ metodo, re: new RegExp('^' + padrao.replace(/:(\w+)/g, '(?<$1>[^/]+)') + '$'), fn, publica });
@@ -547,12 +553,12 @@ function criar(db, { supabase: supabaseInjetado, clerk: clerkInjetado } = {}) {
     else proximo = { acao: 'descansar', texto: 'Por hoje está ótimo. Volte amanhã para a próxima lição.' };
     const inicioHoje = new Date(Date.now() - 864e5).toISOString();
     const pontosHoje = 10 * q("SELECT COUNT(*) n FROM tentativas WHERE user_id = ? AND correto = 1 AND origem IN ('licao','revisao','conversa','producao','material','estudo','simulado') AND em >= ?").get(uid, inicioHoje).n
-      + 20 * q("SELECT COUNT(*) n FROM licoes WHERE user_id = ? AND data = ? AND status = 'concluida'").get(uid, h).n;
+      + 20 * aulasConcluidasHoje(uid, h);
     const diasNoMes = q('SELECT COUNT(*) n FROM dias_estudo WHERE user_id = ? AND data LIKE ?').get(uid, h.slice(0, 7) + '%').n;
     const novasConquistas = q('SELECT codigo FROM conquistas WHERE user_id = ? AND em >= ?').all(uid, new Date(Date.now() - 864e5).toISOString()).map(r => r.codigo);
     return {
       nome: ctx.u.nome.split(' ')[0], hoje: h, economia: { xp: social.xp(uid), moedas: social.saldo(uid) },
-      licao: lic ? { status: lic.status, minutos: lic.dados.minutos, missao: lic.dados.missao, porque: lic.dados.porque, guiada: !!lic.dados.guiada, iniciada: !!lic.iniciada_em } : null,
+      licao: lic ? { status: lic.status, minutos: lic.dados.minutos, missao: lic.dados.missao, porque: lic.dados.porque, guiada: !!lic.dados.guiada, iniciada: !!lic.iniciada_em, proximaDisponivel: proximaDisponivel(uid, h, lic) } : null,
       revisoesPendentes: pend, proximo,
       meta: { minutos: p.meta_diaria || 15, feitos: Math.round(minutosHoje) },
       foco: focoNovo ? { nome: POR_TAG[focoNovo.tag]?.nome, origem: focoNovo.origem } : null,
@@ -599,7 +605,19 @@ function criar(db, { supabase: supabaseInjetado, clerk: clerkInjetado } = {}) {
     if (!lic) throw new ErroHttp(409, 'Seu plano ainda não está pronto.');
     lic = await personalizarLicao(uid, h, lic);
     if (!lic.iniciada_em) q('UPDATE licoes SET iniciada_em = ? WHERE id = ? AND user_id = ?').run(agoraISO(), lic.id, uid);
-    return { licao: paraCliente(lic.dados, `${uid}:${h}`), respondidos: lic.respondidos, status: lic.status, ia: ia.ativo() };
+    return { licao: paraCliente(lic.dados, `${uid}:${h}`), respondidos: lic.respondidos, status: lic.status, ia: ia.ativo(), proximaDisponivel: proximaDisponivel(uid, h, lic) };
+  });
+
+  rota('POST', '/licao/proxima', (ctx) => {
+    const uid = ctx.u.id, h = hojeDe(uid);
+    exigirAcessoCompleto(uid, h);
+    const lic = licaoDeHoje(uid, h, { criar: false });
+    if (!lic || lic.status !== 'concluida') throw new ErroHttp(409, 'Conclua a aula de hoje antes de começar a próxima.');
+    if (aulasConcluidasHoje(uid, h) >= AULAS_POR_DIA) throw new ErroHttp(409, `Hoje você já fez ${AULAS_POR_DIA} aulas. Descansar também ajuda a memória: a próxima fica para amanhã.`);
+    if (!missaoAtual(planoDe(uid), competenciasDe(uid))) throw new ErroHttp(409, 'Você concluiu todas as missões do seu plano.');
+    q('UPDATE licoes SET data = ? WHERE id = ? AND user_id = ?').run(`${h}#${lic.id}`, lic.id, uid);
+    const nova = licaoDeHoje(uid, h);
+    return { ok: true, missao: nova?.dados?.missao || null };
   });
 
   rota('POST', '/licao/responder', (ctx) => {
@@ -739,7 +757,7 @@ function criar(db, { supabase: supabaseInjetado, clerk: clerkInjetado } = {}) {
     conq.push(...somarMinutos(uid, h, minutos));
     const total = q("SELECT COUNT(*) n FROM licoes WHERE user_id = ? AND status = 'concluida'").get(uid).n;
     if (total >= 10 && conquistar(uid, 'licoes-10')) conq.push('licoes-10');
-    return { ok: true, minutos, conquistas: conq, revisoesPendentes: pendentesDe(uid, h), sequencia: sequenciaDe(uid, h) };
+    return { ok: true, minutos, conquistas: conq, revisoesPendentes: pendentesDe(uid, h), sequencia: sequenciaDe(uid, h), proximaDisponivel: proximaDisponivel(uid, h, { status: 'concluida' }) };
   });
 
   // Cartões
