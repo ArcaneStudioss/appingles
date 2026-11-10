@@ -8,11 +8,13 @@ import './mascote.js?v=__V__';
 import { iniciarTour, chaveDoTour } from './tour.js?v=__V__';
 import { agendarAviso } from './lembrete.js?v=__V__';
 import { iniciarTraducoes } from './traducao.js?v=__V__';
+import { montarChatFlutuante } from './chat-flutuante.js?v=__V__';
 
 const palco = document.getElementById('conteudo');
 // Mantém a escala da área de estudo; a rolagem continua livre no celular.
 // Preserva o gesto de ampliar para acessibilidade. Campos usam fonte de pelo menos 16px.
 const nav = document.querySelector('.nav');
+const atualizarChatFlutuante = montarChatFlutuante();
 export const estado = { eu: null };
 
 // tema Dia/Noite: escolhido neste aparelho (claro/escuro) ou igual ao sistema
@@ -170,6 +172,7 @@ async function render() {
   }
   if (btnMais) { const noMais = !naBarra && itensMais().some(m => m.rota === nome || (nome === 'minhaturma' && m.rota === 'turmas')); btnMais.toggleAttribute('aria-current', noMais); if (noMais) btnMais.setAttribute('aria-current', 'page'); }
   document.body.dataset.rota = rota;
+  atualizarChatFlutuante(rota, !nav.hidden);
   const alvo = h('div', { class: 'tela' });
   limpar(palco).append(alvo);
   try {
