@@ -186,7 +186,7 @@ export function exercicio(ex, config) {
     // O voo passa só pela faixa de cima e sem a Mia grande: antes ele ficava 3 s por cima das respostas da pergunta seguinte.
     btnConferir.onclick = () => { if (festejar && aoProximo) voarComemorando({ jeito: 'rasante', tamanho: 92, confetes: false }); aoProximo?.(); };
     btnConferir.removeEventListener('click', aoConferir);
-    if (!silencioso) requestAnimationFrame(() => { folha.focus({ preventScroll: true }); folha.scrollIntoView({ block: 'start', behavior: 'instant' }); });
+    if (!silencioso) requestAnimationFrame(() => { folha.focus({ preventScroll: true }); rolarAte(folha); });
   }
 
   // ---- por tipo
@@ -338,4 +338,30 @@ export function exercicio(ex, config) {
     mostrar(ja, ja.resposta, true);
   }
   return raiz;
+}
+
+// Leva a explicação para a tela deslizando (desacelera no fim), em vez do pulo seco de antes.
+// Mesma posição final do scrollIntoView (respeita o scroll-margin-top); com "menos movimento", vai direto.
+let rolagemAtual = 0;
+function rolarAte(alvo) {
+  if (!alvo?.isConnected) return;
+  const margem = parseFloat(getComputedStyle(alvo).scrollMarginTop) || 0;
+  const de = scrollY, para = Math.max(0, Math.min(document.documentElement.scrollHeight - innerHeight, de + alvo.getBoundingClientRect().top - margem));
+  const dist = para - de;
+  if (Math.abs(dist) < 2) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { scrollTo({ top: para, behavior: 'instant' }); return; }
+  cancelAnimationFrame(rolagemAtual);
+  const ms = Math.min(620, 320 + Math.abs(dist) * 0.45), t0 = performance.now();
+  const curva = k => 1 - Math.pow(1 - k, 4);
+  let parar = false;
+  const tocar = () => { parar = true; };
+  addEventListener('touchstart', tocar, { once: true, passive: true }); addEventListener('wheel', tocar, { once: true, passive: true });
+  const passo = agora => {
+    if (parar) return;
+    const k = Math.min(1, (agora - t0) / ms);
+    scrollTo({ top: de + dist * curva(k), behavior: 'instant' });
+    if (k < 1) rolagemAtual = requestAnimationFrame(passo);
+    else { removeEventListener('touchstart', tocar); removeEventListener('wheel', tocar); }
+  };
+  rolagemAtual = requestAnimationFrame(passo);
 }

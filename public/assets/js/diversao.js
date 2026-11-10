@@ -20,37 +20,49 @@ export function lou(humor = 'oi', { tamanho = 96, rotulo = 'Tuiuiú, a arara-azu
 
 // Tuiuiú de frente: asas contínuas, com ombro, dobra e penas sobrepostas na borda.
 // A ponta alongada acompanha a envergadura da arara; cada asa gira pelo ombro.
+let vooSeq = 0;
 export function louVoando() {
   const C = { corpo: 'var(--arara-1,#2447D0)', sombra: 'var(--arara-2,#1A33A0)', luz: 'var(--arara-3,#6C8DFF)' };
+  const id = ++vooSeq;
   const traco = (d, cor, larg, op = 1) => el('path', { d, stroke: cor, 'stroke-width': larg, 'stroke-linecap': 'round', fill: 'none', opacity: op });
+  // A asa tem duas partes: o "braço" (do ombro até a dobra) e a ponta, com as penas longas.
+  // O braço gira pelo ombro e a ponta gira pela dobra com atraso (follow-through): a asa enverga como pena de verdade,
+  // em vez de bater como uma placa rígida. As duas partes são a mesma silhueta, recortada em x=172 (com 3 px de sobra).
+  const pecas = () => [
+    el('path', { d: 'M132 79 C140 65 149 51 166 47 C186 44 209 36 228 28 C225 43 217 56 207 65 Q204 68 201 65 L208 55 Q199 71 190 77 Q187 79 185 76 L191 65 Q181 80 171 86 Q167 88 165 84 L170 75 Q157 88 145 96 Q137 99 134 90 Z', fill: C.sombra }),
+    el('path', { d: 'M133 79 C143 61 151 51 167 48 C187 45 208 37 225 30 C208 47 190 55 176 65 C163 76 151 88 140 92 Q133 91 133 79 Z', fill: C.corpo }),
+    el('path', { d: 'M138 77 C150 57 158 53 174 51 Q193 48 208 41 C191 52 176 56 164 66 Q151 77 141 85 Z', fill: C.luz, opacity: '.3' }),
+    traco('M158 72 Q181 59 207 46', C.luz, 1.5, .45), traco('M153 80 Q175 69 194 56', C.luz, 1.4, .35), traco('M147 86 Q165 78 180 67', C.luz, 1.3, .3)];
   const asa = lado => {
     const g = el('g', { class: 'asa asa--' + lado });
     const f = el('g', lado === 'e' ? { transform: 'translate(240 0) scale(-1 1)' } : {});
-    // Silhueta única: penas primárias longas na ponta, secundárias menores junto ao corpo.
-    f.append(el('path', { d: 'M132 79 C140 65 149 51 166 47 C186 44 209 36 228 28 C225 43 217 56 207 65 Q204 68 201 65 L208 55 Q199 71 190 77 Q187 79 185 76 L191 65 Q181 80 171 86 Q167 88 165 84 L170 75 Q157 88 145 96 Q137 99 134 90 Z', fill: C.sombra }));
-    // A superfície da asa cobre as bases das penas, sem abri-las em leque.
-    f.append(el('path', { d: 'M133 79 C143 61 151 51 167 48 C187 45 208 37 225 30 C208 47 190 55 176 65 C163 76 151 88 140 92 Q133 91 133 79 Z', fill: C.corpo }));
-    f.append(el('path', { d: 'M138 77 C150 57 158 53 174 51 Q193 48 208 41 C191 52 176 56 164 66 Q151 77 141 85 Z', fill: C.luz, opacity: '.3' }));
-    f.append(traco('M158 72 Q181 59 207 46', C.luz, 1.5, .45),
-      traco('M153 80 Q175 69 194 56', C.luz, 1.4, .35),
-      traco('M147 86 Q165 78 180 67', C.luz, 1.3, .3));
-    g.append(f); return g;
+    const braco = el('g', { 'clip-path': `url(#voo-braco-${id})` }, ...pecas());
+    const ponta = el('g', { class: 'asa__ponta' }, el('g', { 'clip-path': `url(#voo-ponta-${id})` }, ...pecas()));
+    f.append(ponta, braco); g.append(f); return g;
   };
   const s = el('svg', { viewBox: '0 -8 240 184', class: 'lou lou--voando', 'aria-hidden': 'true', focusable: 'false' });
-  s.append(
-    el('path', { d: 'M108 118 L96 172 L120 162 L144 172 L132 118 Z', fill: C.sombra }),
-    el('path', { d: 'M114 118 L112 160 L120 154 L128 160 L126 118 Z', fill: C.corpo }),
+  s.append(el('defs', {},
+    el('clipPath', { id: `voo-braco-${id}`, clipPathUnits: 'userSpaceOnUse' }, el('rect', { x: 100, y: 0, width: 79, height: 140 })),
+    el('clipPath', { id: `voo-ponta-${id}`, clipPathUnits: 'userSpaceOnUse' }, el('rect', { x: 169, y: -20, width: 80, height: 160 }))));
+  // tudo dentro de um corpo que sobe a cada batida para baixo (a asa empurra o ar) e desce na volta
+  const corpo = el('g', { class: 'ave__corpo' });
+  corpo.append(
+    el('g', { class: 'ave__cauda' },
+      el('path', { d: 'M108 118 L96 172 L120 162 L144 172 L132 118 Z', fill: C.sombra }),
+      el('path', { d: 'M114 118 L112 160 L120 154 L128 160 L126 118 Z', fill: C.corpo })),
     asa('e'), asa('d'),
     el('ellipse', { cx: 120, cy: 88, rx: 27, ry: 37, fill: C.corpo }),
     el('ellipse', { cx: 120, cy: 94, rx: 14, ry: 26, fill: C.luz, opacity: '.28' }),
     traco('M110 120 Q108 128 102 130', '#5B6275', 3), traco('M130 120 Q132 128 138 130', '#5B6275', 3),
-    el('circle', { cx: 120, cy: 46, r: 23, fill: C.corpo }), traco('M104 34 Q110 26 120 25', '#fff', 3, .3),
-    el('ellipse', { cx: 105, cy: 55, rx: 6, ry: 4, fill: '#FFC83D' }), el('ellipse', { cx: 135, cy: 55, rx: 6, ry: 4, fill: '#FFC83D' }),
-    el('circle', { cx: 108, cy: 44, r: 8, fill: '#FFC83D' }), el('circle', { cx: 132, cy: 44, r: 8, fill: '#FFC83D' }),
-    traco('M102 46 Q108 37 114 46', '#16224A', 3.4), traco('M126 46 Q132 37 138 46', '#16224A', 3.4),
-    el('path', { d: 'M120 46 Q106 52 110 66 Q114 80 120 82 Q126 80 130 66 Q134 52 120 46 Z', fill: '#3A4254' }),
-    traco('M115 55 Q113 62 116 70', '#7A849B', 2.5, .75),
-    traco('M113 74 Q120 79 127 74', C.sombra, 2, .5));
+    el('g', { class: 'ave__cabeca' },
+      el('circle', { cx: 120, cy: 46, r: 23, fill: C.corpo }), traco('M104 34 Q110 26 120 25', '#fff', 3, .3),
+      el('ellipse', { cx: 105, cy: 55, rx: 6, ry: 4, fill: '#FFC83D' }), el('ellipse', { cx: 135, cy: 55, rx: 6, ry: 4, fill: '#FFC83D' }),
+      el('circle', { cx: 108, cy: 44, r: 8, fill: '#FFC83D' }), el('circle', { cx: 132, cy: 44, r: 8, fill: '#FFC83D' }),
+      traco('M102 46 Q108 37 114 46', '#16224A', 3.4), traco('M126 46 Q132 37 138 46', '#16224A', 3.4),
+      el('path', { d: 'M120 46 Q106 52 110 66 Q114 80 120 82 Q126 80 130 66 Q134 52 120 46 Z', fill: '#3A4254' }),
+      traco('M115 55 Q113 62 116 70', '#7A849B', 2.5, .75),
+      traco('M113 74 Q120 79 127 74', C.sombra, 2, .5)));
+  s.append(corpo);
   return s;
 }
 
@@ -166,22 +178,52 @@ export function brilho(alvo, { cor = 'var(--sol)', quantidade = 9 } = {}) {
 }
 
 // ---------- confete ----------
+// Confete com física em <canvas>: estoura de um ponto, sobe, perde velocidade no ar, cai com gravidade e "vira" como papel
+// (a largura oscila com o giro). Um só quadro por frame (requestAnimationFrame) e some sozinho quando o último papel sai da tela.
+const corDe = c => { if (!c.startsWith('var(')) return c; const nome = c.slice(4, -1).split(',')[0].trim(); return getComputedStyle(document.documentElement).getPropertyValue(nome).trim() || '#4C78D9'; };
 export function confete(alvo = document.body, quantidade = 46) {
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const cores = ['var(--caneta)', 'var(--sol)', '#7FA6FF', '#FF9FB2', '#5EC8F2'];
-  const camada = document.createElement('div'); camada.className = 'confete'; camada.setAttribute('aria-hidden', 'true');
-  for (let i = 0; i < quantidade; i++) {
-    const p = document.createElement('i');
-    p.style.setProperty('--x', `${(Math.random() * 2 - 1) * 46}vw`);
-    p.style.setProperty('--y', `${-30 - Math.random() * 50}vh`);
-    p.style.setProperty('--r', `${Math.random() * 720 - 360}deg`);
-    p.style.setProperty('--d', `${0.9 + Math.random() * 0.8}s`);
-    p.style.setProperty('background', cores[i % cores.length]);
-    p.style.setProperty('left', `${45 + Math.random() * 10}%`);
-    camada.append(p);
-  }
-  alvo.append(camada);
-  setTimeout(() => camada.remove(), 2000);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || document.hidden) return;
+  const cores = ['var(--caneta)', 'var(--sol)', '#7FA6FF', '#FF9FB2', '#5EC8F2', '#7ED69B'].map(corDe);
+  const W = innerWidth, H = innerHeight, dpr = Math.min(2, devicePixelRatio || 1);
+  const tela = document.createElement('canvas'); tela.className = 'confete'; tela.setAttribute('aria-hidden', 'true');
+  tela.width = W * dpr; tela.height = H * dpr; Object.assign(tela.style, { width: W + 'px', height: H + 'px' });
+  document.body.append(tela);
+  const ctx = tela.getContext('2d'); ctx.scale(dpr, dpr);
+  // origem: o centro do alvo (um botão, um cartão) ou, para a página inteira, dois canhões nos cantos de baixo
+  const r = alvo && alvo !== document.body ? alvo.getBoundingClientRect() : null;
+  const origens = r ? [[r.left + r.width / 2, r.top + r.height / 2, -Math.PI / 2, Math.PI * 0.9]] : [[W * 0.08, H * 0.92, -Math.PI * 0.36, 0.5], [W * 0.92, H * 0.92, -Math.PI * 0.64, 0.5]];
+  const forca = Math.min(1.3, Math.max(0.75, Math.sqrt(H / 800)));
+  const papeis = Array.from({ length: Math.round(quantidade * (r ? 1 : 1.4)) }, (_, i) => {
+    const [ox, oy, ang, abre] = origens[i % origens.length], a = ang + (Math.random() - 0.5) * abre, v = (r ? 9 : 27) * forca * (0.6 + Math.random() * 0.55);
+    return { x: ox, y: oy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, giro: Math.random() * Math.PI * 2, vgiro: (Math.random() - 0.5) * 0.32,
+      vira: Math.random() * Math.PI * 2, vvira: 0.12 + Math.random() * 0.16, w: 6 + Math.random() * 6, hh: 9 + Math.random() * 7,
+      forma: Math.random() < 0.18 ? 'bola' : Math.random() < 0.3 ? 'fita' : 'papel', cor: cores[i % cores.length], balanco: Math.random() * 6 };
+  });
+  let antes = performance.now(), vida = 0;
+  const quadro = agora => {
+    const dt = Math.min(2.2, (agora - antes) / 16.67); antes = agora; vida += dt * 16.67;
+    ctx.clearRect(0, 0, W, H);
+    let vivos = 0;
+    for (const p of papeis) {
+      p.vy += 0.32 * dt;                                   // gravidade
+      const ar = Math.pow(0.985, dt); p.vx *= ar; p.vy *= p.vy > 0 ? Math.pow(0.97, dt) : ar;   // o ar segura a queda (velocidade terminal)
+      p.balanco += 0.06 * dt; p.x += (p.vx + Math.sin(p.balanco) * 0.6) * dt; p.y += p.vy * dt;
+      p.giro += p.vgiro * dt; p.vira += p.vvira * dt;
+      if (p.y > H + 30 || p.x < -40 || p.x > W + 40) continue;
+      vivos++;
+      const sumir = vida > 2600 ? Math.max(0, 1 - (vida - 2600) / 500) : 1;
+      ctx.save(); ctx.globalAlpha = sumir; ctx.translate(p.x, p.y); ctx.rotate(p.giro);
+      const face = Math.cos(p.vira);                      // -1..1: o papel mostra a frente, a borda e o verso
+      ctx.scale(1, face); ctx.fillStyle = p.cor;
+      if (face < 0) ctx.filter = 'brightness(.82)';
+      if (p.forma === 'bola') { ctx.beginPath(); ctx.arc(0, 0, p.w / 2, 0, Math.PI * 2); ctx.fill(); }
+      else if (p.forma === 'fita') { ctx.beginPath(); ctx.moveTo(-p.w / 2, -p.hh); ctx.quadraticCurveTo(p.w, 0, -p.w / 2, p.hh); ctx.lineWidth = 3.2; ctx.strokeStyle = p.cor; ctx.lineCap = 'round'; ctx.stroke(); }
+      else { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-p.w / 2, -p.hh / 2, p.w, p.hh, 2) : ctx.rect(-p.w / 2, -p.hh / 2, p.w, p.hh); ctx.fill(); }
+      ctx.restore();
+    }
+    if (vivos && vida < 3100 && tela.isConnected && !document.hidden) requestAnimationFrame(quadro); else tela.remove();
+  };
+  requestAnimationFrame(quadro);
 }
 
 // ---------- comemoração (combo, fim de bloco): o Tuiuiú pula no meio da tela com uma frase grande e some sozinho ----------

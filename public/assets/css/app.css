@@ -2469,3 +2469,94 @@ body{background:var(--fundo)}
 /* desenho da palavra nova na aula (as mesmas cenas de Palavras em desenho) */
 .palavra-nova__desenho{width:min(100%,300px);border-radius:20px;overflow:hidden;border:2px solid var(--borda)}
 .palavra-nova__desenho svg{display:block;width:100%;height:auto}
+
+/* ===================== Movimento 2 (11/2026) =====================
+   Molas de verdade (oscilação amortecida em linear()), asas que envergam, retorno que sobe com mola e
+   cores que mudam com transição. Tudo some com "menos movimento". Antes: a mola era um único exagero
+   (cubic-bezier), as asas eram placas rígidas indo e voltando e a tela pulava seco até a explicação. */
+/* reserva para navegadores sem linear(): as molas novas caem nas curvas antigas */
+:root{--mola-forte:cubic-bezier(.34,1.56,.64,1);--mola-suave:cubic-bezier(.22,1,.36,1)}
+@supports (animation-timing-function: linear(0, 1)) {
+  :root{
+    --mola:linear(0, 0.024, 0.085, 0.173, 0.276, 0.387, 0.498, 0.604, 0.702, 0.789, 0.864, 0.927, 0.978, 1.017, 1.046, 1.065, 1.077, 1.083, 1.083, 1.08, 1.074, 1.066, 1.057, 1.047, 1.038, 1.03, 1.022, 1.015, 1.009, 1.004, 1, 0.997, 0.995, 0.994, 0.993, 0.993, 0.993, 0.994, 0.994, 0.995, 0.996, 0.996, 0.997, 0.998, 1);
+    --mola-forte:linear(0, 0.045, 0.159, 0.318, 0.495, 0.672, 0.833, 0.969, 1.074, 1.146, 1.189, 1.205, 1.199, 1.178, 1.147, 1.111, 1.075, 1.041, 1.012, 0.989, 0.973, 0.963, 0.958, 0.959, 0.962, 0.968, 0.976, 0.983, 0.99, 0.996, 1.001, 1.005, 1.007, 1.008, 1.009, 1.008, 1.007, 1.005, 1.004, 1.002, 1.001, 1, 0.999, 0.999, 1);
+    --mola-suave:linear(0, 0.016, 0.059, 0.12, 0.193, 0.273, 0.355, 0.438, 0.517, 0.592, 0.66, 0.723, 0.778, 0.827, 0.869, 0.905, 0.935, 0.959, 0.979, 0.995, 1.006, 1.015, 1.021, 1.025, 1.028, 1.028, 1.028, 1.027, 1.025, 1.023, 1.021, 1.019, 1.016, 1.014, 1.012, 1.01, 1.008, 1.007, 1.005, 1.004, 1.003, 1.002, 1.001, 1.001, 1);
+  }
+}
+
+/* adultos: mola sem exagero, mas ainda com assentamento natural */
+@supports (animation-timing-function: linear(0, 1)) { body[data-publico="adulto"]{--mola:var(--mola-suave)} }
+
+/* cores que trocam sem piscar: botão (azul -> verde/coral), barra de baixo e alternativas */
+.btn{transition:transform .1s var(--ease),box-shadow .1s var(--ease),filter .15s,background-color .28s ease,color .28s ease}
+.barra-acao,.barra-acao--fixa{transition:background-color .3s ease,border-color .3s ease,box-shadow .3s ease}
+.opcao{transition:transform .18s var(--mola),border-color .2s ease,background-color .2s ease,color .2s ease,box-shadow .18s ease}
+
+/* chacoalhar de erro com amortecimento (antes: dois pulos secos de 6 px) */
+@keyframes treme{0%,100%{transform:none}10%{transform:translateX(-10px) rotate(-.6deg)}25%{transform:translateX(9px) rotate(.5deg)}40%{transform:translateX(-7px)}55%{transform:translateX(5px)}70%{transform:translateX(-3px)}85%{transform:translateX(1.5px)}}
+/* acerto: a alternativa "estala" e assenta */
+@keyframes festa-op{0%{transform:scale(1)}28%{transform:scale(1.07)}52%{transform:scale(.975)}72%{transform:scale(1.018)}100%{transform:scale(1)}}
+@keyframes escolhe{0%{transform:scale(1)}35%{transform:scale(.965)}70%{transform:scale(1.025)}100%{transform:scale(1)}}
+@keyframes sobe-folha{from{opacity:0;transform:translateY(46px) scale(.96)}60%{opacity:1}}
+@keyframes titulo-pop{from{opacity:0;transform:scale(.55) translateY(6px)}}
+@keyframes texto-entra{from{opacity:0;transform:translateY(10px)}}
+@keyframes btn-pop{0%{transform:scale(1)}30%{transform:scale(1.045)}60%{transform:scale(.985)}100%{transform:scale(1)}}
+@keyframes btn-brilho{from{transform:translateX(-130%) skewX(-18deg)}to{transform:translateX(330%) skewX(-18deg)}}
+
+@media (prefers-reduced-motion:no-preference){
+  .is-errado .opcao.escolhida{animation:treme .52s cubic-bezier(.36,.07,.19,.97)}
+  .is-certo .opcao.escolhida{animation:festa-op .6s ease-out}
+  .exercicio:not(.is-certo):not(.is-errado) .opcoes .opcao.escolhida{animation:escolhe .42s ease-out}
+  /* o retorno sobe com mola; título, texto e ações entram em cascata */
+  .barra-acao--certo .folha-resposta,.barra-acao--quase .folha-resposta,.retorno-exercicio:not([hidden]){animation:sobe-folha .62s var(--mola) both}
+  .retorno-exercicio:not([hidden]) .folha-resposta__titulo{animation:titulo-pop .55s var(--mola-forte) .08s both;transform-origin:0 70%}
+  .retorno-exercicio:not([hidden]) .folha-resposta__texto>*:not(.folha-resposta__titulo){animation:texto-entra .45s var(--mola-suave) both}
+  .retorno-exercicio:not([hidden]) .folha-resposta__texto>*:nth-child(2){animation-delay:.14s}
+  .retorno-exercicio:not([hidden]) .folha-resposta__texto>*:nth-child(3){animation-delay:.19s}
+  .retorno-exercicio:not([hidden]) .folha-resposta__texto>*:nth-child(n+4){animation-delay:.24s}
+  /* o botão vira "Continuar" com um estalo e um reflexo que atravessa */
+  .barra-acao--certo .btn:not(:active),.barra-acao--quase .btn:not(:active){animation:btn-pop .5s var(--mola-forte) .05s}
+  .barra-acao--certo .btn{overflow:hidden}
+  .barra-acao--certo .btn::after{content:"";position:absolute;top:0;bottom:0;left:0;width:34%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);animation:btn-brilho .9s ease-out .25s both;pointer-events:none}
+  /* barra de progresso da lição: enche com mola e o Tuiuiú acompanha */
+  .trilho__cheio{transition:transform .75s var(--mola-suave)}
+  .trilho__lou{transition:transform .75s var(--mola)}
+  .celebra__cartao{animation-timing-function:var(--mola-forte)!important}
+
+  /* ---- Tuiuiú em voo: braço gira pelo ombro, ponta enverga com atraso, corpo sobe a cada batida ---- */
+  .lou--voando .asa__ponta{transform-origin:172px 60px}
+  .lou--voando .ave__corpo{transform-origin:120px 90px}
+  .lou--voando .ave__cauda{transform-origin:120px 118px}
+  .lou--voando .asa--d{animation:asa-voo-d .36s linear 3,asa-voo-d 1.05s linear 1.08s infinite}
+  .lou--voando .asa--e{animation:asa-voo-e .36s linear 3,asa-voo-e 1.05s linear 1.08s infinite}
+  .lou--voando .asa__ponta{animation:asa-ponta .36s linear 3,asa-ponta 1.05s linear 1.08s infinite}
+  .lou--voando .ave__corpo{animation:ave-bob .36s linear 3,ave-bob 1.05s linear 1.08s infinite}
+  .lou--voando .ave__cauda{animation:ave-cauda 1.05s ease-in-out infinite}
+  .lou--voando.lou--rapido .asa--d{animation:asa-voo-d .34s linear infinite}
+  .lou--voando.lou--rapido .asa--e{animation:asa-voo-e .34s linear infinite}
+  .lou--voando.lou--rapido .asa__ponta{animation:asa-ponta .34s linear infinite}
+  .lou--voando.lou--rapido .ave__corpo{animation:ave-bob .34s linear infinite}
+  .dupla:is([data-acao=acerto],[data-acao=superacao],[data-acao=combo],[data-acao=fim]) .dupla__voador .asa--d{animation:asa-voo-d .32s linear 9}
+  .dupla:is([data-acao=acerto],[data-acao=superacao],[data-acao=combo],[data-acao=fim]) .dupla__voador .asa--e{animation:asa-voo-e .32s linear 9}
+  .dupla:is([data-acao=acerto],[data-acao=superacao],[data-acao=combo],[data-acao=fim]) .dupla__voador .asa__ponta{animation:asa-ponta .32s linear 9}
+  .dupla:is([data-acao=acerto],[data-acao=superacao],[data-acao=combo],[data-acao=fim]) .dupla__voador .ave__corpo{animation:ave-bob .32s linear 9}
+
+  /* ---- Tuiuiú sentado: batida para baixo rápida, volta lenta (antes: vai e vem simétrico) ---- */
+  .lou--tui.tui--comemora .tui__asa{animation:tui-bate2 .6s linear infinite}
+  .lou--tui.tui--comemora .tui__asa-longe{animation:tui-bate2 .6s linear .07s infinite}
+  .lou--tui.tui--voa .tui__asa{animation:tui-voa2 .95s linear infinite}
+  .lou--tui.tui--voa .tui__asa-longe{animation:tui-voa2 .95s linear .08s infinite}
+  .lou--tui.tui--voa .tui__resp{animation:tui-paira2 .95s linear var(--tui-atraso,0s) infinite}
+  .lou--tui.tui--reage .tui__asa{animation:tui-bate2 .42s linear 2}
+}
+/* um ciclo de batida: desce acelerando (ease-in) em 42% do tempo e sobe desacelerando (ease-out) no resto */
+@keyframes asa-voo-d{0%{transform:rotate(-28deg) scaleY(.88);animation-timing-function:cubic-bezier(.55,0,.8,.55)}42%{transform:rotate(32deg) scaleY(1.05);animation-timing-function:cubic-bezier(.2,.45,.35,1)}100%{transform:rotate(-28deg) scaleY(.88)}}
+@keyframes asa-voo-e{0%{transform:rotate(28deg) scaleY(.88);animation-timing-function:cubic-bezier(.55,0,.8,.55)}42%{transform:rotate(-32deg) scaleY(1.05);animation-timing-function:cubic-bezier(.2,.45,.35,1)}100%{transform:rotate(28deg) scaleY(.88)}}
+/* a ponta atrasa: sobe enquanto o braço desce e chicoteia para baixo no fim; o contrário na volta */
+@keyframes asa-ponta{0%{transform:rotate(12deg);animation-timing-function:ease-out}14%{transform:rotate(-18deg);animation-timing-function:ease-in-out}42%{transform:rotate(-4deg);animation-timing-function:ease-out}58%{transform:rotate(18deg);animation-timing-function:ease-in-out}100%{transform:rotate(12deg)}}
+@keyframes ave-bob{0%{transform:translateY(3px);animation-timing-function:cubic-bezier(.45,0,.55,1)}46%{transform:translateY(-5px);animation-timing-function:cubic-bezier(.45,0,.55,1)}100%{transform:translateY(3px)}}
+@keyframes ave-cauda{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+@keyframes tui-bate2{0%{transform:rotate(126deg);animation-timing-function:cubic-bezier(.55,0,.8,.55)}40%{transform:rotate(174deg);animation-timing-function:cubic-bezier(.2,.45,.35,1)}100%{transform:rotate(126deg)}}
+@keyframes tui-voa2{0%{transform:rotate(26deg);animation-timing-function:cubic-bezier(.55,0,.8,.55)}42%{transform:rotate(136deg);animation-timing-function:cubic-bezier(.2,.45,.35,1)}100%{transform:rotate(26deg)}}
+@keyframes tui-paira2{0%{transform:translateY(1px);animation-timing-function:ease-in-out}46%{transform:translateY(-6px);animation-timing-function:ease-in-out}100%{transform:translateY(1px)}}
+@media (prefers-reduced-motion:reduce){.barra-acao--certo .btn::after{display:none}}
