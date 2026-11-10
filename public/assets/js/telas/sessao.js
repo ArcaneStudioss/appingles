@@ -1,7 +1,7 @@
 import { api } from '../api.js?v=__V__';
 import { h, falar, falarPt, pararVoz, ocupado, toast, icone } from '../ui.js?v=__V__';
 import { exercicio } from './exercicio.js?v=__V__';
-import { celebrarSequencia } from '../chama.js?v=__V__';
+import { celebrarSequencia } from '../penas.js?v=__V__';
 import { lou, louFala, som, confete, botaoSom, pontosFlutuantes, contar, vibrar, voarComemorando } from '../diversao.js?v=__V__';
 import { mudarPose } from '../tui.js?v=__V__';
 
@@ -12,7 +12,7 @@ export async function telaSessao(el, { ir }) {
   const progresso = h('p', { class: 'licao-contador', role: 'status' });
   // Mesmo "jeito de jogo" da aula: trilho com o Tuiuiú andando, combo de acertos seguidos e som. O progresso fica salvo ao sair.
   let combo = 0, melhorCombo = 0, comemorouFim = false;
-  const chipCombo = h('span', { class: 'combo', hidden: true, 'aria-live': 'polite' }, icone('flame'), h('b', {}, '0'), h('span', { class: 'oculto' }, ' acertos seguidos'));
+  const chipCombo = h('span', { class: 'combo', hidden: true, 'aria-live': 'polite' }, icone('lightning'), h('b', {}, '0'), h('span', { class: 'oculto' }, ' acertos seguidos'));
   const trilho = h('div', { class: 'trilho', role: 'progressbar', 'aria-label': 'Progresso da sessão', 'aria-valuemin': 0, 'aria-valuemax': s.itens.length + 1 }, h('span', { class: 'trilho__cheio' }), h('span', { class: 'trilho__lou' }, lou('feliz', { tamanho: 38, rotulo: '', pose: 'voa' })));
   const topo = h('div', { class: 'licao-topo' }, h('a', { class: 'btn btn-texto btn-peq', href: '#/hoje', 'aria-label': 'Sair e continuar depois', title: 'Sair e continuar depois' }, icone('x')), trilho, chipCombo, botaoSom());
   function marcarCombo(certo, xp = 0) {

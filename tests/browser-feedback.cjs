@@ -47,8 +47,8 @@ await page.getByRole('button',{name:'Concluir sessão',exact:true}).waitFor();
 const antes=(await R('GET','/sessao')).sessao;assert.equal(antes.concluida,false);assert.ok(antes.itens.every(e=>antes.respondidos[e.id]));
 await page.reload({waitUntil:'networkidle'});await page.getByRole('heading',{name:'Sessão concluída',exact:true}).waitFor();await page.getByRole('button',{name:'Concluir sessão',exact:true}).click();
 await page.getByRole('link',{name:'Ver meu progresso',exact:true}).waitFor();assert.equal((await R('GET','/sessao')).sessao.concluida,true);
-// a comemoração do primeiro dia de sequência abre por cima; a pessoa fecha no botão
-await page.locator('.chama__botao').click();await page.locator('.chama').waitFor({state:'detached'});
+// a comemoração do primeiro dia de voo abre por cima; a pessoa fecha no botão
+await page.locator('.dias-voo__botao').click();await page.locator('.dias-voo').waitFor({state:'detached'});
 const depois=(await R('GET','/sessao')).sessao;assert.deepEqual(Object.keys(depois.respondidos),Object.keys(antes.respondidos));
 // Dicionário: resposta local imediata; enriquecimento explícito e uma só chamada em andamento.
 let chamadas=0;await page.route('**/api/v1/palavra',async route=>{chamadas++;await new Promise(r=>setTimeout(r,800));await route.fulfill({json:{forma_base:'song',sentidos:[{classe:'substantivo',pt:'canção',ex_en:'This song is beautiful.',ex_pt:'Esta canção é bonita.',no_contexto:true}]}});});

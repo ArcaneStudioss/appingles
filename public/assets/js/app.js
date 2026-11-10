@@ -44,7 +44,7 @@ const MAIS = [
   { grupo: 'Praticar', rota: 'revisar', cor: 'sol', ic: 'cards', t: 'Revisar palavras', s: 'relembre o que aprendeu', k: 'cartoes vocabulario memoria' },
   { grupo: 'Praticar', rota: 'treino', cor: 'limao', ic: 'target', t: 'Treinar o que erro', s: 'questões para reforçar suas dificuldades', k: 'dificuldade erros reforco' },
   { grupo: 'Praticar', rota: 'podcast', cor: 'rosa', ic: 'headphones', t: 'Rádio Tuiuiú', s: 'ouça um episódio com legendas', k: 'podcast audio ouvir video mia' },
-  { grupo: 'Meu caminho', rota: 'progresso', cor: 'lilas', ic: 'chart-line-up', t: 'Meu progresso', s: 'sequência, conquistas e evolução', k: 'sequencia estatistica conquistas', professor: true },
+  { grupo: 'Meu caminho', rota: 'progresso', cor: 'lilas', ic: 'chart-line-up', t: 'Meu progresso', s: 'dias de voo, conquistas e evolução', k: 'sequencia dias voo penas estatistica conquistas', professor: true },
   { grupo: 'Meu caminho', rota: 'nivel', cor: 'lilas', ic: 'chart-line-up', t: 'Meu nível', s: 'ver, subir ou descer de nível', k: 'facil dificil a1 a2 b1 b2 c1 ajustar', aluno: true },
   { grupo: 'Meu caminho', rota: 'aprender', cor: 'limao', ic: 'compass', t: 'Meu jeito de aprender', s: 'suas preferências e pontos fortes', k: 'perfil estilo preferencias' },
   { grupo: 'Meu caminho', rota: 'sobmedida', cor: 'turquesa', ic: 'graduation-cap', t: 'Estudar para um objetivo', s: 'prova, entrevista ou viagem', k: 'objetivo prova entrevista viagem plano' },

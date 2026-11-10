@@ -65,6 +65,7 @@ A navegação do aluno tem Hoje, Biblioteca, Progresso (Álbum para crianças), 
 
 
 ## Sequência e Rádio Tuiuiú (18/10/2026)
+- **Dias de voo** (10/11/2026): a sequência de dias aparece como penas azuis do Tuiuiú. Cada dia de estudo rende uma pena e as sete da semana abrem em leque, como uma asa (`public/assets/js/penas.js`); marcos ganham pena dourada. Substitui o foguinho anterior; as regras abaixo não mudaram.
 - **Sequência de dias** (`src/motor/sequencia.js`): calculada de `dias_estudo`, sem castigo. Hoje sem estudo não quebra; a cada 7 dias seguidos ganha 1 escudo (até 2) que salva um dia perdido; o recorde fica. Prêmios viram figurinhas especiais aos 3, 7, 14, 30, 60, 100, 200 e 365 dias.
 - **Rádio Tuiuiú** (`src/motor/podcast.js`, tela `#/podcast`): um episódio por dia com os tropeços dos últimos 21 dias (focos + respostas erradas). O Tuiuiú explica em português, a Mia fala inglês, com pausas de "repita". A frase errada aparece riscada e nunca é falada. Sem IA, o roteiro sai do catálogo; com IA, `ia.podcast` escreve (limite `podcast` por mês). Treino no fim, corrigido no servidor. Ouvir até o fim conta como dia de estudo. Áudio exclusivamente pelas quatro vozes oficiais da Mia e do Tuiuiú, com síntese ElevenLabs no servidor e cache privado. Configuração em [docs/vozes-personagens.md](docs/vozes-personagens.md).
 

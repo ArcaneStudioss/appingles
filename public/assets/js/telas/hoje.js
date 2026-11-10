@@ -1,7 +1,7 @@
 // Tela principal: saudação, medidores do dia, Tuiuiú com o porquê da aula, a aula de hoje (o "pacotinho"),
 // quatro atalhos grandes (cada um com a cor da sua atividade) e o álbum de missões.
 // Sem vidas e sem "ofensiva" que se perde: os dias do mês só somam.
-import { chamaMini } from '../chama.js?v=__V__';
+import { penaMini } from '../penas.js?v=__V__';
 import { api } from '../api.js?v=__V__';
 import { h, icone, dataBR, plural, toast, janela, localStorageGet, localStorageSet } from '../ui.js?v=__V__';
 import { lou, louFala, reagirCanto } from '../diversao.js?v=__V__';
@@ -61,9 +61,9 @@ function verSequencia(seq, diasNoMes) {
   const semana = h('ol', { class: 'seq-semana', 'aria-label': 'Últimos 7 dias' }, seq.semana.map(d => {
     const dia = DIA_CURTO[new Date(d.data + 'T12:00:00Z').getUTCDay()];
     const rot = { estudou: 'estudou', escudo: 'salvo pelo escudo', hoje: 'hoje, ainda dá tempo', nao: 'sem estudo' }[d.estado];
-    return h('li', { class: 'seq-dia seq-dia--' + d.estado, 'aria-label': `${dia}: ${rot}` }, h('span', { class: 'seq-dia__bola' }, d.estado === 'estudou' ? chamaMini() : d.estado === 'escudo' ? icone('shield-check') : null), h('small', {}, dia));
+    return h('li', { class: 'seq-dia seq-dia--' + d.estado, 'aria-label': `${dia}: ${rot}` }, h('span', { class: 'seq-dia__bola' }, d.estado === 'estudou' ? penaMini() : d.estado === 'escudo' ? icone('shield-check') : null), h('small', {}, dia));
   }));
-  janela({ titulo: seq.atual ? `${seq.atual} ${seq.atual === 1 ? 'dia seguido' : 'dias seguidos'}!` : 'Comece sua sequência hoje', corpo: h('div', { class: 'seq-janela' },
+  janela({ titulo: seq.atual ? `${seq.atual} ${seq.atual === 1 ? 'dia de voo' : 'dias de voo seguidos'}!` : 'Ganhe sua primeira pena hoje', corpo: h('div', { class: 'seq-janela' },
     semana,
     h('ul', { class: 'numeros' },
       h('li', {}, h('strong', {}, String(seq.atual)), 'seguidos agora'),
@@ -72,9 +72,9 @@ function verSequencia(seq, diasNoMes) {
       h('li', {}, h('strong', {}, String(diasNoMes)), 'dias neste mês')),
     seq.proximoPremio ? h('p', { class: 'aviso-suave' }, icone('medal'), h('span', {}, `Faltam ${plural(seq.faltam, 'dia', 'dias')} para a figurinha especial de ${seq.proximoPremio} dias.`)) : null,
     h('ul', { class: 'lista-check' },
-      h('li', {}, 'Qualquer estudo conta: aula, revisão, conversa ou episódio da Rádio Tuiuiú.'),
-      h('li', {}, 'A cada 7 dias seguidos você ganha um escudo (guarda até 2). Se faltar um dia, o escudo salva a sequência sozinho.'),
-      h('li', {}, 'Se a sequência recomeçar, nada se perde: o recorde e as figurinhas ficam no seu álbum.'))) });
+      h('li', {}, 'Cada dia de estudo rende uma pena azul do Tuiuiú. Qualquer estudo conta: aula, revisão, conversa ou episódio da Rádio Tuiuiú.'),
+      h('li', {}, 'A cada 7 dias seguidos você ganha um escudo (guarda até 2). Se faltar um dia, o escudo cobre e seus dias de voo continuam.'),
+      h('li', {}, 'Se os dias de voo recomeçarem, nada se perde: o recorde e as figurinhas ficam no seu álbum.'))) });
 }
 
 // O app ajustou o nível sozinho? Avisa com o motivo e deixa desfazer. Nível certo mas com erros? Convida a reforçar.
@@ -111,9 +111,9 @@ export async function telaHoje(el, { ir, estado }) {
   principal.append(
     h('header', { class: 'saudacao' },
       h('h1', {}, `${saud}, ${d.nome}!`),
-      // a chama aparece desde o primeiro dia (apagada): é o convite para começar a sequência
-      a_completo ? h('button', { type: 'button', class: 'status__item status__item--seq c-coral' + (d.sequencia.estudouHoje ? ' acesa' : ''), 'aria-label': d.sequencia.atual ? `Sequência: ${d.sequencia.atual} dias seguidos. Ver detalhes` : 'Sequência ainda não começou. Ver como funciona', on: { click: () => verSequencia(d.sequencia, d.diasNoMes) } },
-        chamaMini({ acesa: d.sequencia.estudouHoje }), h('strong', {}, String(d.sequencia.atual))) : null,
+      // a pena aparece desde o primeiro dia (ainda sem cor): é o convite para começar os dias de voo
+      a_completo ? h('button', { type: 'button', class: 'status__item status__item--seq c-azul' + (d.sequencia.estudouHoje ? ' acesa' : ''), 'aria-label': d.sequencia.atual ? `Dias de voo: ${d.sequencia.atual} seguidos. Ver detalhes` : 'Seus dias de voo ainda não começaram. Ver como funciona', on: { click: () => verSequencia(d.sequencia, d.diasNoMes) } },
+        penaMini({ acesa: d.sequencia.estudouHoje }), h('strong', {}, String(d.sequencia.atual))) : null,
       d.nivel?.atual ? h('a', { class: 'chip nivel-chip', href: '#/nivel', 'aria-label': `Meu nível: ${d.nivel.atual}. Ver ou ajustar` }, icone('chart-line-up'), d.nivel.atual) : null));
   const metaDias = estado?.eu?.perfil?.dias_semana, feitosSemana = d.sequencia.semana.filter(x => x.estado === 'estudou' || x.estado === 'escudo').length;
   if (metaDias && (d.sequencia.atual || d.sequencia.recorde)) principal.append(h('p', { class: 'ajuda meta-semana' }, feitosSemana >= metaDias ? `Meta da semana cumprida: ${feitosSemana} dias de estudo nos últimos 7. Parabéns!` : `Meta da semana: ${feitosSemana} de ${metaDias} dias de estudo nos últimos 7.`));

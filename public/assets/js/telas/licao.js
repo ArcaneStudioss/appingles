@@ -4,7 +4,7 @@ import { h, icone, falar, falarPt, pararVoz, acompanharFala, botaoOuvir, ocupado
 import { exercicio } from './exercicio.js?v=__V__';
 import { nomeConquista } from './hoje.js?v=__V__';
 import { mudarPose } from '../tui.js?v=__V__';
-import { celebrarSequencia } from '../chama.js?v=__V__';
+import { celebrarSequencia } from '../penas.js?v=__V__';
 import { lou, louFala, som, confete, botaoSom, pontosFlutuantes, contar, vibrar, voarComemorando } from '../diversao.js?v=__V__';
 import { companheirosAula } from '../companheiros.js?v=__V__';
 
@@ -40,7 +40,7 @@ export async function telaLicao(el, { ir }) {
   const inicio = Date.now();
   // combo: acertos seguidos. Nunca pune: errar só zera o contador, sem som feio nem perda de pontos
   let combo = 0, melhorCombo = 0;
-  const chipCombo = h('span', { class: 'combo', hidden: true, 'aria-live': 'polite' }, icone('flame'), h('b', {}, '0'), h('span', { class: 'oculto' }, ' acertos seguidos'));
+  const chipCombo = h('span', { class: 'combo', hidden: true, 'aria-live': 'polite' }, icone('lightning'), h('b', {}, '0'), h('span', { class: 'oculto' }, ' acertos seguidos'));
   function marcarCombo(certo, xp = 0) {
     combo = certo ? combo + 1 : 0;
     melhorCombo = Math.max(melhorCombo, combo);
@@ -149,7 +149,7 @@ export async function telaLicao(el, { ir }) {
       licao.missao ? h('p', { class: 'ajuda' }, `Parte ${licao.missao.parte} de ${licao.missao.total}. ${licao.missao.podeFazer}`) : null,
       licao.guiada ? companheirosAula({ texto: licao.reforco ? 'Vamos rever com mais apoio, sem pressa. Eu explico e o Tuiuiú pratica com você.' : infantil ? `Hoje são ${palavras.length} palavras e ${passos.filter(p => p.tipo === 'ex').length} atividades curtinhas. Eu e o Tuiuiú vamos com você!` : `${palavras.length} expressões úteis e ${passos.filter(p => p.tipo === 'ex').length} atividades curtas. Eu ajudo com as explicações e o Tuiuiú acompanha a prática.` }).elemento : louFala('oi', h('p', { class: 'bilhete pequeno' }, 'Por que esta aula'), h('ul', { class: 'por-que' }, licao.porque.map(t => h('li', {}, t)))),
       licao.guiada ? h('ol', { class: 'como-aprender' }, h('li', {}, icone('speaker-high'), h('span', {}, 'Veja, ouça e descubra o significado.')), h('li', {}, icone('hand-waving'), h('span', {}, 'Toque nas respostas. Pode pedir uma dica.')), h('li', {}, icone('smiley'), h('span', {}, 'Errou? Veja a explicação e tente de novo.'))) : null,
-      licao.embalado ? h('p', { class: 'chip c-menta ritmo-chip' }, icone('flame'), 'Você está embalado: hoje sem o modelo na tela') : null,
+      licao.embalado ? h('p', { class: 'chip c-menta ritmo-chip' }, icone('lightning'), 'Você está embalado: hoje sem o modelo na tela') : null,
       licao.missao?.id === 'zero-sons' ? h('a', { class: 'btn btn-texto', href: '#/sons' }, icone('speaker-high'), 'Antes de começar: sons do inglês') : null,
       barraBotao(status === 'concluida' ? 'Rever a aula' : 'Vamos aprender'));
   }

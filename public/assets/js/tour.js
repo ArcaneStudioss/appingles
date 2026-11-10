@@ -7,7 +7,7 @@ const NAV = {
   hoje: ['Hoje', 'A sua aula do dia começa aqui. Escolha 5, 10 ou 20 minutos e o Tuiuiú monta o treino para você.'],
   professor: ['Painel', 'Suas turmas, aulas e alunos ficam aqui.'],
   biblioteca: ['Biblioteca', 'Capítulos, textos e expressões do Brasil pro mundo para estudar no seu tempo.'],
-  progresso: ['Progresso', 'Sua sequência de dias, o que você já domina e onde ainda tropeça.'],
+  progresso: ['Progresso', 'Seus dias de voo, o que você já domina e onde ainda tropeça.'],
   conta: ['Conta', 'Seus dados, o plano e os lembretes.'],
   turmas: ['Turmas', 'Atividades do professor. Entre com o código que ele passar.'],
   mais: ['Mais', 'Tudo o resto mora aqui: revisar, conversar, ouvir a Rádio, biblioteca, mudar de nível ou de tema e tirar dúvidas. Tem um campo de busca para achar rápido.'],
