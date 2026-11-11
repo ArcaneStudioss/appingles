@@ -2560,3 +2560,39 @@ body{background:var(--fundo)}
 @keyframes tui-voa2{0%{transform:rotate(26deg);animation-timing-function:cubic-bezier(.55,0,.8,.55)}42%{transform:rotate(136deg);animation-timing-function:cubic-bezier(.2,.45,.35,1)}100%{transform:rotate(26deg)}}
 @keyframes tui-paira2{0%{transform:translateY(1px);animation-timing-function:ease-in-out}46%{transform:translateY(-6px);animation-timing-function:ease-in-out}100%{transform:translateY(1px)}}
 @media (prefers-reduced-motion:reduce){.barra-acao--certo .btn::after{display:none}}
+
+/* ===== Reação dos personagens na resposta (11/2026) =====
+   Antes a Mia e o Tuiuiú apareciam com 48 px no canto do retorno. Agora a dupla tem o dobro do tamanho,
+   surge de baixo com mola e reage de corpo inteiro: no acerto a Mia agacha, pula e pousa (antecipação,
+   estica e achata) e o Tuiuiú sai voando e volta; no erro a Mia se aproxima e acena com a cabeça, sem drama. */
+body[data-publico] .retorno-exercicio .companheiros--compactos{--mia-alto:96px;--tui-alto:68px;--dupla-largo:112px;--salto-dupla:10px;grid-template-columns:112px minmax(0,1fr);gap:.6rem;margin:0 0 .4rem}
+body[data-publico=adulto] .retorno-exercicio .companheiros--compactos{--mia-alto:84px;--tui-alto:60px;--dupla-largo:100px;--salto-dupla:7px;grid-template-columns:100px minmax(0,1fr)}
+@media(max-width:360px){body[data-publico] .retorno-exercicio .companheiros--compactos{--mia-alto:76px;--tui-alto:54px;--dupla-largo:88px;grid-template-columns:88px minmax(0,1fr)}}
+.retorno-exercicio .companheiros--compactos .companheiros__mensagem{font-weight:700}
+.retorno-exercicio .dupla{overflow:visible}
+.retorno-exercicio .companheiros__figuras{position:relative;isolation:isolate}
+.retorno-exercicio .companheiros__figuras::before{content:"";position:absolute;left:50%;bottom:4%;width:100%;aspect-ratio:1;border-radius:50%;translate:-50% 0;z-index:-1;opacity:0;pointer-events:none}
+.retorno-exercicio--certo .companheiros__figuras::before{background:radial-gradient(circle,color-mix(in srgb,var(--menta) 38%,transparent) 0 46%,transparent 70%)}
+.retorno-exercicio--aprender .companheiros__figuras::before{background:radial-gradient(circle,color-mix(in srgb,var(--sol) 34%,transparent) 0 46%,transparent 70%)}
+@media (prefers-reduced-motion:no-preference){
+  .retorno-exercicio .dupla__ator{animation:reacao-surge .62s var(--mola) both}
+  .retorno-exercicio .dupla__ator--tuiuiu{animation-delay:.07s}
+  .retorno-exercicio .companheiros__figuras::before{animation:reacao-aura 1.1s ease-out .12s both}
+  .retorno-exercicio .dupla[data-acao=acerto] .dupla__ator--mia,
+  .retorno-exercicio .dupla[data-acao=superacao] .dupla__ator--mia{animation:reacao-surge .55s var(--mola) both,reacao-pula .9s linear .42s 1}
+  .retorno-exercicio .dupla:is([data-acao=apoio],[data-acao=dica]) .dupla__ator--mia{animation:reacao-surge .55s var(--mola) both,reacao-acolhe 1.7s ease-in-out .45s 1}
+  .retorno-exercicio .dupla:is([data-acao=apoio],[data-acao=dica]) .dupla__ator--tuiuiu{animation:reacao-surge .55s var(--mola) .08s both,reacao-inclina 1.5s ease-in-out .6s 1}
+}
+@keyframes reacao-surge{from{opacity:0;transform:translateY(36%) scale(.7,.6)}45%{opacity:1}}
+@keyframes reacao-aura{0%{opacity:0;transform:scale(.4)}35%{opacity:1}100%{opacity:.55;transform:scale(1)}}
+/* agacha (antecipação), sobe esticada, gira um pouco no alto, pousa achatada e assenta */
+@keyframes reacao-pula{
+  0%{transform:none;animation-timing-function:ease-out}
+  14%{transform:translateY(3px) scale(1.1,.86);animation-timing-function:cubic-bezier(.2,.7,.4,1)}
+  42%{transform:translateY(calc(-2.2 * var(--salto-dupla,10px))) scale(.92,1.1) rotate(-4deg);animation-timing-function:cubic-bezier(.5,0,.8,.4)}
+  64%{transform:translateY(2px) scale(1.12,.86);animation-timing-function:ease-out}
+  80%{transform:translateY(-2px) scale(.97,1.04)}
+  100%{transform:none}}
+/* chega mais perto, inclina e "concorda" com a cabeça duas vezes: acolhe sem fazer festa */
+@keyframes reacao-acolhe{0%,100%{transform:none}18%{transform:translateX(4px) rotate(4deg)}34%{transform:translateX(4px) rotate(1deg)}50%{transform:translateX(4px) rotate(5deg)}66%{transform:translateX(3px) rotate(2deg)}}
+@keyframes reacao-inclina{0%,100%{transform:none}30%,70%{transform:rotate(-7deg) translateY(1px)}}
